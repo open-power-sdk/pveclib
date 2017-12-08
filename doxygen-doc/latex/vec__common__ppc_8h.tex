@@ -1,0 +1,180 @@
+\hypertarget{vec__common__ppc_8h}{
+\section{src/vec\_\-common\_\-ppc.h File Reference}
+\label{vec__common__ppc_8h}\index{src/vec\_\-common\_\-ppc.h@{src/vec\_\-common\_\-ppc.h}}
+}
+
+
+Common definitions and typedef used by the collection of Power Vector Library headers.  
+{\ttfamily \#include $<$stdint.h$>$}\par
+{\ttfamily \#include $<$altivec.h$>$}\par
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+union \hyperlink{union____VEC__U__128}{\_\-\_\-VEC\_\-U\_\-128}
+\begin{DoxyCompactList}\small\item\em Union used to transfer 128-\/bit data between vector and non-\/vector types. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{vec__common__ppc_8h_af4ffb9244d1aa4482b683d35c3544194}{
+\#define \hyperlink{vec__common__ppc_8h_af4ffb9244d1aa4482b683d35c3544194}{CONST\_\-VINT64\_\-DW}(\_\-\_\-dw0, \_\-\_\-dw1)~\{\_\-\_\-dw1, \_\-\_\-dw0\}}
+\label{vec__common__ppc_8h_af4ffb9244d1aa4482b683d35c3544194}
+
+\begin{DoxyCompactList}\small\item\em Arrange elements of dword initializer in high-\/$>$low order. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a9ed8c282b57705c960542ed869de3325}{
+\#define \hyperlink{vec__common__ppc_8h_a9ed8c282b57705c960542ed869de3325}{CONST\_\-VINT128\_\-DW}(\_\-\_\-dw0, \_\-\_\-dw1)~(\hyperlink{vec__common__ppc_8h_a52a773b6353c69a546bdc2e8686a50ec}{vui64\_\-t})\{\_\-\_\-dw1, \_\-\_\-dw0\}}
+\label{vec__common__ppc_8h_a9ed8c282b57705c960542ed869de3325}
+
+\begin{DoxyCompactList}\small\item\em Initializer for 128-\/bits vector, as two unsigned long long elements in high-\/$>$low order. May require an explicit cast. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a562dba1b4daf1f8ecb38841ec38c9b4d}{
+\#define \hyperlink{vec__common__ppc_8h_a562dba1b4daf1f8ecb38841ec38c9b4d}{CONST\_\-VINT128\_\-DW128}(\_\-\_\-dw0, \_\-\_\-dw1)~(\hyperlink{vec__common__ppc_8h_a66332b4bd68c0b5d93121f6dc0f0839b}{vui128\_\-t})((\hyperlink{vec__common__ppc_8h_a52a773b6353c69a546bdc2e8686a50ec}{vui64\_\-t})\{\_\-\_\-dw1, \_\-\_\-dw0\})}
+\label{vec__common__ppc_8h_a562dba1b4daf1f8ecb38841ec38c9b4d}
+
+\begin{DoxyCompactList}\small\item\em A vector unsigned \_\-\_\-int128 initializer, as two unsigned long long elements in high-\/$>$low order. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_ae4520a89b9b5a292a3e647a6d5b712ad}{
+\#define \hyperlink{vec__common__ppc_8h_ae4520a89b9b5a292a3e647a6d5b712ad}{CONST\_\-VINT128\_\-W}(\_\-\_\-w0, \_\-\_\-w1, \_\-\_\-w2, \_\-\_\-w3)~(\hyperlink{vec__common__ppc_8h_a2ff4a776536870e01b7c9e454586544b}{vui32\_\-t})\{\_\-\_\-w3, \_\-\_\-w2, \_\-\_\-w1, \_\-\_\-w0\}}
+\label{vec__common__ppc_8h_ae4520a89b9b5a292a3e647a6d5b712ad}
+
+\begin{DoxyCompactList}\small\item\em Arrange word elements of a unsigned int initializer in high-\/$>$low order. May require an explicit cast. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a7e03d3eaeafea2c6613233fd58f98ec1}{
+\#define \hyperlink{vec__common__ppc_8h_a7e03d3eaeafea2c6613233fd58f98ec1}{CONST\_\-VINT32\_\-W}(\_\-\_\-w0, \_\-\_\-w1, \_\-\_\-w2, \_\-\_\-w3)~\{\_\-\_\-w3, \_\-\_\-w2, \_\-\_\-w1, \_\-\_\-w0\}}
+\label{vec__common__ppc_8h_a7e03d3eaeafea2c6613233fd58f98ec1}
+
+\begin{DoxyCompactList}\small\item\em Arrange elements of word initializer in high-\/$>$low order. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_adb2bc7bad8fc5c335244ac6f877f3c8f}{
+\#define \hyperlink{vec__common__ppc_8h_adb2bc7bad8fc5c335244ac6f877f3c8f}{VEC\_\-DW\_\-H}~1}
+\label{vec__common__ppc_8h_adb2bc7bad8fc5c335244ac6f877f3c8f}
+
+\begin{DoxyCompactList}\small\item\em Element index for high order dword. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a9d8b8de825b673b53cd50458dfc6efa8}{
+\#define \hyperlink{vec__common__ppc_8h_a9d8b8de825b673b53cd50458dfc6efa8}{VEC\_\-DW\_\-L}~0}
+\label{vec__common__ppc_8h_a9d8b8de825b673b53cd50458dfc6efa8}
+
+\begin{DoxyCompactList}\small\item\em Element index for low order dword. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a47854cd0a31b62fe1ebf0d77ccb7c854}{
+\#define \hyperlink{vec__common__ppc_8h_a47854cd0a31b62fe1ebf0d77ccb7c854}{VEC\_\-W\_\-H}~3}
+\label{vec__common__ppc_8h_a47854cd0a31b62fe1ebf0d77ccb7c854}
+
+\begin{DoxyCompactList}\small\item\em Element index for highest order word. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_aafb30510341c41500fc4fab3268cfec7}{
+\#define \hyperlink{vec__common__ppc_8h_aafb30510341c41500fc4fab3268cfec7}{VEC\_\-W\_\-L}~0}
+\label{vec__common__ppc_8h_aafb30510341c41500fc4fab3268cfec7}
+
+\begin{DoxyCompactList}\small\item\em Element index for lowest order word. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_aa4c9ef3ba2f2c2a8b33f4f4459bbd2aa}{
+\#define \hyperlink{vec__common__ppc_8h_aa4c9ef3ba2f2c2a8b33f4f4459bbd2aa}{VEC\_\-WE\_\-0}~3}
+\label{vec__common__ppc_8h_aa4c9ef3ba2f2c2a8b33f4f4459bbd2aa}
+
+\begin{DoxyCompactList}\small\item\em Element index for vector splat word 0. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a0cbf2bc0426544f7d64ce84da322a919}{
+\#define \hyperlink{vec__common__ppc_8h_a0cbf2bc0426544f7d64ce84da322a919}{VEC\_\-WE\_\-1}~2}
+\label{vec__common__ppc_8h_a0cbf2bc0426544f7d64ce84da322a919}
+
+\begin{DoxyCompactList}\small\item\em Element index for vector splat word 1. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_ad739666851dfec6cc520c2ee06fd5d41}{
+\#define \hyperlink{vec__common__ppc_8h_ad739666851dfec6cc520c2ee06fd5d41}{VEC\_\-WE\_\-2}~1}
+\label{vec__common__ppc_8h_ad739666851dfec6cc520c2ee06fd5d41}
+
+\begin{DoxyCompactList}\small\item\em Element index for vector splat word 2. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_abf3504d2f86f03f90239a3196da3b3de}{
+\#define \hyperlink{vec__common__ppc_8h_abf3504d2f86f03f90239a3196da3b3de}{VEC\_\-WE\_\-3}~0}
+\label{vec__common__ppc_8h_abf3504d2f86f03f90239a3196da3b3de}
+
+\begin{DoxyCompactList}\small\item\em Element index for vector splat word 3. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a7a067a69e501014d68d003ac4e11d9fd}{
+\#define \hyperlink{vec__common__ppc_8h_a7a067a69e501014d68d003ac4e11d9fd}{VEC\_\-HW\_\-H}~7}
+\label{vec__common__ppc_8h_a7a067a69e501014d68d003ac4e11d9fd}
+
+\begin{DoxyCompactList}\small\item\em Element index for highest order hword. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a8084f0958a53a6de32969cf234c8ceae}{
+\#define \hyperlink{vec__common__ppc_8h_a8084f0958a53a6de32969cf234c8ceae}{VEC\_\-HW\_\-L}~0}
+\label{vec__common__ppc_8h_a8084f0958a53a6de32969cf234c8ceae}
+
+\begin{DoxyCompactList}\small\item\em Element index for lowest order hword. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a9d1a7749d270995baf9eaae078578961}{
+\#define \hyperlink{vec__common__ppc_8h_a9d1a7749d270995baf9eaae078578961}{VEC\_\-BYTE\_\-L}~0}
+\label{vec__common__ppc_8h_a9d1a7749d270995baf9eaae078578961}
+
+\begin{DoxyCompactList}\small\item\em Element index for lowest order byte. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a3975205947785b1745a791ef12256e9a}{
+\#define \hyperlink{vec__common__ppc_8h_a3975205947785b1745a791ef12256e9a}{VEC\_\-BYTE\_\-H}~15}
+\label{vec__common__ppc_8h_a3975205947785b1745a791ef12256e9a}
+
+\begin{DoxyCompactList}\small\item\em Element index for highest order byte. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_aa2b36d047166859c0f7fabe4b7c131ad}{
+\#define \hyperlink{vec__common__ppc_8h_aa2b36d047166859c0f7fabe4b7c131ad}{VEC\_\-BYTE\_\-HHW}~14}
+\label{vec__common__ppc_8h_aa2b36d047166859c0f7fabe4b7c131ad}
+
+\begin{DoxyCompactList}\small\item\em Element index for second lowest order byte. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{vec__common__ppc_8h_aed458e4755a6589049b936cf9f24f6f8}{
+typedef \_\-\_\-vector unsigned char \hyperlink{vec__common__ppc_8h_aed458e4755a6589049b936cf9f24f6f8}{vui8\_\-t}}
+\label{vec__common__ppc_8h_aed458e4755a6589049b936cf9f24f6f8}
+
+\begin{DoxyCompactList}\small\item\em vector of 8-\/bit unsigned char elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_afb47075b07673afbf78f8c60298f3712}{
+typedef \_\-\_\-vector unsigned short \hyperlink{vec__common__ppc_8h_afb47075b07673afbf78f8c60298f3712}{vui16\_\-t}}
+\label{vec__common__ppc_8h_afb47075b07673afbf78f8c60298f3712}
+
+\begin{DoxyCompactList}\small\item\em vector of 16-\/bit unsigned short elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a2ff4a776536870e01b7c9e454586544b}{
+typedef \_\-\_\-vector unsigned int \hyperlink{vec__common__ppc_8h_a2ff4a776536870e01b7c9e454586544b}{vui32\_\-t}}
+\label{vec__common__ppc_8h_a2ff4a776536870e01b7c9e454586544b}
+
+\begin{DoxyCompactList}\small\item\em vector of 32-\/bit unsigned int elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a52a773b6353c69a546bdc2e8686a50ec}{
+typedef \_\-\_\-vector unsigned long long \hyperlink{vec__common__ppc_8h_a52a773b6353c69a546bdc2e8686a50ec}{vui64\_\-t}}
+\label{vec__common__ppc_8h_a52a773b6353c69a546bdc2e8686a50ec}
+
+\begin{DoxyCompactList}\small\item\em vector of 64-\/bit unsigned long long elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a748bbf6563e6ab1ddcb694c86e2aaef4}{
+typedef \_\-\_\-vector signed char \hyperlink{vec__common__ppc_8h_a748bbf6563e6ab1ddcb694c86e2aaef4}{vi8\_\-t}}
+\label{vec__common__ppc_8h_a748bbf6563e6ab1ddcb694c86e2aaef4}
+
+\begin{DoxyCompactList}\small\item\em vector of 8-\/bit signed char elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a873846dd078cef3d766814d856760526}{
+typedef \_\-\_\-vector short \hyperlink{vec__common__ppc_8h_a873846dd078cef3d766814d856760526}{vi16\_\-t}}
+\label{vec__common__ppc_8h_a873846dd078cef3d766814d856760526}
+
+\begin{DoxyCompactList}\small\item\em vector of 16-\/bit signed short elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_adf5717f56a3dac6980206dbd37614ca2}{
+typedef \_\-\_\-vector int \hyperlink{vec__common__ppc_8h_adf5717f56a3dac6980206dbd37614ca2}{vi32\_\-t}}
+\label{vec__common__ppc_8h_adf5717f56a3dac6980206dbd37614ca2}
+
+\begin{DoxyCompactList}\small\item\em vector of 32-\/bit signed int elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a0c3abdfe41178c152e0a2130c20476ff}{
+typedef \_\-\_\-vector long long \hyperlink{vec__common__ppc_8h_a0c3abdfe41178c152e0a2130c20476ff}{vi64\_\-t}}
+\label{vec__common__ppc_8h_a0c3abdfe41178c152e0a2130c20476ff}
+
+\begin{DoxyCompactList}\small\item\em vector of 64-\/bit signed long long elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a18f1382a0cb269770bbb8387dfcbbe1c}{
+typedef \_\-\_\-vector float \hyperlink{vec__common__ppc_8h_a18f1382a0cb269770bbb8387dfcbbe1c}{vf32\_\-t}}
+\label{vec__common__ppc_8h_a18f1382a0cb269770bbb8387dfcbbe1c}
+
+\begin{DoxyCompactList}\small\item\em vector of 32-\/bit float elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_ae5cccc22e004bddbb80a51117c448675}{
+typedef \_\-\_\-vector double \hyperlink{vec__common__ppc_8h_ae5cccc22e004bddbb80a51117c448675}{vf64\_\-t}}
+\label{vec__common__ppc_8h_ae5cccc22e004bddbb80a51117c448675}
+
+\begin{DoxyCompactList}\small\item\em vector of 64-\/bit double elements. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_ac1c414a60e2a13398427203b40e8dd3f}{
+typedef \_\-\_\-vector int \hyperlink{vec__common__ppc_8h_ac1c414a60e2a13398427203b40e8dd3f}{vi128\_\-t}}
+\label{vec__common__ppc_8h_ac1c414a60e2a13398427203b40e8dd3f}
+
+\begin{DoxyCompactList}\small\item\em vector of one 128-\/bit signed \_\-\_\-int128 element. \item\end{DoxyCompactList}\item 
+\hypertarget{vec__common__ppc_8h_a66332b4bd68c0b5d93121f6dc0f0839b}{
+typedef \_\-\_\-vector unsigned int \hyperlink{vec__common__ppc_8h_a66332b4bd68c0b5d93121f6dc0f0839b}{vui128\_\-t}}
+\label{vec__common__ppc_8h_a66332b4bd68c0b5d93121f6dc0f0839b}
+
+\begin{DoxyCompactList}\small\item\em vector of one 128-\/bit unsigned \_\-\_\-int128 element. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Common definitions and typedef used by the collection of Power Vector Library headers. \hypertarget{vec__common__ppc_8h_includes}{}\subsection{includes}\label{vec__common__ppc_8h_includes}
+
+\begin{DoxyItemize}
+\item Typedefs as short names of common vector types.
+\item Union used to transfer 128-\/bit data between vector and non-\/vector types.
+\item Helper macros that make declaring constants and accessing elements, a little easier. 
+\end{DoxyItemize}

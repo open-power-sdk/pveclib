@@ -1,9 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.63)
-# AC_INIT(pveclib, 1.0.0)
 AC_INIT([pveclib], [1.0.0], munroesj@us.ibm.com raji@linux.vnet.ibm.com tulioqm@br.ibm.com)
-
 
 AC_CANONICAL_SYSTEM
 AC_CONFIG_MACRO_DIR([m4])
@@ -27,4 +25,3 @@ DX_INIT_DOXYGEN($PACKAGE_NAME, [ doc/pveclib-doxygen-pveclib.doxy ])
 
 AC_CONFIG_FILES(Makefile src/Makefile)
 AC_OUTPUT
-

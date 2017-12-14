@@ -9,6 +9,7 @@ AC_CANONICAL_SYSTEM
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/vec_common_ppc.h])
 AM_INIT_AUTOMAKE(subdir-objects)
+AX_AM_MACROS
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -18,11 +19,11 @@ AC_PROG_LIBTOOL
 AC_CHECK_HEADERS([altivec.h stddef.h stdint.h unistd.h stdio.h fenv.h float.h math.h])
 
 # Doxygen support
-#DX_HTML_FEATURE(ON)
-#DX_MAN_FEATURE(OFF)
-#DX_PDF_FEATURE(OFF)
-#DX_PS_FEATURE(OFF)
-#DX_INIT_DOXYGEN($PACKAGE_NAME, [ doc/pveclib-doxygen-pveclib.doxy ])
+DX_HTML_FEATURE(ON)
+DX_MAN_FEATURE(OFF)
+DX_PDF_FEATURE(OFF)
+DX_PS_FEATURE(OFF)
+DX_INIT_DOXYGEN($PACKAGE_NAME, [ doc/pveclib-doxygen-pveclib.doxy ])
 
 AC_CONFIG_FILES(Makefile src/Makefile)
 AC_OUTPUT

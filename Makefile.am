@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-# include $(top_srcdir)/aminclude.am
+@INC_AMINCLUDE@
 
 dist_doc_DATA = COPYING CONTRIBUTING.md README.md
 

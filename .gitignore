@@ -31,3 +31,14 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Temporary artifacts
+*.log
+*.cache
+Makefile
+.deps
+.libs
+config.h
+config.scan
+stamp-h1
+*~

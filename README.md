@@ -18,8 +18,8 @@ of useful vector and large number operations:
   can be implemented as inline functions with inline asm in earlier
   compiler versions.
 - Provide higher order functions not provided directly by the PowerISA.
-  For example vector SIMI implementation for ASCII __isalpha, etc.
-  Another example full __int128 implementations of Count Leading Zeros,
+  For example vector SIMD implementation for ASCII `__isalpha`, etc.
+  Another example full `__int128` implementations of Count Leading Zeros,
   Population Count, and Multiply.
 
 ## Build
@@ -41,8 +41,8 @@ perform this step first:
 ## Usage
 
 Once pveclib is installed on the POWER or OpenPOWER system
-simply add -I/<path>/pveclib to the compile command line. Then
+simply add `-I/<path>/pveclib` to the compile command line. Then
 include the appropriate header. For example:
 
-#include <vec_int128_ppc.h>
+    #include <vec_int128_ppc.h>
 

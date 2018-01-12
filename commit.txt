@@ -1,4 +1,0 @@
-Fix testsuite build
-    
-Signed-off-by: Paul A. Clarke <pc@us.ibm.com>
-Suggested-by: Tulio Magno Quites Machado Filho <tuliom@linux.vnet.ibm.com>

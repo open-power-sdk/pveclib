@@ -24,16 +24,19 @@ of useful vector and large number operations:
 
 ## Build
 
-    $ libtoolize
-    $ aclocal
-    $ automake --add-missing
-    $ autoconf
+It is likely sufficient to perform:
+
     $ ./configure
     $ make
 
 and, optionally:
 
     $ make check
+
+If the included autotools poorly match what is installed on the system,
+perform this step first:
+
+    $ autoreconf
 
 ## Usage
 

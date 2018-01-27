@@ -637,41 +637,49 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-DX_RULES
-PAPER_SIZE
 DOXYGEN_PAPER_SIZE
-GENERATE_LATEX
+DX_COND_latex_FALSE
+DX_COND_latex_TRUE
+DX_COND_pdf_FALSE
+DX_COND_pdf_TRUE
 DX_PDFLATEX
 DX_FLAG_pdf
+DX_COND_ps_FALSE
+DX_COND_ps_TRUE
 DX_EGREP
 DX_DVIPS
 DX_MAKEINDEX
 DX_LATEX
 DX_FLAG_ps
+DX_COND_html_FALSE
+DX_COND_html_TRUE
 DX_FLAG_html
-GENERATE_CHI
+DX_COND_chi_FALSE
+DX_COND_chi_TRUE
 DX_FLAG_chi
-GENERATE_HTMLHELP
-GENERATE_HTML
-HHC_PATH
+DX_COND_chm_FALSE
+DX_COND_chm_TRUE
 DX_HHC
 DX_FLAG_chm
-GENERATE_XML
+DX_COND_xml_FALSE
+DX_COND_xml_TRUE
 DX_FLAG_xml
-GENERATE_RTF
+DX_COND_rtf_FALSE
+DX_COND_rtf_TRUE
 DX_FLAG_rtf
-GENERATE_MAN
+DX_COND_man_FALSE
+DX_COND_man_TRUE
 DX_FLAG_man
-DOT_PATH
-HAVE_DOT
+DX_COND_dot_FALSE
+DX_COND_dot_TRUE
 DX_DOT
 DX_FLAG_dot
-PERL_PATH
+DX_COND_doc_FALSE
+DX_COND_doc_TRUE
 DX_PERL
+DX_FLAG_DX_CURRENT_FEATURE
 DX_DOXYGEN
 DX_FLAG_doc
-PROJECT
-SRCDIR
 DX_ENV
 DX_DOCDIR
 DX_CONFIG
@@ -716,8 +724,9 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
-INC_AMINCLUDE
-AMINCLUDE
+MAINT
+MAINTAINER_MODE_FALSE
+MAINTAINER_MODE_TRUE
 AM_BACKSLASH
 AM_DEFAULT_VERBOSITY
 AM_DEFAULT_V
@@ -800,6 +809,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_silent_rules
+enable_maintainer_mode
 enable_dependency_tracking
 enable_shared
 enable_static
@@ -1463,6 +1473,9 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-silent-rules   less verbose build output (undo: "make V=1")
   --disable-silent-rules  verbose build output (undo: "make V=0")
+  --enable-maintainer-mode
+                          enable make rules and dependencies not useful (and
+                          sometimes confusing) to the casual installer
   --enable-dependency-tracking
                           do not reject slow dependency extractors
   --disable-dependency-tracking
@@ -1473,7 +1486,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-doxygen-doc   don't generate any doxygen documentation
-  --enable-doxygen-dot    generate graphics for doxygen documentation
+  --disable-doxygen-dot   don't generate graphics for doxygen documentation
   --enable-doxygen-man    generate doxygen manual pages
   --enable-doxygen-rtf    generate doxygen RTF documentation
   --enable-doxygen-xml    generate doxygen XML documentation
@@ -3016,32 +3029,29 @@ END
 fi
 
 
-AX_DOLLAR="\$"
-AX_SRB="\\135"
-AX_SLB="\\133"
-AX_BS="\\\\"
-AX_DQ="\""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5
+$as_echo_n "checking whether to enable maintainer-specific portions of Makefiles... " >&6; }
+    # Check whether --enable-maintainer-mode was given.
+if test "${enable_maintainer_mode+set}" = set; then :
+  enableval=$enable_maintainer_mode; USE_MAINTAINER_MODE=$enableval
+else
+  USE_MAINTAINER_MODE=no
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_MAINTAINER_MODE" >&5
+$as_echo "$USE_MAINTAINER_MODE" >&6; }
+   if test $USE_MAINTAINER_MODE = yes; then
+  MAINTAINER_MODE_TRUE=
+  MAINTAINER_MODE_FALSE='#'
+else
+  MAINTAINER_MODE_TRUE='#'
+  MAINTAINER_MODE_FALSE=
+fi
+
+  MAINT=$MAINTAINER_MODE_TRUE
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: adding automake macro support" >&5
-$as_echo "$as_me: adding automake macro support" >&6;}
-AMINCLUDE="aminclude.am"
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: creating $AMINCLUDE" >&5
-$as_echo "$as_me: creating $AMINCLUDE" >&6;}
-AMINCLUDE_TIME=`date`
-
-
-printf "
-# generated automatically by configure from AX_AUTOMAKE_MACROS
-# on $AMINCLUDE_TIME
-
-" > "$AMINCLUDE"
-
-
-INC_AMINCLUDE="include \$(top_builddir)/$AMINCLUDE"
-
-
+AX_AM_MACROS
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -12123,22 +12133,23 @@ done
 # Files:
 DX_PROJECT=$PACKAGE_NAME
 
-DX_CONFIG=' doc/pveclib-doxygen-pveclib.doxy '
+DX_CONFIG=" doc/pveclib-doxygen-pveclib.doxy "
 
-DX_DOCDIR='doxygen-doc'
+DX_DOCDIR=doxygen-doc
 
 
 # Environment variables used inside doxygen.cfg:
 DX_ENV="$DX_ENV SRCDIR='$srcdir'"
-SRCDIR=$srcdir
 
 DX_ENV="$DX_ENV PROJECT='$DX_PROJECT'"
-PROJECT=$DX_PROJECT
+
+DX_ENV="$DX_ENV DOCDIR='$DX_DOCDIR'"
 
 DX_ENV="$DX_ENV VERSION='$PACKAGE_VERSION'"
 
 
 # Doxygen itself:
+
 
 
 
@@ -12385,17 +12396,33 @@ fi
     :
 fi
 if test "$DX_FLAG_doc" = 1; then
+     if :; then
+  DX_COND_doc_TRUE=
+  DX_COND_doc_FALSE='#'
+else
+  DX_COND_doc_TRUE='#'
+  DX_COND_doc_FALSE=
+fi
+
     DX_ENV="$DX_ENV PERL_PATH='$DX_PERL'"
-PERL_PATH=$DX_PERL
 
     :
 else
+     if false; then
+  DX_COND_doc_TRUE=
+  DX_COND_doc_FALSE='#'
+else
+  DX_COND_doc_TRUE='#'
+  DX_COND_doc_FALSE=
+fi
+
 
     :
 fi
 
 
 # Dot for graphics:
+
 
 
 
@@ -12423,7 +12450,7 @@ esac
 
 else
 
-DX_FLAG_dot=0
+DX_FLAG_dot=1
 
 
 test "$DX_FLAG_doc" = "1" || DX_FLAG_dot=0
@@ -12542,22 +12569,36 @@ fi
     :
 fi
 if test "$DX_FLAG_dot" = 1; then
+     if :; then
+  DX_COND_dot_TRUE=
+  DX_COND_dot_FALSE='#'
+else
+  DX_COND_dot_TRUE='#'
+  DX_COND_dot_FALSE=
+fi
+
     DX_ENV="$DX_ENV HAVE_DOT='YES'"
-HAVE_DOT=YES
 
              DX_ENV="$DX_ENV DOT_PATH='`expr ".$DX_DOT" : '\(\.\)[^/]*$' \| "x$DX_DOT" : 'x\(.*\)/[^/]*$'`'"
-DOT_PATH=`expr ".$DX_DOT" : '\(\.\)[^/]*$' \| "x$DX_DOT" : 'x\(.*\)/[^/]*$'`
 
     :
 else
+     if false; then
+  DX_COND_dot_TRUE=
+  DX_COND_dot_FALSE='#'
+else
+  DX_COND_dot_TRUE='#'
+  DX_COND_dot_FALSE=
+fi
+
     DX_ENV="$DX_ENV HAVE_DOT='NO'"
-HAVE_DOT=NO
 
     :
 fi
 
 
 # Man pages generation:
+
 
 
 
@@ -12599,19 +12640,34 @@ if test "$DX_FLAG_man" = 1; then
     :
 fi
 if test "$DX_FLAG_man" = 1; then
+     if :; then
+  DX_COND_man_TRUE=
+  DX_COND_man_FALSE='#'
+else
+  DX_COND_man_TRUE='#'
+  DX_COND_man_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_MAN='YES'"
-GENERATE_MAN=YES
 
     :
 else
+     if false; then
+  DX_COND_man_TRUE=
+  DX_COND_man_FALSE='#'
+else
+  DX_COND_man_TRUE='#'
+  DX_COND_man_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_MAN='NO'"
-GENERATE_MAN=NO
 
     :
 fi
 
 
 # RTF file generation:
+
 
 
 
@@ -12653,19 +12709,34 @@ if test "$DX_FLAG_rtf" = 1; then
     :
 fi
 if test "$DX_FLAG_rtf" = 1; then
+     if :; then
+  DX_COND_rtf_TRUE=
+  DX_COND_rtf_FALSE='#'
+else
+  DX_COND_rtf_TRUE='#'
+  DX_COND_rtf_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_RTF='YES'"
-GENERATE_RTF=YES
 
     :
 else
+     if false; then
+  DX_COND_rtf_TRUE=
+  DX_COND_rtf_FALSE='#'
+else
+  DX_COND_rtf_TRUE='#'
+  DX_COND_rtf_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_RTF='NO'"
-GENERATE_RTF=NO
 
     :
 fi
 
 
 # XML file generation:
+
 
 
 
@@ -12707,19 +12778,34 @@ if test "$DX_FLAG_xml" = 1; then
     :
 fi
 if test "$DX_FLAG_xml" = 1; then
+     if :; then
+  DX_COND_xml_TRUE=
+  DX_COND_xml_FALSE='#'
+else
+  DX_COND_xml_TRUE='#'
+  DX_COND_xml_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_XML='YES'"
-GENERATE_XML=YES
 
     :
 else
+     if false; then
+  DX_COND_xml_TRUE=
+  DX_COND_xml_FALSE='#'
+else
+  DX_COND_xml_TRUE='#'
+  DX_COND_xml_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_XML='NO'"
-GENERATE_XML=NO
 
     :
 fi
 
 
 # (Compressed) HTML help generation:
+
 
 
 
@@ -12866,25 +12952,38 @@ fi
     :
 fi
 if test "$DX_FLAG_chm" = 1; then
+     if :; then
+  DX_COND_chm_TRUE=
+  DX_COND_chm_FALSE='#'
+else
+  DX_COND_chm_TRUE='#'
+  DX_COND_chm_FALSE=
+fi
+
     DX_ENV="$DX_ENV HHC_PATH='$DX_HHC'"
-HHC_PATH=$DX_HHC
 
              DX_ENV="$DX_ENV GENERATE_HTML='YES'"
-GENERATE_HTML=YES
 
              DX_ENV="$DX_ENV GENERATE_HTMLHELP='YES'"
-GENERATE_HTMLHELP=YES
 
     :
 else
+     if false; then
+  DX_COND_chm_TRUE=
+  DX_COND_chm_FALSE='#'
+else
+  DX_COND_chm_TRUE='#'
+  DX_COND_chm_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_HTMLHELP='NO'"
-GENERATE_HTMLHELP=NO
 
     :
 fi
 
 
 # Seperate CHI file generation.
+
 
 
 
@@ -12926,19 +13025,34 @@ if test "$DX_FLAG_chi" = 1; then
     :
 fi
 if test "$DX_FLAG_chi" = 1; then
+     if :; then
+  DX_COND_chi_TRUE=
+  DX_COND_chi_FALSE='#'
+else
+  DX_COND_chi_TRUE='#'
+  DX_COND_chi_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_CHI='YES'"
-GENERATE_CHI=YES
 
     :
 else
+     if false; then
+  DX_COND_chi_TRUE=
+  DX_COND_chi_FALSE='#'
+else
+  DX_COND_chi_TRUE='#'
+  DX_COND_chi_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_CHI='NO'"
-GENERATE_CHI=NO
 
     :
 fi
 
 
 # Plain HTML pages generation:
+
 
 
 
@@ -12986,19 +13100,34 @@ if test "$DX_FLAG_html" = 1; then
     :
 fi
 if test "$DX_FLAG_html" = 1; then
+     if :; then
+  DX_COND_html_TRUE=
+  DX_COND_html_FALSE='#'
+else
+  DX_COND_html_TRUE='#'
+  DX_COND_html_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_HTML='YES'"
-GENERATE_HTML=YES
 
     :
 else
+     if false; then
+  DX_COND_html_TRUE=
+  DX_COND_html_FALSE='#'
+else
+  DX_COND_html_TRUE='#'
+  DX_COND_html_FALSE=
+fi
+
     test "$DX_FLAG_chm" = 1 || DX_ENV="$DX_ENV GENERATE_HTML='NO'"
-GENERATE_HTML=NO
 
     :
 fi
 
 
 # PostScript file generation:
+
 
 
 
@@ -13463,15 +13592,32 @@ fi
     :
 fi
 if test "$DX_FLAG_ps" = 1; then
+     if :; then
+  DX_COND_ps_TRUE=
+  DX_COND_ps_FALSE='#'
+else
+  DX_COND_ps_TRUE='#'
+  DX_COND_ps_FALSE=
+fi
+
 
     :
 else
+     if false; then
+  DX_COND_ps_TRUE=
+  DX_COND_ps_FALSE='#'
+else
+  DX_COND_ps_TRUE='#'
+  DX_COND_ps_FALSE=
+fi
+
 
     :
 fi
 
 
 # PDF file generation:
+
 
 
 
@@ -13830,9 +13976,25 @@ fi
     :
 fi
 if test "$DX_FLAG_pdf" = 1; then
+     if :; then
+  DX_COND_pdf_TRUE=
+  DX_COND_pdf_FALSE='#'
+else
+  DX_COND_pdf_TRUE='#'
+  DX_COND_pdf_FALSE=
+fi
+
 
     :
 else
+     if false; then
+  DX_COND_pdf_TRUE=
+  DX_COND_pdf_FALSE='#'
+else
+  DX_COND_pdf_TRUE='#'
+  DX_COND_pdf_FALSE=
+fi
+
 
     :
 fi
@@ -13840,12 +14002,26 @@ fi
 
 # LaTeX generation for PS and/or PDF:
 if test "$DX_FLAG_ps" = 1 || test "$DX_FLAG_pdf" = 1; then
+     if :; then
+  DX_COND_latex_TRUE=
+  DX_COND_latex_FALSE='#'
+else
+  DX_COND_latex_TRUE='#'
+  DX_COND_latex_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_LATEX='YES'"
-GENERATE_LATEX=YES
 
 else
+     if false; then
+  DX_COND_latex_TRUE=
+  DX_COND_latex_FALSE='#'
+else
+  DX_COND_latex_TRUE='#'
+  DX_COND_latex_FALSE=
+fi
+
     DX_ENV="$DX_ENV GENERATE_LATEX='NO'"
-GENERATE_LATEX=NO
 
 fi
 
@@ -13859,192 +14035,12 @@ case "$DOXYGEN_PAPER_SIZE" in
 ;; #(
 a4wide|a4|letter|legal|executive)
     DX_ENV="$DX_ENV PAPER_SIZE='$DOXYGEN_PAPER_SIZE'"
-PAPER_SIZE=$DOXYGEN_PAPER_SIZE
 
 ;; #(
 *)
     as_fn_error $? "unknown DOXYGEN_PAPER_SIZE='$DOXYGEN_PAPER_SIZE'" "$LINENO" 5
 ;;
 esac
-
-# Rules:
-if test $DX_FLAG_html -eq 1; then :
-  DX_SNIPPET_html="## ------------------------------- ##
-
-DX_CLEAN_HTML = \$(DX_DOCDIR)/html\\
-                \$(DX_DOCDIR)/html
-
-"
-else
-  DX_SNIPPET_html=""
-fi
-if test $DX_FLAG_chi -eq 1; then :
-  DX_SNIPPET_chi="
-DX_CLEAN_CHI = \$(DX_DOCDIR)/\$(PACKAGE).chi\\
-               \$(DX_DOCDIR)/\$(PACKAGE).chi"
-else
-  DX_SNIPPET_chi=""
-fi
-if test $DX_FLAG_chm -eq 1; then :
-  DX_SNIPPET_chm="## ------------------------------ ##
-
-DX_CLEAN_CHM = \$(DX_DOCDIR)/chm\\
-               \$(DX_DOCDIR)/chm\
-${DX_SNIPPET_chi}
-
-"
-else
-  DX_SNIPPET_chm=""
-fi
-if test $DX_FLAG_man -eq 1; then :
-  DX_SNIPPET_man="## ------------------------------ ##
-
-DX_CLEAN_MAN = \$(DX_DOCDIR)/man\\
-               \$(DX_DOCDIR)/man
-
-"
-else
-  DX_SNIPPET_man=""
-fi
-if test $DX_FLAG_rtf -eq 1; then :
-  DX_SNIPPET_rtf="## ------------------------------ ##
-
-DX_CLEAN_RTF = \$(DX_DOCDIR)/rtf\\
-               \$(DX_DOCDIR)/rtf
-
-"
-else
-  DX_SNIPPET_rtf=""
-fi
-if test $DX_FLAG_xml -eq 1; then :
-  DX_SNIPPET_xml="## ------------------------------ ##
-
-DX_CLEAN_XML = \$(DX_DOCDIR)/xml\\
-               \$(DX_DOCDIR)/xml
-
-"
-else
-  DX_SNIPPET_xml=""
-fi
-if test $DX_FLAG_ps -eq 1; then :
-  DX_SNIPPET_ps="## ----------------------------- ##
-
-DX_CLEAN_PS = \$(DX_DOCDIR)/\$(PACKAGE).ps\\
-              \$(DX_DOCDIR)/\$(PACKAGE).ps
-
-DX_PS_GOAL = doxygen-ps
-
-doxygen-ps: \$(DX_CLEAN_PS)
-
-\$(DX_DOCDIR)/\$(PACKAGE).ps: \$(DX_DOCDIR)/\$(PACKAGE).tag
-	\$(DX_V_LATEX)cd \$(DX_DOCDIR)/latex; \\
-	rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out; \\
-	\$(DX_LATEX) refman.tex; \\
-	\$(DX_MAKEINDEX) refman.idx; \\
-	\$(DX_LATEX) refman.tex; \\
-	countdown=5; \\
-	while \$(DX_EGREP) 'Rerun (LaTeX|to get cross-references right)' \\
-	                  refman.log > /dev/null 2>&1 \\
-	   && test \$\$countdown -gt 0; do \\
-	    \$(DX_LATEX) refman.tex; \\
-            countdown=\`expr \$\$countdown - 1\`; \\
-	done; \\
-	\$(DX_DVIPS) -o ../\$(PACKAGE).ps refman.dvi
-
-"
-else
-  DX_SNIPPET_ps=""
-fi
-if test $DX_FLAG_pdf -eq 1; then :
-  DX_SNIPPET_pdf="## ------------------------------ ##
-
-DX_CLEAN_PDF = \$(DX_DOCDIR)/\$(PACKAGE).pdf\\
-               \$(DX_DOCDIR)/\$(PACKAGE).pdf
-
-DX_PDF_GOAL = doxygen-pdf
-
-doxygen-pdf: \$(DX_CLEAN_PDF)
-
-\$(DX_DOCDIR)/\$(PACKAGE).pdf: \$(DX_DOCDIR)/\$(PACKAGE).tag
-	\$(DX_V_LATEX)cd \$(DX_DOCDIR)/latex; \\
-	rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out; \\
-	\$(DX_PDFLATEX) refman.tex; \\
-	\$(DX_MAKEINDEX) refman.idx; \\
-	\$(DX_PDFLATEX) refman.tex; \\
-	countdown=5; \\
-	while \$(DX_EGREP) 'Rerun (LaTeX|to get cross-references right)' \\
-	                  refman.log > /dev/null 2>&1 \\
-	   && test \$\$countdown -gt 0; do \\
-	    \$(DX_PDFLATEX) refman.tex; \\
-	    countdown=\`expr \$\$countdown - 1\`; \\
-	done; \\
-	mv refman.pdf ../\$(PACKAGE).pdf
-
-"
-else
-  DX_SNIPPET_pdf=""
-fi
-if test $DX_FLAG_ps -eq 1 -o $DX_FLAG_pdf -eq 1; then :
-  DX_SNIPPET_latex="## ------------------------------------------------- ##
-
-DX_V_LATEX = \$(_DX_v_LATEX_\$(V))
-_DX_v_LATEX_ = \$(_DX_v_LATEX_\$(AM_DEFAULT_VERBOSITY))
-_DX_v_LATEX_0 = @echo \"  LATEX \" \$@;
-
-DX_CLEAN_LATEX = \$(DX_DOCDIR)/latex\\
-                 \$(DX_DOCDIR)/latex
-
-"
-else
-  DX_SNIPPET_latex=""
-fi
-
-if test $DX_FLAG_doc -eq 1; then :
-  DX_SNIPPET_doc="## --------------------------------- ##
-
-${DX_SNIPPET_html}\
-${DX_SNIPPET_chm}\
-${DX_SNIPPET_man}\
-${DX_SNIPPET_rtf}\
-${DX_SNIPPET_xml}\
-${DX_SNIPPET_ps}\
-${DX_SNIPPET_pdf}\
-${DX_SNIPPET_latex}\
-DX_V_DXGEN = \$(_DX_v_DXGEN_\$(V))
-_DX_v_DXGEN_ = \$(_DX_v_DXGEN_\$(AM_DEFAULT_VERBOSITY))
-_DX_v_DXGEN_0 = @echo \"  DXGEN \" \$<;
-
-.PHONY: doxygen-run doxygen-doc \$(DX_PS_GOAL) \$(DX_PDF_GOAL)
-
-.INTERMEDIATE: doxygen-run \$(DX_PS_GOAL) \$(DX_PDF_GOAL)
-
-doxygen-run: \$(DX_DOCDIR)/\$(PACKAGE).tag
-
-doxygen-doc: doxygen-run \$(DX_PS_GOAL) \$(DX_PDF_GOAL)
-
-\$(DX_DOCDIR)/\$(PACKAGE).tag: \$(DX_CONFIG) \$(pkginclude_HEADERS)
-	\$(A""M_V_at)rm -rf \$(DX_DOCDIR)
-	\$(DX_V_DXGEN)\$(DX_ENV) DOCDIR=\$(DX_DOCDIR) \$(DX_DOXYGEN) \$(DX_CONFIG)
-	\$(A""M_V_at)echo Timestamp >\$@
-
-DX_CLEANFILES = \\
-	\$(DX_DOCDIR)/doxygen_sqlite3.db \\
-	\$(DX_DOCDIR)/\$(PACKAGE).tag \\
-	-r \\
-	\$(DX_CLEAN_HTML) \\
-	\$(DX_CLEAN_CHM) \\
-	\$(DX_CLEAN_CHI) \\
-	\$(DX_CLEAN_MAN) \\
-	\$(DX_CLEAN_RTF) \\
-	\$(DX_CLEAN_XML) \\
-	\$(DX_CLEAN_PS) \\
-	\$(DX_CLEAN_PDF) \\
-	\$(DX_CLEAN_LATEX)"
-else
-  DX_SNIPPET_doc=""
-fi
-DX_RULES="${DX_SNIPPET_doc}"
-
 
 #For debugging:
 #echo DX_FLAG_doc=$DX_FLAG_doc
@@ -14223,12 +14219,104 @@ else
   am__EXEEXT_FALSE=
 fi
 
+if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
+  as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
   as_fn_error $? "conditional \"AMDEP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_doc_TRUE}" && test -z "${DX_COND_doc_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_doc\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_doc_TRUE}" && test -z "${DX_COND_doc_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_doc\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_dot_TRUE}" && test -z "${DX_COND_dot_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_dot\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_dot_TRUE}" && test -z "${DX_COND_dot_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_dot\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_man_TRUE}" && test -z "${DX_COND_man_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_man\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_man_TRUE}" && test -z "${DX_COND_man_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_man\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_rtf_TRUE}" && test -z "${DX_COND_rtf_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_rtf\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_rtf_TRUE}" && test -z "${DX_COND_rtf_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_rtf\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_xml_TRUE}" && test -z "${DX_COND_xml_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_xml\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_xml_TRUE}" && test -z "${DX_COND_xml_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_xml\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_chm_TRUE}" && test -z "${DX_COND_chm_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_chm\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_chm_TRUE}" && test -z "${DX_COND_chm_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_chm\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_chi_TRUE}" && test -z "${DX_COND_chi_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_chi\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_chi_TRUE}" && test -z "${DX_COND_chi_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_chi\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_html_TRUE}" && test -z "${DX_COND_html_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_html\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_html_TRUE}" && test -z "${DX_COND_html_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_html\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_ps_TRUE}" && test -z "${DX_COND_ps_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_ps\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_ps_TRUE}" && test -z "${DX_COND_ps_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_ps\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_pdf_TRUE}" && test -z "${DX_COND_pdf_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_pdf\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_pdf_TRUE}" && test -z "${DX_COND_pdf_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_pdf\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_latex_TRUE}" && test -z "${DX_COND_latex_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_latex\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DX_COND_latex_TRUE}" && test -z "${DX_COND_latex_FALSE}"; then
+  as_fn_error $? "conditional \"DX_COND_latex\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

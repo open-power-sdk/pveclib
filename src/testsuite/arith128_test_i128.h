@@ -39,6 +39,9 @@ extern int
 test_4b (void);
 
 extern int
+test_4b1 (void);
+
+extern int
 test_4c (void);
 
 extern int
@@ -54,3 +57,4 @@ extern int
 test_43 (void);
 
 #endif /* TEST_ARITH128_TEST_I128_H_ */
+

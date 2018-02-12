@@ -885,6 +885,20 @@ test_4b (void)
 #endif
   rc += check_vint256 ("vec_mul10ecuq:", l, k, (vui128_t) ec, (vui128_t) e);
 
+  return (rc);
+}
+
+
+/* Needed to split these tests into a separate function to avoid a ICE
+   in GCC 6.3 / AT10.  */
+int
+test_4b1 (void)
+{
+  vui32_t i, e, em, ec;
+  vui128_t j, k, l, m, n;
+  int ii;
+  int rc = 0;
+
   i = (vui32_t )CONST_VINT32_W(0x33333333, 0x33333333, 0x33333333, 0x33333333);
   j = (vui128_t) ((vui32_t )CONST_VINT32_W(0, 0, 0, 0));
   e = (vui32_t )
@@ -985,7 +999,6 @@ test_4b (void)
 #endif
   rc += check_vint256 ("vec_mul10ecuq:", l, k, (vui128_t) ec, (vui128_t) e);
 
-#if 1
   i = (vui32_t )CONST_VINT32_W(0, 0, 0, 10);
   m = (vui128_t) (vui32_t )CONST_VINT32_W(0, 0, 0, 0);
   e = (vui32_t )CONST_VINT32_W(0x7775a5f1, 0x71951000, 0x00000000, 0x00000000);
@@ -1024,7 +1037,7 @@ test_4b (void)
     }
   rc += check_vint384 ("vec_mul10ecuq:", n, m, k, (vui128_t) ec, (vui128_t) em,
                        (vui128_t) e);
-#endif
+
   return (rc);
 }
 

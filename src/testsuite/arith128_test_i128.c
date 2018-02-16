@@ -697,11 +697,7 @@ test_4b (void)
   ec = (vui32_t )CONST_VINT32_W(0, 0, 0, 9);
 
   k = vec_mul10uq ((vui128_t) i);
-#if 1
   j = vec_mul10cuq ((vui128_t) i);
-#else
-  j = db_vec_mul10cuq ((vui128_t)i);
-#endif
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("2E128-1 * 10 ", k);
@@ -888,7 +884,6 @@ test_4b (void)
   return (rc);
 }
 
-
 /* Needed to split these tests into a separate function to avoid a ICE
    in GCC 6.3 / AT10.  */
 int
@@ -999,7 +994,6 @@ test_4b1 (void)
 #endif
   rc += check_vint256 ("vec_mul10ecuq:", l, k, (vui128_t) ec, (vui128_t) e);
 
-#if 1
   i = (vui32_t )CONST_VINT32_W(0, 0, 0, 10);
   m = (vui128_t) (vui32_t )CONST_VINT32_W(0, 0, 0, 0);
   e = (vui32_t )CONST_VINT32_W(0x7775a5f1, 0x71951000, 0x00000000, 0x00000000);
@@ -1038,7 +1032,7 @@ test_4b1 (void)
     }
   rc += check_vint384 ("vec_mul10ecuq:", n, m, k, (vui128_t) ec, (vui128_t) em,
                        (vui128_t) e);
-#endif
+
   return (rc);
 }
 
@@ -1131,7 +1125,6 @@ test_4c (void)
   rc += check_vint256 ("vec_cmul100ecuq:", (vui128_t) l, (vui128_t) k,
                        (vui128_t) ec, (vui128_t) e);
 
-#if 1
   i = (vui32_t )CONST_VINT32_W(0, 0, 0, 100);
   m = (vui128_t) (vui32_t )CONST_VINT32_W(0, 0, 0, 0);
   e = (vui32_t )CONST_VINT32_W(0x7775a5f1, 0x71951000, 0x00000000, 0x00000000);
@@ -1147,9 +1140,7 @@ test_4c (void)
       i = (vui32_t) k;
     }
   rc += check_vint256 ("vec_mul10euq:", m, k, (vui128_t) ec, (vui128_t) e);
-#endif
 
-#if 1
   n = (vui128_t) (vui32_t )CONST_VINT32_W(0, 0, 0, 0);
   e = (vui32_t )CONST_VINT32_W (0xd1640000, 0000000000, 0x00000000, 0x00000000);
   em = (vui32_t )CONST_VINT32_W(0x1db2332b, 0x93f1e94f, 0x637a5429, 0x0fe2a55c);
@@ -1168,7 +1159,7 @@ test_4c (void)
     }
   rc += check_vint384 ("vec_mul10ecuq:", n, m, k, (vui128_t) ec, (vui128_t) em,
                        (vui128_t) e);
-#endif
+
   return (rc);
 }
 

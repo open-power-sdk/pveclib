@@ -39,6 +39,9 @@ extern int
 test_4b (void);
 
 extern int
+test_4b1 (void);
+
+extern int
 test_4c (void);
 
 extern int

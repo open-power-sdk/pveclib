@@ -51,6 +51,7 @@ main (void)
 #if 1
   rc += test_4 ();
   rc += test_4b ();
+  rc += test_4b1 ();
 #endif
 #if 1
   rc += test_4c ();

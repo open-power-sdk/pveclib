@@ -302,46 +302,63 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
 /** \brief Vector Shift right Quadword Immediate.
  *
  * Vector Shift right Quadword 0-127 bits.
- * The shift amount is a const int in the range 0-127.
+ * The shift amount is a const unsigned int in the range 0-127.
+ * A shift count of 0 returs the original value of vra.
+ * Shift counts greater then 127 bits return zero.
  *
  *	@param vra a 128-bit vector treated a __int128.
  *	@param shb Shift amount in the range 0-127.
  *	@return 128-bit vector shifted right shb bits.
  */
 static inline vui128_t
-vec_srqi (vui128_t vra, const int shb)
+vec_srqi (vui128_t vra, const unsigned int shb)
 {
   vui8_t lshift;
   vui8_t result;
 
-  if ((shb % 8) == 0)
+  if (shb < 128)
     {
-      /* When shifting an multiple of 8 bits (octet), use Vector
-       Shift Left Double By Octet Immediate.  This eliminates
-       loading the shift const into a VR, but requires an
-       explicit vector of zeros.  */
-      vui8_t zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-      result = vec_sld (zero, (vui8_t) vra, (16 -(shb / 8)));
+      if (__builtin_constant_p (shb) && ((shb % 8)) == 0)
+	{
+	  /* When shifting an multiple of 8 bits (octet), use Vector
+	   Shift Left Double By Octet Immediate.  This eliminates
+	   loading the shift const into a VR, but requires an
+	   explicit vector of zeros.  */
+	  vui8_t zero =
+	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	  /* The compiler needs to know at compile time that
+	     0 < shb < 128 is true to insure the constraint (4 bit
+	     immediate field) of vsldoi is meet.  So the following if
+	     is required but should not generate any branch code.  */
+	  if (shb > 0)
+	    result = vec_sld (zero, (vui8_t) vra, (16 - (shb / 8)));
+	  else
+	    result = (vui8_t) vra;
+	}
+      else
+	{
+	  /* Load the shift const in a vector.  The bit level shifts
+	   require the shift amount is splated to all 16-bytes of
+	   the shift control.  */
+	  if ((__builtin_constant_p (shb) && (shb < 16)))
+	    lshift = (vui8_t) vec_splat_s8(shb);
+	  else
+	    lshift = vec_splats ((unsigned char) shb);
+
+	  if (shb > 7)
+	    /* Vector Shift right By Octet based on the bits 121-124 of
+	     lshift.  */
+	    result = vec_sro ((vui8_t) vra, lshift);
+	  else
+	    result = ((vui8_t) vra);
+
+	  /* Vector Shift right based on the lower 3-bits of lshift.  */
+	  result = vec_srl (result, lshift);
+	}
     }
   else
-    {
-      /* Load the shift const in a vector.  The bit level shifts
-       require the shift amount is splated to all 16-bytes of
-       the shift control.  */
-      if (shb < 32)
-        lshift = (vui8_t) vec_splat_s8(shb);
-      else
-        lshift = vec_splats ((unsigned char) shb);
-
-      if (shb > 7)
-        /* Vector Shift right By Octet based on the bits 121-124 of
-         lshift.  */
-        result = vec_sro ((vui8_t) vra, lshift);
-      else
-        result = ((vui8_t) vra);
-
-      /* Vector Shift right based on the lower 3-bits of lshift.  */
-      result = vec_srl (result, lshift);
+    { /* shifts greater then 127 bits return zeros.  */
+      result = vec_xor ((vui8_t) vra, (vui8_t) vra);
     }
   return (vui128_t) result;
 }
@@ -374,46 +391,58 @@ vec_srq (vui128_t vra, vui128_t vrb)
 /** \brief Vector Shift left Quadword Immediate.
  *
  * Vector Shift left Quadword 0-127 bits.
- * The shift amount is a const int in the range 0-127.
+ * The shift amount is a const unsigned int in the range 0-127.
+ * A shift count of 0 returs the original value of vra.
+ * Shift counts greater then 127 bits return zero.
  *
  *	@param vra a 128-bit vector treated a __int128.
- *	@param shb Shift amount in the range.
+ *	@param shb Shift amount in the range 0-127.
  *	@return 128-bit vector shifted left shb bits.
  */
-static inline vui128_t
-vec_slqi (vui128_t vra, const int shb)
+static inline vui128_t __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+vec_slqi (vui128_t vra, const unsigned int shb)
 {
   vui8_t lshift;
   vui8_t result;
 
-  if ((shb % 8) == 0)
+  if (shb < 128)
     {
-      /* When shifting an multiple of 8 bits (octet), use Vector
-       Shift Left Double By Octet Immediate.  This eliminates
-       loading the shift const into a VR, but requires an
-       explicit vector of zeros.  */
-      vui8_t zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-      result = vec_sld ((vui8_t) vra, zero, (shb / 8));
+      if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+	{
+	  /* When shifting an multiple of 8 bits (octet), use Vector
+	   Shift Left Double By Octet Immediate.  This eliminates
+	   loading the shift const into a VR, but requires an
+	   explicit vector of zeros.  */
+	  vui8_t zero =
+	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	  if (shb > 0)
+	    result = vec_sld ((vui8_t) vra, zero, (shb / 8));
+	  else
+	    result = (vui8_t) vra;
+	}
+      else
+	{
+	  /* Load the shift const in a vector.  The bit level shifts
+	   require the shift amount is splated to all 16-bytes of
+	   the shift control.  */
+	  if (__builtin_constant_p (shb) && (shb < 16))
+	    lshift = (vui8_t) vec_splat_s8(shb);
+	  else
+	    lshift = vec_splats ((unsigned char) shb);
+
+	  if (shb > 7)
+	    /* Vector Shift Left By Octet by bits 121-124 of lshift.  */
+	    result = vec_slo ((vui8_t) vra, lshift);
+	  else
+	    result = ((vui8_t) vra);
+
+	  /* Vector Shift Left by bits 125-127 of lshift.  */
+	  result = vec_sll (result, lshift);
+	}
     }
   else
-    {
-      /* Load the shift const in a vector.  The bit level shifts
-       require the shift amount is splated to all 16-bytes of
-       the shift control.  */
-      if (shb < 32)
-        lshift = (vui8_t) vec_splat_s8(shb);
-      else
-        lshift = vec_splats ((unsigned char) shb);
-
-      if (shb > 7)
-        /* Vector Shift Left By Octet based on the bits 121-124 of
-         lshift.  */
-        result = vec_slo ((vui8_t) vra, lshift);
-      else
-        result = ((vui8_t) vra);
-
-      /* Vector Shift Left based on the lower 3-bits of lshift.  */
-      result = vec_sll (result, lshift);
+    { /* shifts greater then 127 bits return zeros.  */
+      result = vec_xor ((vui8_t) vra, (vui8_t) vra);
     }
   return (vui128_t) result;
 }

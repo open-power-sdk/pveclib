@@ -56,4 +56,16 @@ test_8 (void);
 extern int
 test_43 (void);
 
+extern int
+test_44 (void);
+
+extern int
+test_45 (void);
+
+extern int
+test_46 (void);
+
+extern int
+test_47 (void);
+
 #endif /* TEST_ARITH128_TEST_I128_H_ */

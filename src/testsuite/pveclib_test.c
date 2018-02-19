@@ -73,6 +73,10 @@ main (void)
   rc += test_8 ();
 #endif
 
+#if 1
+  rc += test_43 ();
+#endif
+
   if (rc > 0)
     printf ("%d failures reported\n", rc);
   return (rc);

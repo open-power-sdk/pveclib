@@ -73,6 +73,17 @@ main (void)
   rc += test_8 ();
 #endif
 
+#if 1
+  rc += test_43 ();
+#endif
+
+#if 1
+  rc += test_44 ();
+  rc += test_45 ();
+  rc += test_46 ();
+  rc += test_47 ();
+#endif
+
   if (rc > 0)
     printf ("%d failures reported\n", rc);
   return (rc);

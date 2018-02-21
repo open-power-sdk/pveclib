@@ -23,6 +23,146 @@
 #include <vec_int128_ppc.h>
 
 vui128_t
+test_vec_slqi_0 (vui128_t __A)
+{
+  return vec_slqi (__A, 0);
+}
+
+vui128_t
+test_vec_slqi_4 (vui128_t __A)
+{
+  return vec_slqi (__A, 4);
+}
+
+vui128_t
+test_vec_slqi_7 (vui128_t __A)
+{
+  return vec_slqi (__A, 7);
+}
+
+vui128_t
+test_vec_slqi_8 (vui128_t __A)
+{
+  return vec_slqi (__A, 8);
+}
+
+vui128_t
+test_vec_slqi_14 (vui128_t __A)
+{
+  return vec_slqi (__A, 14);
+}
+
+vui128_t
+test_vec_slqi_16 (vui128_t __A)
+{
+  return vec_slqi (__A, 16);
+}
+#if 1
+
+vui128_t
+test_vec_slqi_17 (vui128_t __A)
+{
+  return vec_slqi (__A, 17);
+}
+vui128_t
+test_vec_slqi_31 (vui128_t __A)
+{
+  return vec_slqi (__A, 31);
+}
+
+vui128_t
+test_vec_slqi_48 (vui128_t __A)
+{
+  return vec_slqi (__A, 48);
+}
+
+vui128_t
+test_vec_slqi_120 (vui128_t __A)
+{
+  return vec_slqi (__A, 120);
+}
+
+vui128_t
+test_vec_slqi_128 (vui128_t __A)
+{
+  return vec_slqi (__A, 128);
+}
+
+vui128_t
+test_vec_slqi_129 (vui128_t __A)
+{
+  return vec_slqi (__A, 129);
+}
+#endif
+
+vui128_t
+test_vec_srqi_0 (vui128_t __A)
+{
+  return vec_srqi (__A, 0);
+}
+
+vui128_t
+test_vec_srqi_4 (vui128_t __A)
+{
+  return vec_srqi (__A, 4);
+}
+
+vui128_t
+test_vec_srqi_7 (vui128_t __A)
+{
+  return vec_srqi (__A, 7);
+}
+
+vui128_t
+test_vec_srqi_8 (vui128_t __A)
+{
+  return vec_srqi (__A, 8);
+}
+
+vui128_t
+test_vec_srqi_14 (vui128_t __A)
+{
+  return vec_srqi (__A, 14);
+}
+
+vui128_t
+test_vec_srqi_16 (vui128_t __A)
+{
+  return vec_srqi (__A, 16);
+}
+#if 1
+vui128_t
+test_vec_srqi_31 (vui128_t __A)
+{
+  return vec_srqi (__A, 31);
+}
+
+vui128_t
+test_vec_srqi_48 (vui128_t __A)
+{
+  return vec_srqi (__A, 48);
+}
+
+vui128_t
+test_vec_srqi_120 (vui128_t __A)
+{
+  return vec_srqi (__A, 120);
+}
+
+vui128_t
+test_vec_srqi_128 (vui128_t __A)
+{
+  return vec_srqi (__A, 128);
+}
+
+vui128_t
+test_vec_srqi_129 (vui128_t __A)
+{
+  return vec_srqi (__A, 129);
+}
+#endif
+
+vui128_t
 test_vsl4 (vui128_t a)
 {
 	return (vec_slq4(a));

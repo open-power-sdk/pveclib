@@ -996,7 +996,7 @@ db_sdiv_qrnnd (int64_t *remainder, int64_t high_num, int64_t low_num,
 }
 
 #ifdef __DEBUG_PRINT__
-
+#ifdef _ARCH_PWR8
 vui128_t
 db_vec_clzq (vui128_t vra)
 {
@@ -1031,6 +1031,7 @@ db_vec_clzq (vui128_t vra)
 
   return ((vui128_t) result);
 }
+#endif
 
 /*
  * Return a vector boolean char with a true indicator for any character
@@ -1157,6 +1158,7 @@ db_vec_tolower (vui8_t vec_str)
   return (result);
 }
 
+#ifdef _ARCH_PWR8
 vui32_t
 db_vec_mulluq (vui32_t a, vui32_t b)
 {
@@ -1342,10 +1344,12 @@ db_vec_mulluq (vui32_t a, vui32_t b)
       "v" (t_odd)
       : );
 #else
-#error Implememention pre power8
+#warning Implememention pre power8
 #endif
   return (tmq);
 }
+#endif
+
 vui32_t
 db_vec_muludq (vui32_t *mulu, vui32_t a, vui32_t b)
 {
@@ -1550,7 +1554,7 @@ db_vec_muludq (vui32_t *mulu, vui32_t a, vui32_t b)
       : );
   print_vint128 (" t      = ", (vui128_t)t);
 #else
-#error Implememention pre power8 missing
+#warning Implememention pre power8 missing
 #endif
   *mulu = t;
   return (tmq);
@@ -1573,11 +1577,11 @@ db_vec_addeuqm (vui32_t a, vui32_t b, vui32_t c)
   vui32_t z = { 0, 0, 0, 0 };
   vui32_t m = { 0, 0, 0, 1 };
   printf ("db_vec_addeuqm\n");
-  print_vint128 ("  a = ", a);
-  print_vint128 ("  b = ", b);
-  print_vint128 ("  c = ", c);
-  print_vint128 ("  z = ", z);
-  print_vint128 ("  m = ", m);
+  print_vint128 ("  a = ", (vui128_t)a);
+  print_vint128 ("  b = ", (vui128_t)b);
+  print_vint128 ("  c = ", (vui128_t)c);
+  print_vint128 ("  z = ", (vui128_t)z);
+  print_vint128 ("  m = ", (vui128_t)m);
   __asm__(
       "vand %2,%1,%6;\n"
       "\tvaddcuw %1,%3,%4;\n"
@@ -1602,9 +1606,9 @@ db_vec_addeuqm (vui32_t a, vui32_t b, vui32_t c)
       "v" (z), /* 5 */
       "v" (m) /* 6 */
       : );
-  print_vint128 ("  t = ", t);
-  print_vint128 ("  c = ", c);
-  print_vint128 ("  c2= ", c2);
+  print_vint128 ("  t = ", (vui128_t)t);
+  print_vint128 ("  c = ", (vui128_t)c);
+  print_vint128 ("  c2= ", (vui128_t)c2);
 #endif
   return (t);
 }
@@ -1630,11 +1634,11 @@ db_vec_addeq (vui32_t *cout, vui32_t a, vui32_t b, vui32_t c)
   co = (vui32_t ) { 0, 0, 0, 1 };
 
   printf ("db_vec_addeq\n");
-  print_vint128 ("  a = ", a);
-  print_vint128 ("  b = ", b);
-  print_vint128 ("  c = ", c);
-  print_vint128 ("  z = ", z);
-  print_vint128 ("  co= ", co);
+  print_vint128 ("  a = ", (vui128_t)a);
+  print_vint128 ("  b = ", (vui128_t)b);
+  print_vint128 ("  c = ", (vui128_t)c);
+  print_vint128 ("  z = ", (vui128_t)z);
+  print_vint128 ("  co= ", (vui128_t)co);
   __asm__(
       "vand %3,%1,%2;\n"
       "\tvaddcuw %2,%4,%5;\n"
@@ -1665,10 +1669,10 @@ db_vec_addeq (vui32_t *cout, vui32_t a, vui32_t b, vui32_t c)
       "v" (b), /* 5 */
       "v" (z) /* 6 */
       : );
-  print_vint128 ("  t = ", t);
-  print_vint128 ("  c = ", c);
-  print_vint128 ("  co= ", co);
-  print_vint128 ("  c2= ", c2);
+  print_vint128 ("  t = ", (vui128_t)t);
+  print_vint128 ("  c = ", (vui128_t)c);
+  print_vint128 ("  co= ", (vui128_t)co);
+  print_vint128 ("  c2= ", (vui128_t)c2);
 #endif
   *cout = co;
   return (t);

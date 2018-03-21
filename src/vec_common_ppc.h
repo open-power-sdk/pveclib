@@ -75,16 +75,27 @@ typedef __vector unsigned int vui128_t;
  * non-vector types. */
 typedef union
 {
+  /*! \brief Signed 128-bit integer from pair of 64-bit GPRs.  */
   unsigned __int128 i128;
+  /*! \brief Unsigned 128-bit integer from pair of 64-bit GPRs.  */
   unsigned __int128 ui128;
+  /*! \brief 128 bit Decimal Float from pair of double float registers.  */
   _Decimal128 dpd128;
+  /*! \brief IBM long double float from pair of double float registers.  */
   long double ldbl128;
+  /*! \brief 128 bit Vector of 16 unsigned char elements.  */
   vui8_t vx16;
+  /*! \brief 128 bit Vector of 8 unsigned short int elements.  */
   vui16_t vx8;
+  /*! \brief 128 bit Vector of 4 unsigned int elements.  */
   vui32_t vx4;
+  /*! \brief 128 bit Vector of 2 unsigned long int (64-bit) elements.  */
   vui64_t vx2;
+  /*! \brief 128 bit Vector of 1 unsigned __int128 element.  */
   vui128_t vx1;
+  /*! \brief 128 bit Vector of 2 double float elements.  */
   vf64_t vf2;
+  /*! \brief Struct of two unsigned long int (64-bit GPR) fields.  */
   struct
   {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

@@ -23,8 +23,27 @@
 #ifndef VEC_BCD_PPC_H_
 #define VEC_BCD_PPC_H_
 
-#include <altivec.h>
+#include <vec_common_ppc.h>
 
+/*!
+ * \file  vec_bcd_ppc.h
+ * \brief Header package containing a collection of Binary Coded
+ * Decimal (<B>BCD</B> computation functions implemented
+ * with PowerISA VMX, VSX, and DFP instructions.
+ */
+
+/** \brief Quantize (truncate) a _Decimal128 value before convert to
+ * BCD.
+ *
+ * The truncate (round toward 0) and justify right the input
+ * _Decimal128 value so that the unit digit is in the right most
+ * position.  This supports BCD multiply and divide using DFP
+ * instructions by truncating fractional digits before conversion
+ * back to BCD.
+ *
+ * @param val a _Decimal128 value.
+ * @return The quantized __Decimal128 value in a double float pair.
+ */
 static inline _Decimal128
 bcd_qauntize0 (_Decimal128 val)
 {
@@ -46,8 +65,8 @@ bcd_qauntize0 (_Decimal128 val)
  * The BCD vector is permuted into a double float pair before
  * conversion to DPD format via the DFP Encode BCD To DPD Quad.
  *
- *	@param val a 128-bit vector treated a signed BCD 31 digit value.
- *	@return a __Decimal128 in a double float pair.
+ * @param val a 128-bit vector treated a signed BCD 31 digit value.
+ * @return a __Decimal128 in a double float pair.
  */
 static inline _Decimal128
 vec_BCD2DFP (vui32_t val)
@@ -77,8 +96,8 @@ vec_BCD2DFP (vui32_t val)
  * in a double float register pair and so is permuted into single
  * vector register for use.
  *
- *	@param val a __Decimal128 in a double float pair.
- *	@return a 128-bit vector treated a signed BCD 31 digit value.
+ * @param val a __Decimal128 in a double float pair.
+ * @return a 128-bit vector treated a signed BCD 31 digit value.
  */
 static inline vui32_t
 vec_DFP2BCD (_Decimal128 val)
@@ -113,9 +132,9 @@ vec_DFP2BCD (_Decimal128 val)
  * Two Signed 31 digit values are added and lower 31 digits of the
  * sum are returned.  Overflow (carry-out) is ignored.
  *
- *	@param a a 128-bit vector treated a signed BCD 31 digit value.
- *	@param b a 128-bit vector treated a signed BCD 31 digit value.
- *	@return a 128-bit vector which is the lower 31 digits of (a + b).
+ * @param a a 128-bit vector treated a signed BCD 31 digit value.
+ * @param b a 128-bit vector treated a signed BCD 31 digit value.
+ * @return a 128-bit vector which is the lower 31 digits of (a + b).
  */
 static inline vui32_t
 vec_bcdadd (vui32_t a, vui32_t b)
@@ -148,9 +167,9 @@ vec_bcdadd (vui32_t a, vui32_t b)
  * Subtract Signed 31 digit values and return the lower 31 digits of
  * of the result.  Overflow (carry-out/barrow) is ignored.
  *
- *	@param a a 128-bit vector treated a signed BCD 31 digit value.
- *	@param b a 128-bit vector treated a signed BCD 31 digit value.
- *	@return a 128-bit vector which is the lower 31 digits of (a - b).
+ * @param a a 128-bit vector treated a signed BCD 31 digit value.
+ * @param b a 128-bit vector treated a signed BCD 31 digit value.
+ * @return a 128-bit vector which is the lower 31 digits of (a - b).
  */
 static inline vui32_t
 vec_bcdsub (vui32_t a, vui32_t b)
@@ -178,14 +197,14 @@ vec_bcdsub (vui32_t a, vui32_t b)
  * Two Signed 31 digit values are multiplied and lower 31 digits of the
  * product are returned.  Overflow is ignored.
  *
- *  \todu This is tricky as the product can be up to 62 digits and
- *  _Decimal128 can only hold 36 digits. So products that are more
- *  than 36 digits will loose precision on the right during the
- *  conversion back to BCD.
+ * \todo This is tricky as the product can be up to 62 digits and
+ * _Decimal128 can only hold 34 digits. So products that are more
+ * than 34 digits will loose precision on the right during the
+ * conversion back to BCD.
  *
- *	@param a a 128-bit vector treated a signed BCD 31 digit value.
- *	@param b a 128-bit vector treated a signed BCD 31 digit value.
- *	@return a 128-bit vector which is the lower 31 digits of (a * b).
+ * @param a a 128-bit vector treated a signed BCD 31 digit value.
+ * @param b a 128-bit vector treated a signed BCD 31 digit value.
+ * @return a 128-bit vector which is the lower 31 digits of (a * b).
  */
 static inline vui32_t
 vec_bcdmul (vui32_t a, vui32_t b)
@@ -204,9 +223,9 @@ vec_bcdmul (vui32_t a, vui32_t b)
  * One Signed 31 digit value is divided by a second 31 digit value
  * and the quotient is returned.
  *
- *	@param a a 128-bit vector treated a signed BCD 31 digit value.
- *	@param b a 128-bit vector treated a signed BCD 31 digit value.
- *	@return a 128-bit vector which is the lower 31 digits of (a / b).
+ * @param a a 128-bit vector treated a signed BCD 31 digit value.
+ * @param b a 128-bit vector treated a signed BCD 31 digit value.
+ * @return a 128-bit vector which is the lower 31 digits of (a / b).
  */
 static inline vui32_t
 vec_bcddiv (vui32_t a, vui32_t b)

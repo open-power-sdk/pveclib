@@ -27,13 +27,13 @@
 
 /*!
  * \file  vec_int128_ppc.h
- * \brief Header package a collection of 128-bit computation functions
- * implemented with PowerISA VMX and VSX instructions.
+ * \brief Header package containing a collection of 128-bit computation
+ * functions implemented with PowerISA VMX and VSX instructions.
  */
 
-/** \brief byte reverse quadword for a vector __int128.
+/*! \brief byte reverse quadword for a vector __int128.
  *
- * Return the bytes / octets of a 128-bit vector in reverse order.
+ *	Return the bytes / octets of a 128-bit vector in reverse order.
  *
  *	@param vra a 128-bit vector treated a __int128.
  *	@return a 128-bit vector with the bytes in reserve order.
@@ -62,10 +62,10 @@ vec_revq (vui128_t vra)
   return (result);
 }
 
-/** \brief byte reverse each doubleword for a vector unsigned long int.
+/*! \brief byte reverse each doubleword for a vector unsigned long int.
  *
- * For each doubleword of the input vector, reverse the order of
- * bytes / octets within the doubleword.
+ *	For each doubleword of the input vector, reverse the order of
+ *	bytes / octets within the doubleword.
  *
  *	@param vra a 128-bit vector unsigned long int.
  *	@return a 128-bit vector with the bytes of each doubleword
@@ -95,10 +95,10 @@ vec_revd (vui64_t vra)
   return (result);
 }
 
-/** \brief byte reverse each word of a vector unsigned int.
+/*! \brief byte reverse each word of a vector unsigned int.
  *
- * For each word of the input vector, reverse the order of
- * bytes / octets within the word.
+ *	For each word of the input vector, reverse the order of
+ *	bytes / octets within the word.
  *
  *	@param vra a 128-bit vector unsigned int.
  *	@return a 128-bit vector with the bytes of each word
@@ -128,10 +128,10 @@ vec_revw (vui32_t vra)
   return (result);
 }
 
-/** \brief byte reverse each halfword of a vector unsigned short.
+/*! \brief byte reverse each halfword of a vector unsigned short.
  *
- * For each halfword of the input vector, reverse the order of
- * bytes / octets within the halfword.
+ *	For each halfword of the input vector, reverse the order of
+ *	bytes / octets within the halfword.
  *
  *	@param vra a 128-bit vector unsigned short.
  *	@return a 128-bit vector with the bytes of each halfword
@@ -163,9 +163,9 @@ vec_revh (vui16_t vra)
 
 /** \brief Count leading zeros for a vector __int128.
  *
- * Count leading zeros for a vector __int128 and return the count in a
- * vector suitable for use with vector shift (left|right) and vector
- * shift (left|right) by octet instructions.
+ *	Count leading zeros for a vector __int128 and return the count in a
+ *	vector suitable for use with vector shift (left|right) and vector
+ *	shift (left|right) by octet instructions.
  *
  *	@param vra a 128-bit vector treated a __int128.
  *	@return a 128-bit vector with bits 121:127 containing the count of
@@ -222,8 +222,8 @@ vec_clzq (vui128_t vra)
 }
 /** \brief Population Count vector __int128.
  *
- * Count leading zeros for a vector __int128 and return the count in a
- * vector .
+ *	Count the number of '1' bits within a vector __int128 and return
+ *	the count (0-128) in a vector __int128.
  *
  *	@param vra a 128-bit vector treated a __int128.
  *	@return a 128-bit vector with bits 121:127 containing the
@@ -267,10 +267,10 @@ vec_popcntq (vui128_t vra)
 
 /** \brief Vector Shift Left double Quadword.
  *
- * Vector Shift Left double Quadword 0-127 bits.
- * Return a vector __int128 that is the left most 128-bits after
- * shifting left 0-127-bits of the 32-byte double vector
- * (vrw||vrx).  The shift amount is from bits 121:127 of vrb.
+ *	Vector Shift Left double Quadword 0-127 bits.
+ *	Return a vector __int128 that is the left most 128-bits after
+ *	shifting left 0-127-bits of the 32-byte double vector
+ *	(vrw||vrx).  The shift amount is from bits 121:127 of vrb.
  *
  *	@param vrw upper 128-bits of the 256-bit double vector.
  *	@param vrx lower 128-bits of the 256-bit double vector.
@@ -301,12 +301,12 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
 
 /** \brief Vector Shift right Quadword Immediate.
  *
- * Vector Shift right Quadword 0-127 bits.
- * The shift amount is a const unsigned int in the range 0-127.
- * A shift count of 0 returs the original value of vra.
- * Shift counts greater then 127 bits return zero.
+ *	Vector Shift right Quadword 0-127 bits.
+ *	The shift amount is a const unsigned int in the range 0-127.
+ *	A shift count of 0 returns the original value of vra.
+ *	Shift counts greater then 127 bits return zero.
  *
- *	@param vra a 128-bit vector treated a __int128.
+ *	@param vra a 128-bit vector treated as a __int128.
  *	@param shb Shift amount in the range 0-127.
  *	@return 128-bit vector shifted right shb bits.
  */
@@ -365,10 +365,10 @@ vec_srqi (vui128_t vra, const unsigned int shb)
 
 /** \brief Vector Shift right Quadword.
  *
- * Vector Shift Right Quadword 0-127 bits.
- * The shift amount is from bits 121-127 of vrb.
+ *	Vector Shift Right Quadword 0-127 bits.
+ *	The shift amount is from bits 121-127 of vrb.
  *
- *	@param vra a 128-bit vector treated a __int128.
+ *	@param vra a 128-bit vector treated as a __int128.
  *	@param vrb Shift amount in bits 121:127.
  *	@return Right shifted vector.
  */
@@ -390,16 +390,16 @@ vec_srq (vui128_t vra, vui128_t vrb)
 
 /** \brief Vector Shift left Quadword Immediate.
  *
- * Vector Shift left Quadword 0-127 bits.
- * The shift amount is a const unsigned int in the range 0-127.
- * A shift count of 0 returs the original value of vra.
- * Shift counts greater then 127 bits return zero.
+ *	Vector Shift left Quadword 0-127 bits.
+ *	The shift amount is a const unsigned int in the range 0-127.
+ *	A shift count of 0 returns the original value of vra.
+ *	Shift counts greater then 127 bits return zero.
  *
- *	@param vra a 128-bit vector treated a __int128.
+ *	@param vra a 128-bit vector treated as a __int128.
  *	@param shb Shift amount in the range 0-127.
  *	@return 128-bit vector shifted left shb bits.
  */
-static inline vui128_t __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+static inline vui128_t
 vec_slqi (vui128_t vra, const unsigned int shb)
 {
   vui8_t lshift;
@@ -449,10 +449,10 @@ vec_slqi (vui128_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Left Quadword.
  *
- * Vector Shift Left Quadword 0-127 bits.
- * The shift amount is from bits 121-127 of vrb.
+ *	Vector Shift Left Quadword 0-127 bits.
+ *	The shift amount is from bits 121-127 of vrb.
  *
- *	@param vra a 128-bit vector treated a __int128.
+ *	@param vra a 128-bit vector treated as a __int128.
  *	@param vrb Shift amount in bits 121:127.
  *	@return Left shifted vector.
  */
@@ -472,75 +472,75 @@ vec_slq (vui128_t vra, vui128_t vrb)
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift right 4-bits Quadword.
+/** \deprecated Vector Shift right 4-bits Quadword.
+ * Replaced by vec_srqi with shb param = 4.
  *
  * Vector Shift Right Quadword 0-127 bits.
  * The shift amount is from bits 121-127 of vrb.
  *
- *	@param vra a 128-bit vector treated a __int128.
- *	@return Right shifted vector.
+ * @param vra a 128-bit vector treated as a __int128.
+ * @return Right shifted vector.
  */
 static inline vui128_t
 vec_srq4 (vui128_t vra)
 {
   __vector unsigned char result, vsht_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsr instruction only works
-   * correctly if the bit shift value is splatted to each byte
-   * of the vector.  */
+  /* The vsr instruction only works correctly if the bit shift value
+   * is splatted to each byte of the vector.  */
   vsht_splat = vec_splat_u8(4);
   result = vec_srl ((__vector unsigned char) vra, vsht_splat);
 
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift Left 4-bits Quadword.
+/** \deprecated Vector Shift Left 4-bits Quadword.
+ * Replaced by vec_slqi with shb param = 4.
+ *
  * Vector Shift Left Quadword 0-127 bits.
  * The shift amount is from bits 121-127 of vrb.
  *
- *	@param vra a 128-bit vector treated a __int128.
- *	@return Left shifted vector.
+ * @param vra a 128-bit vector treated a __int128.
+ * @return Left shifted vector.
  */
 static inline vui128_t
 vec_slq4 (vui128_t vra)
 {
   __vector unsigned char result, vsht_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsl instruction only works
-   * correctly if the bit shift value is splatted to each byte
-   * of the vector.  */
+  /* The vsl instruction only works correctly if the bit shift value
+   * is splatted to each byte of the vector.  */
   vsht_splat = vec_splat_u8(4);
   result = vec_sll ((__vector unsigned char) vra, vsht_splat);
 
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift right 4-bits Quadword.
+/** \deprecated Vector Shift right 5-bits Quadword.
+ * Replaced by vec_srqi with shb param = 5.
  *
  * Vector Shift Right Quadword 0-127 bits.
  * The shift amount is from bits 121-127 of vrb.
  *
- *	@param vra a 128-bit vector treated a __int128.
- *	@return Right shifted vector.
+ * @param vra a 128-bit vector treated a __int128.
+ * @return Right shifted vector.
  */
 static inline vui128_t
 vec_srq5 (vui128_t vra)
 {
   __vector unsigned char result, vsht_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsr instruction only works
-   * correctly if the bit shift value is splatted to each byte
-   * of the vector.  */
+  /* The vsr instruction only works correctly if the bit shift value
+   * is splatted to each byte of the vector.  */
   vsht_splat = vec_splat_u8(5);
   result = vec_srl ((__vector unsigned char) vra, vsht_splat);
 
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift Left 4-bits Quadword.
+/** \deprecated Vector Shift Left 5-bits Quadword.
+ * Replaced by vec_slqi with shb param = 5.
+ *
  * Vector Shift Left Quadword 0-127 bits.
  * The shift amount is from bits 121-127 of vrb.
  *
@@ -552,10 +552,8 @@ vec_slq5 (vui128_t vra)
 {
   __vector unsigned char result, vsht_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsl instruction only works
-   * correctly if the bit shift value is splatted to each byte
-   * of the vector.  */
+  /* The vsl instruction only works correctly if the bit shift value
+   * is splatted to each byte of the vector.  */
   vsht_splat = vec_splat_u8(5);
   result = vec_sll ((__vector unsigned char) vra, vsht_splat);
 
@@ -563,14 +561,15 @@ vec_slq5 (vui128_t vra)
 }
 
 /** \brief Vector doubleword paste.
- * Combine the high doubleword of the 1st vector with the
- * low double word of the 2nd vector.
+ *	Combine the high doubleword of the 1st vector with the
+ *	low double word of the 2nd vector.
  *
- * @param __VH a 128-bit vector as the source of the
+ *	@param __VH a 128-bit vector as the source of the
  * 	high order doubleword.
- * @param __VL a 128-bit vector as the source of the
+ *	@param __VL a 128-bit vector as the source of the
  * 	low order doubleword.
- * @return The combined 128-bit vector.
+ *	@return The combined 128-bit vector composed of the high order
+ *	doubleword of __VH and the low order doubleword of __VL.
  */
 static inline vui64_t
 vec_pasted (vui64_t __VH, vui64_t __VL)
@@ -587,12 +586,12 @@ vec_pasted (vui64_t __VH, vui64_t __VL)
 
 /** \brief Vector multiply odd unsigned words.
  *
- * Multiple the odd words of two vector unsigned int values and return
- * the unsigned long product of the odd words..
+ *	Multiple the odd words of two vector unsigned int values and return
+ *	the unsigned long product of the odd words..
  *
- * @param a 128-bit vector unsigned int.
- * @param b 128-bit vector unsigned int.
- * @return vector unsigned long product of the odd words of a and b.
+ *	@param a 128-bit vector unsigned int.
+ *	@param b 128-bit vector unsigned int.
+ *	@return vector unsigned long product of the odd words of a and b.
  */
 static inline vui64_t
 vec_mulouw (vui32_t a, vui32_t b)
@@ -711,7 +710,7 @@ vec_mulesw (vi32_t a, vi32_t b)
 
 /** \brief Vector Add Unsigned Quadword Modulo.
  *
- * Add two vector __int128 values and return result modulo 128-bits.
+ *	Add two vector __int128 values and return result modulo 128-bits.
  *
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
@@ -734,33 +733,25 @@ vec_adduqm (vui128_t a, vui128_t b)
 #endif
 #else
   vui32_t c, c2;
-  vui32_t z=
-    { 0,0,0,0};
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (a),
-      "v" (b),
-      "v" (z)
-      : );
+  vui32_t z= { 0,0,0,0};
+
+  c = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
+  t = vec_vadduwm ((vui32_t)a, (vui32_t)b);
+  c = vec_sld (c, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  c = vec_sld (c2, z, 4);
+  t = vec_vadduwm (t, c);
 #endif
   return ((vui128_t) t);
 }
 
 /** \brief Vector Add & write Carry Unsigned Quadword.
  *
- * Add two vector __int128 values and return the carry out.
+ *	Add two vector __int128 values and return the carry out.
  *
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
@@ -769,51 +760,43 @@ vec_adduqm (vui128_t a, vui128_t b)
 static inline vui128_t
 vec_addcuq (vui128_t a, vui128_t b)
 {
-  vui32_t t;
+  vui32_t co;
 #ifdef _ARCH_PWR8
 #ifndef vec_vaddcuq
   __asm__(
       "vaddcuq %0,%1,%2;"
-      : "=v" (t)
+      : "=v" (co)
       : "v" (a),
       "v" (b)
       : );
 #else
-  t = (vui32_t) vec_vaddcuq (a, b);
+  co = (vui32_t) vec_vaddcuq (a, b);
 #endif
 #else
-  vui32_t c, c2, co;
-  vui32_t z=
-    { 0,0,0,0};
-  __asm__(
-      "vaddcuw %3,%4,%5;\n"
-      "\tvadduwm %0,%4,%5;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %3,%3,%2;\n"
-      "\tvsldoi %1,%2,%6,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %3,%3,%2;\n"
-      "\tvsldoi %1,%2,%6,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t), /* 0 */
-      "=&v" (c), /* 1 */
-      "=&v" (c2), /* 2 */
-      "=&v" (co) /* 3 */
-      : "v" (a), /* 4 */
-      "v" (b), /* 5 */
-      "v" (z) /* 6 */
-      : );
-  t = co;
+  vui32_t c, c2, t;
+  vui32_t z= { 0,0,0,0};
+
+  co = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
+  t = vec_vadduwm ((vui32_t)a, (vui32_t)b);
+  c = vec_sld (co, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  co = vec_vor (co, c2);
+  co = vec_sld (z, co, 4);
 #endif
-  return ((vui128_t) t);
+  return ((vui128_t) co);
 }
 
 /** \brief Vector Add with carry Unsigned Quadword.
  *
- * Add two vector __int128 values and return sum and the carry out.
+ *	Add two vector __int128 values and return sum and the carry out.
  *
  *	@param *cout carry out from the sum of a and b.
  *	@param a 128-bit vector treated a __int128.
@@ -840,31 +823,23 @@ vec_addcq (vui128_t *cout, vui128_t a, vui128_t b)
 #endif
 #else
   vui32_t c, c2;
-  vui32_t z=
-    { 0,0,0,0};
-  __asm__(
-      "vaddcuw %3,%4,%5;\n"
-      "\tvadduwm %0,%4,%5;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %3,%3,%2;\n"
-      "\tvsldoi %1,%2,%6,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %3,%3,%2;\n"
-      "\tvsldoi %1,%2,%6,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %3,%6,%3,4;\n"
-      : "=&v" (t), /* 0 */
-      "=&v" (c), /* 1 */
-      "=&v" (c2), /* 2 */
-      "=&v" (co) /* 3 */
-      : "v" (a), /* 4 */
-      "v" (b), /* 5 */
-      "v" (z) /* 6 */
-      : );
-  t = co;
+  vui32_t z= { 0,0,0,0};
+
+  co = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
+  t = vec_vadduwm ((vui32_t)a, (vui32_t)b);
+  c = vec_sld (co, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  co = vec_sld (z, co, 4);
 #endif
   *cout = (vui128_t) co;
   return ((vui128_t) t);
@@ -872,16 +847,16 @@ vec_addcq (vui128_t *cout, vui128_t a, vui128_t b)
 
 /** \brief Vector Add Extended Unsigned Quadword Modulo.
  *
- * Add two vector __int128 values plus a carry (0|1) and return
- * the modulo 128-bit result.
+ *	Add two vector __int128 values plus a carry (0|1) and return
+ *	the modulo 128-bit result.
  *
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
- *	@param c Carry-in from vector bit[127].
+ *	@param ci Carry-in from vector bit[127].
  *	@return __int128 sum of a + b + c, modulo 128-bits.
  */
 static inline vui128_t
-vec_addeuqm (vui128_t a, vui128_t b, vui128_t c)
+vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
@@ -891,125 +866,103 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t c)
       : "=v" (t)
       : "v" (a),
       "v" (b),
-      "v" (c)
+      "v" (ci)
       : );
 #else
-  t = (vui32_t) vec_vaddeuqm (a, b, c);
+  t = (vui32_t) vec_vaddeuqm (a, b, ci);
 #endif
 #else
-  vui32_t c2;
-  vui32_t z=
-    { 0,0,0,0};
-  vui32_t m=
-    { 0,0,0,1};
-  __asm__(
-      "vand %2,%1,%6;\n"
-      "\tvaddcuw %1,%3,%4;\n"
-      "\tvsldoi %2,%2,%5,12;\n"
-      "\tvsldoi %1,%1,%2,4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t), /* 0 */
-      "+&v" (c), /* 1 */
-      "=&v" (c2) /* 2 */
-      : "v" (a), /* 3 */
-      "v" (b), /* 4 */
-      "v" (z), /* 5 */
-      "v" (m) /* 6 */
-      : );
+  vui32_t c2, c;
+  vui32_t z  = { 0,0,0,0};
+  vui32_t co = { 1,1,1,1};
+
+  c2 = vec_and ((vui32_t)ci, co);
+  c2 = vec_sld ((vui32_t)ci, z, 12);
+  co = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
+  t = vec_vadduwm ((vui32_t)a, (vui32_t)b);
+  c = vec_sld (co, c2, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  c = vec_sld (c2, z, 4);
+  t = vec_vadduwm (t, c);
 #endif
   return ((vui128_t) t);
 }
 
 /** \brief Vector Add Extended & write Carry Unsigned Quadword.
  *
- * Add two vector __int128 values plus a carry-in (0|1) and return
- * the carry out bit.
+ *	Add two vector __int128 values plus a carry-in (0|1) and return
+ *	the carry out bit.
  *
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
- *	@param c Carry-in from vector bit[127].
+ *	@param ci Carry-in from vector bit[127].
  *	@return carry-out in bit[127] of the sum of a + b + c.
  */
 static inline vui128_t
-vec_addecuq (vui128_t a, vui128_t b, vui128_t c)
+vec_addecuq (vui128_t a, vui128_t b, vui128_t ci)
 {
-  vui32_t t;
+  vui32_t co;
 #ifdef _ARCH_PWR8
 #ifndef vec_vaddecuq
   __asm__(
       "vaddecuq %0,%1,%2,%3;"
-      : "=v" (t)
+      : "=v" (co)
       : "v" (a),
       "v" (b),
-      "v" (c)
+      "v" (ci)
       : );
 #else
-  t = (vui32_t) vec_vaddecuq (a, b, c);
+  co = (vui32_t) vec_vaddecuq (a, b, ci);
 #endif
 #else
-  vui32_t c2;
-  vui32_t z=
-    { 0,0,0,0};
-  vui32_t co=
-    { 0,0,0,1};
-  __asm__(
-      "vand %3,%1,%2;\n"
-      "\tvaddcuw %2,%4,%5;\n"
-      "\tvsldoi %3,%3,%5,12;\n"
-      "\tvsldoi %1,%2,%3,4;\n"
-      "\tvadduwm %0,%4,%5;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %2,%6,%2,4;\n"
-      : "=&v" (t), /* 0 */
-      "+&v" (c), /* 1 */
-      "+&v" (co), /* 2 */
-      "=&v" (c2) /* 3 */
-      : "v" (a), /* 4 */
-      "v" (b), /* 5 */
-      "v" (z) /* 6 */
-      : );
-  t = co;
+  vui32_t c, c2, t;
+  vui32_t z = { 0, 0, 0, 0 };
+  co = (vui32_t){ 1, 1, 1, 1 };
+
+  c2 = vec_and ((vui32_t) ci, co);
+  c2 = vec_sld ((vui32_t) c2, z, 12);
+  co = vec_vaddcuw ((vui32_t) a, (vui32_t) b);
+  t = vec_vadduwm ((vui32_t) a, (vui32_t) b);
+  c = vec_sld (co, c2, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  co = vec_vor (co, c2);
+  co = vec_sld (z, co, 4);
 #endif
-  return ((vui128_t) t);
+  return ((vui128_t) co);
 }
 
 /** \brief Vector Add Extend with carry Unsigned Quadword.
  *
- * Add two vector __int128 values plus a carry-in (0|1)
- * and return sum and the carry out.
+ *	Add two vector __int128 values plus a carry-in (0|1)
+ *	and return sum and the carry out.
  *
  *	@param *cout carry out from the sum of a and b.
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
- *	@param c Carry-in from vector bit[127].
+ *	@param ci Carry-in from vector bit[127].
  *	@return __int128 (lower 128-bits) sum of a + b + c.
  */
 static inline vui128_t
-vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t c)
+vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
 {
   vui32_t t, co;
 #ifdef _ARCH_PWR8
@@ -1024,46 +977,35 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t c)
       "v" (c)
       : );
 #else
-  t = (vui32_t) vec_vaddeuqm (a, b, c);
-  co = (vui32_t) vec_vaddecuq (a, b, c);
+  t = (vui32_t) vec_vaddeuqm (a, b, ci);
+  co = (vui32_t) vec_vaddecuq (a, b, ci);
 #endif
 #else
-  vui32_t c2;
-  vui32_t z=
-    { 0,0,0,0};
+  vui32_t c, c2;
+  vui32_t z= { 0,0,0,0};
+  co = (vui32_t){ 1,1,1,1};
 
-  co= (vui32_t)
-    { 0,0,0,1};
-  __asm__(
-      "vand %3,%1,%2;\n"
-      "\tvaddcuw %2,%4,%5;\n"
-      "\tvsldoi %3,%3,%5,12;\n"
-      "\tvsldoi %1,%2,%3,4;\n"
-      "\tvadduwm %0,%4,%5;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %2,%6,%2,4;\n"
-      : "=&v" (t), /* 0 */
-      "+&v" (c), /* 1 */
-      "+&v" (co), /* 2 */
-      "=&v" (c2) /* 3 */
-      : "v" (a), /* 4 */
-      "v" (b), /* 5 */
-      "v" (z) /* 6 */
-      : );
+  c2 = vec_and ((vui32_t)ci, co);
+  c2 = vec_sld ((vui32_t)c2, z, 12);
+  co = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
+  t = vec_vadduwm ((vui32_t)a, (vui32_t)b);
+  c = vec_sld (co, c2, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  c = vec_sld (c2, z, 4);
+  c2 = vec_vaddcuw (t, c);
+  t = vec_vadduwm (t, c);
+  co = vec_vor (co, c2);
+  co = vec_sld (z, co, 4);
 #endif
   *cout = (vui128_t) co;
   return ((vui128_t) t);
@@ -1148,10 +1090,10 @@ vec_muleud (vui64_t a, vui64_t b)
   return ((vui128_t) res);
 }
 
-/** \brief Vector Multiply Unsigned Quadword.
+/** \brief Vector Multiply Low Unsigned Quadword.
  *
- * compute the 256 bit product of two 128 bit values a, b.
- * Only the low order 128 bits of the product are returned.
+ *	compute the 256 bit product of two 128 bit values a, b.
+ *	Only the low order 128 bits of the product are returned.
  *
  *	@param a 128-bit vector treated a __int128.
  *	@param b 128-bit vector treated a __int128.
@@ -1205,9 +1147,7 @@ vec_mulluq (vui128_t a, vui128_t b)
   t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
 #endif
   /* Sum the low 128 bits of odd previous partial products */
-  /* todo is there a possible carry out of this */
   t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
-
   /* rotate right the low 32-bits into tmq */
   tmq = vec_sld (t_odd, tmq, 12);
   /* shift the low 128 bits of partial product right 32-bits */
@@ -1264,8 +1204,8 @@ vec_mulluq (vui128_t a, vui128_t b)
 
 /** \brief Vector Multiply Unsigned double Quadword.
  *
- * compute the 256 bit product of two 128 bit values a, b.
- * Only the low order 128 bits of the product are returned.
+ *	compute the 256 bit product of two 128 bit values a, b.
+ *	Only the low order 128 bits of the product are returned.
  *
  *	@param *mulu pointer to upper 128-bits of the product.
  *	@param a 128-bit vector treated a __int128.
@@ -1382,8 +1322,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
 /** \brief Vector Multiply by 10 Unsigned Quadword.
  *
- * compute the product of a 128 bit value a * 10.
- * Only the low order 128 bits of the product are returned.
+ *	compute the product of a 128 bit value a * 10.
+ *	Only the low order 128 bits of the product are returned.
  *
  *	@param a 128-bit vector treated as a __int128.
  *	@return __int128 (lower 128-bits) a * 10.
@@ -1417,19 +1357,8 @@ vec_mul10uq (vui128_t a)
 #ifdef _ARCH_PWR8
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
+  /* Use pveclib addcuq implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   return ((vui128_t) t);
@@ -1437,8 +1366,8 @@ vec_mul10uq (vui128_t a)
 
 /** \brief Vector Multiply by 10 extended Unsigned Quadword.
  *
- * compute the product of a 128 bit value a * 10 + digit(cin).
- * Only the low order 128 bits of the extended product are returned.
+ *	compute the product of a 128 bit value a * 10 + digit(cin).
+ *	Only the low order 128 bits of the extended product are returned.
  *
  *	@param a 128-bit vector treated as a unsigned __int128.
  *	@param cin values 0-9 in bits 124:127 of a vector.
@@ -1477,19 +1406,8 @@ vec_mul10euq (vui128_t a, vui128_t cin)
 #ifdef _ARCH_PWR8
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
+  /* Use pveclib addcuq implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   return ((vui128_t) t);
@@ -1497,10 +1415,10 @@ vec_mul10euq (vui128_t a, vui128_t cin)
 
 /** \brief Vector Multiply by 10 & write Carry Unsigned Quadword.
  *
- * compute the product of a 128 bit value a * 10.
- * Only the high order 128 bits of the product are returned.
- * This will be binary coded decimal value 0-9 in bits 124-127,
- * Bits 0-123 will be '0'.
+ *	compute the product of a 128 bit value a * 10.
+ *	Only the high order 128 bits of the product are returned.
+ *	This will be binary coded decimal value 0-9 in bits 124-127,
+ *	Bits 0-123 will be '0'.
  *
  *	@param a 128-bit vector treated as a __int128.
  *	@return __int128 (upper 128-bits of the 256-bit product) a * 10 >> 128.
@@ -1535,30 +1453,13 @@ vec_mul10cuq (vui128_t a)
   /* then add the even/odd sub-products to generate the final product */
 #ifdef _ARCH_PWR8
   /* Any compiler that supports ARCH_PWR8 should support these builtins.  */
-//        t = (vui32_t)vec_vadduqm ((vui128_t)t_even, (vui128_t)t_odd);
   t_carry = (vui32_t) vec_vaddcuq ((vui128_t) t_even, (vui128_t) t_odd);
   t_carry = (vui32_t) vec_vadduqm ((vui128_t) t_carry, (vui128_t) t_high);
 #else
-  vui32_t c, c2, t;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-  __asm__(
-      "vadduwm %0,%1,%2;\n"
-      : "=v" (t_carry)
-      : "v" (t_high),
-      "v" (c2)
-      : );
+  /* Use pveclib addcuq implementation for pre _ARCH_PWR8.  */
+  t_carry = (vui32_t) vec_addcuq ((vui128_t) t_even, (vui128_t) t_odd);
+  /* The final carry is small (0-9) so use word add, ignore carries.  */
+  t_carry = vec_vadduwm (t_carry, t_high);
 #endif
 #endif
   return ((vui128_t) t_carry);
@@ -1566,8 +1467,8 @@ vec_mul10cuq (vui128_t a)
 
 /** \brief Vector Multiply by 10 Extended & write Carry Unsigned Quadword.
  *
- * Compute the product of a 128 bit value a * 10 + digit(cin).
- * Only the low order 128 bits of the extended product are returned.
+ *	Compute the product of a 128 bit value a * 10 + digit(cin).
+ *	Only the low order 128 bits of the extended product are returned.
  *
  *	@param a 128-bit vector treated as a unsigned __int128.
  *	@param cin values 0-9 in bits 124:127 of a vector.
@@ -1613,26 +1514,10 @@ vec_mul10ecuq (vui128_t a, vui128_t cin)
   t_carry = (vui32_t) vec_vaddcuq ((vui128_t) t_even, (vui128_t) t_odd);
   t_carry = (vui32_t) vec_vadduqm ((vui128_t) t_carry, (vui128_t) t_high);
 #else
-  vui32_t c, c2, t;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-  __asm__(
-      "vadduwm %0,%1,%2;\n"
-      : "=v" (t_carry)
-      : "v" (t_high),
-      "v" (c2)
-      : );
+  /* Use pveclib addcuq implementation for pre _ARCH_PWR8.  */
+  t_carry = (vui32_t) vec_addcuq ((vui128_t) t_even, (vui128_t) t_odd);
+  /* The final carry is small (0-9) so use word add, ignore carries.  */
+  t_carry = vec_vadduwm (t_carry, t_high);
 #endif
 #endif
   return ((vui128_t) t_carry);
@@ -1640,8 +1525,8 @@ vec_mul10ecuq (vui128_t a, vui128_t cin)
 
 /** \brief Vector combined Multiply by 10 Extended & write Carry Unsigned Quadword.
  *
- * Compute the product of a 128 bit value a * 10 + digit(cin).
- * Only the low order 128 bits of the extended product are returned.
+ *	Compute the product of a 128 bit value a * 10 + digit(cin).
+ *	Only the low order 128 bits of the extended product are returned.
  *
  *	@param *cout pointer to upper 128-bits of the product.
  *	@param a 128-bit vector treated as a unsigned __int128.
@@ -1685,24 +1570,12 @@ vec_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   /* then add the even/odd sub-products to generate the final product */
 #ifdef _ARCH_PWR8
   /* Any compiler that supports ARCH_PWR8 should support these builtins.  */
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
+  /* Use pveclib adduqm implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   *cout = (vui128_t) t_carry;
@@ -1711,8 +1584,8 @@ vec_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
 
 /** \brief Vector combined Multiply by 10 & write Carry Unsigned Quadword.
  *
- * compute the product of a 128 bit values a * 10.
- * Only the low order 128 bits of the product are returned.
+ *	compute the product of a 128 bit values a * 10.
+ *	Only the low order 128 bits of the product are returned.
  *
  *	@param *cout pointer to upper 128-bits of the product.
  *	@param a 128-bit vector treated as a __int128.
@@ -1751,23 +1624,12 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
   /* then add the even/odd sub-products to generate the final product */
 #ifdef _ARCH_PWR8
   /* Any compiler that supports ARCH_PWR8 should support these builtins.  */
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
+  t_carry = t_high; /* there is no carry into high */
+  /* Use pveclib adduqm implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   *cout = (vui128_t) t_carry;
@@ -1776,8 +1638,8 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
 
 /** \brief Vector combined Multiply by 100 & write Carry Unsigned Quadword.
  *
- * compute the product of a 128 bit values a * 100.
- * Only the low order 128 bits of the product are returned.
+ *	compute the product of a 128 bit values a * 100.
+ *	Only the low order 128 bits of the product are returned.
  *
  *	@param *cout pointer to upper 128-bits of the product.
  *	@param a 128-bit vector treated as a __int128.
@@ -1834,23 +1696,12 @@ vec_cmul100cuq (vui128_t *cout, vui128_t a)
   /* then add the even/odd sub-products to generate the final product */
 #ifdef _ARCH_PWR8
   /* Any compiler that supports ARCH_PWR8 should support these builtins.  */
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
+  t_carry = t_high; /* there is no carry into high */
+  /* Use pveclib adduqm implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   *cout = (vui128_t) t_carry;
@@ -1859,10 +1710,10 @@ vec_cmul100cuq (vui128_t *cout, vui128_t a)
 
 /** \brief Vector combined Multiply by 100 Extended & write Carry Unsigned Quadword.
  *
- * Compute the product of a 128 bit value a * 100 + digit(cin).
- * The function return its low order 128 bits of the extended product.
- * The first parameter (*cout) it the address of the vector to receive
- * the generated carry out in the range 0-99.
+ *	Compute the product of a 128 bit value a * 100 + digit(cin).
+ *	The function return its low order 128 bits of the extended product.
+ *	The first parameter (*cout) it the address of the vector to receive
+ *	the generated carry out in the range 0-99.
  *
  *	@param *cout pointer to upper 128-bits of the product.
  *	@param a 128-bit vector treated as a unsigned __int128.
@@ -1925,24 +1776,12 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   /* then add the even/odd sub-products to generate the final product */
 #ifdef _ARCH_PWR8
   /* Any compiler that supports ARCH_PWR8 should support these builtins.  */
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
   t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-  t_carry = t_high; /* there is not carry into high */
+  t_carry = t_high; /* there is no carry into high */
+  /* Use pveclib adduqm implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
   *cout = (vui128_t) t_carry;

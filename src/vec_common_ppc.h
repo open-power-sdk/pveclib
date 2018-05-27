@@ -122,6 +122,13 @@ typedef union
 #define CONST_VINT128_W(__w0, __w1, __w2, __w3) (vui32_t){__w3, __w2, __w1, __w0}
 /*! \brief Arrange elements of word initializer in high->low order.  */
 #define CONST_VINT32_W(__w0, __w1, __w2, __w3) {__w3, __w2, __w1, __w0}
+/*! \brief Arrange word elements of a unsigned int initializer in
+ * high->low order.  May require an explicit cast.  */
+#define CONST_VINT128_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
+    {__hw7, __hw6, __hw5, __hw4, __hw3, __hw2, __hw1, __hw0}
+/*! \brief Arrange elements of word initializer in high->low order.  */
+#define CONST_VINT16_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
+    {__hw7, __hw6, __hw5, __hw4, __hw3, __hw2, __hw1, __hw0}
 /*! \brief Element index for high order dword.  */
 #define VEC_DW_H 1
 /*! \brief Element index for low order dword.  */
@@ -144,6 +151,10 @@ typedef union
 #define VEC_HW_L 0
 /*! \brief Element index for lowest order byte.  */
 #define VEC_BYTE_L 0
+/*! \brief Element index for lowest order byte of the high dword.  */
+#define VEC_BYTE_L_DWH 8
+/*! \brief Element index for lowest order byte of the low dword.  */
+#define VEC_BYTE_L_DWL 0
 /*! \brief Element index for highest order byte.  */
 #define VEC_BYTE_H 15
 /*! \brief Element index for second lowest order byte.  */
@@ -154,6 +165,13 @@ typedef union
 #define CONST_VINT128_DW128(__dw0, __dw1) (vui128_t)((vui64_t){__dw0, __dw1})
 #define CONST_VINT128_W(__w0, __w1, __w2, __w3) (vui32_t){__w0, __w1, __w2, __w3}
 #define CONST_VINT32_W(__w0, __w1, __w2, __w3) {__w0, __w1, __w2, __w3}
+/*! \brief Arrange word elements of a unsigned int initializer in
+ * high->low order.  May require an explicit cast.  */
+#define CONST_VINT128_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
+    {__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7}
+/*! \brief Arrange elements of word initializer in high->low order.  */
+#define CONST_VINT16_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
+    {__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7}
 #define VEC_DW_H 0
 #define VEC_DW_L 1
 #define VEC_W_H 0
@@ -165,6 +183,10 @@ typedef union
 #define VEC_HW_H 0
 #define VEC_HW_L 7
 #define VEC_BYTE_L 15
+/*! \brief Element index for lowest order byte of the high dword.  */
+#define VEC_BYTE_L_DWH 7
+/*! \brief Element index for lowest order byte of the low dword.  */
+#define VEC_BYTE_L_DWL 15
 #define VEC_BYTE_H 0
 #define VEC_BYTE_HHW 1
 #endif

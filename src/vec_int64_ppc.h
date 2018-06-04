@@ -45,7 +45,7 @@
  * added multiply word operations that produce the full doubleword
  * product and full quadword add / subtract (with carry extend).
  *
- * POWER9 (PowerISA 3.0B) adds the <B>Vector Multiply-Sum unsigned
+ * POWER9 (PowerISA 3.0B) adds the <B>Vector Multiply-Sum Unsigned
  * Doubleword Modulo</B> instruction. This is not the expected
  * multiply even/odd/modulo doubleword nor a full multiply modulo
  * quadword. But with a few extra (permutes and splat zero)
@@ -347,8 +347,8 @@ vec_cmpud_any_gt (vui64_t a, vui64_t b)
 #if __GNUC__ >= 7
   result = vec_any_gt(a, b);
 #else
-  vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpgtud (a, b);
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpgtud (a, b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
 #else
@@ -384,8 +384,8 @@ vec_cmpud_all_gt (vui64_t a, vui64_t b)
 #if __GNUC__ >= 7
   result = vec_all_gt(a, b);
 #else
-  vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpgtud (a, b);
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpgtud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
 #else
@@ -462,7 +462,7 @@ vec_cmpud_all_le (vui64_t a, vui64_t b)
 #if __GNUC__ >= 7
   result = vec_all_le(a, b);
 #else
-  vui32_t wt= { -1, -1, -1, -1};
+  vui32_t wt = { -1, -1, -1, -1};
   vui64_t gt_bool = vec_cmpleud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif

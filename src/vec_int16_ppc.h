@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 
- vec_int32_ppc.h
+ vec_int16_ppc.h
 
  Contributors:
       IBM Corporation, Steven Munroe
@@ -45,7 +45,7 @@
  * This header serves to fill in functional gaps for older
  * (POWER7, POWER8) processors and provides an in-line assembler
  * implementation for older compilers that do not
- * provide the build-ins.
+ * provide the built-ins.
  *
  * This header covers operations that are either:
  *
@@ -55,18 +55,17 @@
  * Examples include Count Leading Zeros, Population Count and Byte
  * Reverse.
  * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
- * <altivec.n> provided by available compilers in common use.
+ * <altivec.h> provided by available compilers in common use.
  * Examples include Count Leading Zeros, Population Count and Byte
  * Reverse.
  * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
  * Examples include the shift immediate operations.
- *
  */
 
 
-/** \brief Count leading zeros for a vector unsigned short (halfword)
+/** \brief Count Leading Zeros for a vector unsigned short (halfword)
  *  elements.
  *
  *  Count the number of leading '0' bits (0-16) within each halfword
@@ -305,7 +304,7 @@ vec_slhi (vui16_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Right Halfword Immediate.
  *
- *	Vector Shift right Halfwords each element [0-7], 0-15 bits,
+ *	Shift right each halfword element [0-7], 0-15 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-15.
  *	A shift count of 0 returns the original value of vra.
@@ -332,7 +331,7 @@ vec_srhi (vui16_t vra, const unsigned int shb)
       else
 	lshift = vec_splats ((unsigned short) shb);
 
-      /* Vector Shift right bytes based on the lower 4-bits of
+      /* Vector Shift right halfword based on the lower 4-bits of
          corresponding element of lshift.  */
       result = vec_vsrh (vra, lshift);
     }
@@ -345,7 +344,7 @@ vec_srhi (vui16_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Right Algebraic Halfword Immediate.
  *
- *  Vector Shift Right Algebraic Halfwords each element [0-7],
+ *  Shift right algebraic each halfword element [0-7],
  *  0-15 bits, as specified by an immediate value.
  *  The shift amount is a const unsigned int in the range 0-15.
  *  A shift count of 0 returns the original value of vra.
@@ -379,7 +378,7 @@ vec_srahi (vi16_t vra, const unsigned int shb)
     }
   else
     { /* shifts greater then 15 bits returns the sign bit propagated to
-         all bits.   This is equivalent to shift Right Algebraic of
+         all bits.  This is equivalent to shift Right Algebraic of
          15 bits.  */
       lshift = (vui16_t) vec_splat_s16(15);
       result = vec_vsrah (vra, lshift);
@@ -387,6 +386,5 @@ vec_srahi (vi16_t vra, const unsigned int shb)
 
   return (vi16_t) result;
 }
-
 
 #endif /* VEC_INT16_PPC_H_ */

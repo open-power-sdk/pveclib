@@ -731,7 +731,7 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
  *	Shift counts greater then 63 bits return zero.
  *
  *	@param vra a 128-bit vector treated as a vector unsigned long int.
- *	@param shb Shift amount in the range 0-63.
+ *	@param shb shift amount in the range 0-63.
  *	@return 128-bit vector unsigned long int, shifted left shb bits.
  */
 static inline vui64_t
@@ -962,7 +962,7 @@ vec_swapd (vui64_t vra)
  *  if the compiler does not define it in <altivec.h>.
  *
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
- *  @param vrb Shift amount in bits 58:63 and 122:127.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Left shifted vector unsigned long.
  */
 #ifndef vec_vsld
@@ -1021,7 +1021,7 @@ vec_vsld (vui64_t vra, vui64_t vrb)
  *  <altivec.h>.
  *
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
- *  @param vrb Shift amount in bits 58:63 and 122:127.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
  */
 #ifndef vec_vsrad
@@ -1083,7 +1083,7 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
  *  <altivec.h>.
  *
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
- *  @param vrb Shift amount in bits 58:63 and 122:127.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
  */
 #ifndef vec_vsrd

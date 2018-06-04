@@ -1,5 +1,5 @@
 /*
- Copyright [2018] IBM Corporation.
+ Copyright (c) [2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -32,26 +32,26 @@
  *
  * The original VMX (AKA Altivec) did not define any doubleword element
  * (long long integer or double float) operations.
- * The VSX facility (introduced with Power7) added vector double float
+ * The VSX facility (introduced with POWER7) added vector double float
  * but did not add any integer doubleword (64-bit) operations.  However
  * it did add a useful doubleword permute immediate and word wise;
  * merge, shift, and splat immediate operations.
  * Otherwise vector long int (64-bit elements) operations
  * have to be implemented using VMX word and halfword element integer
- * operations for Power7.
+ * operations for POWER7.
  *
- * Power8 (PowerISA 2.07B) adds important doubleword integer (add,
- * subtract, compare, shift, rotate, ...) VMX operations. Power8 also
+ * POWER8 (PowerISA 2.07B) adds important doubleword integer (add,
+ * subtract, compare, shift, rotate, ...) VMX operations. POWER8 also
  * added multiply word operations that produce the full doubleword
  * product and full quadword add / subtract (with carry extend).
  *
- * Power9 (PowerISA 3.0B) adds the <B>Vector Multiply-Sum unsigned
+ * POWER9 (PowerISA 3.0B) adds the <B>Vector Multiply-Sum unsigned
  * Doubleword Modulo</B> instruction. This is not the expected
- * multiple even/odd/modulo doubleword nor a full multiply modulo
+ * multiply even/odd/modulo doubleword nor a full multiply modulo
  * quadword. But with a few extra (permutes and splat zero)
  * instructions you can get equivalent function.
  *
- * Most of these intrinsic (compiler built-ins) operations are defined
+ * Most of these intrinsic (compiler built-in) operations are defined
  * in <altivec.h> and described in the compiler documentation.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
@@ -63,14 +63,14 @@
  *
  * Most of these
  * operations are implemented in a single instruction on newer
- * (Power8/Power9) processors. So this header serves to fill in
- * functional gaps for older (Power7, Power8) processors and provides
+ * (POWER8/POWER9) processors. So this header serves to fill in
+ * functional gaps for older (POWER7, POWER8) processors and provides
  * a in-line assembler implementation for older compilers that do not
  * provide the build-ins.
  *
  * This header covers operations that are either:
  *
- * - Operations implemented in hardware instructions for later
+ * - Implemented in hardware instructions for later
  * processors and useful to programmers, on slightly older processors,
  * even if the equivalent function requires more instructions.
  * Examples include the multiply even/odd/modulo word operations.
@@ -78,7 +78,7 @@
  * <altivec.n> provided by available compilers in common use.
  * Examples include Count Leading Zeros, Population Count and Byte
  * Reverse.
- * - Are commonly used operations, not covered by the ABI or
+ * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.  Examples include the shift immediate operations.
  *
@@ -86,7 +86,7 @@
  * currently implemented in <vec_int128_ppc.h> which resolves a
  * dependency on Add Quadword. These functions (vec_msumudm,
  * vec_muleud, vec_muloud) all produce a quadword results and need
- * vec_adduqm to sum partial products and earlier power platforms.
+ * vec_adduqm to sum partial products on earlier Power platforms.
  * \sa vec_adduqm, vec_muleud, vec_muloud, and vec_msumudm
  */
 
@@ -177,7 +177,7 @@ vec_clzd (vui64_t vra)
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] == b[i], otherwise all '0's.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count DoubleWord (<B>vcmpequd</B>) instruction. Otherwise use
  *  boolean logic using word compares.
  *
@@ -232,8 +232,9 @@ vec_cmpequd (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return true if all
  *  elements of a and b are equal.
  *
- *  For Power8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
- *  Otherwise case to unsigned word and use the same predicate generating (<B>vcmpequw</B>).
+ *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
+ *  predicate directly.  Otherwise cast to unsigned word and use the
+ *  same predicate generating (<B>vcmpequw</B>).
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -263,7 +264,7 @@ vec_cmpud_all_eq (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] > b[i], otherwise all '0's.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count DoubleWord (<B>vcmpgtud</B>) instruction. Otherwise use
  *  boolean logic using word compares.
  *
@@ -327,7 +328,7 @@ vec_cmpgtud (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return true if all
  *  elements of a > b.
  *
- *  For Power8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
+ *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
  *  Otherwise case to unsigned word and use the same predicate generating (<B>vcmpequw</B>).
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
@@ -363,8 +364,9 @@ vec_cmpud_any_gt (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return true if all
  *  elements of a > b.
  *
- *  For Power8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
- *  Otherwise case to unsigned word and use the same predicate generating (<B>vcmpequw</B>).
+ *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
+ *  predicate directly.  Otherwise cast to unsigned word and use the
+ *  same predicate generating (<B>vcmpequw</B>).
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -400,7 +402,7 @@ vec_cmpud_all_gt (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] > b[i], otherwise all '0's.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count DoubleWord (<B>vcmpgtud</B>) instruction. Otherwise use
  *  boolean logic using word compares.
  *
@@ -440,8 +442,9 @@ vec_cmpleud (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return true if all
  *  elements of a > b.
  *
- *  For Power8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
- *  Otherwise case to unsigned word and use the same predicate generating (<B>vcmpequw</B>).
+ *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
+ *  predicate directly.  Otherwise cast to unsigned word and use the
+ *  same predicate generating (<B>vcmpequw</B>).
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -460,7 +463,7 @@ vec_cmpud_all_le (vui64_t a, vui64_t b)
   result = vec_all_le(a, b);
 #else
   vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpleud (a, b);
+  vui64_t gt_bool = vec_cmpleud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
 #else
@@ -635,7 +638,7 @@ vec_permdi (vui64_t vra, vui64_t vrb, const int ctl)
  *  Count the number of '1' bits (0-64) within each doubleword element
  *  of a 128-bit vector.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count DoubleWord (<B>vpopcntd</B>) instruction. Otherwise use the
  *  pveclib vec_popcntw to count each word then sum across with Vector
  *  Sum across Half Signed Word Saturate (<B>vsum2sws</B>).
@@ -654,7 +657,7 @@ vec_popcntd (vui64_t vra)
 #ifndef vec_vpopcntd
   __asm__(
       "vpopcntd %0,%1;"
-      : "=v" (t)
+      : "=v" (r)
       : "v" (vra)
       : );
 #else
@@ -670,6 +673,7 @@ vec_popcntd (vui64_t vra)
   return (r);
 }
 #else
+/* Work around for GCC PR85830.  */
 #undef vec_popcntd
 #define vec_popcntd __builtin_vec_vpopcntd
 #endif
@@ -740,7 +744,7 @@ vec_sldi (vui64_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui64_t) vec_splat_s32(shb);
@@ -801,14 +805,14 @@ vec_spltd (vui64_t vra, const int ctl)
 
 /** \brief Vector Shift Right Doubleword Immediate.
  *
- *	Vector Shift right Doublewords each element [0-1], 0-63 bits,
+ *	Vector Shift Right Doublewords each element [0-1], 0-63 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-63.
  *	A shift count of 0 returns the original value of vra.
  *	Shift counts greater then 63 bits return zero.
  *
  *	@param vra a 128-bit vector treated as a vector unsigned long int.
- *	@param shb Shift amount in the range 0-63.
+ *	@param shb shift amount in the range 0-63.
  *	@return 128-bit vector unsigned long int, shifted right shb bits.
  */
 static inline vui64_t
@@ -821,7 +825,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui64_t) vec_splat_s32(shb);
@@ -849,7 +853,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
  *  propagated to each bit of each element.
  *
  *  @param vra a 128-bit vector treated as a vector signed long int.
- *  @param shb Shift amount in the range 0-63.
+ *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector signed long int, shifted right shb bits.
  */
 static inline vi64_t
@@ -862,7 +866,7 @@ vec_sradi (vi64_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui64_t) vec_splat_s32(shb);
@@ -889,7 +893,7 @@ vec_sradi (vi64_t vra, const unsigned int shb)
  *  For each unsigned long (64-bit) integer element c[i] = a[i] +
  *  NOT(b[i]) + 1.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Subtract
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Subtract
  *  Unsigned Doubleword Modulo (<B>vsubudm</B>) instruction. Otherwise
  *  use vector add word modulo forms and propagate the carry bits.
  *
@@ -982,14 +986,13 @@ vec_vsld (vui64_t vra, vui64_t vrb)
 
   /* constrain the dword shift amounts to 0-63.  */
   vsh_l = vec_and ((vui8_t)vrb, (vui8_t)shft_mask);
-  /* Isolate the high dword so that bits from the low dword,
+  /* Isolate the high dword so that bits from the low dword
    * do not contaminate the result.  */
   vr_h = vec_andc ((vui8_t)vra, (vui8_t)sel_mask);
-#if 0
-  vr_l  = vec_and ((vui8_t)vra, (vui8_t)sel_mask);
-#else
+  /* The low dword is just vra as the 128-bit shift left generates
+   * '0's on the right and the final merge (vec_sel)
+   * cleans up 64-bit overflow on the left.  */
   vr_l  = (vui8_t)vra;
-#endif
   /* The vsr instruction only works correctly if the bit shift
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);

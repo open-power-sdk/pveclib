@@ -1,5 +1,5 @@
 /*
- Copyright [2018] IBM Corporation.
+ Copyright (c) [2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
  * \brief Header package containing a collection of 128-bit SIMD
  * operations over 16-bit integer elements.
  *
- * Most vector short (16-bit integer) operations are are already
+ * Most vector short (16-bit integer) operations are already
  * covered by the original VMX (AKA Altivec) instructions.
  * VMX intrinsic (compiler built-ins) operations are defined in
  * <altivec.h> and described in the compiler documentation.
@@ -43,13 +43,13 @@
  * target, and produce correct results.
  *
  * This header serves to fill in functional gaps for older
- * (Power7, Power8) processors and provides a in-line assembler
+ * (POWER7, POWER8) processors and provides an in-line assembler
  * implementation for older compilers that do not
  * provide the build-ins.
  *
  * This header covers operations that are either:
  *
- * - Operations implemented in hardware instructions for later
+ * - Implemented in hardware instructions for later
  * processors and useful to programmers, on slightly older processors,
  * even if the equivalent function requires more instructions.
  * Examples include Count Leading Zeros, Population Count and Byte
@@ -58,7 +58,7 @@
  * <altivec.n> provided by available compilers in common use.
  * Examples include Count Leading Zeros, Population Count and Byte
  * Reverse.
- * - Are commonly used operations, not covered by the ABI or
+ * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
  * Examples include the shift immediate operations.
@@ -72,7 +72,7 @@
  *  Count the number of leading '0' bits (0-16) within each halfword
  *  element of a 128-bit vector.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Count Leading
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Count Leading
  *  Zeros Halfword instruction <B>vclzh</B>. Otherwise use sequence of pre
  *  2.07 VMX instructions.
  *  SIMDized count leading zeros inspired by:
@@ -154,7 +154,7 @@ vec_clzh (vui16_t vra)
  *  Count the number of '1' bits (0-16) within each byte element of
  *  a 128-bit vector.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count Halfword instruction. Otherwise use simple Vector (VMX)
  *  instructions to count bits in bytes in parallel.
  *  SIMDized population count inspired by:
@@ -176,7 +176,7 @@ vec_popcnth (vui16_t vra)
 #ifndef vec_vpopcnth
   __asm__(
       "vpopcnth %0,%1;"
-      : "=v" (t)
+      : "=v" (r)
       : "v" (vra)
       : );
 #else
@@ -220,6 +220,7 @@ vec_popcnth (vui16_t vra)
   return (r);
 }
 #else
+/* Work around for GCC PR85830.  */
 #undef vec_popcnth
 #define vec_popcnth __builtin_vec_vpopcnth
 #endif
@@ -283,7 +284,7 @@ vec_slhi (vui16_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
 	lshift = (vui16_t) vec_splat_s16(shb);
@@ -324,7 +325,7 @@ vec_srhi (vui16_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
 	lshift = (vui16_t) vec_splat_s16(shb);
@@ -365,7 +366,7 @@ vec_srahi (vi16_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
 	lshift = (vui16_t) vec_splat_s16(shb);

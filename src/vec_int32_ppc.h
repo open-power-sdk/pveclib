@@ -1,5 +1,5 @@
 /*
- Copyright [2018] IBM Corporation.
+ Copyright (c) [2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@
  * Most vector int (32-bit integer word) operations are implemented
  * with PowerISA VMX instructions either defined by the original VMX
  * (AKA Altivec) or added to later versions of the PowerISA.
- * Power8 added several multiply word operations not included in the
+ * POWER8 added several multiply word operations not included in the
  * original VMX.
  *
- * Also some useful word wise merge, shift, and splat operations where
+ * Also some useful word wise merge, shift, and splat operations were
  * added with VSX in PowerISA 2.06B.
  * Most of these intrinsic (compiler built-ins) operations are defined
  * in <altivec.h> and described in the compiler documentation.
@@ -49,15 +49,15 @@
  * target, and produce correct results.
  *
  * Most of these operations are implemented in a single instruction
- * on newer (Power8/Power9) processors.
+ * on newer (POWER8/POWER9) processors.
  * This header serves to fill in functional gaps for older
- * (Power7, Power8) processors and provides a in-line assembler
+ * (POWER7, POWER8) processors and provides a in-line assembler
  * implementation for older compilers that do not
  * provide the build-ins.
  *
  * This header covers operations that are either:
  *
- * - Operations implemented in hardware instructions for later
+ * - Implemented in hardware instructions for later
  * processors and useful to programmers, on slightly older processors,
  * even if the equivalent function requires more instructions.
  * Examples include the multiply even/odd/modulo word operations.
@@ -65,7 +65,7 @@
  * <altivec.n> provided by available compilers in common use.
  * Examples include Count Leading Zeros, Population Count and Byte
  * Reverse.
- * - Are commonly used operations, not covered by the ABI or
+ * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
  * Examples include the shift immediate operations.
@@ -77,7 +77,7 @@
  *  Count the number of leading '0' bits (0-32) within each word
  *  element of a 128-bit vector.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Count Leading
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Count Leading
  *  Zeros Word instruction <B>vclzw</B>. Otherwise use sequence of pre
  *  2.07 VMX instructions.
  *  SIMDized count leading zeros inspired by:
@@ -105,10 +105,10 @@ vec_clzw (vui32_t vra)
   r = vec_vclzw (vra);
 #endif
 #else
-//#warning Implememention pre power8
+//#warning Implememention pre POWER8
   vui32_t n, nt, y, x, s, m;
-  vui32_t z= { 0,0,0,0};
-  vui32_t one = { 1,1,1,1};
+  vui32_t z= {0,0,0,0};
+  vui32_t one = {1,1,1,1};
 
   /* n = 32 s = 16 */
   s = vec_splat_u32(8);
@@ -121,43 +121,43 @@ vec_clzw (vui32_t vra)
   nt = vec_sub(n,s);
   m = (vui32_t)vec_cmpgt(y, z);
   s = vec_sr(s,one);
-  x = vec_sel (x , y, m);
-  n = vec_sel (n , nt, m);
+  x = vec_sel (x, y, m);
+  n = vec_sel (n, nt, m);
 
   /* y=x>>8 if (y!=0) (n=n-8 x=y)  */
   y = vec_sr(x, s);
   nt = vec_sub(n,s);
   m = (vui32_t)vec_cmpgt(y, z);
   s = vec_sr(s,one);
-  x = vec_sel (x , y, m);
-  n = vec_sel (n , nt, m);
+  x = vec_sel (x, y, m);
+  n = vec_sel (n, nt, m);
 
   /* y=x>>4 if (y!=0) (n=n-4 x=y)  */
   y = vec_sr(x, s);
   nt = vec_sub(n,s);
   m = (vui32_t)vec_cmpgt(y, z);
   s = vec_sr(s,one);
-  x = vec_sel (x , y, m);
-  n = vec_sel (n , nt, m);
+  x = vec_sel (x, y, m);
+  n = vec_sel (n, nt, m);
 
   /* y=x>>2 if (y!=0) (n=n-2 x=y)  */
   y = vec_sr(x, s);
   nt = vec_sub(n,s);
   m = (vui32_t)vec_cmpgt(y, z);
   s = vec_sr(s,one);
-  x = vec_sel (x , y, m);
-  n = vec_sel (n , nt, m);
+  x = vec_sel (x, y, m);
+  n = vec_sel (n, nt, m);
 
   /* y=x>>1 if (y!=0) return (n=n-2)   */
   y = vec_sr(x, s);
   nt = vec_sub(n,s);
   nt = vec_sub(nt,s);
   m = (vui32_t)vec_cmpgt(y, z);
-  n = vec_sel (n , nt, m);
+  n = vec_sel (n, nt, m);
 
   /* else return (x-n)  */
   nt = vec_sub (n, x);
-  n = vec_sel (nt , n, m);
+  n = vec_sel (nt, n, m);
   r = n;
 #endif
   return ((vui32_t) r);
@@ -197,7 +197,7 @@ vec_mulesw (vi32_t a, vi32_t b)
 /** \brief Vector multiply odd signed words.
  *
  * Multiple the odd words of two vector signed int values and return
- * the signed long product of the odd words..
+ * the signed long product of the odd words.
  *
  * @param a 128-bit vector signed int.
  * @param b 128-bit vector signed int.
@@ -444,7 +444,7 @@ vec_muluwm (vui32_t a, vui32_t b)
  *  Count the number of '1' bits (0-32) within each word element of
  *  a 128-bit vector.
  *
- *  For Power8 (PowerISA 2.07B) or later use the Vector Population
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count Word instruction. Otherwise use the pveclib vec_popcntb
  *  to count each byte then sum across with Vector Sum across Quarter
  *  Unsigned Byte Saturate.
@@ -463,7 +463,7 @@ vec_popcntw (vui32_t vra)
 #ifndef vec_vpopcntw
   __asm__(
       "vpopcntw %0,%1;"
-      : "=v" (t)
+      : "=v" (r)
       : "v" (vra)
       : );
 #else
@@ -479,6 +479,7 @@ vec_popcntw (vui32_t vra)
   return (r);
 }
 #else
+/* Work around for GCC PR85830.  */
 #undef vec_popcntw
 #define vec_popcntw __builtin_vec_vpopcntw
 #endif
@@ -529,7 +530,7 @@ vec_revbw (vui32_t vra)
  *	Shift counts greater then 31 bits return zero.
  *
  *	@param vra a 128-bit vector treated as a vector unsigned int.
- *	@param shb Shift amount in the range 0-31.
+ *	@param shb shift amount in the range 0-31.
  *	@return 128-bit vector unsigned int, shifted left shb bits.
  */
 static inline vui32_t
@@ -542,7 +543,7 @@ vec_slwi (vui32_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui32_t) vec_splat_s32(shb);
@@ -571,7 +572,7 @@ vec_slwi (vui32_t vra, const unsigned int shb)
  *  propagated to each bit of each element.
  *
  *  @param vra a 128-bit vector treated as a vector signed int.
- *  @param shb Shift amount in the range 0-31.
+ *  @param shb shift amount in the range 0-31.
  *  @return 128-bit vector signed int, shifted right shb bits.
  */
 static inline vi32_t
@@ -584,7 +585,7 @@ vec_srawi (vi32_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui32_t) vec_splat_s32(shb);
@@ -615,7 +616,7 @@ vec_srawi (vi32_t vra, const unsigned int shb)
  *	Shift counts greater then 31 bits return zero.
  *
  *	@param vra a 128-bit vector treated as a vector unsigned char.
- *	@param shb Shift amount in the range 0-31.
+ *	@param shb shift amount in the range 0-31.
  *	@return 128-bit vector unsigned int, shifted right shb bits.
  */
 static inline vui32_t
@@ -628,7 +629,7 @@ vec_srwi (vui32_t vra, const unsigned int shb)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the
-         shift constant is splated to all elements of the
+         shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui32_t) vec_splat_s32(shb);

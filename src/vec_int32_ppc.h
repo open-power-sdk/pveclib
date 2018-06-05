@@ -523,7 +523,7 @@ vec_revbw (vui32_t vra)
 
 /** \brief Vector Shift left Word Immediate.
  *
- *	Vector Shift left Words each element [0-3], 0-31 bits,
+ *	Shift left each word element [0-3], 0-31 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-31.
  *	A shift count of 0 returns the original value of vra.
@@ -564,7 +564,7 @@ vec_slwi (vui32_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Right Algebraic Word Immediate.
  *
- *  Vector Shift Right Algebraic Words each element [0-3],
+ *  Shift Right Algebraic each word element [0-3],
  *  0-31 bits, as specified by an immediate value.
  *  The shift amount is a const unsigned int in the range 0-31.
  *  A shift count of 0 returns the original value of vra.
@@ -609,7 +609,7 @@ vec_srawi (vi32_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Right Word Immediate.
  *
- *	Vector Shift right Words each element [0-3], 0-31 bits,
+ *	Shift right each word element [0-3], 0-31 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-31.
  *	A shift count of 0 returns the original value of vra.

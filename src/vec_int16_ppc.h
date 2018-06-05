@@ -263,7 +263,7 @@ vec_revbh (vui16_t vra)
 
 /** \brief Vector Shift left Halfword Immediate.
  *
- *	Vector Shift left Halfwords each element [0-7], 0-15 bits,
+ *	Shift left each halfword element [0-7], 0-15 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-15.
  *	A shift count of 0 returns the original value of vra.

@@ -724,7 +724,7 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
 
 /** \brief Vector Shift left Doubleword Immediate.
  *
- *	Vector Shift left Doublewords each element [0-1], 0-63 bits,
+ *	Shift left each doubleword element [0-1], 0-63 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned long int in the range 0-63.
  *	A shift count of 0 returns the original value of vra.
@@ -805,7 +805,7 @@ vec_spltd (vui64_t vra, const int ctl)
 
 /** \brief Vector Shift Right Doubleword Immediate.
  *
- *	Vector Shift Right Doublewords each element [0-1], 0-63 bits,
+ *	Shift Right each doubleword element [0-1], 0-63 bits,
  *	as specified by an immediate value.
  *	The shift amount is a const unsigned int in the range 0-63.
  *	A shift count of 0 returns the original value of vra.
@@ -845,7 +845,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
 
 /** \brief Vector Shift Right Algebraic Doubleword Immediate.
  *
- *  Vector Shift Right Algebraic Doublewords each element [0-1],
+ *  Shift Right Algebraic each doubleword element [0-1],
  *  0-63 bits, as specified by an immediate value.
  *  The shift amount is a const unsigned int in the range 0-63.
  *  A shift count of 0 returns the original value of vra.

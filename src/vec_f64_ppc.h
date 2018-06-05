@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -123,7 +123,8 @@ vec_isinff64 (__vf64 vf64)
 	const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000, 0x8000000000000000);
 	tmp = vec_andc ((vui64_t)vf64, signmask);
 #endif
-	result = (__f64_bool)vec_cmpeq (tmp, expmask);
+// TODO need a P7 equivalent to vcmpequd
+	result = (__f64_bool)vec_cmpeq ((vui32_t)tmp, (vui32_t)expmask);
 
 	return (result);
 }
@@ -155,10 +156,17 @@ vec_isnormalf64 (__vf64 vf64)
 	tmp2 = vec_andc ((vui64_t)vf64, signmask);
 #endif
 	tmp = vec_and ((vui64_t)vf64, expmask);
+#ifdef _ARCH_PWR8
 	tmp2 = (vui64_t)vec_cmpeq(tmp2, vec_zero);
 	tmp = (vui64_t)vec_cmpeq(tmp, expmask);
 	result = (__f64_bool)vec_nor (tmp, tmp2);
-
+#else
+	tmp2 = (vui64_t)vec_cmpeq((vui32_t)tmp2, (vui32_t)vec_zero);
+	tmp = (vui64_t)vec_cmpeq((vui32_t)tmp, (vui32_t)expmask);
+	result = (__f64_bool)vec_nor (tmp, tmp2);
+	// TODO need a P7- equivallent to vmrgew
+//	result = (__f64_bool)vec_mergee ((vui32_t)result, (vui32_t)result);
+#endif
 	return (result);
 }
 

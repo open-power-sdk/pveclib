@@ -1739,7 +1739,8 @@ vui128_t
 db_vec_mul10cuq (vui128_t a)
 {
   vui32_t t;
-#ifdef _ARCH_PWR9
+/* disable temporarily until the rest of the infrastructure is in place.  */
+#if 0
   __asm__(
       "vmul10uq %0,%1;\n"
       : "=v" (t)

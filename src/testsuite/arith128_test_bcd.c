@@ -450,7 +450,7 @@ test_vec_bcd (void)
 {
   int rc = 0;
 
-  printf ("\ntest_vec_bcd\n");
+  printf ("\n%s\n", __FUNCTION__);
 
   rc += test_bcd_addsub ();
 

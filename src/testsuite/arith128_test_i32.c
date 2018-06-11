@@ -693,7 +693,7 @@ test_vec_i32 (void)
 {
   int rc = 0;
 
-  printf ("\n__FUNCTION__\n");
+  printf ("\n%s\n", __FUNCTION__);
 
   rc += test_revbw ();
   rc += test_clzw ();

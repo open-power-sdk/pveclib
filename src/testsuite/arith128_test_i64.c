@@ -1099,7 +1099,7 @@ test_vec_i64 (void)
 {
   int rc = 0;
 
-  printf ("\ntest_vec_i64\n");
+  printf ("\n%s\n", __FUNCTION__);
 
   rc += test_permdi ();
   rc += test_revbd ();

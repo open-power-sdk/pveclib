@@ -214,7 +214,7 @@ test_vec_i16 (void)
 {
   int rc = 0;
 
-  printf ("\n__FUNCTION__\n");
+  printf ("\n%s\n", __FUNCTION__);
 #if 1
   rc += test_revbh ();
   rc += test_clzh ();

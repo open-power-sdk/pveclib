@@ -301,7 +301,7 @@ test_vec_char (void)
 {
   int rc = 0;
 
-  printf ("\n__FUNCTION__\n");
+  printf ("\n%s\n", __FUNCTION__);
 #if 1
   rc += test_clzb ();
   rc += test_popcntb();

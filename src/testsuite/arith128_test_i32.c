@@ -31,7 +31,6 @@
 #include <vec_common_ppc.h>
 #include <vec_int32_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_test_i32.h>
 
 int
@@ -87,8 +86,7 @@ test_revbw (void)
 int
 test_popcntw (void)
 {
-  vui32_t i, e;
-  vui32_t j;
+  vui32_t i, e, j;
   int rc = 0;
 
   printf ("\ntest_popcntw Vector Pop Count word\n");
@@ -207,8 +205,7 @@ test_popcntw (void)
 int
 test_clzw (void)
 {
-  vui32_t i, e;
-  vui32_t j;
+  vui32_t i, e, j;
   int rc = 0;
 
   printf ("\ntest_clzw Vector Count Leading Zeros in words\n");
@@ -574,20 +571,13 @@ test_mulouw (void)
 int
 test_muluwm (void)
 {
-  vui32_t i, j;
-  vui32_t k, e;
+  vui32_t i, j, k, e;
   int rc = 0;
 
   printf ("\ntest_muluwm Vector Multiply Unsigned Word Modulo\n");
-#if 0
-  i = (vui32_t )CONST_VINT32_W(1, 2, 3, 4);
-  j = (vui32_t )CONST_VINT32_W(10, 20, 30, 40);
-  e = (vui32_t )CONST_VINT32_W(10, 40, 90, 160);
-#else
   i = (vui32_t ){1, 2, 3, 4};
   j = (vui32_t ){10, 20, 30, 40};
   e = (vui32_t ){10, 40, 90, 160};
-#endif
   k = vec_muluwm(i, j);
 
 #ifdef __DEBUG_PRINT__
@@ -703,7 +693,7 @@ test_vec_i32 (void)
 {
   int rc = 0;
 
-  printf ("\ntest_vec_i32\n");
+  printf ("\n__FUNCTION__\n");
 
   rc += test_revbw ();
   rc += test_clzw ();

@@ -10,15 +10,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#if 0
-#include <dfp/fenv.h>
-#include <dfp/float.h>
-#include <dfp/math.h>
-#else
 #include <fenv.h>
 #include <float.h>
 #include <math.h>
-#endif
 
 //#define __DEBUG_PRINT__
 
@@ -36,40 +30,48 @@
 vui8_t
 db_vec_isalpha (vui8_t vec_str)
 {
-	vui8_t result;
-	const vui8_t UC_FIRST = {0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40};
-	const vui8_t UC_LAST  = {0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a};
-	const vui8_t LC_FIRST = {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60};
-	const vui8_t LC_LAST  = {0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a};
+  vui8_t result;
+  const vui8_t UC_FIRST =
+    { 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
+	0x40, 0x40, 0x40, 0x40 };
+  const vui8_t UC_LAST =
+    { 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
+	0x5a, 0x5a, 0x5a, 0x5a };
+  const vui8_t LC_FIRST =
+    { 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
+	0x60, 0x60, 0x60, 0x60 };
+  const vui8_t LC_LAST =
+    { 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a,
+	0x7a, 0x7a, 0x7a, 0x7a };
 
-	vui8_t cmp1, cmp2, cmp3, cmp4, cmask1, cmask2;
+  vui8_t cmp1, cmp2, cmp3, cmp4, cmask1, cmask2;
 
-    printf ("db_vec_isalpha\n");
-	print_vint8 ("vec_str = ", vec_str);
+  printf ("db_vec_isalpha\n");
+  print_vint8 ("vec_str = ", vec_str);
 
-	cmp1 = (vui8_t)vec_cmpgt (vec_str, LC_FIRST);
-	cmp2 = (vui8_t)vec_cmpgt (vec_str, LC_LAST);
+  cmp1 = (vui8_t) vec_cmpgt (vec_str, LC_FIRST);
+  cmp2 = (vui8_t) vec_cmpgt (vec_str, LC_LAST);
 
-	print_vint8 ("cmp1    = ", cmp1);
-	print_vint8 ("cmp2    = ", cmp2);
+  print_vint8 ("cmp1    = ", cmp1);
+  print_vint8 ("cmp2    = ", cmp2);
 
-	cmp3 = (vui8_t)vec_cmpgt (vec_str, UC_FIRST);
-	cmp4 = (vui8_t)vec_cmpgt (vec_str, UC_LAST);
+  cmp3 = (vui8_t) vec_cmpgt (vec_str, UC_FIRST);
+  cmp4 = (vui8_t) vec_cmpgt (vec_str, UC_LAST);
 
-	print_vint8 ("cmp3    = ", cmp3);
-	print_vint8 ("cmp4    = ", cmp4);
+  print_vint8 ("cmp3    = ", cmp3);
+  print_vint8 ("cmp4    = ", cmp4);
 
-	cmask1 = vec_andc (cmp1, cmp2);
-	cmask2 = vec_andc (cmp3, cmp4);
+  cmask1 = vec_andc (cmp1, cmp2);
+  cmask2 = vec_andc (cmp3, cmp4);
 
-	print_vint8 ("lcmask1 = ", cmask1);
-	print_vint8 ("ucmask2 = ", cmask2);
+  print_vint8 ("lcmask1 = ", cmask1);
+  print_vint8 ("ucmask2 = ", cmask2);
 
-	result = vec_or (cmask1, cmask2);
+  result = vec_or (cmask1, cmask2);
 
-	print_vint8 ("result  = ", result);
+  print_vint8 ("result  = ", result);
 
-	return (result);
+  return (result);
 }
 /*
  * Convert any Lower Case Alpha ASCII characters within a vector
@@ -79,32 +81,38 @@ db_vec_isalpha (vui8_t vec_str)
 vui8_t
 db_vec_toupper (vui8_t vec_str)
 {
-	vui8_t result;
-	const vui8_t UC_MASK  = {0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-	const vui8_t LC_FIRST = {0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60};
-	const vui8_t LC_LAST  = {0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a};
+  vui8_t result;
+  const vui8_t UC_MASK =
+    { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+	0x20, 0x20, 0x20, 0x20 };
+  const vui8_t LC_FIRST =
+    { 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
+	0x60, 0x60, 0x60, 0x60 };
+  const vui8_t LC_LAST =
+    { 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a,
+	0x7a, 0x7a, 0x7a, 0x7a };
 
-	vui8_t cmp1, cmp2, cmask;
+  vui8_t cmp1, cmp2, cmask;
 
-    printf ("db_vec_tolower\n");
-	print_vint8 ("vec_str = ", vec_str);
+  printf ("db_vec_tolower\n");
+  print_vint8 ("vec_str = ", vec_str);
 
-	cmp1 = (vui8_t)vec_cmpgt (vec_str, LC_FIRST);
-	cmp2 = (vui8_t)vec_cmpgt (vec_str, LC_LAST);
+  cmp1 = (vui8_t) vec_cmpgt (vec_str, LC_FIRST);
+  cmp2 = (vui8_t) vec_cmpgt (vec_str, LC_LAST);
 
-	print_vint8 ("cmp1    = ", cmp1);
-	print_vint8 ("cmp2    = ", cmp2);
+  print_vint8 ("cmp1    = ", cmp1);
+  print_vint8 ("cmp2    = ", cmp2);
 
-	cmask = vec_andc (cmp1, cmp2);
-	cmask = vec_and (cmask, UC_MASK);
+  cmask = vec_andc (cmp1, cmp2);
+  cmask = vec_and (cmask, UC_MASK);
 
-	print_vint8 ("cmask   = ", cmask);
+  print_vint8 ("cmask   = ", cmask);
 
-	result = vec_andc (vec_str, cmask);
+  result = vec_andc (vec_str, cmask);
 
-	print_vint8 ("result  = ", result);
+  print_vint8 ("result  = ", result);
 
-	return (result);
+  return (result);
 }
 /*
  * Convert any Upper Case Alpha ASCII characters within a vector
@@ -114,32 +122,38 @@ db_vec_toupper (vui8_t vec_str)
 vui8_t
 db_vec_tolower (vui8_t vec_str)
 {
-	vui8_t result;
-	const vui8_t UC_MASK  = {0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-	const vui8_t UC_FIRST = {0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40};
-	const vui8_t UC_LAST  = {0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a};
+  vui8_t result;
+  const vui8_t UC_MASK =
+    { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+	0x20, 0x20, 0x20, 0x20 };
+  const vui8_t UC_FIRST =
+    { 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
+	0x40, 0x40, 0x40, 0x40 };
+  const vui8_t UC_LAST =
+    { 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
+	0x5a, 0x5a, 0x5a, 0x5a };
 
-	vui8_t cmp1, cmp2, cmask;
+  vui8_t cmp1, cmp2, cmask;
 
-    printf ("db_vec_tolower\n");
-	print_vint8 ("vec_str = ", vec_str);
+  printf ("db_vec_tolower\n");
+  print_vint8 ("vec_str = ", vec_str);
 
-	cmp1 = (vui8_t)vec_cmpgt (vec_str, UC_FIRST);
-	cmp2 = (vui8_t)vec_cmpgt (vec_str, UC_LAST);
+  cmp1 = (vui8_t) vec_cmpgt (vec_str, UC_FIRST);
+  cmp2 = (vui8_t) vec_cmpgt (vec_str, UC_LAST);
 
-	print_vint8 ("cmp1    = ", cmp1);
-	print_vint8 ("cmp2    = ", cmp2);
+  print_vint8 ("cmp1    = ", cmp1);
+  print_vint8 ("cmp2    = ", cmp2);
 
-	cmask = vec_andc (cmp1, cmp2);
-	cmask = vec_and (cmask, UC_MASK);
+  cmask = vec_andc (cmp1, cmp2);
+  cmask = vec_and (cmask, UC_MASK);
 
-	print_vint8 ("cmask   = ", cmask);
+  print_vint8 ("cmask   = ", cmask);
 
-	result = vec_or (vec_str, cmask);
+  result = vec_or (vec_str, cmask);
 
-	print_vint8 ("result  = ", result);
+  print_vint8 ("result  = ", result);
 
-	return (result);
+  return (result);
 }
 
 #ifdef __DEBUG_PRINT__
@@ -159,8 +173,7 @@ db_vec_tolower (vui8_t vec_str)
 int
 test_vec_ischar (void)
 {
-    vui8_t i, j, k/*, l, m*/;
-    vui8_t e;
+    vui8_t i, j, k, e;
     int rc = 0;
 
     printf ("\ntest_vec_ischar Vector tolower, toupper, ...\n");
@@ -288,7 +301,7 @@ test_vec_char (void)
 {
   int rc = 0;
 
-  printf ("\ntest_vec_char/i8\n");
+  printf ("\n__FUNCTION__\n");
 #if 1
   rc += test_clzb ();
   rc += test_popcntb();

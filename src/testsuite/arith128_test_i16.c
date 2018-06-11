@@ -31,15 +31,12 @@
 #include <vec_common_ppc.h>
 #include <vec_int32_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_test_i16.h>
-
 
 int
 test_clzh (void)
 {
-  vui16_t i, e;
-  vui16_t j;
+  vui16_t i, e, j;
   int rc = 0;
 
   printf ("\ntest_clzh Vector Count Leading Zeros in halfwords\n");
@@ -172,7 +169,7 @@ test_revbh (void)
 
   i = (vui32_t ) { 0, 1, 2, 3 };
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  e = (vui32_t )CONST_VINT32_W(0x00000000, 0x00000100, 0x00000200, 0x00000300);
+  e = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000100, 0x00000200, 0x00000300);
 #else
   e = (vui32_t)CONST_VINT32_W(0x00000300, 0x00000200, 0x00000100, 0x00000000);
 #endif
@@ -184,8 +181,8 @@ test_revbh (void)
 #endif
   rc += check_vuint128x ("vec_revbh 1:", k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0x01020304, 0x11121314, 0x21222324, 0x31323334);
-  e = (vui32_t )CONST_VINT32_W(0x02010403, 0x12111413, 0x22212423, 0x32313433);
+  i = (vui32_t)CONST_VINT32_W(0x01020304, 0x11121314, 0x21222324, 0x31323334);
+  e = (vui32_t)CONST_VINT32_W(0x02010403, 0x12111413, 0x22212423, 0x32313433);
   k = (vui128_t) vec_revbh ((vui16_t) i);
 
 #ifdef __DEBUG_PRINT__
@@ -197,7 +194,7 @@ test_revbh (void)
   ip = (vui32_t*) mem;
   i = *ip;
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  e = (vui32_t )CONST_VINT32_W(0xf1f0f3f2, 0xe1e0e3e2, 0xd1d0d3d2, 0xc1c0c3c2);
+  e = (vui32_t)CONST_VINT32_W(0xf1f0f3f2, 0xe1e0e3e2, 0xd1d0d3d2, 0xc1c0c3c2);
 #else
   e = (vui32_t)CONST_VINT32_W(0xc2c3c0c1, 0xd2d3d0d1, 0xe2e3e0e1, 0xf2f3f0f1);
 #endif
@@ -217,7 +214,7 @@ test_vec_i16 (void)
 {
   int rc = 0;
 
-  printf ("\ntest_vec_i16\n");
+  printf ("\n__FUNCTION__\n");
 #if 1
   rc += test_revbh ();
   rc += test_clzh ();
@@ -225,5 +222,3 @@ test_vec_i16 (void)
 #endif
   return (rc);
 }
-
-

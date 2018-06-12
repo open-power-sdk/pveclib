@@ -53,4 +53,3 @@ pveclib_test_SOURCES = \
 pveclib_test_LDADD = .libs/libpvec.a
 
 check_PROGRAMS = $(TESTS)
-

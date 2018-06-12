@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -23,11 +23,33 @@
 #include <vec_int128_ppc.h>
 
 vui128_t
-test_vec_add256 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
+__test_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
-  vui128_t c0, c1;
-  out[1] = vec_addcq (&c1, a1, b1);
-  out[0] = vec_addeq (&c0, a0, b0, c1);
+  return vec_msumudm ( a, b, c);
+}
+
+vui128_t
+test_vec_add256_1 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
+{
+  vui128_t s0, s1, c0, c1;
+  s1 = vec_adduqm (a1, b1);
+  c1 = vec_addcuq (a1, b1);
+  s0 = vec_addeuqm (a0, b0, c1);
+  c0 = vec_addecuq (a0, b0, c1);
+
+  out[1] = s1;
+  out[0] = s0;
+  return (c0);
+}
+vui128_t
+test_vec_add256_2 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
+{
+  vui128_t s0, s1, c0, c1;
+  s1 = vec_addcq (&c1, a1, b1);
+  s0 = vec_addeq (&c0, a0, b0, c1);
+
+  out[1] = s1;
+  out[0] = s0;
   return (c0);
 }
 
@@ -249,17 +271,27 @@ test_vec_popcntq (vui128_t vra)
 }
 
 vui128_t
-test_cmul10uq (vui128_t *cout, vui128_t a)
+test_cmul10cuq (vui128_t *cout, vui128_t a)
 {
-  *cout = vec_mul10cuq (a);
-  return vec_mul10uq (a);
+  return vec_cmul10cuq (cout, a);
 }
 
 vui128_t
-test_cmul10euq (vui128_t *cout, vui128_t a, vui128_t cin)
+test_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
 {
-  *cout = vec_mul10ecuq (a, cin);
-  return vec_mul10euq (a, cin);
+  return vec_cmul10ecuq (cout, a, cin);
+}
+
+vui128_t
+test_cmul100cuq (vui128_t *cout, vui128_t a)
+{
+  return vec_cmul100cuq (cout, a);
+}
+
+vui128_t
+test_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
+{
+  return vec_cmul100ecuq (cout, a, cin);
 }
 
 vui128_t
@@ -294,9 +326,9 @@ test_vec_mul10ecuq (vui128_t a, vui128_t cin)
 }
 
 vui128_t
-test_vec_revq (vui128_t a)
+test_vec_revbq (vui128_t a)
 {
-	return vec_revq(a);
+	return vec_revbq(a);
 }
 
 void
@@ -307,12 +339,6 @@ test_vec_load_store (vui128_t *a, vui128_t *b)
     temp = vec_ld (0, (vui64_t *)a);
     vec_st (temp, 0, (vui64_t *)b);
   }
-
-vui64_t
-test_vpaste (vui64_t __VH, vui64_t __VL)
-{
-	return (vec_pasted(__VH, __VL));
-}
 
 vui64_t
 test_vpaste_x (vui64_t __VH, vui64_t __VL)
@@ -354,22 +380,36 @@ test_vec_slq  (vui128_t a, vui128_t sh)
 }
 
 vui128_t
-test_muloud (vui64_t a, vui64_t b)
+__test_muloud (vui64_t a, vui64_t b)
 {
   return (vec_muloud (a, b));
 }
 
 vui128_t
-test_muleud (vui64_t a, vui64_t b)
+__test_muleud (vui64_t a, vui64_t b)
 {
   return (vec_muleud (a, b));
 }
 
 vui128_t
-test_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
+__test_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 {
   return (vec_muludq (mulu, a, b));
 }
+
+vui128_t
+__test_mulluq (vui128_t a, vui128_t b)
+{
+  return (vec_mulluq (a, b));
+}
+
+#ifdef _ARCH_PWR8
+vui128_t
+test_vec_subq (vui128_t a, vui128_t b)
+{
+  return (vec_sub(a,b));
+}
+#endif
 
 void
 test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m2h, vui128_t m2l)
@@ -395,7 +435,7 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m
 
 #ifdef _ARCH_PWR8
 vui128_t
-test_clzq (vui128_t vra)
+__test_clzq (vui128_t vra)
 {
 	__vector unsigned long long result, vt1, vt3;
 	__vector unsigned long long vt2;

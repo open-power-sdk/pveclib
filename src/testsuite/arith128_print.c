@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 #include <float.h>
 #define __DEBUG_PRINT__
 #include "vec_f128_ppc.h"
-#include "arith128_print.h"
+#include <testsuite/arith128_print.h>
 //#include "math_private.h"
 #include "ieee754.h"
 
@@ -380,7 +380,33 @@ print_int128_carry (char *prefix,
     print_int128 ("  b = ", b);
     print_int128 ("  c = ", c);
     print_int128 ("  r = ", r);
-  }
+}
+
+void
+print_vint32d (char *prefix, vui32_t val)
+{
+  printf ("%s%10d,%10d,%10d,%10d\n", prefix, val[0], val[1], val[2], val[3]);
+}
+
+void
+print_vint32x (char *prefix, vui32_t val)
+{
+  printf ("%s%08x,%08x,%08x,%08x\n", prefix, val[0], val[1], val[2], val[3]);
+}
+
+void
+print_vint16d (char *prefix, vui16_t val)
+{
+  printf ("%s%5d,%5d,%5d,%5d,%5d,%5d,%5d,%5d\n", prefix, val[0], val[1], val[2],
+	  val[3], val[4], val[5], val[6], val[7]);
+}
+
+void
+print_vint16x (char *prefix, vui16_t val)
+{
+  printf ("%s%04x,%4x,%4x,%4x,%4x,%4x,%4x,%4x\n", prefix, val[0], val[1],
+	  val[2], val[3], val[4], val[5], val[6], val[7]);
+}
 
 void
 print_vint8 (char *prefix, vui8_t val)
@@ -392,20 +418,48 @@ print_vint8 (char *prefix, vui8_t val)
 }
 
 void
+print_vint8c (char *prefix, vui8_t val)
+{
+  printf ("%s%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c\n", prefix, val[0],
+	  val[1], val[2], val[3], val[4], val[5], val[6], val[7], val[8],
+	  val[9], val[10], val[11], val[12], val[13], val[14], val[15]);
+}
+
+void
+print_vint8x (char *prefix, vui8_t val)
+{
+  printf (
+      "%s%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
+      prefix, val[0], val[1], val[2], val[3], val[4], val[5], val[6], val[7],
+      val[8], val[9], val[10], val[11], val[12], val[13], val[14], val[15]);
+}
+
+void
+print_vint8d (char *prefix, vui8_t val)
+{
+  printf ("%s%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d\n",
+	  prefix, val[0], val[1], val[2], val[3], val[4], val[5], val[6],
+	  val[7], val[8], val[9], val[10], val[11], val[12], val[13], val[14],
+	  val[15]);
+}
+
+void
 print_vchar (char *prefix, vui8_t val)
 {
   printf ("%s%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", prefix, val[0], val[1],
-          val[2], val[3], val[4], val[5], val[6], val[7], val[8], val[9],
-          val[10], val[11], val[12], val[13], val[14], val[15]);
+	  val[2], val[3], val[4], val[5], val[6], val[7], val[8], val[9],
+	  val[10], val[11], val[12], val[13], val[14], val[15]);
 }
 
 void
 print_vbool8 (char *prefix, vui8_t val)
 {
-  const vui8_t UC_TRUE = { 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54,
-      0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54 };
-  const vui8_t UC_FALSE = { 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46,
-      0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46 };
+  const vui8_t UC_TRUE =
+    { 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54, 0x54,
+	0x54, 0x54, 0x54, 0x54 };
+  const vui8_t UC_FALSE =
+    { 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46, 0x46,
+	0x46, 0x46, 0x46, 0x46 };
 
   vui8_t tpart, fpart, merge;
 
@@ -414,9 +468,9 @@ print_vbool8 (char *prefix, vui8_t val)
   merge = vec_or (tpart, fpart);
 
   printf ("%s%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", prefix, merge[0], merge[1],
-          merge[2], merge[3], merge[4], merge[5], merge[6], merge[7], merge[8],
-          merge[9], merge[10], merge[11], merge[12], merge[13], merge[14],
-          merge[15]);
+	  merge[2], merge[3], merge[4], merge[5], merge[6], merge[7], merge[8],
+	  merge[9], merge[10], merge[11], merge[12], merge[13], merge[14],
+	  merge[15]);
 }
 
 void
@@ -470,8 +524,14 @@ print_vint256 (char *prefix, vui128_t val0_128, vui128_t val1_128)
 {
   vui32_t val0 = (vui32_t) val0_128;
   vui32_t val1 = (vui32_t) val1_128;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[3], val0[2], val0[1], val0[0],
+	  val1[3], val1[2], val1[1], val1[0]);
+#else
   printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix, val0[0], val0[1],
           val0[2], val0[3], val1[0], val1[1], val1[2], val1[3]);
+#endif
 }
 
 void
@@ -704,6 +764,21 @@ check_vint384_priv (char *prefix, vui128_t val0_128, vui128_t val1_128,
 }
 
 int
+check_vui8_priv (char *prefix, vui8_t val128, vui8_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui8_t )val128, (vui8_t )shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_vint8x ("\tshould be: ", shouldbe);
+      print_vint8x ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
 check_vuint128_priv (char *prefix, vui128_t val128, vui128_t shouldbe)
 {
   int rc = 0;
@@ -920,885 +995,4 @@ check_frexptfti_priv (char *prefix, __int128 val128, long exp,
   return (rc);
 }
 
-vui128_t
-db_shift_rightq (vui128_t vra, vui128_t vrb)
-{
-  vui128_t result;
 
-  result = vec_srq (vra, vrb);
-
-  return (result);
-}
-
-vui128_t
-db_shift_leftq (vui128_t vra, vui128_t vrb)
-{
-  vui128_t result;
-
-  result = vec_slq (vra, vrb);
-
-  return (result);
-}
-
-/*
- * udiv_qrnnd(quotient, remainder, high_numerator, low_numerator,
- denominator) divides a UDWtype, composed by the UWtype integers
- HIGH_NUMERATOR and LOW_NUMERATOR, by DENOMINATOR and places the quotient
- in QUOTIENT and the remainder in REMAINDER.  HIGH_NUMERATOR must be less
- than DENOMINATOR for correct operation.
- */
-
-int64_t
-db_sdiv_qrnnd (int64_t *remainder, int64_t high_num, int64_t low_num,
-               int64_t denom)
-{
-  int64_t q1, q2, r1, r2, Q, R, abs_D;
-
-  abs_D = __builtin_labs (denom);
-
-  printf ("db_sdiv_qrnnd N= (%ld,%ld) (%016lx%016lx)\n", high_num, low_num,
-          high_num, low_num);
-  printf ("db_sdiv_qrnnd D= (%ld) (%016lx)\n", denom, denom);
-  q1 = __builtin_divde (high_num, denom);
-  r1 = -(q1 * denom);
-#if 0
-  q2 = low_num / denom;
-#else
-  q2 = ((uint64_t) low_num / (uint64_t) denom);
-#endif
-  r2 = low_num - (q2 * denom);
-  Q = q1 + q2;
-  R = r1 + r2;
-  printf ("db_sdiv_qrnnd q= (%ld,%ld)\n", q1, q2);
-  printf ("db_sdiv_qrnnd Q= (%ld) (%016lx)\n", Q, Q);
-  printf ("db_sdiv_qrnnd r= (%ld,%ld)\n", r1, r2);
-  printf ("db_sdiv_qrnnd R= (%ld) (%016lx)\n", R, R);
-  printf ("db_sdiv_qrnnd (high_num >=0) (%d)\n", (int) (high_num >= 0));
-  printf ("db_sdiv_qrnnd (R >= abs_D) (%d)\n", (int) (R >= abs_D));
-  printf ("db_sdiv_qrnnd (R >= -abs_D) (%d)\n", (int) (R >= -abs_D));
-  printf ("db_sdiv_qrnnd (R <= -abs_D) (%d)\n", (int) (R <= -abs_D));
-  printf ("db_sdiv_qrnnd (N^R >>63) (%d)\n", (int) ((high_num ^ R) >> 63));
-  printf ("db_sdiv_qrnnd (abs_R >= abs_D) (%d)\n",
-          (int) (__builtin_labs (R) >= abs_D));
-#if 0
-  printf ("db_sdiv_qrnnd (R > -abs_D) (%d)\n", (int)(R > -abs_D));
-  printf ("db_sdiv_qrnnd (r2 > -abs_D) (%d)\n", (int)(r2 > -abs_D));
-#endif
-  if (((high_num >= 0) && (R >= abs_D)) || ((high_num < 0) && (R >= -abs_D)))
-    {
-      Q += 1;
-      R = R - denom;
-      printf ("db_sdiv_qrnnd Q' (%ld) (%016lx)\n", Q, Q);
-      printf ("db_sdiv_qrnnd R' (%ld) (%016lx)\n", R, R);
-    }
-  *remainder = R;
-  return (Q);
-}
-
-#ifdef __DEBUG_PRINT__
-#ifdef _ARCH_PWR8
-vui128_t
-db_vec_clzq (vui128_t vra)
-{
-  __vector
-  unsigned long long result, vt1, vt3;
-  __vector
-  unsigned long long vt2;
-  const __vector
-  unsigned long long vzero = { 0, 0 };
-  const __vector
-  unsigned long long v64 = { 64, 64 };
-
-  printf ("db_vec_clzq\n");
-  print_v2xint64 ("  a = ", (vui64_t) vra);
-  print_v2xint64 ("  0 = ", vzero);
-  print_v2xint64 (" 64 = ", v64);
-
-  vt1 = vec_vclz ((__vector unsigned long long)vra);
-  print_v2xint64 ("ctz = ", vt1);
-#if 0
-  vt2 = (__vector unsigned long long)vec_cmpeq ((__vector unsigned long long)vra, vzero);
-#else
-  vt2 = (__vector unsigned long long)vec_cmplt (vt1, v64);
-#endif
-  print_v2xint64 ("cmp = ", vt2);
-  vt3 = (__vector unsigned long long)vec_sld ((__vector unsigned char)vzero, (__vector unsigned char)vt2, 8);
-  print_v2xint64 ("slo8= ", vt3);
-  result = vec_andc (vt1, vt3);
-  print_v2xint64 ("andc= ", result);
-  result = (__vector unsigned long long)vec_sums ((__vector int)result, (__vector int)vzero);
-  print_v2xint64 ("sum = ", result);
-
-  return ((vui128_t) result);
-}
-#endif
-
-/*
- * Return a vector boolean char with a true indicator for any character
- * that is either Lower Case Alpha ASCII or Upper Case ASCII.
- * False otherwise.
- */
-vui8_t
-db_vec_isalpha (vui8_t vec_str)
-{
-  vui8_t result;
-  const vui8_t UC_FIRST = { 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
-      0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40 };
-  const vui8_t UC_LAST = { 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
-      0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a };
-  const vui8_t LC_FIRST = { 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
-      0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60 };
-  const vui8_t LC_LAST = { 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a,
-      0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a };
-
-  vui8_t cmp1, cmp2, cmp3, cmp4, cmask1, cmask2;
-
-  printf ("db_vec_isalpha\n");
-  print_vint8 ("vec_str = ", vec_str);
-
-  cmp1 = (vui8_t) vec_cmpgt (vec_str, LC_FIRST);
-  cmp2 = (vui8_t) vec_cmpgt (vec_str, LC_LAST);
-
-  print_vint8 ("cmp1    = ", cmp1);
-  print_vint8 ("cmp2    = ", cmp2);
-
-  cmp3 = (vui8_t) vec_cmpgt (vec_str, UC_FIRST);
-  cmp4 = (vui8_t) vec_cmpgt (vec_str, UC_LAST);
-
-  print_vint8 ("cmp3    = ", cmp3);
-  print_vint8 ("cmp4    = ", cmp4);
-
-  cmask1 = vec_andc (cmp1, cmp2);
-  cmask2 = vec_andc (cmp3, cmp4);
-
-  print_vint8 ("lcmask1 = ", cmask1);
-  print_vint8 ("ucmask2 = ", cmask2);
-
-  result = vec_or (cmask1, cmask2);
-
-  print_vint8 ("result  = ", result);
-
-  return (result);
-}
-
-/*
- * Convert any Lower Case Alpha ASCII characters within a vector
- * unsigned char into the equivalent Upper Case character.
- * Return the result as a vector unsigned char.
- */
-vui8_t
-db_vec_toupper (vui8_t vec_str)
-{
-  vui8_t result;
-  const vui8_t UC_MASK = { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-      0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
-  const vui8_t LC_FIRST = { 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60,
-      0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60 };
-  const vui8_t LC_LAST = { 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a,
-      0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a };
-
-  vui8_t cmp1, cmp2, cmask;
-
-  printf ("db_vec_tolower\n");
-  print_vint8 ("vec_str = ", vec_str);
-
-  cmp1 = (vui8_t) vec_cmpgt (vec_str, LC_FIRST);
-  cmp2 = (vui8_t) vec_cmpgt (vec_str, LC_LAST);
-
-  print_vint8 ("cmp1    = ", cmp1);
-  print_vint8 ("cmp2    = ", cmp2);
-
-  cmask = vec_andc (cmp1, cmp2);
-  cmask = vec_and (cmask, UC_MASK);
-
-  print_vint8 ("cmask   = ", cmask);
-
-  result = vec_andc (vec_str, cmask);
-
-  print_vint8 ("result  = ", result);
-
-  return (result);
-}
-/*
- * Convert any Upper Case Alpha ASCII characters within a vector
- * unsigned char into the equivalent Lower Case character.
- * Return the result as a vector unsigned char.
- */
-vui8_t
-db_vec_tolower (vui8_t vec_str)
-{
-  vui8_t result;
-  const vui8_t UC_MASK = { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-      0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
-  const vui8_t UC_FIRST = { 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
-      0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40 };
-  const vui8_t UC_LAST = { 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
-      0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a };
-
-  vui8_t cmp1, cmp2, cmask;
-
-  printf ("db_vec_tolower\n");
-  print_vint8 ("vec_str = ", vec_str);
-
-  cmp1 = (vui8_t) vec_cmpgt (vec_str, UC_FIRST);
-  cmp2 = (vui8_t) vec_cmpgt (vec_str, UC_LAST);
-
-  print_vint8 ("cmp1    = ", cmp1);
-  print_vint8 ("cmp2    = ", cmp2);
-
-  cmask = vec_andc (cmp1, cmp2);
-  cmask = vec_and (cmask, UC_MASK);
-
-  print_vint8 ("cmask   = ", cmask);
-
-  result = vec_or (vec_str, cmask);
-
-  print_vint8 ("result  = ", result);
-
-  return (result);
-}
-
-#ifdef _ARCH_PWR8
-vui32_t
-db_vec_mulluq (vui32_t a, vui32_t b)
-{
-  vui32_t t, tmq;
-  /* compute the 256 bit product of two 128 bit values a, b.
-   * The high 128 bits are accumulated in t and the low 128-bits
-   * in tmq.
-   *
-   * We use the Vector Multiple Even/Odd Unsigned word to compute
-   * the 128 x 32 partial (160-bit) product of value a with the
-   * word splat of b. These instructions (vmuleum, vmuloum)
-   * product four 64-bit 32 x 32 partial products where even
-   * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword.
-   *
-   *
-   *
-   */
-#ifdef _ARCH_PWR8
-  vui32_t tsw;
-  vui32_t t_odd, t_even;
-  vui32_t z=
-    { 0,0,0,0};
-  vui32_t sro_4 =
-    { 0,0,0,4*8};
-
-  tsw = vec_splat (b, 3);
-  printf ("db_vec_mulluq\n");
-  print_vint128 ("  a = ", (vui128_t)a);
-  print_vint128 ("  b = ", (vui128_t)b);
-  print_vint128 ("tsw = ", (vui128_t)tsw);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* Rotate the low 32-bits (right) into tmq. This is actually
-   * implemented as 96-bit (12-byte) shift left. */
-  tmq = vec_sld (t_odd, z, 12);
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-#if 0
-  t_odd = vec_sro (t_odd, (vui8_t)sro_4);
-#else
-  t_odd = vec_sld (z, t_odd, 12);
-#endif
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the high 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-
-  print_vint128 (" t      = ", (vui128_t)t);
-  tsw = vec_splat (b, 2);
-  print_vint128 ("tsw = ", (vui128_t)tsw);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  /* todo is there a possible carry out of this */
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sro (t_odd, (vui8_t)sro_4);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-
-  print_vint128 (" t      = ", (vui128_t)t);
-  tsw = vec_splat (b, 1);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  /* todo is there a possible carry out of this */
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sro (t_odd, (vui8_t)sro_4);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-
-  tsw = vec_splat (b, 0);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  /* todo is there a possible carry out of this */
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sro (t_odd, (vui8_t)sro_4);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-#else
-#warning Implememention pre power8
-#endif
-  return (tmq);
-}
-#endif
-
-vui32_t
-db_vec_muludq (vui32_t *mulu, vui32_t a, vui32_t b)
-{
-  vui32_t t, tmq;
-  /* compute the 256 bit product of two 128 bit values a, b.
-   * The high 128 bits are accumulated in t and the low 128-bits
-   * in tmq. The high 128-bits of the product are returned to the
-   * address of the 1st parm. The low 128-bits are the return
-   * value.
-   *
-   * We use the Vector Multiple Even/Odd Unsigned word to compute
-   * the 128 x 32 partial (160-bit) product of value a with the
-   * word splat of b. These instructions (vmuleum, vmuloum)
-   * product four 64-bit 32 x 32 partial products where even
-   * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword.
-   *
-   *
-   *
-   */
-#ifdef _ARCH_PWR8
-  vui32_t tsw;
-  vui32_t tc;
-  vui32_t t_odd, t_even;
-  vui32_t z=
-    { 0,0,0,0};
-
-  tsw = vec_splat (b, 3);
-  printf ("db_vec_muluq\n");
-  print_vint128 ("  a = ", (vui128_t)a);
-  print_vint128 ("  b = ", (vui128_t)b);
-  print_vint128 ("tsw = ", (vui128_t)tsw);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* Rotate the low 32-bits (right) into tmq. This is actually
-   * implemented as 96-bit (12-byte) shift left. */
-  tmq = vec_sld (t_odd, z, 12);
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sld (z, t_odd, 12);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the high 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-
-  print_vint128 (" t      = ", (vui128_t)t);
-  tsw = vec_splat (b, 2);
-  print_vint128 ("tsw = ", (vui128_t)tsw);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  __asm__(
-      "vaddcuq %0,%1,%2;\n"
-      : "=v" (tc)
-      : "v" (t_odd),
-      "v" (t)
-      : );
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  print_vint128 ("  carry = ", (vui128_t)tc);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sld (tc, t_odd, 12);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-
-  print_vint128 (" t      = ", (vui128_t)t);
-  tsw = vec_splat (b, 1);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  __asm__(
-      "vaddcuq %0,%1,%2;\n"
-      : "=v" (tc)
-      : "v" (t_odd),
-      "v" (t)
-      : );
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  print_vint128 ("  carry = ", (vui128_t)tc);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sld (tc, t_odd, 12);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-  print_vint128 (" t      = ", (vui128_t)t);
-
-  tsw = vec_splat (b, 0);
-  /* t_even = vec_vmuleum(a, tsw) */
-  __asm__(
-      "vmuleuw %0,%1,%2;\n"
-      : "=v" (t_even)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  /* t_odd  = vec_vmuloum(a, tsw) */
-  __asm__(
-      "vmulouw %0,%1,%2;\n"
-      : "=v" (t_odd)
-      : "v" (a),
-      "v" (tsw)
-      : );
-  print_vint128 (" t_even = ", (vui128_t)t_even);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* Sum the low 128 bits of odd previous partial products */
-  __asm__(
-      "vaddcuq %0,%1,%2;\n"
-      : "=v" (tc)
-      : "v" (t_odd),
-      "v" (t)
-      : );
-  __asm__(
-      "vadduqm %0,%0,%1;\n"
-      : "+v" (t_odd)
-      : "v" (t)
-      : );
-  print_vint128 (" t_odd+t= ", (vui128_t)t_odd);
-  print_vint128 ("  carry = ", (vui128_t)tc);
-  /* rotate right the low 32-bits into tmq */
-  tmq = vec_sld (t_odd, tmq, 12);
-  print_vint128 (" tmq    = ", (vui128_t)tmq);
-  /* shift the low 128 bits of partial product right 32-bits */
-  t_odd = vec_sld (tc, t_odd, 12);
-  print_vint128 (" t_odd  = ", (vui128_t)t_odd);
-  /* add the top 128 bits of even / odd partial products */
-  __asm__(
-      "vadduqm %0,%1,%2;\n"
-      : "=v" (t)
-      : "v" (t_even),
-      "v" (t_odd)
-      : );
-  print_vint128 (" t      = ", (vui128_t)t);
-#else
-#warning Implememention pre power8 missing
-#endif
-  *mulu = t;
-  return (tmq);
-}
-
-vui32_t
-db_vec_addeuqm (vui32_t a, vui32_t b, vui32_t c)
-{
-  vui32_t t;
-#ifdef _ARCH_PWR8
-  __asm__(
-      "vaddeuqm %0,%1,%2,%3;"
-      : "=v" (t)
-      : "v" (a),
-      "v" (b),
-      "v" (c)
-      : );
-#else
-  vui32_t c2;
-  vui32_t z = { 0, 0, 0, 0 };
-  vui32_t m = { 0, 0, 0, 1 };
-  printf ("db_vec_addeuqm\n");
-  print_vint128 ("  a = ", (vui128_t)a);
-  print_vint128 ("  b = ", (vui128_t)b);
-  print_vint128 ("  c = ", (vui128_t)c);
-  print_vint128 ("  z = ", (vui128_t)z);
-  print_vint128 ("  m = ", (vui128_t)m);
-  __asm__(
-      "vand %2,%1,%6;\n"
-      "\tvaddcuw %1,%3,%4;\n"
-      "\tvsldoi %2,%2,%5,12;\n"
-      "\tvsldoi %1,%1,%2,4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t), /* 0 */
-      "+&v" (c), /* 1 */
-      "=&v" (c2) /* 2 */
-      : "v" (a), /* 3 */
-      "v" (b), /* 4 */
-      "v" (z), /* 5 */
-      "v" (m) /* 6 */
-      : );
-  print_vint128 ("  t = ", (vui128_t)t);
-  print_vint128 ("  c = ", (vui128_t)c);
-  print_vint128 ("  c2= ", (vui128_t)c2);
-#endif
-  return (t);
-}
-
-vui32_t
-db_vec_addeq (vui32_t *cout, vui32_t a, vui32_t b, vui32_t c)
-{
-  vui32_t t, co;
-#ifdef _ARCH_PWR8
-  __asm__(
-      "vaddeuqm %0,%2,%3,%4;\n"
-      "\tvaddecuq %1,%2,%3,%4;"
-      : "=v" (t),
-      "=v" (co)
-      : "v" (a),
-      "v" (b),
-      "v" (c)
-      : );
-#else
-  vui32_t c2;
-  vui32_t z = { 0, 0, 0, 0 };
-
-  co = (vui32_t ) { 0, 0, 0, 1 };
-
-  printf ("db_vec_addeq\n");
-  print_vint128 ("  a = ", (vui128_t)a);
-  print_vint128 ("  b = ", (vui128_t)b);
-  print_vint128 ("  c = ", (vui128_t)c);
-  print_vint128 ("  z = ", (vui128_t)z);
-  print_vint128 ("  co= ", (vui128_t)co);
-  __asm__(
-      "vand %3,%1,%2;\n"
-      "\tvaddcuw %2,%4,%5;\n"
-      "\tvsldoi %3,%3,%5,12;\n"
-      "\tvsldoi %1,%2,%3,4;\n"
-      "\tvadduwm %0,%4,%5;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %1,%3,%6,4;\n"
-      "\tvaddcuw %3,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvor %2,%2,%3;\n"
-      "\tvsldoi %2,%6,%2,4;\n"
-      : "=&v" (t), /* 0 */
-      "+&v" (c), /* 1 */
-      "+&v" (co), /* 2 */
-      "=&v" (c2) /* 3 */
-      : "v" (a), /* 4 */
-      "v" (b), /* 5 */
-      "v" (z) /* 6 */
-      : );
-  print_vint128 ("  t = ", (vui128_t)t);
-  print_vint128 ("  c = ", (vui128_t)c);
-  print_vint128 ("  co= ", (vui128_t)co);
-  print_vint128 ("  c2= ", (vui128_t)c2);
-#endif
-  *cout = co;
-  return (t);
-}
-
-vui128_t
-db_vec_mul10uq (vui128_t a)
-{
-  vui32_t t;
-#ifdef _ARCH_PWR9
-  __asm__(
-      "vmul10uq %0,%1;\n"
-      : "=v" (t)
-      : "v" (a)
-      : );
-#else
-  vui16_t ts = (vui16_t) a;
-  vui16_t t10;
-  vui32_t t_odd, t_even;
-  vui32_t z = { 0, 0, 0, 0 };
-  t10 = vec_splat_u16 (10);
-
-  print_vint128 ("vec_mul10uq: ts     ", (vui128_t) ts);
-  print_vint128 ("vec_mul10uq: t10    ", (vui128_t) t10);
-
-  t_even = vec_vmuleuh (ts, t10);
-  t_odd = vec_vmulouh (ts, t10);
-
-  print_vint128 ("vec_mul10uq: t_odd  ", (vui128_t) t_odd);
-  print_vint128 ("vec_mul10uq: t_even ", (vui128_t) t_even);
-
-  /* Just using t10 to supply zeros into the low 16 bits of t_odd */
-  t_even = vec_sld (t_even, z, 2);
-
-  print_vint128 ("vec_mul10uq: t_even ", (vui128_t) t_even);
-#ifdef _ARCH_PWR8
-  t = (vui32_t)vec_vadduqm ((vui128_t)t_even, (vui128_t)t_odd);
-#else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvaddcuw %2,%0,%1;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      "\tvsldoi %1,%2,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-#endif
-#endif
-  return ((vui128_t) t);
-}
-
-vui128_t
-db_vec_mul10cuq (vui128_t a)
-{
-  vui32_t t;
-/* disable temporarily until the rest of the infrastructure is in place.  */
-#if 0
-  __asm__(
-      "vmul10uq %0,%1;\n"
-      : "=v" (t)
-      : "v" (a)
-      : );
-#else
-  vui16_t ts = (vui16_t) a;
-  vui16_t t10;
-  vui32_t t_odd, t_even, t_carry, t_high;
-  vui32_t z = { 0, 0, 0, 0 };
-  t10 = vec_splat_u16 (10);
-
-  print_vint128 ("vec_mul10cuq: ts     ", (vui128_t) ts);
-  print_vint128 ("vec_mul10cuq: t10    ", (vui128_t) t10);
-
-  t_even = vec_vmuleuh (ts, t10);
-  t_odd = vec_vmulouh (ts, t10);
-
-  print_vint128 ("vec_mul10cuq: t_odd  ", (vui128_t) t_odd);
-  print_vint128 ("vec_mul10cuq: t_even ", (vui128_t) t_even);
-
-  /* Shift t_even left 16-bits (right 112-bits) for the partial carry.  */
-  t_high = vec_sld (z, t_even, 2);
-  /* Shift t_even left 16 bits to align for lower 128-bits. */
-  t_even = vec_sld (t_even, z, 2);
-
-  print_vint128 ("vec_mul10cuq: t_high ", (vui128_t) t_high);
-  print_vint128 ("vec_mul10cuq: t_even ", (vui128_t) t_even);
-#ifdef _ARCH_PWR8
-  t = (vui32_t)vec_vadduqm ((vui128_t)t_even, (vui128_t)t_odd);
-  t_carry = (vui32_t)vec_vaddcuq ((vui128_t)t_even, (vui128_t)t_odd);
-  t_carry = (vui32_t)vec_vadduqm ((vui128_t)t_carry, (vui128_t)t_high);
-  print_vint128 ("vec_mul10cuq: t       ", (vui128_t)t);
-  print_vint128 ("vec_mul10cuq: t_carry ", (vui128_t)t_carry);
-#else
-  vui32_t c, c2;
-  __asm__(
-      "vaddcuw %1,%3,%4;\n"
-      "\tvadduwm %0,%3,%4;\n"
-      "\tvsldoi %2,%5,%1,4;\n"
-      "\tvsldoi %1,%1,%5,4;\n"
-      "\tvadduwm %0,%0,%1;\n"
-      : "=&v" (t),
-      "=&v" (c),
-      "=&v" (c2)
-      : "v" (t_even),
-      "v" (t_odd),
-      "v" (z)
-      : );
-  __asm__(
-      "vadduwm %0,%1,%2;\n"
-      : "=v" (t_carry)
-      : "v" (t_high),
-      "v" (c2)
-      : );
-#endif
-#endif
-  return ((vui128_t) t_carry);
-}
-
-#endif

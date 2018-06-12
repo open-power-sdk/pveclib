@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -33,6 +33,11 @@
 #include <vec_int128_ppc.h>
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_i128.h>
+#include <testsuite/arith128_test_i64.h>
+#include <testsuite/arith128_test_i32.h>
+#include <testsuite/arith128_test_i16.h>
+#include <testsuite/arith128_test_char.h>
+#include <testsuite/arith128_test_bcd.h>
 
 int
 main (void)
@@ -42,46 +47,18 @@ main (void)
   puts ("Power Vector Library testsuite");
 
 #if 1
-  rc += test_2 ();
+  rc += test_vec_char ();
+  rc += test_vec_bcd ();
+  rc += test_vec_i16 ();
 #endif
 #if 1
-  rc += test_3 ();
-#endif
-
-#if 1
-  rc += test_4 ();
-  rc += test_4b ();
-  rc += test_4b1 ();
+  rc += test_vec_i32 ();
 #endif
 #if 1
-  rc += test_4c ();
+  rc += test_vec_i64 ();
 #endif
 #if 1
-  rc += test_5 ();
-
-#endif
-#if 1
-  rc += test_6 ();
-
-#endif
-
-#if 0
-  rc += test_7 ();
-#endif
-
-#if 1
-  rc += test_8 ();
-#endif
-
-#if 1
-  rc += test_43 ();
-#endif
-
-#if 1
-  rc += test_44 ();
-  rc += test_45 ();
-  rc += test_46 ();
-  rc += test_47 ();
+  rc += test_vec_i128 ();
 #endif
 
   if (rc > 0)

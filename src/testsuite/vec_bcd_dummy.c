@@ -11,7 +11,7 @@
 vui8_t
 test_vec_bcdctb100s (vui8_t a)
 {
-	return (vec_bcdctb100s(a));
+  return (vec_bcdctb100s (a));
 }
 
 vui32_t

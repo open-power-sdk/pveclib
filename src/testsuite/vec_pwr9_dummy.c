@@ -31,7 +31,7 @@ __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
   return vec_absdub (__A, __B);
 }
 
-vui128_t /*__attribute__ ((__target__ ("cpu=power9")))*/
+vui128_t
 __test_msumudm_PWR9 (vui64_t a, vui64_t b, vui128_t c)
 {
   return vec_msumudm ( a, b, c);
@@ -40,25 +40,25 @@ __test_msumudm_PWR9 (vui64_t a, vui64_t b, vui128_t c)
 vui128_t
 __test_muloud_PWR9 (vui64_t a, vui64_t b)
 {
-  return (vec_muloud (a, b));
+  return vec_muloud (a, b);
 }
 
 vui128_t
 __test_muleud_PWR9 (vui64_t a, vui64_t b)
 {
-  return (vec_muleud (a, b));
+  return vec_muleud (a, b);
 }
 
 vui128_t
 __test_mulluq_PWR9 (vui128_t a, vui128_t b)
 {
-  return (vec_mulluq (a, b));
+  return vec_mulluq (a, b);
 }
 
 vui128_t
 __test_muludq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
 {
-  return (vec_muludq (mulh, a, b));
+  return vec_muludq (mulh, a, b);
 }
 
 vui128_t
@@ -95,49 +95,49 @@ __test_mul10uq_c_PWR9 (vui128_t *p, vui128_t a)
 vui128_t
 __test_mul10uq_PWR9 (vui128_t a)
 {
-	return vec_mul10uq (a);
+  return vec_mul10uq (a);
 }
 
 vui128_t
 __test_mul10euq_PWR9 (vui128_t a, vui128_t cin)
 {
-	return vec_mul10euq (a, cin);
+  return vec_mul10euq (a, cin);
 }
 
 vui128_t
 __test_mul10cuq_PWR9 (vui128_t a)
 {
-	return vec_mul10cuq (a);
+  return vec_mul10cuq (a);
 }
 
 vui128_t
 __test_mul10ecuq_PWR9 (vui128_t a, vui128_t cin)
 {
-	return vec_mul10ecuq (a, cin);
+  return vec_mul10ecuq (a, cin);
 }
 
 vui64_t
 __test_revbd_PWR9 (vui64_t a)
 {
-	return vec_revbd(a);
+  return vec_revbd (a);
 }
 
 vui16_t
 __test_revbh_PWR9 (vui16_t a)
 {
-	return vec_revbh(a);
+  return vec_revbh (a);
 }
 
 vui128_t
 __test_revbq_PWR9 (vui128_t a)
 {
-	return vec_revbq(a);
+  return vec_revbq (a);
 }
 
 vui32_t
 __test_revbw_PWR9 (vui32_t a)
 {
-	return vec_revbw(a);
+  return vec_revbw (a);
 }
 
 void

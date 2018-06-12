@@ -130,7 +130,6 @@ test_sradi_64 (vi64_t a)
   return vec_sradi (a, 64);
 }
 
-
 int
 test_cmpud_all_gt (vui64_t a, vui64_t b)
 {
@@ -164,31 +163,31 @@ test_cmpud_all_eq2 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
 vui64_t
 test_subudm (vui64_t a, vui64_t b)
 {
-  return (vec_subudm (a, b));
+  return vec_subudm (a, b);
 }
 
 vui64_t
 test_addudm (vui64_t a, vui64_t b)
 {
-  return (vec_addudm (a, b));
+  return vec_addudm (a, b);
 }
 
 vui64_t
 test_cmpgtud (vui64_t a, vui64_t b)
 {
-  return (vec_cmpgtud (a, b));
+  return vec_cmpgtud (a, b);
 }
 
 vui64_t
 __test_popcntd (vui64_t a)
 {
-  return (vec_popcntd (a));
+  return vec_popcntd (a);
 }
 
 vui64_t
 __test_clzd (vui64_t a)
 {
-  return (vec_clzd (a));
+  return vec_clzd (a);
 }
 
 vui64_t
@@ -200,59 +199,59 @@ __test_revbd (vui64_t vra)
 vui64_t
 __test_mrghd (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_mrghd(__VH, __VL));
+  return vec_mrghd (__VH, __VL);
 }
 
 vui64_t
 __test_mrgld (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_mrgld(__VH, __VL));
+  return vec_mrgld (__VH, __VL);
 }
 
 vui64_t
 __test_permdi_0 (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_permdi(__VH, __VL, 0));
+  return vec_permdi (__VH, __VL, 0);
 }
 
 vui64_t
 __test_permdi_1 (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_permdi(__VH, __VL, 1));
+  return vec_permdi (__VH, __VL, 1);
 }
 
 vui64_t
 __test_permdi_2 (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_permdi(__VH, __VL, 2));
+  return vec_permdi (__VH, __VL, 2);
 }
 
 vui64_t
 __test_permdi_3 (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_permdi(__VH, __VL, 3));
+  return vec_permdi (__VH, __VL, 3);
 }
 
 vui64_t
 __test_vpaste (vui64_t __VH, vui64_t __VL)
 {
-	return (vec_pasted(__VH, __VL));
+  return vec_pasted (__VH, __VL);
 }
 
 vui64_t
 __test_spltd_0 (vui64_t __VH)
 {
-	return (vec_spltd(__VH, 0));
+  return vec_spltd (__VH, 0);
 }
 
 vui64_t
 __test_spltd_1 (vui64_t __VH)
 {
-	return (vec_spltd(__VH, 1));
+  return vec_spltd (__VH, 1);
 }
 
 vui64_t
 __test_swapd (vui64_t __VH)
 {
-	return (vec_swapd(__VH));
+  return vec_swapd (__VH);
 }

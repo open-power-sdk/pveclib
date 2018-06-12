@@ -21,7 +21,7 @@
 #define __PVECLIB_MAIN_DOX_H
 
 /** \mainpage POWER Vector Library (pveclib)
-* \brief library of useful vector functions for POWER. This library
+* \brief A library of useful vector functions for POWER. This library
 * fills in the gap between the instructions defined in the POWER
 * Instruction Set Architecture (<B>PowerISA</B>) and major application
 * libraries like ESSL and MASSV.
@@ -39,7 +39,7 @@
 *  is to smooth over the high complexity of the evolving PowerISA and
 *  compiler support.
 *
-*  For example: the PowerISA 2.07 (Power8) provides population count
+*  For example: the PowerISA 2.07 (POWER8) provides population count
 *  and count leading zero operations on vectors of byte, halfword,
 *  word, and doubleword elements but not on the whole vector as a
 *  __int128 value. Before PowerISA 2.07, neither operation was
@@ -61,7 +61,7 @@
 *  This can be helpful, if you are willing to apply grade school
 *  arithmetic (add, carry the 1) to vector elements.
 *
-*  PowerISA 3.0 (Power9) did add a Vector Multiply-Sum Unsigned
+*  PowerISA 3.0 (POWER9) did add a Vector Multiply-Sum Unsigned
 *  Doubleword Modulo operation.  With this instruction (and a generated
 *  vector of zeros as input) you can effectively implement the simple
 *  doubleword integer multiply modulo operation in a few instructions.
@@ -87,34 +87,35 @@
 *
 *  - Provide equivalent functions across versions of the PowerISA.
 *  This includes some of the most useful vector instructions added to
-*  Power9 (PowerISA 3.0B).
-*  Many of these operations can be implemented as in-line function in
+*  POWER9 (PowerISA 3.0B).
+*  Many of these operations can be implemented as inline function in
 *  a few vector instructions on earlier PowerISA versions.
 *  - Provide equivalent functions across versions of the compiler.
 *  For example built-ins provided in later versions of the compiler
-*  can be implemented as in-line functions with in-line asm in earlier
+*  can be implemented as inline functions with inline asm in earlier
 *  compiler versions.
 *  - Provide complete arithmetic operations across supported C types.
 *  For example multiply modulo and even/odd for int, long, and __int128.
 *  - Provide complete extended arithmetic (carry / extend /
 *  multiple high) operations across supported C types.
-*  For example add / subtract with carry and extent for int, long,
+*  For example add / subtract with carry and extend for int, long,
 *  and __int128.
 *  - Provide higher order functions not provided directly by the PowerISA.
 *  For example vector SIMD implementation for ASCII __isalpha, etc.
-*  Another example full __int128 implementations of Count Leading Zeros,
+*  As another example full __int128 implementations of Count Leading Zeros,
 *  Population Count, Shift left/right immediate, and integer divide.
-*  - Such implementations should be small enough to in-line and allow
+*  - Such implementations should be small enough to inline and allow
 *  the compiler opportunity to apply common optimization techniques.
 *
 *  \subsubsection mainpage_sub0_1 POWER Vector Library Intrinsic headers
 *
 *  The POWER Vector Library will be primarily delivered as C language
-*  in-line functions in headers files.
+*  inline functions in headers files.
 *  - vec_common_ppc.h Typedefs and helper macros
 *  - vec_int128_ppc.h Operations on vector __int128 values
 *  - vec_int64_ppc.h Operations on vector long int (64-bit) values
 *  - vec_int32_ppc.h Operations on vector int (32-bit) values
+*  - vec_int16_ppc.h Operations on vector short int (16-bit) values
 *  - vec_char_ppc.h Operations on vector char (values) values
 *  - vec_bcd_ppc.h Operations on vectors of Binary Code Decimal
 *  and Zoned Decimal values
@@ -122,7 +123,7 @@
 *  - vec_f64_ppc.h Operations on vector double values
 *  - vec_f32_ppc.h Operations on vector float values
 *
-*  \note The list above more of an aspiration at this time.
+*  \note The list above is more of an aspiration at this time.
 *  You will not find all of these headers or complete operation set
 *  and platform coverage in the current public github.
 *  But many of these headers do exist in private trees as we work
@@ -131,7 +132,7 @@
 *
 *  The goal is to provide high quality implementations that adapt to
 *  the specifics of the compile target (-mcpu=) and compiler
-*  (<altive.h>) version you are using. Initially pveclib will focus on
+*  (<altivec.h>) version you are using. Initially pveclib will focus on
 *  the GCC compiler and -mcpu=[power7|power8|power9] for Linux.
 *  Testing will focus on Little Endian (<B>powerpc64le</B> for power8
 *  and power9 targets.  Any testing for Big Endian (<B>powerpc64</B>
@@ -149,29 +150,29 @@
 *
 *  \subsection mainpage_sub1 How pveclib is different from compiler vector built-ins
 *
-*  The PowerPC vector build-ins evolved from the original
+*  The PowerPC vector built-ins evolved from the original
 *  <a href="https://www.nxp.com/docs/en/reference-manual/ALTIVECPIM.pdf">
 *  AltiVec (TM) Technology Programming Interface Manual</a> (PIM).
 *  The PIM defined the minimal extensions to the application binary
 *  interface (ABI) required to support the Vector Facility.
 *  This included new keywords (vector, pixel, bool) for defining
-*  new vector types, and new operators (build-in functions) required
+*  new vector types, and new operators (built-in functions) required
 *  for any supporting and compliant C language compiler.
 *
-*  The vector build-in function support included:
+*  The vector built-in function support included:
 *  - generic AltiVec operations, like vec_add()
 *  - specific AltiVec operations (instructions, like vec_vaddubm())
-*  - predicates computed from a AltiVec operations, like vec_all_eq()
+*  - predicates computed from AltiVec operations, like vec_all_eq()
 *  which are also generic
 *
-*  See \ref mainpage_sub_1_3 for more details.
+*  See \ref mainpage_sub2 for more details.
 *
 *  There are clear advantages with the compiler implementing the
 *  vector operations as built-ins:
 *  - The compiler can access the C language type information and
 *  vector extensions to implement the function overloading
 *  required to process generic operations.
-*  - Built-ins can be generated in-line, which eliminates function
+*  - Built-ins can be generated inline, which eliminates function
 *  call overhead and allows more compact code generation.
 *  - The compiler can then apply higher order optimization across
 *  built-ins including:
@@ -186,7 +187,7 @@
 *  not provide much function beyond the specific operations specified in
 *  the PowerISA.
 *
-*  Another issue is that generic operations where not
+*  Another issue is that generic operations were not
 *  uniformly applicable across vector types.
 *  For example:
 *  - vec_add / vec_sub applied to float, int, short and char.
@@ -195,12 +196,12 @@
 *  - Integer long (64-bit) and __int128 support for POWER8
 *  (PowerISA 2.07B).
 *
-*  But vec_mul vec_div did not:
+*  But vec_mul / vec_div did not:
 *  - vec_mul applied to float (and later double, with POWER7 VSX).
 *  - vec_mule / vec_mulo (Multiply even / odd elements)
 *  applied to [signed | unsigned] integer short and char.
 *  Later compilers added support for vector int after
-*  Power8 added vector multiply word instructions.
+*  POWER8 added vector multiply word instructions.
 *  - vec_div was not included in the original PIM as
 *  Altivec (VMX) only included vector reciprocal estimate for float
 *  and no vector integer divide for any size.
@@ -221,7 +222,7 @@
 *  (usually in August) with the latest stable GCC from that spring.
 *
 *  This all can be very frustrating, at minimum,  or even a show
-*  stopper, if you are on a tight schedule for you project.
+*  stopper, if you are on a tight schedule for your project.
 *  Especially if you are not familiar with the evolving history of the
 *  PowerISA and supporting compilers.
 *
@@ -231,18 +232,18 @@
 *  public release of the PowerISA document. So while your compiler
 *  may not support the latest vector operations as built-in operations,
 *  an older compiler with an updated assembler,
-*  may support the instructions as in-line assembler.
+*  may support the instructions as inline assembler.
 *
-*  Sequences of in-line assembler instructions can be wrapped within
+*  Sequences of inline assembler instructions can be wrapped within
 *  C language static inline functions and placed in a header files
 *  for shared use. If you are careful with the input / output register
 *  <I>constraints</I> the GCC compiler can provide local register
 *  allocation and minimize parameter marshaling overhead. This is very
 *  close (in function) to a specific Altivec (built-in) operation.
 *
-*  \note Using GCC's in-line assembler can be challenging even for the
+*  \note Using GCC's inline assembler can be challenging even for the
 *  experienced programmer. The register constraints have grown in
-*  complexity as new facilities and categories where added.
+*  complexity as new facilities and categories were added.
 *  The fact that some (VMX) instructions are restricted to the original
 *  32 Vector Registers (<B>VRs</B>) (the high half of the Vector-Scalar
 *  Registers <B>VSRs</B>), while others (Binary and Decimal
@@ -251,7 +252,7 @@
 *  the new VSX instructions can access all 64 VSRs, is just one source
 *  of complexity.
 *  So it is very important to get your input/output constraints correct
-*  if you want in-line assembler code to work correctly.
+*  if you want inline assembler code to work correctly.
 *
 *  In-line assembler should be
 *  reserved for the first implementation using the latest PowerISA.
@@ -271,17 +272,17 @@
 *  machines in 10-11 instructions. This uses a combination of
 *  Vector Add Unsigned Word Modulo (vadduwm), Vector Add and Write
 *  Carry-Out Unsigned Word (vaddcuw), and Vector Shift Left Double by
-*  Octet Immediate (sldoi), to propagate the word carries through the
+*  Octet Immediate (vsldoi), to propagate the word carries through the
 *  quadword.
 *
-*  For Power8 and later, C vector integer (modulo) multiply can be
+*  For POWER8 and later, C vector integer (modulo) multiply can be
 *  implemented in a single Vector Unsigned Word Modulo (<B>vmuluwm</B>)
 *  instruction. This was added explicitly to address vectorizing loops
 *  using int multiply in C language code.  And some newer compilers do
 *  support generic vec_mul() for vector int. But this is not
 *  documented. Similarly for char (byte) and short (halfword) elements.
 *
-*  Power8 also introduced Vector Multiply Even Signed Word
+*  POWER8 also introduced Vector Multiply Even Signed Word
 *  (<B>vmulesw</B>) and Vector Multiply Odd Signed Word
 *  (<B>vmulosw</B>) instructions.  So you would expect the generic
 *  vec_mule and vec_mulo operations to be extended to support
@@ -307,26 +308,26 @@
 *  These concepts can be extended to operations that PowerISA and the
 *  compiler does not support yet.  For example; a processor that may
 *  not have multiply even/odd/modulo of the required width (word,
-*  doubleword, or quadword). This it might take 10-12 instructions to
+*  doubleword, or quadword). This might take 10-12 instructions to
 *  implement the next element size bigger then the current processor.
 *  A full 128-bit by 128-bit multiply with 256-bit result only
-*  requires 32 instructions on a Power8 (using multiple word even/odd).
+*  requires 32 instructions on a POWER8 (using multiple word even/odd).
 *
 *  Also many of the operations missing from the vector facility,
 *  exist in the Fixed-point, Floating-point,
 *  or Decimal Floating-point scalar facilities.
-*  There will some loss of efficiency in the data transfer but
+*  There will be some loss of efficiency in the data transfer but
 *  compared to a complex operation like divide or decimal conversions,
 *  this can be a workable solution.
 *  On older POWER processors (before power7/8) transfers between
 *  register banks (GPR, FPR, VR) had to go through memory.
-*  But with the VSX facility (Power7) FPRs and VRs overlap with the
+*  But with the VSX facility (POWER7) FPRs and VRs overlap with the
 *  lower and upper halves of the 64 VSR registers.
 *  So FPR <-> VSR transfer are 0-2 cycles latency.
-*  And with power8 we GPR <-> FPR | VR | VSR direct transfer
+*  And with power8 we have direct transfer (GPR <-> FPR | VR | VSR)
 *  instructions in the 4-5 cycle latency range.
 *
-*  For example Power8 added Binary Coded Decimal (<B>BCD</B>)
+*  For example POWER8 added Binary Coded Decimal (<B>BCD</B>)
 *  add/subtract for signed 31 digit vector values. The vector unit
 *  does not support BCD multiply / divide.
 *  But the Decimal Floating-Point (<B>DFP</B>) facility (introduced
@@ -338,7 +339,7 @@
 *  (<B>DFU</B>).
 *
 *  So bcd_add / bcd_sub can be generated as a single instruction on
-*  Power8 and later, and 10-11 instructions for Power6/7.
+*  POWER8 and later, and 10-11 instructions for Power6/7.
 *  This count include the VSR <-> FPRp transfers,
 *  BCD <-> DFP conversions, and DFP add/sub.
 *  Similarly bcd_mul / bcd_div are implemented in 11 instructions using
@@ -362,14 +363,14 @@
 *  on which POWER processor(s) you have or plan to support.
 *  It can also depend on the specific compiler version you use, unless
 *  you are willing to write some of your application code in assembler.
-*  Even then you need to be aware of The PowerISA versions and when
+*  Even then you need to be aware of the PowerISA versions and when
 *  specific instructions where introduced.  This can be frustrating if
-*  you just want to port you application to POWER for a quick
+*  you just want to port your application to POWER for a quick
 *  evaluation.
 *
 *  So you would like to start evaluating how to leverage this power
 *  for key algorithms at the heart of your application.
-*  - But you are working with older POWER processor
+*  - But you are working with an older POWER processor
 *  (until the latest POWER box is delivered).
 *  - Or the latest POWER machine just arrived at your site (or cloud)
 *  but you are stuck using an older/stable Linux distro version
@@ -380,7 +381,7 @@
 *  - Or you would like to program with higher level operations to
 *  improve your own productivity.
 *
-*  Someone with the right background (knowledge of the; PowerISA,
+*  Someone with the right background (knowledge of the PowerISA,
 *  assembler level programming, compilers and the vector built-ins,
 *  ...) can solve any of the issues described above. But you don't
 *  have time for this.
@@ -388,7 +389,7 @@
 *  There should be an easier way to exploit the POWER vector hardware
 *  without getting lost in the details. And this extends beyond
 *  classical vector (Single Instruction Multiple Data (SIMD))
-*  programming to exploiting; larger data width (128-bit and beyond),
+*  programming to exploiting larger data width (128-bit and beyond),
 *  and larger register space (64 x 128 Vector Scalar Registers)
 *
 *  Here is an example of what can be done: \code
@@ -466,15 +467,15 @@ vec_adduqm (vui128_t a, vui128_t b)
 *  Then a final add modulo word to complete the 128-bit add.
 *  This sequence requires 10-11 instructions. The 11th instruction is
 *  a vector splat word 0 immediate, which in needed in the shift left
-*  (vsldoi) instructions. This common in vector codes and the compile
-*  can usually reuse this register across several blocks of code and
-*  in-line functions.
+*  (vsldoi) instructions. This is common in vector codes and the
+*  compiler can usually reuse this register across several blocks of
+*  code and inline functions.
 *
-*  For Power7/8 these instructions are all 2 cycle latency and 2 per
+*  For POWER7/8 these instructions are all 2 cycle latency and 2 per
 *  cycle throughput.  The vadduwm / vaddcuw instruction pairs should
 *  issue in the same cycle and execute in parallel.
-*  So the expected a latency for this sequence is 14 cycles.
-*  For Power8 the vadduqm instruction has a 4 cycle latency.
+*  So the expected latency for this sequence is 14 cycles.
+*  For POWER8 the vadduqm instruction has a 4 cycle latency.
 *
 *  Similarly for the carry / extend forms which can be combined to
 *  support wider (256, 512, 1024, ...) extended arithmetic.
@@ -540,8 +541,9 @@ vec_mul10uq (vui128_t a)
 *  multiply each of these 16-bit digits by 10, which is done in two
 *  (even and odd) parts. The result is 4 32-bit (2 16-bit digits)
 *  partial products for the even digits and 4 32-bit products for the
-*  odd digits. The vector register the even product elements are the
-*  higher order elements and odd product element are lower order.
+*  odd digits. The vector register (independent of endian);
+*  the even product elements are higher order and odd product elements
+*  are lower order.
 *
 *  The even digit partial products are offset right by 16-bits in the
 *  register.  If we shift the even products left 1 (16-bit) digit,
@@ -563,7 +565,7 @@ vec_mul10uq (vui128_t a)
 *
 *  But this is the wrong thing to do for this computation.  For LE
 *  targets the compiler will generate code that swaps the high and low
-*  order partial products. This miss-aligns the digit columns and
+*  order partial products. This misaligns the digit columns and
 *  produces incorrect results.  So the pveclib implementation needs to
 *  be endian sensitive and pre-swaps the partial product multiplies
 *  for LE, to get the correct results.
@@ -579,7 +581,7 @@ vec_mul10uq (vui128_t a)
 *  pveclib <B>vec_adduqm</B> implementation above. We can assume that
 *  this implementation is correct and tested for supported platforms.
 *  So here we use another pveclib function to complete the
-*  implementation of <B>Vector Multiply-by-10 Unsigned Quadword</B>
+*  implementation of <B>Vector Multiply-by-10 Unsigned Quadword</B>.
 *
 *  Again similarly for the carry / extend forms which can be combined
 *  to support wider (256, 512,  1024, ...) extended decimal to binary
@@ -591,14 +593,282 @@ vec_mul10uq (vui128_t a)
 *  implement wider (256, 512, 1024, ...) multiply operations.
 *  \sa vec_mulluq and vec_muludq
 *
-*  \subsubsection mainpage_sub_1_3 Background on the evolution  of <altivec.h>
+*  \subsubsection  mainpage_sub_1_3 Returning extended quadword results.
+*
+*  Extended quadword add, subtract and multiply results can exceed the
+*  width of a single 128-bit vector. A 128-bit add can product 129-bit
+*  results. A unsigned 128-bit by 128-bit multiply result can produce
+*  256-bit results. This is simplified for the <I>modulo</I> case where
+*  any result bits above the low order 128 can be discarded.
+*  But extended arithmetic requires returning the full precision
+*  result.  Returning double wide quadword results are a complication
+*  for both RISC processor and C language library design.
+*
+*  \paragraph mainpage_sub_1_3_1 PowerISA and Implementation.
+*
+*  For a RISC processor, encoding multiple return registers forces hard
+*  trade-offs in a fixed sized instruction format.  Also building a
+*  vector register file that can support at least one (or more) double
+*  wide register writes per cycle is challenging.  For a super-scalar
+*  machine with multiple vector execution pipelines the processor can
+*  issue and complete multiple instructions per cycle. As most
+*  operations return single vector results, this is a higher
+*  priority, than optimizing for double wide results.
+*
+*  The PowerISA addresses this by splitting these operations into two
+*  instructions that execute independently. Here independent means that
+*  given the same inputs, one instruction does not depend on the result
+*  of the other. Independent instructions can execute out-of-order,
+*  or if the processor has multiple vector execution pipelines,
+*  can execute (issue and complete) concurrently.
+*
+*  The original VMX implementation had Vector Add/Subtract Unsigned
+*  Word Modulo (<B>vadduwm</B> / <B>vsubuwm</B>), paired with
+*  Vector Add/Subtract and Write Carry-out Unsigned Word
+*  (<B>vaddcuw</B> / <B>vsubcuw</B>).
+*  Most usage ignores the carry-out and only uses the add/sub modulo
+*  instructions.  Applications requiring extended precision,
+*  pair the add/sub modulo with add/sub write carry-out, to capture
+*  the carry and propagate it to higher order bits.
+*
+*  The (four word) carries are generated into the same <I>word lane</I>
+*  as the source addends and modulo result.
+*  Propagating the carries require a separate shift (to align the
+*  carry-out with the low order (carry-in) bit of the next higher word)
+*  and another add word modulo.
+*
+*  POWER8 (PowerISA 2.07B) added full Vector Add/Subtract Unsigned
+*  Quadword Modulo (<B>vadduqm</B> / <B>vsubuqm</B>) instructions,
+*  paired with corresponding Write Carry-out instructions.
+*  (<B>vaddcuq</B> / <B>vsubcuq</B>).
+*  A further improvement over the word instructions was the addition
+*  of three operand <I>Extend</I> forms which combined add/subtract
+*  with carry-in (<B>vaddeuqm</B>, <B>vsubeuqm</B>,
+*  <B>vaddecuq</B> and <B>vsubecuq</B>).
+*  This simplifies propagating the carry-out into higher quadword
+*  operations.
+*  \sa vec_adduqm, vec_addcuq, vec_addeuqm, vec_addecuq
+*
+*  POWER9 (PowerISA 3.0B) added Vector Multiply-by-10 Unsigned
+*  Quadword (Modulo is implied), paired with Vector Multiply-by-10 and
+*  Write Carry-out Unsigned Quadword
+*  (<B>vmul10uq</B> / <B>vmul10cuq</B>).
+*  And the <I>Extend</I> forms (<B>vmul10euq</B> / <B>vmul10ecuq</B>)
+*  simplifies the digit (0-9) carry-in for extended precision decimal
+*  to binary conversions.
+*  \sa vec_mul10uq, vec_mul10cuq, vec_mul10euq, vec_mul10ecuq
+*
+*  The VMX integer multiply operations are split into multiply even/odd
+*  instructions by element size.
+*  The product requires the next larger element size
+*  (twice as many bits).
+*  So a vector multiply byte would generate 16 halfword products
+*  (256-bits in total).
+*  Requiring separate even and odd multiply instructions cuts the
+*  total generated product bits (per instruction) in half.
+*  It also simplifies the hardware design by keeping the generated
+*  product in adjacent element lanes.
+*  So each vector multiply even or odd byte operation generates 8
+*  halfword products (128-bits) per instruction.
+*
+*  This multiply even/odd technique applies to most element sizes from
+*  byte up to doubleword.  The original VMX supports multiply even/odd
+*  byte and halfword operations.  In the original VMX, arithmetic
+*  operations where restricted to byte, halfword, and word elements.
+*  Multiply halfword products fit within the integer word element.
+*  No multiply byte/halfword modulo instructions were provided, but
+*  could be implemented via a vmule, vmulo, vperm sequence.
+*
+*  POWER8 (PowerISA 2.07B) added multiply even/odd word and multiply
+*  modulo word instructions.
+*  \sa vec_muleuw, vec_mulouw, vec_muluwm
+*
+*  The latest PowerISA (3.0B for POWER9) does add a doubleword integer
+*  multiply via
+*  <B>Vector Multiply-Sum unsigned Doubleword Modulo</B>.
+*  This is a departure from the Multiply even/odd byte/halfword/word
+*  instructions available in earlier Power processors.
+*  But careful conditioning of the inputs can generate the equivalent
+*  of multiply even/odd unsigned doubleword.
+*  \sa vec_msumudm, vec_muleud, vec_muloud
+*
+*  This (multiply even/odd) technique breaks down when the input
+*  element size is quadword or larger.
+*  A quadword integer multiply forces a different split.
+*  The easiest next step would be a high/low split (like the
+*  Fixed-point integer multiply).
+*  A multiply low (modulo) quadword would be a useful function.
+*  Paired with multiply high quadword provides the double quadword
+*  product. This would provide the basis for higher (multi-quadword)
+*  precision multiplies.
+*  \sa vec_mulluq, vec_muludq
+*
+*  \paragraph mainpage_sub_1_3_2 C Language restrictions.
+*
+*  The Power Vector Library is implemented using C language (inline)
+*  functions and this imposes its own restrictions.
+*  Standard C language allows an
+*  arbitrary number of formal parameters and one return value per
+*  function.  Parameters and return values with simple C types are
+*  normally transfered (passed / returned) efficiently in local
+*  (high performance) hardware registers.
+*  Aggregate types (struct, union, and arrays of arbitrary size)
+*  are normally handled by pointer indirection.
+*  The details are defined in the appropriate Application Binary
+*  Interface (ABI) documentation.
+*
+*  The POWER processor provides lots (96) of registers so we want to
+*  use registers wherever possible.  Especially when our application is
+*  composed of collections of small functions.  And more especially
+*  when these functions are small enough to inline and we want the
+*  compiler to perform local register allocation and common
+*  subexpression elimination optimizations across these functions.
+*  The PowerISA defines 3 kinds of registers;
+*  - General Purpose Registers (GPRs),
+*  - Floating-point Registers (FPRs),
+*  - Vector registers (VRs),
+*
+*  with 32 of each kind.
+*  We will ignore the various special registers for now.
+*
+*  The PowerPC64 64-bit ELF (and OpenPOWER ELF V2) ABIs normally
+*  pass simple arguments and return values in a single register
+*  (of the appropriate kind) per value.
+*  Arguments of aggregate types are passed as storage pointers in
+*  General Purpose Registers (GPRs).
+*
+*  The language specification, the language implementation, and the
+*  ABI provide some exceptions.
+*  The C99 language adds _Complex floating types which are composed of
+*  real and imaginary parts.  GCC adds _Complex integer types.
+*  For PowerPC ABIs complex values are held in a pair of registers of
+*  the appropriate kind.
+*  C99 also adds double word integers as the <I>long long int</I> type.
+*  This only matters for PowerPC 32-bit ABIs.
+*  For PowerPC64 ABIs <I>long long</I> and <I>long</I> are both 64-bit
+*  integers and are held in 64-bit GPRs.
+*
+*  GCC also adds the __int128 type for some targets including the
+*  PowerPC64 ABIs. Values of __int128 type are held (for operations,
+*  parameter passing and function return) in 64-bit GPR pairs.
+*  GCC  adds __ibm128 and _Decimal128 floating point types which are
+*  held in Floating-point Registers pairs.
+*  GCC recently added the __float128 floating point type which are held
+*  in single vector register.  Similarly for vector __int128.
+*
+*  GCC defines Generic Vector Extensions that allow typedefs for
+*  vectors of various element sizes/types and generic SIMD
+*  (arithmetic, logical, and element indexing) operations.
+*  For PowerPC64 ABIs this is currently restricted to 16-byte vectors
+*  as defined in <altivec.h>.
+*  For currently available compilers attempts to define vector types
+*  with larger (32 or 64 byte) <I>vector_size</I> values are treated
+*  as arrays of scalar elements.  Only vector_size(16) variables are
+*  passed and returned in vector registers.
+*
+*  The OpenPOWER 64-Bit ELF V2 ABI Specification makes specific
+*  provisions for passing/returning <I>homogeneous aggregates</I>
+*  of multiple like data types.  Such aggregates can be passed
+*  as up to eight floating-point or  vector registers.
+*  This is defined for the Little Endian ELF V2 ABI and is
+*  not applicable to Big Endian ELF V1 targets.
+*  Also current GCC versions, in common use,
+*  do not fully implement this ABI feature.
+*
+*  So we have shown that there are mechanisms for functions to return
+*  multiple vector register values.  But none are really practical at
+*  this time as they not yet available (function or optimal code
+*  generation) in current GCC compilers, that are in common use.
+*
+*  Returning pairs of vector __int128 values as _Complex
+*  __float128 would be awkward at best. And it is not clear when or if
+*  _Complex vector __int128 will be supported.  GCC's Generic Vector
+*  Extensions are only implemented for vector_size(16).
+*  And current GCC compilers can generate some sub-optimal code for
+*  passing/returning <I>homogeneous aggregates</I> as suggested in the
+*  OpenPOWER ABI.
+*
+*  \paragraph mainpage_sub_1_3_3 Subsetting the problem.
+*
+*  We can simplify this problem by remembering that:
+*  - Only a subset of the pveclib functions need to return more than
+*  one 128-bit vector.
+*  - The PowerISA normally splits these cases into multiple
+*  instructions anyway.
+*  - So far these functions are small and fully inlined.
+*
+*  So we have two (or three) options given the current state of GCC
+*  compilers in common use:
+*  - Mimic the PowerISA and split the operation into two functions,
+*  where each function only returns (up to) 128-bits of the result.
+*  - Use pointer parameters to return a second vector value in
+*  addition to the function return.
+*  - Support both and let the user decide which works best.
+*
+*  The add/subtract quadword operations provide good examples.
+*  For exmaple adding two 256-bit unsigned integer values and returning
+*  the 257-bit (the high / low sum and the carry)result looks like this: \code
+s1 = vec_vadduqm (a1, b1); // sum low 128-bits a1+b1
+c1 = vec_vaddcuq (a1, b1); // write-carry from low a1+b1
+s0 = vec_vaddeuqm (a0, b0, c1); // Add-extend high 128-bits a0+b0+c1
+c0 = vec_vaddecuq (a0, b0, c1); // write-carry from high a0+b0+c1
+*  \endcode
+*  This sequence uses the built-ins from <altivec.h> and generates
+*  instructions that will execute on POWER8 and POWER9.
+*  The compiler must target POWER8 (-mcpu=power8) or higher.
+*  In fact the compile will fail if the target is POWER7.
+*
+*  Now let's look at the pveclib version of these operations from
+*  <vec_int128_ppc.h>: \code
+s1 = vec_adduqm (a1, b1); // sum low 128-bits a1+b1
+c1 = vec_addcuq (a1, b1); // write-carry from low a1+b1
+s0 = vec_addeuqm (a0, b0, c1); // Add-extend high 128-bits a0+b0+c1
+c0 = vec_addecuq (a0, b0, c1); // write-carry from high a0+b0+c1
+*  \endcode
+*  Looks almost the same but the operations do not use the 'v' prefix
+*  on the operation name.
+*  This sequence generates the same instructions for (-mcpu=power8)
+*  as the <altivec.h> version above.
+*  It will also generate a different (slightly longer) instruction
+*  sequence for (-mcpu=power7) which is functionally equivalent.
+*
+*  The pveclib <vec_int128_ppc.h> header also provides a coding style
+*  alternative: \code
+s1 = vec_addcq (&c1, a1, b1);
+s0 = vec_addeq (&c0, a0, b0, c1);
+*  \endcode
+*  Here vec_addcq combines the adduqm/addcuq operations into a
+*  <I>add and carry quadword</I> operation.
+*  The first parameter is a pointer to vector to receive the carry-out
+*  while the 128-bit modulo sum is the function return value.
+*  Similarly vec_addeq combines the addeuqm/addecuq operations
+*  into a <I>add with extend and carry quadword</I> operation.
+*
+*  As these functions are inlined by the compiler the implied
+*  store / reload of the carry can be converted into a simple
+*  register assignment.
+*  For (-mcpu=power8) the compiler should generate the same
+*  instruction sequence as the two previous examples.
+*
+*  For (-mcpu=power7) these functions will expand into a different
+*  (slightly longer) instruction sequence which is functionally
+*  equivalent to the instruction sequence generated for (-mcpu=power8).
+*
+*  For older processors (power7 and earlier) and under some
+*  circumstances instructions generated for this "combined form"
+*  may perform better than the "split form" equivalent from the
+*  second example.
+*  Here the compiler may not recognize all the common subexpressions,
+*  as the "split forms" are expanded before optimization.
+*
+*  \subsection mainpage_sub2 Background on the evolution  of <altivec.h>
 *
 *  The original
 *  <a href="https://www.nxp.com/docs/en/reference-manual/ALTIVECPIM.pdf">
 *  AltiVec (TM) Technology Programming Interface Manual</a>
 *  defined the minimal vector extensions to the application binary
 *  interface (ABI), new keywords (vector, pixel, bool) for defining
-*  new vector types, and new operators (build-in functions).
+*  new vector types, and new operators (built-in functions).
 *
 *  - generic AltiVec operations, like vec_add()
 *  - specific AltiVec operations (instructions, like vec_addubm())
@@ -617,8 +887,9 @@ vec_mul10uq (vui128_t a)
 *  The PIM defined a set of compiler built-ins for vector instructions
 *  (see section "4.4 Generic and Specific AltiVec Operations")
 *  that compilers should support.
-*  The document suggests that any requires typedefs and supporting
-*  macros definitions be collected into an include file named <altivec.h>.
+*  The document suggests that any required typedefs and supporting
+*  macro definitions be collected into an include file named
+*  <altivec.h>.
 *
 *  The built-ins defined by the PIM closely match the vector
 *  instructions of the underlying PowerISA.
@@ -632,34 +903,34 @@ vec_mul10uq (vui128_t a)
 *  as the inputs (the results don't stay in their lane).
 *  \par
 *  The RISC philosophy resists and POWER Architecture avoids
-*  instructions that write to more then one register.
+*  instructions that write to more than one register.
 *  So the hardware and PowerISA vector integer multiply generate
 *  even and odd product results (from even and odd input elements)
 *  from two instructions executing separately.
 *  The PIM defines and compiler supports
-*  these operation as overloaded built-ins
+*  these operations as overloaded built-ins
 *  and selects the specific instructions based on the operand
 *  (char or short) type.
 *
 *  This is complicated as the PowerISA evolves.
-*  The the original Altivec (VMX) provided vector multiply (even / odd)
+*  The original Altivec (VMX) provided vector multiply (even / odd)
 *  operations for byte (char) and halfword (short) integers.
-*  Multiple even / odd word (int) instruction where not introduced
+*  Multiple even / odd word (int) instructions were not introduced
 *  until PowerISA V2.07 (POWER8). PowerISA 2.07 also introduced vector
 *  multiply word modulo which is included under the generic vec_mul.
 *
-*  As the PowerISA evolved adding; new vector (VMX) instructions,
+*  As the PowerISA evolved adding new vector (VMX) instructions,
 *  new facilities (Vector Scalar Extended (VSX)),
 *  and specialized vector categories (little endian, AES, SHA2, RAID),
-*  these new operators where added to <altivec.h>.
+*  these new operators were added to <altivec.h>.
 *  This included new specific and generic operations and
 *  additional vector element types (long (64-bit) int, __int128,
 *  double and quad precision (__Float128) float).
 *
-*  However the PIM documents where primarily focused on embedded
-*  processors and where not updated to include the vector extensions
+*  However the PIM documents were primarily focused on embedded
+*  processors and were not updated to include the vector extensions
 *  implemented by the server processors.
-*  So any documentation for new vector operations where relegated to
+*  So any documentation for new vector operations were relegated to
 *  the various compilers.  This was a haphazard process and some
 *  divergence in operation naming did occur between compilers.
 *
@@ -668,7 +939,7 @@ vec_mul10uq (vui128_t a)
 *  new and well documented Application Binary Interface (<B>ABI</B>).
 *  It was also recognized that new <altivec.h> extensions needed to be
 *  documented in a common place so the various compilers could
-*  implement a common vector build-in API. So ...
+*  implement a common vector built-in API. So ...
 *
 *  The
 *  <a href="https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture">
@@ -682,36 +953,37 @@ vec_mul10uq (vui128_t a)
 *  generic operations. Here the compiler selects a specific PowerISA
 *  implementation based on the operand (vector element) types.
 *  The ABI also defines the (big/little) endian behavior and the
-*  compiler may select different instructions based on the endian
+*  compiler may select different instructions based on the endianness
 *  of the target.
 *
 *  Also note that the vector element numbering
 *  changes between big and little endian, and so does the meaning of
-*  even and odd. Both effect what the compiler supports and the
+*  even and odd. Both affect what the compiler supports and the
 *  instruction sequence generated.
 *  - <B>vec_muleub</B> and <B>vec_muloub</B> (multiply even / odd
 *  unsigned byte) are examples of non-overloaded built-ins provided by
 *  the GCC compiler but not defined in the ABI.
 *  One would assume these built-ins will generate the matching
 *  instruction, however the GCC compiler will adjust the generated
-*  instruction based on the target endian
+*  instruction based on the target endianness
 *  (even / odd is reversed for little endian).
 *
 *  The ABI also defines vec_mul as an overloaded operation on integer
 *  types, where only the low order half (modulo element size)
 *  of the product is returned.
-*  The PowerISA does not provide a direct multiply modulo instructions
-*  for all the integer sizes / types. So this requires a multiple
-*  instruction sequence to implement.
+*  The PowerISA does not provide direct multiply modulo instructions
+*  for all the integer sizes / types. So this requires a
+*  multiple-instruction sequence to implement.
 *  Also integer vec_mul is defined in the ABI as "phased in" and is
 *  only implemented in the latest GCC versions.
 *
 *  This is a small sample of the complexity we encounter programming
-*  at this low level (vector intrinsic) API. Partially this due to
-*  RISC design philosophy where there is a trade-off software
+*  at this low level (vector intrinsic) API. Partially this is due to
+*  RISC design philosophy where there is a trade-off of software
 *  complexity for simpler (hopefully faster) hardware design.
 *
-*  \subsection mainpage_sub2 pveclib is not a vector math library
+*
+*  \subsection mainpage_sub3 pveclib is not a vector math library
 *
 *  The pveclib does not implement general purpose vector math operations.
 *  These should continue to be developed and improved within existing

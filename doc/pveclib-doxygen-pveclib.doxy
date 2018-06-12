@@ -738,7 +738,11 @@ WARN_LOGFILE           =
 
 INPUT                  = $(SRCDIR)/doc/pveclibmaindox.h \
                          $(SRCDIR)/src/vec_int128_ppc.h \
+                         $(SRCDIR)/src/vec_int64_ppc.h \
+                         $(SRCDIR)/src/vec_int32_ppc.h \
+                         $(SRCDIR)/src/vec_int16_ppc.h \
                          $(SRCDIR)/src/vec_bcd_ppc.h \
+                         $(SRCDIR)/src/vec_char_ppc.h \
                          $(SRCDIR)/src/vec_common_ppc.h
 
 # This tag can be used to specify the character encoding of the source files

@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
       Created on: May 10, 2015
  */
 
-#ifndef ARITH128_PRINT_H_
-#define ARITH128_PRINT_H_
+#ifndef TESTSUITE_ARITH128_PRINT_H_
+#define TESTSUITE_ARITH128_PRINT_H_
 
 #include "arith128.h"
 #include "vec_f128_ppc.h"
@@ -125,24 +125,48 @@ extern void
 print_vint128x_sum (char *prefix, vui32_t r, vui32_t a, vui32_t b);
 
 extern void
-print_vint128_carry (char *prefix, vui32_t r, vui32_t a, vui32_t b, vui32_t c);
+print_vint128_carry (char *prefix,
+    vui32_t r, vui32_t a, vui32_t b, vui32_t c);
 
 extern void
-print_vint128x_carry (char *prefix, vui32_t r, vui32_t a, vui32_t b, vui32_t c);
+print_vint128x_carry (char *prefix,
+    vui32_t r, vui32_t a, vui32_t b, vui32_t c);
 
 extern void
-print_vint128_prod (char *prefix, vui32_t r, vui32_t a, vui32_t b, vui32_t c);
+print_vint128_prod (char *prefix,
+    vui32_t r, vui32_t a, vui32_t b, vui32_t c);
 
 extern void
-print_vint128_extend (char *prefix, vui32_t r, vui32_t co, vui32_t a, vui32_t b,
-                      vui32_t c);
+print_vint128_extend (char *prefix,
+    vui32_t r, vui32_t co, vui32_t a, vui32_t b, vui32_t c);
 
 extern void
-print_vint128x_extend (char *prefix, vui32_t r, vui32_t co, vui32_t a,
-                       vui32_t b, vui32_t c);
+print_vint128x_extend (char *prefix,
+    vui32_t r, vui32_t co, vui32_t a, vui32_t b, vui32_t c);
+
+extern void
+print_vint32x (char *prefix, vui32_t val);
+
+extern void
+print_vint32d (char *prefix, vui32_t val);
+
+extern void
+print_vint16x (char *prefix, vui16_t val);
+
+extern void
+print_vint16d (char *prefix, vui16_t val);
 
 extern void
 print_vint8 (char *prefix, vui8_t val);
+
+extern void
+print_vint8c (char *prefix, vui8_t val);
+
+extern void
+print_vint8x (char *prefix, vui8_t val);
+
+extern void
+print_vint8d (char *prefix, vui8_t val);
 
 extern void
 print_vchar (char *prefix, vui8_t val);
@@ -211,6 +235,9 @@ extern int
 check_int128_priv (char *prefix, __int128 val128, __int128 shouldbe);
 
 extern int
+check_vui8_priv (char *prefix, vui8_t val128, vui8_t shouldbe);
+
+extern int
 check_vuint128_priv (char *prefix, vui128_t val128, vui128_t shouldbe);
 
 extern int
@@ -235,10 +262,9 @@ check_vint384 (char *prefix, vui128_t val0_128, vui128_t val1_128,
                vui128_t sb2_128)
 {
   int rc = 0;
-  if (vec_any_ne(
-      (vui32_t )val0_128,
-      (vui32_t )sb0_128) || vec_any_ne ((vui32_t)val1_128, (vui32_t)sb1_128)
-      || vec_any_ne ((vui32_t)val2_128, (vui32_t)sb2_128))
+  if (vec_any_ne ((vui32_t)val0_128, (vui32_t)sb0_128)
+  ||  vec_any_ne ((vui32_t)val1_128, (vui32_t)sb1_128)
+  ||  vec_any_ne ((vui32_t)val2_128, (vui32_t)sb2_128))
     {
       rc = check_vint384_priv (prefix, val0_128, val1_128, val2_128, sb0_128,
                                sb1_128, sb2_128);
@@ -252,9 +278,8 @@ check_vint256 (char *prefix, vui128_t val0_128, vui128_t val1_128,
                vui128_t sb0_128, vui128_t sb1_128)
 {
   int rc = 0;
-  if (vec_any_ne(
-      (vui32_t )val0_128,
-      (vui32_t )sb0_128) || vec_any_ne ((vui32_t)val1_128, (vui32_t)sb1_128))
+  if (vec_any_ne((vui32_t)val0_128, (vui32_t)sb0_128)
+  ||  vec_any_ne ((vui32_t)val1_128, (vui32_t)sb1_128))
     {
       rc = check_vint256_priv (prefix, val0_128, val1_128, sb0_128, sb1_128);
     }
@@ -267,12 +292,22 @@ check_vuint128c (char *prefix, vui128_t val128, vui128_t carry128,
                  vui128_t shouldbe, vui128_t shouldcarry)
 {
   int rc = 0;
-  if (vec_any_ne(
-      (vui32_t )val128,
-      (vui32_t )shouldbe) || vec_any_ne ((vui32_t)carry128, (vui32_t)shouldcarry))
+  if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe)
+   || vec_any_ne ((vui32_t)carry128, (vui32_t)shouldcarry))
     {
-      rc = check_vuint128c_priv (prefix, val128, carry128, shouldbe,
-                                 shouldcarry);
+      rc = check_vuint128c_priv (prefix, val128, carry128, shouldbe, shouldcarry);
+    }
+
+  return (rc);
+}
+
+static inline int
+check_vui8 (char *prefix, vui8_t val128, vui8_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui8_t )val128, (vui8_t )shouldbe))
+    {
+      rc = check_vui8_priv (prefix, val128, shouldbe);
     }
 
   return (rc);
@@ -418,48 +453,6 @@ check_frexptfti (char *prefix, __int128 val128, long exp, __int128 shouldbe,
 extern void
 print_dfp128p2 (char *prefix, _Decimal128 val128, long exp);
 
-extern vui128_t
-db_shift_rightq (vui128_t vra, vui128_t vrb);
 
-extern vui128_t
-db_shift_leftq (vui128_t vra, vui128_t vrb);
+#endif /* TESTSUITE_ARITH128_PRINT_H_ */
 
-#ifdef __DEBUG_PRINT__
-
-extern int64_t
-db_sdiv_qrnnd (int64_t *remainder,
-    int64_t high_num, int64_t low_num,
-    int64_t denom);
-
-extern vui128_t
-db_vec_clzq (vui128_t vra);
-
-extern vui8_t
-db_vec_tolower (vui8_t vec_str);
-
-extern vui8_t
-db_vec_toupper (vui8_t vec_str);
-
-extern vui8_t
-db_vec_isalpha (vui8_t vec_str);
-
-extern vui32_t
-db_vec_addeuqm (vui32_t a, vui32_t b, vui32_t c);
-
-extern vui32_t
-db_vec_addeq (vui32_t *cout, vui32_t a, vui32_t b, vui32_t c);
-
-extern vui32_t
-db_vec_mulluq (vui32_t a, vui32_t b);
-
-extern vui32_t
-db_vec_muludq (vui32_t *mulu, vui32_t a, vui32_t b);
-#endif
-
-extern vui128_t
-db_vec_mul10uq (vui128_t a);
-
-extern vui128_t
-db_vec_mul10cuq (vui128_t a);
-
-#endif /* ARITH128_PRINT_H_ */

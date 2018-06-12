@@ -148,7 +148,12 @@ am__EXEEXT_1 = pveclib_test$(EXEEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
 	testsuite/arith128_print.$(OBJEXT) \
-	testsuite/arith128_test_i128.$(OBJEXT)
+	testsuite/arith128_test_i128.$(OBJEXT) \
+	testsuite/arith128_test_i64.$(OBJEXT) \
+	testsuite/arith128_test_i32.$(OBJEXT) \
+	testsuite/arith128_test_i16.$(OBJEXT) \
+	testsuite/arith128_test_char.$(OBJEXT) \
+	testsuite/arith128_test_bcd.$(OBJEXT)
 pveclib_test_OBJECTS = $(am_pveclib_test_OBJECTS)
 pveclib_test_DEPENDENCIES = .libs/libpvec.a
 AM_V_P = $(am__v_P_@AM_V@)
@@ -552,7 +557,12 @@ pveclib_testincludedir = $(includedir)/testsuite
 # on 'make install'
 pveclibinclude_HEADERS = \
 	vec_common_ppc.h \
-	vec_int128_ppc.h
+	vec_int128_ppc.h \
+	vec_int64_ppc.h \
+	vec_int32_ppc.h \
+	vec_int16_ppc.h \
+	vec_char_ppc.h \
+	vec_bcd_ppc.h
 
 pveclib_la_INCLUDES = \
 	$(pveclibinclude_HEADERS)
@@ -563,7 +573,12 @@ pveclib_test_la_INCLUDES = \
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
-	testsuite/arith128_test_i128.c
+	testsuite/arith128_test_i128.c \
+	testsuite/arith128_test_i64.c \
+	testsuite/arith128_test_i32.c \
+	testsuite/arith128_test_i16.c \
+	testsuite/arith128_test_char.c \
+	testsuite/arith128_test_bcd.c
 
 pveclib_test_LDADD = .libs/libpvec.a
 all: all-am
@@ -658,6 +673,16 @@ testsuite/arith128_print.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/arith128_test_i128.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_i64.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_i32.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_i16.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_char.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_bcd.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
 
 pveclib_test$(EXEEXT): $(pveclib_test_OBJECTS) $(pveclib_test_DEPENDENCIES) $(EXTRA_pveclib_test_DEPENDENCIES) 
 	@rm -f pveclib_test$(EXEEXT)
@@ -673,7 +698,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decpowof2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tipowof10.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_print.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_bcd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_char.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i128.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i16.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test.Po@am__quote@
 
 .c.o:

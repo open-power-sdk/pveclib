@@ -1,5 +1,5 @@
 /*
- Copyright [2017] IBM Corporation.
+ Copyright (c) [2017] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -23,49 +23,58 @@
 #ifndef TEST_ARITH128_TEST_I128_H_
 #define TEST_ARITH128_TEST_I128_H_
 
-extern int
-test_1 (void);
+#ifdef __DEBUG_PRINT__
+
+extern vui128_t
+db_shift_rightq (vui128_t vra, vui128_t vrb);
+
+extern vui128_t
+db_shift_leftq (vui128_t vra, vui128_t vrb);
+
+extern vui128_t
+db_vec_clzq (vui128_t vra);
+
+extern vui32_t
+db_vec_addeuqm (vui32_t a, vui32_t b, vui32_t c);
+
+extern vui32_t
+db_vec_addeq (vui32_t *cout, vui32_t a, vui32_t b, vui32_t c);
+
+extern vui32_t
+db_vec_mulluq (vui32_t a, vui32_t b);
+
+extern vui32_t
+db_vec_muludq (vui32_t *mulu, vui32_t a, vui32_t b);
+#endif
+
+extern vui128_t
+db_vec_mul10uq (vui128_t a);
+
+extern vui128_t
+db_vec_mul10cuq (vui128_t a);
 
 extern int
-test_2 (void);
+test_addq (void);
 
 extern int
-test_3 (void);
+test_mul10uq (void);
 
 extern int
-test_4 (void);
+test_mul10ecuq (void);
 
 extern int
-test_4b (void);
+test_cmul100 (void);
 
 extern int
-test_4b1 (void);
+test_mulluq (void);
 
 extern int
-test_4c (void);
+test_muludq(void);
 
 extern int
-test_5 (void);
+test_msumudm (void);
 
 extern int
-test_6 (void);
-
-extern int
-test_8 (void);
-
-extern int
-test_43 (void);
-
-extern int
-test_44 (void);
-
-extern int
-test_45 (void);
-
-extern int
-test_46 (void);
-
-extern int
-test_47 (void);
+test_vec_i128 (void);
 
 #endif /* TEST_ARITH128_TEST_I128_H_ */

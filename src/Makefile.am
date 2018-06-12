@@ -21,7 +21,12 @@ pveclib_testincludedir = $(includedir)/testsuite
 # on 'make install'
 pveclibinclude_HEADERS = \
 	vec_common_ppc.h \
-	vec_int128_ppc.h
+	vec_int128_ppc.h \
+	vec_int64_ppc.h \
+	vec_int32_ppc.h \
+	vec_int16_ppc.h \
+	vec_char_ppc.h \
+	vec_bcd_ppc.h
 
 pveclib_la_INCLUDES = \
 	$(pveclibinclude_HEADERS)
@@ -38,7 +43,13 @@ TESTS += pveclib_test
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
-	testsuite/arith128_test_i128.c
+	testsuite/arith128_test_i128.c \
+	testsuite/arith128_test_i64.c \
+	testsuite/arith128_test_i32.c \
+	testsuite/arith128_test_i16.c \
+	testsuite/arith128_test_char.c \
+	testsuite/arith128_test_bcd.c
+	
 pveclib_test_LDADD = .libs/libpvec.a
 
 check_PROGRAMS = $(TESTS)

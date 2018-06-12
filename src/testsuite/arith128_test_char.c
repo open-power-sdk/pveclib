@@ -24,7 +24,7 @@
 
 /*
  * Return a vector boolean char with a true indicator for any character
- * that is either Lower Case Alpha ASCII or Upper Case ASCII.
+ * that is either Lower Case Alpha ASCII or Upper Case Alpha ASCII.
  * False otherwise.
  */
 vui8_t

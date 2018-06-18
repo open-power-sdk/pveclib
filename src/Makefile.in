@@ -92,7 +92,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-TESTS = pveclib_test$(EXEEXT)
+TESTS = pveclib_test$(EXEEXT) vec_dummy$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -136,7 +136,7 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" \
 	"$(DESTDIR)$(pveclibincludedir)"
-LTLIBRARIES = $(lib_LTLIBRARIES)
+LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 libpvec_la_LIBADD =
 am_libpvec_la_OBJECTS = tipowof10.lo decpowof2.lo
 libpvec_la_OBJECTS = $(am_libpvec_la_OBJECTS)
@@ -144,8 +144,14 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-am__EXEEXT_1 = pveclib_test$(EXEEXT)
+libvecdummy_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
+am_libvecdummy_la_OBJECTS = testsuite/vec_int128_dummy.lo \
+	testsuite/vec_int64_dummy.lo testsuite/vec_int32_dummy.lo \
+	testsuite/vec_pwr9_dummy.lo testsuite/vec_bcd_dummy.lo \
+	testsuite/vec_char_dummy.lo
+libvecdummy_la_OBJECTS = $(am_libvecdummy_la_OBJECTS)
+am__EXEEXT_1 = pveclib_test$(EXEEXT) vec_dummy$(EXEEXT)
 am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
 	testsuite/arith128_print.$(OBJEXT) \
 	testsuite/arith128_test_i128.$(OBJEXT) \
@@ -156,6 +162,9 @@ am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
 	testsuite/arith128_test_bcd.$(OBJEXT)
 pveclib_test_OBJECTS = $(am_pveclib_test_OBJECTS)
 pveclib_test_DEPENDENCIES = .libs/libpvec.a
+am_vec_dummy_OBJECTS = testsuite/vec_dummy_main.$(OBJEXT)
+vec_dummy_OBJECTS = $(am_vec_dummy_OBJECTS)
+vec_dummy_DEPENDENCIES = .libs/libpvec.a libvecdummy.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -190,8 +199,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libpvec_la_SOURCES) $(pveclib_test_SOURCES)
-DIST_SOURCES = $(libpvec_la_SOURCES) $(pveclib_test_SOURCES)
+SOURCES = $(libpvec_la_SOURCES) $(libvecdummy_la_SOURCES) \
+	$(pveclib_test_SOURCES) $(vec_dummy_SOURCES)
+DIST_SOURCES = $(libpvec_la_SOURCES) $(libvecdummy_la_SOURCES) \
+	$(pveclib_test_SOURCES) $(vec_dummy_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -543,8 +554,19 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+
+#Test only codes mostly for eyeballing the generated code
+noinst_LTLIBRARIES = libvecdummy.la
+#Any runtime and const tables needed by pveclib functions 
 lib_LTLIBRARIES = libpvec.la
 libpvec_la_SOURCES = tipowof10.c decpowof2.c
+libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
+	testsuite/vec_int64_dummy.c \
+	testsuite/vec_int32_dummy.c \
+	testsuite/vec_pwr9_dummy.c \
+	testsuite/vec_bcd_dummy.c \
+	testsuite/vec_char_dummy.c
+
 EXTRA_DIST = $(pveclib_la_INCLUDES)
 
 # pveclib definitions
@@ -581,6 +603,10 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_bcd.c
 
 pveclib_test_LDADD = .libs/libpvec.a
+
+#Dummy main to force generation of vec_dummy_* codes
+vec_dummy_SOURCES = testsuite/vec_dummy_main.c 
+vec_dummy_LDADD = .libs/libpvec.a libvecdummy.la
 all: all-am
 
 .SUFFIXES:
@@ -650,8 +676,40 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
+
 libpvec.la: $(libpvec_la_OBJECTS) $(libpvec_la_DEPENDENCIES) $(EXTRA_libpvec_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libpvec_la_OBJECTS) $(libpvec_la_LIBADD) $(LIBS)
+testsuite/$(am__dirstamp):
+	@$(MKDIR_P) testsuite
+	@: > testsuite/$(am__dirstamp)
+testsuite/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) testsuite/$(DEPDIR)
+	@: > testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_int128_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_int64_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_int32_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_pwr9_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_bcd_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_char_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+
+libvecdummy.la: $(libvecdummy_la_OBJECTS) $(libvecdummy_la_DEPENDENCIES) $(EXTRA_libvecdummy_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libvecdummy_la_OBJECTS) $(libvecdummy_la_LIBADD) $(LIBS)
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -661,12 +719,6 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-testsuite/$(am__dirstamp):
-	@$(MKDIR_P) testsuite
-	@: > testsuite/$(am__dirstamp)
-testsuite/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) testsuite/$(DEPDIR)
-	@: > testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/pveclib_test.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/arith128_print.$(OBJEXT): testsuite/$(am__dirstamp) \
@@ -687,10 +739,17 @@ testsuite/arith128_test_bcd.$(OBJEXT): testsuite/$(am__dirstamp) \
 pveclib_test$(EXEEXT): $(pveclib_test_OBJECTS) $(pveclib_test_DEPENDENCIES) $(EXTRA_pveclib_test_DEPENDENCIES) 
 	@rm -f pveclib_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pveclib_test_OBJECTS) $(pveclib_test_LDADD) $(LIBS)
+testsuite/vec_dummy_main.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+
+vec_dummy$(EXEEXT): $(vec_dummy_OBJECTS) $(vec_dummy_DEPENDENCIES) $(EXTRA_vec_dummy_DEPENDENCIES) 
+	@rm -f vec_dummy$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(vec_dummy_OBJECTS) $(vec_dummy_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f testsuite/*.$(OBJEXT)
+	-rm -f testsuite/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -705,6 +764,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_bcd_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_char_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_dummy_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int128_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int32_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int64_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_pwr9_dummy.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -735,6 +801,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+	-rm -rf testsuite/.libs testsuite/_libs
 install-pveclibincludeHEADERS: $(pveclibinclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(pveclibinclude_HEADERS)'; test -n "$(pveclibincludedir)" || list=; \
@@ -957,6 +1024,13 @@ pveclib_test.log: pveclib_test$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+vec_dummy.log: vec_dummy$(EXEEXT)
+	@p='vec_dummy$(EXEEXT)'; \
+	b='vec_dummy'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1049,7 +1123,7 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool mostlyclean-am
+	clean-libtool clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR) testsuite/$(DEPDIR)
@@ -1121,20 +1195,20 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-pveclibincludeHEADERS
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-TESTS check-am clean \
 	clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-pveclibincludeHEADERS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
-	uninstall-am uninstall-libLTLIBRARIES \
-	uninstall-pveclibincludeHEADERS
+	clean-libtool clean-noinstLTLIBRARIES cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-libLTLIBRARIES install-man install-pdf \
+	install-pdf-am install-ps install-ps-am \
+	install-pveclibincludeHEADERS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	recheck tags tags-am uninstall uninstall-am \
+	uninstall-libLTLIBRARIES uninstall-pveclibincludeHEADERS
 
 .PRECIOUS: Makefile
 

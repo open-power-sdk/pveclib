@@ -1,8 +1,17 @@
 # bin_PROGRAMS=pveclib_test
 
+#Test only codes mostly for eyeballing the generated code
+noinst_LTLIBRARIES = libvecdummy.la
+#Any runtime and const tables needed by pveclib functions 
 lib_LTLIBRARIES = libpvec.la
 
 libpvec_la_SOURCES = tipowof10.c decpowof2.c
+libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
+	testsuite/vec_int64_dummy.c \
+	testsuite/vec_int32_dummy.c \
+	testsuite/vec_pwr9_dummy.c \
+	testsuite/vec_bcd_dummy.c \
+	testsuite/vec_char_dummy.c
 
 EXTRA_DIST =
 
@@ -51,5 +60,12 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_bcd.c
 	
 pveclib_test_LDADD = .libs/libpvec.a
+	
+TESTS += vec_dummy
+
+#Dummy main to force generation of vec_dummy_* codes
+vec_dummy_SOURCES = testsuite/vec_dummy_main.c 
+
+vec_dummy_LDADD   = .libs/libpvec.a libvecdummy.la
 
 check_PROGRAMS = $(TESTS)

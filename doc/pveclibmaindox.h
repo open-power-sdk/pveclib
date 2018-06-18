@@ -596,7 +596,7 @@ vec_mul10uq (vui128_t a)
 *  \subsubsection  mainpage_sub_1_3 Returning extended quadword results.
 *
 *  Extended quadword add, subtract and multiply results can exceed the
-*  width of a single 128-bit vector. A 128-bit add can product 129-bit
+*  width of a single 128-bit vector. A 128-bit add can produce 129-bit
 *  results. A unsigned 128-bit by 128-bit multiply result can produce
 *  256-bit results. This is simplified for the <I>modulo</I> case where
 *  any result bits above the low order 128 can be discarded.
@@ -610,10 +610,10 @@ vec_mul10uq (vui128_t a)
 *  trade-offs in a fixed sized instruction format.  Also building a
 *  vector register file that can support at least one (or more) double
 *  wide register writes per cycle is challenging.  For a super-scalar
-*  machine with multiple vector execution pipelines the processor can
+*  machine with multiple vector execution pipelines, the processor can
 *  issue and complete multiple instructions per cycle. As most
 *  operations return single vector results, this is a higher
-*  priority, than optimizing for double wide results.
+*  priority than optimizing for double wide results.
 *
 *  The PowerISA addresses this by splitting these operations into two
 *  instructions that execute independently. Here independent means that
@@ -642,7 +642,7 @@ vec_mul10uq (vui128_t a)
 *  paired with corresponding Write Carry-out instructions.
 *  (<B>vaddcuq</B> / <B>vsubcuq</B>).
 *  A further improvement over the word instructions was the addition
-*  of three operand <I>Extend</I> forms which combined add/subtract
+*  of three operand <I>Extend</I> forms which combine add/subtract
 *  with carry-in (<B>vaddeuqm</B>, <B>vsubeuqm</B>,
 *  <B>vaddecuq</B> and <B>vsubecuq</B>).
 *  This simplifies propagating the carry-out into higher quadword

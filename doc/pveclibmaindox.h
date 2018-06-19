@@ -67,7 +67,7 @@
 *
 *  \subsection mainpage_ref_docs Reference Documentation
 *
-*  - Power Instruction Set Architecture, Versions 2.6B, 2.7B and 3.0B,
+*  - Power Instruction Set Architecture, Versions 2.06B, 2.07B and 3.0B,
 *  IBM, 2010-2017. http://www.power.org
 *  and more recently from
 *  https://www-355.ibm.com/systems/power/openpower/
@@ -86,7 +86,7 @@
 *  The C/C++ language compilers (that support PowerISA) may implement
 *  vector intrinsic functions (compiler built-ins as embodied by
 *  altivec.h). These vector intrinsics offer an alternative to
-*  assembler programming, but but do little to reduce the complexity
+*  assembler programming, but do little to reduce the complexity
 *  of the underlying PowerISA.
 *  Higher level vector intrinsic operations are needed to improve
 *  productivity and encourage developers to optimize their applications

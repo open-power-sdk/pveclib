@@ -23,21 +23,75 @@
 /** \mainpage POWER Vector Library (pveclib)
 * \brief A library of useful vector functions for POWER. This library
 * fills in the gap between the instructions defined in the POWER
-* Instruction Set Architecture (<B>PowerISA</B>) and major application
-* libraries like ESSL and MASSV.
-* The C/C++ language compilers (that support PowerISA) may implement
-* vector intrinsic functions (compiler built-ins as embodied by
-* altivec.h). These vector intrinsics offer an alternative to
-* assembler programming, but do not offer higher function then that
-* already provided by the PowerISA.
+* Instruction Set Architecture (<B>PowerISA</B>) and higher level
+* library APIs.  The intent is to improve the productivity of
+* application developers who need to optimize their applications or
+* dependent libraries for POWER.
 *
 *  \authors Steven Munroe
 *
-*  \section Rationale
+*  \copyright 2017-2018 IBM Corporation.
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at:
+*  http://www.apache.org/licenses/LICENSE-2.0 .
 *
-*  Higher level vector intrinsic operations are needed. One key reason
-*  is to smooth over the high complexity of the evolving PowerISA and
-*  compiler support.
+*  Unless required by applicable law or agreed to in writing, software
+*  and documentation
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+*  \section mainpage_notices Notices
+*
+*  IBM, the IBM logo, and ibm.com are trademarks or registered trademarks
+*  of International Business Machines Corp., registered in many
+*  jurisdictions worldwide. Other product and service names might
+*  be trademarks of IBM or other companies. A current list of IBM
+*  trademarks is available on the Web at “Copyright and trademark
+*  information” at http:www.ibm.com/legal/copytrade.shtml.
+*
+*  The following terms are trademarks or registered trademarks licensed
+*  by Power.org in the United States and/or other countries:
+*  Power ISA<SUP>TM</SUP>, Power Architecture<SUP>TM</SUP>.
+*  Information on the list of U.S.
+*  trademarks licensed by Power.org may be found at
+*  http:www.power.org/about/brand-center/.
+*
+*  The following terms are trademarks or registered trademarks of
+*  Freescale Semiconductor in the United States and/or other countries:
+*  AltiVec<SUP>TM</SUP>. Information on the list of U.S. trademarks owned by
+*  Freescale Semiconductor may be found at
+*  http://www.freescale.com/files/abstract/help_page/TERMSOFUSE.html.
+*
+*  \subsection mainpage_ref_docs Reference Documentation
+*
+*  - Power Instruction Set Architecture, Versions 2.06B, 2.07B and 3.0B,
+*  IBM, 2010-2017. http://www.power.org
+*  and more recently from
+*  https://www-355.ibm.com/systems/power/openpower/
+*  - ALTIVEC PIM: AltiVecTM Technology Programming Interface Manual,
+*  Freescale Semiconductor, 1999.
+*  http://www.freescale.com/files/32bit/doc/ref_manual/ALTIVECPIM.pdf
+*  - 64-bit PowerPC ELF Application Binary Interface Supplement 1.9.
+*  http://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html
+*  - OpenPOWER ELF V2 application binary interface (ABI), OpenPOWER Foundation, 2017.
+*  https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture
+*  - Using the GNU Compiler Collection (GCC), Free Software Foundation, 1988-2018.
+*  https://gcc.gnu.org/onlinedocs/
+*
+*  \section mainpage_rationale Rationale
+*
+*  The C/C++ language compilers (that support PowerISA) may implement
+*  vector intrinsic functions (compiler built-ins as embodied by
+*  altivec.h). These vector intrinsics offer an alternative to
+*  assembler programming, but do little to reduce the complexity
+*  of the underlying PowerISA.
+*  Higher level vector intrinsic operations are needed to improve
+*  productivity and encourage developers to optimize their applications
+*  for PowerISA.  Another key goal is to smooth over the complexity
+*  of the evolving PowerISA and compiler support.
 *
 *  For example: the PowerISA 2.07 (POWER8) provides population count
 *  and count leading zero operations on vectors of byte, halfword,

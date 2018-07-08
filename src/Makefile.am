@@ -9,6 +9,7 @@ libpvec_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
+	testsuite/vec_f32_dummy.c \
 	testsuite/vec_pwr9_dummy.c \
 	testsuite/vec_bcd_dummy.c \
 	testsuite/vec_char_dummy.c
@@ -19,6 +20,7 @@ EXTRA_DIST =
 # .libs/libpvec.a and if make is executed in parallel (-jN) the 
 # pveclib_test rule may be run before .libs/libpvec.a is built.
 .libs/libpvec.a: libpvec.la
+.libs/libpvecdummy.a: libpvecdummy.la
 
 # pveclib definitions
 pveclibincludedir = $(includedir)/pveclib
@@ -30,6 +32,7 @@ pveclib_testincludedir = $(includedir)/testsuite
 # on 'make install'
 pveclibinclude_HEADERS = \
 	vec_common_ppc.h \
+	vec_f32_ppc.h \
 	vec_int128_ppc.h \
 	vec_int64_ppc.h \
 	vec_int32_ppc.h \
@@ -52,6 +55,9 @@ TESTS += pveclib_test
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
+	testsuite/vec_perf_f32.c \
+	testsuite/vec_perf_i128.c \
+	testsuite/arith128_test_f32.c \
 	testsuite/arith128_test_i128.c \
 	testsuite/arith128_test_i64.c \
 	testsuite/arith128_test_i32.c \
@@ -59,7 +65,7 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_char.c \
 	testsuite/arith128_test_bcd.c
 	
-pveclib_test_LDADD = .libs/libpvec.a
+pveclib_test_LDADD = .libs/libpvec.a .libs/libvecdummy.a
 	
 TESTS += vec_dummy
 

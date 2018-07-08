@@ -44,6 +44,7 @@
 #include <testsuite/arith128_print.h>
 
 #include <testsuite/arith128_test_i128.h>
+#include <testsuite/vec_perf_i128.h>
 
 extern const vui128_t vtipowof10 [];
 
@@ -1425,7 +1426,7 @@ test_mul10uq (void)
     }
 
   if (rc)
-    printf ("\ntest_4 Vector Multiply by 10 %d errors\n", rc);
+    printf ("\n%s Vector Multiply by 10 %d errors\n", __FUNCTION__, rc);
 
   return (rc);
 }
@@ -4277,6 +4278,60 @@ test_vslq (void)
   return (rc);
 }
 
+#define TIME_10_ITERATION 10
+
+int
+test_time_i128 (void)
+{
+  long i;
+  uint64_t t_start, t_end, t_delta;
+  double delta_sec;
+  int rc = 0;
+
+  printf ("\n%s mul10uq start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIME_10_ITERATION; i++)
+    {
+      rc += timed_mul10uq ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mul10uq end", __FUNCTION__);
+  printf ("\n%s mul10uq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s mul10uq2x start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIME_10_ITERATION; i++)
+    {
+      rc += timed_mul10uq2x ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mul10uq2x end", __FUNCTION__);
+  printf ("\n%s mul10uq2x  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s mulluq start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIME_10_ITERATION; i++)
+    {
+      rc += timed_mulluq ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mulluq end", __FUNCTION__);
+  printf ("\n%s mulluq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+  return (rc);
+}
+
 int
 test_vec_i128 (void)
 {
@@ -4303,6 +4358,8 @@ test_vec_i128 (void)
   rc += test_muludq ();
 
   rc += test_msumudm ();
+
+  rc += test_time_i128();
 
   return (rc);
 }

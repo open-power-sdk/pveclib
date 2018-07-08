@@ -60,6 +60,15 @@ typedef __vector float vf32_t;
 /*! \brief vector of 64-bit double elements. */
 typedef __vector double vf64_t;
 
+/*! \brief vector of 8-bit bool char elements. */
+typedef __vector __bool char vb8_t;
+/*! \brief vector of 16-bit bool short elements. */
+typedef __vector __bool short vb16_t;
+/*! \brief vector of 32-bit bool int elements. */
+typedef __vector __bool int vb32_t;
+/*! \brief vector of 64-bit bool long long elements. */
+typedef __vector __bool long long vb64_t;
+
 /* did not get vector __int128 until GCC4.8.  */
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 typedef __vector __int128 vi128_t;

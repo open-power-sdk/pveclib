@@ -80,6 +80,10 @@
 *  https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture
 *  - Using the GNU Compiler Collection (GCC), Free Software Foundation, 1988-2018.
 *  https://gcc.gnu.org/onlinedocs/
+*  - POWER8 Processor User’s Manual for the Single-Chip Module
+*  https://ibm.ent.box.com/s/649rlau0zjcc0yrulqf4cgx5wk3pgbfk
+*  - POWER9 Processor User’s Manual
+*  https://ibm.ent.box.com/s/8uj02ysel62meji4voujw29wwkhsz6a4
 *
 *  \section mainpage_rationale Rationale
 *
@@ -1048,6 +1052,365 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 *  and more consistent vector interface for the PowerISA.
 *  Similarly for implementors of extended arithmetic, cryptographic,
 *  compression/decompression, and pattern matching / search libraries.
+*
+* \section perf_data Performance data.
+*
+* It is useful to provide basic performance data for each pveclib
+* function.  This is challenging as these functions are small and
+* intended to be in-lined within larger functions (algorithms).
+* As such they are subject to both the compilers instruction
+* scheduling and common subexpression optimizations plus the
+* processors super-scalar and out-of-order execution design features.
+*
+* As pveclib functions are normally only a few
+* instructions, the actual timing will depend on the context it
+* is in (the instructions that is depends on for data and instructions
+* that proceed them in the pipelines).
+*
+* The simplest approach is to use the same performance metrics as the
+* Power Processor Users Manuals Performance Profile.
+* This is normally per instruction latency in cycles and
+* throughput in instructions issued per cycle. There may also be
+* additional information for special conditions that may apply.
+*
+* For example the vector float absolute value function.
+* For recent PowerISA implementations this a single
+* (VSX <B>xvabssp</B>) instruction which we can look up in the
+* POWER8 / POWER9 Processor User's Manuals (<B>UM</B>).
+*
+*  |processor|Latency|Throughput|
+*  |--------:|:-----:|:---------|
+*  |power8   | 6-7   | 2/cycle  |
+*  |power9   | 2     | 2/cycle  |
+*
+* The POWER8 UM specifies a latency of
+* <I>"6 cycles to FPU (+1 cycle to other VSU ops"</I>
+* for this class of VSX single precision FPU instructions.
+* So the minimum latency is 6 cycles if the register result is input
+* to another VSX single precision FPU instruction.
+* Otherwise if the result is input to a VSU logical or integer
+* instruction then the latency is 7 cycles.
+* The POWER9 UM shows the pipeline improvement of 2 cycles latency
+* for simple FPU instructions like this.
+* Both processors support dual pipelines for a 2/cycle throughput
+* capability.
+*
+* A more complicated example: \code
+static inline vb32_t
+vec_isnanf32 (vf32_t vf32)
+{
+vui32_t tmp2;
+const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
+					0x7f800000);
+#if _ARCH_PWR9
+// P9 has a 2 cycle xvabssp and eliminates a const load.
+tmp2 = (vui32_t) vec_abs (vf32);
+#else
+const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
+					 0x80000000);
+tmp2 = vec_andc ((vui32_t)vf32, signmask);
+#endif
+return vec_cmpgt (tmp2, expmask);
+}
+* \endcode
+* Here we want to test for <I>Not A Number</I> without triggering any
+* of the associate floating-point exceptions (VXSNAN or VXVC).
+* For this test the sign bit does not effect the result so we need to
+* zero the sign bit before the actual test. The vector abs would work
+* for this, but we know from the example above that this instruction
+* has a high latency as we are definitely passing the result to a
+* non-FPU instruction (vector compare greater than unsigned word).
+*
+* So the code needs to load two constant vectors masks, then vector
+* and-compliment to clear the sign-bit, before comparing each word
+* for greater then infinity. The generated code should look
+* something like this: \code
+      addis   r9,r2,.rodata.cst16+0x10@ha
+      addis   r10,r2,.rodata.cst16+0x20@ha
+      addi    r9,r9,.rodata.cst16+0x10@l
+      addi    r10,r10,.rodata.cst16+0x20@l
+      lvx     v0,0,r10	# load vector const signmask
+      lvx     v12,0,r9	# load vector const expmask
+      xxlandc vs34,vs34,vs32
+      vcmpgtuw v2,v2,v12
+* \endcode
+* So six instructions to load the const masks and two instructions
+* for the actual vec_isnanf32 function. The first six instructions
+* are only needed once for each containing function, can be hoisted
+* out of loops and into the function prologue, can be <I>commoned</I>
+* with the same constant for other pveclib functions, or executed
+* out-of-order and early by the processor.
+*
+* Most of the time, constant setup does not contribute measurably to
+* the over all performance of vec_isnanf32. When it does it is
+* limited by the longest (in cycles latency) of the various
+* independent paths that load constants.  In this case the const load
+* sequence is composed of three pairs of instructions that can issue
+* and execute in parallel. The addis/addi FXU instructions supports
+* throughput of 6/cycle and the lvx load supports 2/cycle.
+* So the two vector constant load sequences can execute
+* in parallel and the latency is same as a single const load.
+*
+* For POWER8 it appears to be (2+2+5=) 9 cycles latency for the const
+* load. While the core vec_isnanf32 function (xxlandc/vcmpgtuw) is a
+* dependent sequence and runs (2+2) 4 cycles latency.
+* Similar analysis for POWER9 where the addis/addi/lvx sequence is
+* still listed as (2+2+5) 9 cycles latency. While the xxlandc/vcmpgtuw
+* sequence increases to (2+3) 5 cycles.
+*
+* The next interesting question is what can we say about throughput
+* (if anything) for this example.  The thought experiment is "what
+* would happen if?";
+* - two or more instances of vec_isnanf32 are used within a single
+* function,
+* - in close proximity in the code,
+* - with independent data as input,
+*
+* could the generated instructions execute in parallel and to what
+* extent. This illustrated by the following (contrived) example:
+* \code
+int
+test512_all_f32_nan (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
+{
+const vb32_t alltrue = { -1, -1, -1, -1 };
+vb32_t nan0, nan1, nan2, nan3;
+
+nan0 = vec_isnanf32 (val0);
+nan1 = vec_isnanf32 (val1);
+nan2 = vec_isnanf32 (val2);
+nan3 = vec_isnanf32 (val3);
+
+nan0 = vec_and (nan0, nan1);
+nan2 = vec_and (nan2, nan3);
+nan0 = vec_and (nan2, nan0);
+
+return vec_all_eq(nan0, alltrue);
+}
+* \endcode
+* which tests 4 X vector float (16 X float) values and returns true
+* if all 16 floats are NaN. Recent compilers will generates something
+* like the following PowerISA code:
+* \code
+   addis   r9,r2,-2
+   addis   r10,r2,-2
+   vspltisw v13,-1	# load vector const alltrue
+   addi    r9,r9,21184
+   addi    r10,r10,-13760
+   lvx     v0,0,r9	# load vector const signmask
+   lvx     v1,0,r10	# load vector const expmask
+   xxlandc vs35,vs35,vs32
+   xxlandc vs34,vs34,vs32
+   xxlandc vs37,vs37,vs32
+   xxlandc vs36,vs36,vs32
+   vcmpgtuw v3,v3,v1	# nan1 = vec_isnanf32 (val1);
+   vcmpgtuw v2,v2,v1	# nan0 = vec_isnanf32 (val0);
+   vcmpgtuw v5,v5,v1	# nan3 = vec_isnanf32 (val3);
+   vcmpgtuw v4,v4,v1	# nan2 = vec_isnanf32 (val2);
+   xxland  vs35,vs35,vs34	# nan0 = vec_and (nan0, nan1);
+   xxland  vs36,vs37,vs36	# nan2 = vec_and (nan2, nan3);
+   xxland  vs36,vs35,vs36	# nan0 = vec_and (nan2, nan0);
+   vcmpequw. v4,v4,v13	# vec_all_eq(nan0, alltrue);
+...
+* \endcode
+* first the generated code loading the vector constants for signmask,
+* expmask, and alltrue. We see that the code is generated only once
+* for each constant. Then the compiler generate the core vec_isnanf32
+* function four times and interleaves the instructions. This enables
+* parallel pipeline execution where conditions allow. Finally the 16X
+* isnan results are reduced to 8X, then 4X, then to a single
+* condition code.
+*
+* For this exercise we will ignore the constant load as in any
+* realistic usage it will be <I>commoned</I> across several pveclib
+* functions and hoisted out of any loops. The reduction code is not
+* part of the vec_isnanf32 implementation and also ignored.
+* The sequence of 4X xxlandc and 4X vcmpgtuw in the middle it the
+* interesting part.
+*
+* For POWER8 both xxlandc and vcmpgtuw are listed as 2 cycles
+* latency and throughput of 2 per cycle. So we can assume that (only)
+* the first two xxlandc will issue in the same cycle (assuming the
+* input vectors are ready).  The issue of the next two xxlandc
+* instructions will be delay by 1 cycle. The following vcmpgtuw
+* instruction are dependent on the xxlandc results and will not
+* execute until their input vectors are ready. The first two vcmpgtuw
+* instruction will execute 2 cycles (latency) after the first two
+* xxlandc instructions execute. Execution of the second two vcmpgtuw
+* instructions will be delayed 1 cycle due to the issue delay in the
+* second pair of xxlandc instructions.
+*
+* So at least for this example and this set of simplifying assumptions
+* we suggest that the throughput metric for vec_isnanf32 is 2/cycle.
+* For latency metric we offer the range with the latency for the core
+* function (without and constant load overhead) first. Followed by the
+* total latency (the sum of the constant load and core function
+* latency). For the vec_isnanf32 example the metrics are:
+*
+*  |processor|Latency|Throughput|
+*  |--------:|:-----:|:---------|
+*  |power8   | 4-13  | 2/cycle  |
+*  |power9   | 5-14  | 2/cycle  |
+*
+* Looking at a slightly more complicated example where core functions
+* implementation can execute more then one instruction per cycle.
+* Consider:
+* \code
+static inline vb32_t
+vec_isnormalf32 (vf32_t vf32)
+{
+vui32_t tmp, tmp2;
+const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
+					0x7f800000);
+const vui32_t minnorm = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
+					0x00800000);
+#if _ARCH_PWR9
+// P9 has a 2 cycle xvabssp and eliminates a const load.
+tmp2 = (vui32_t) vec_abs (vf32);
+#else
+const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
+					 0x80000000);
+tmp2 = vec_andc ((vui32_t)vf32, signmask);
+#endif
+tmp = vec_and ((vui32_t) vf32, expmask);
+tmp2 = (vui32_t) vec_cmplt (tmp2, minnorm);
+tmp = (vui32_t) vec_cmpeq (tmp, expmask);
+
+return (vb32_t )vec_nor (tmp, tmp2);
+}
+* \endcode
+* which requires two (independent) masking operations (sign and exponent),
+* two (independent) compares that are dependent on the masking operations,
+* and a final <I>not OR</I> operation dependent on the compare results.
+*
+* The generated POWER8 code looks like this: \code
+   addis   r10,r2,-2
+   addis   r8,r2,-2
+   addi    r10,r10,21184
+   addi    r8,r8,-13760
+   addis   r9,r2,-2
+   lvx     v13,0,r8
+   addi    r9,r9,21200
+   lvx     v1,0,r10
+   lvx     v0,0,r9
+   xxland  vs33,vs33,vs34
+   xxlandc vs34,vs45,vs34
+   vcmpgtuw v0,v0,v1
+   vcmpequw v2,v2,v13
+   xxlnor  vs34,vs32,vs34
+* \endcode
+* Note this this sequence needs to load 3 vector constants. In
+* previous examples we have noted that POWER8 lvx supports 2/cycle
+* throughput. But with good scheduling, the 3rd vector constant load,
+* will only add 1 additional cycle to the timing (10 cycles).
+*
+* Once the constant masks are loaded the xxland/xxlandc instructions
+* can execute in parallel. The vcmpgtuw/vcmpequw  can also execute
+* in parallel but are delayed waiting for the results of masking
+* operations. Finally the xxnor is dependent on the data from both
+* compare instructions.
+*
+* For POWER8 the latencies are 2 cycles each, and assuming parallel
+* execution of xxland/xxlandc and vcmpgtuw/vcmpequw we can assume
+* (2+2+2=) 6 cycles minimum latency and another 10 cycles for the
+* constant loads (if needed).
+*
+* While the POWER8 core has ample resources (10 issue ports across
+* 16 execution units), this specific sequence is restricted to the
+* two <I>issue ports and VMX execution units</I> for this class of
+* (simple vector integer and logical) instructions.
+* For vec_isnormalf32 this allows for a lower latency
+* (6 cycles vs the expected 10, over 5 instructions),
+* it also implies that both of the POWER8 cores
+* <I>VMX execution units</I> are busy for 2 out of the 6 cycles.
+*
+* So while the individual instructions have can have a throughput of
+* 2/cycle, vec_isnormalf32 can not.  It is plausible for two
+* executions of vec_isnormalf32 to interleave with a delay of 1 cycle
+* for the second sequence.  To keep the table information simple for
+* now, just say the throughput of vec_isnormalf32 is 1/cycle.
+*
+* After that it gets complicated. For example after the first two
+* instances of vec_isnormalf32 are issued, both
+* <I>VMX execution units</I> are busy for 4 cycles. So either the
+* first instructions of the third vec_isnormalf32 will be delayed
+* until the fifth cycle.  Or the compiler scheduler will interleave
+* instructions across the instances of vec_isnormalf32 and the
+* latencies of individual vec_isnormalf32 results will increase.
+* This is too complicated to put in a simple table.
+*
+* For POWER9 the sequence is slightly different \code
+   addis   r10,r2,-2
+   addis   r9,r2,-2
+   xvabssp vs45,vs34
+   addi    r10,r10,-14016
+   addi    r9,r9,-13920
+   lvx     v1,0,r10
+   lvx     v0,0,r9
+   xxland  vs34,vs34,vs33
+   vcmpgtuw v0,v0,v13
+   vcmpequw v2,v2,v1
+   xxlnor  vs34,vs32,vs34
+* \endcode
+* We use vec_abs (xvabssp) to replace the sigmask and vec_andc
+* and so only need to load two vector constants.
+* So the constant load overhead is reduced to 9 cycles.
+* However the the vector compares are now 3 cycles for (2+3+2=)
+* 7 cycles for the core sequence. The final table for vec_isnormalf32:
+*
+*  |processor|Latency|Throughput|
+*  |--------:|:-----:|:---------|
+*  |power8   | 6-16  | 1/cycle  |
+*  |power9   | 7-16  | 1/cycle  |
+*
+* \subsection  perf_data_sub_1 Additional analysis and tools.
+*
+* The overview above is simplified analysis based on the instruction
+* latency and throughput numbers published in the
+* Processor User's Manuals (see \ref mainpage_ref_docs).
+* These values are <I>best case</I> (input data is ready, SMT1 mode,
+* no cache misses, mispredicted branches, or other hazards) for each
+* instruction in isolation.
+*
+* \note This information is intended as a guide for compiler and
+* application developers wishing to optimize for the platform.
+* Any performance tables provided for pveclib functions are in this
+* spirit.
+*
+* Of course the actual performance is complicated by the overall
+* environment and how the pveclib functions are used. It would be
+* unusual for pveclib functions to be used in isolation. The compiler
+* will in-line pveclib functions and look for sub-expressions it can
+* hoist out of loops or share across pveclib function instances. The
+* The compiler will also model the processor and schedule instructions
+* across the larger containing function. So in actual use the
+* instruction sequences for the examples above are likely to be
+* interleaved with instructions from other pvevlib functions
+* and user written code.
+*
+* Larger functions that use pveclib and even some of the more
+* complicated pveclib functions (like vec_muludq) defy simple
+* analysis. For these cases it is better to use POWER specific
+* analysis tools. To understand the overall pipeline flows and
+* identify hazards the instruction trace driven performance simulator
+* is recommended.
+*
+* The IBM Advance Toolchain includes an updated (POWER enabled)
+* Valgrind tool and instruction trace plug-in (itrace). The itrace
+* tool (--tool=itrace) collects instruction traces for the whole
+* program or specific functions (via --fnname= option).
+*
+* \note The Valgrind package provided by the Linux Distro may not be
+* enabled for the latest POWER processor. Nor will it include the
+* itrace plug-in or the associated vgi2qt conversion tool.
+*
+* Instruction traces are processed by the performance simulator
+* (sim_ppc) models. Performance simulators are specific to each
+* processor generation (POWER7-9) and provides a cycle accurate
+* modeling for instruction trace streams. The results of the model
+* (a pipe file) can viewed via one the interactive display tools
+* (scrollpv, jviewer) or passed to an analysis tool like
+* <B>pipestat</B>.
+*
 *
 **/
 

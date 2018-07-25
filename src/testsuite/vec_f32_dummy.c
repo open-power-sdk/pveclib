@@ -90,6 +90,15 @@ test512_any_f32_subnorm (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
 }
 
 int
+test512_any_f32_subnorm2 (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
+{
+  return vec_any_issubnormalf32 (val0)
+      || vec_any_issubnormalf32 (val1)
+      || vec_any_issubnormalf32 (val2)
+      || vec_any_issubnormalf32 (val3);
+}
+
+int
 test512_all_f32_nan (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
 {
   const vb32_t alltrue = { -1, -1, -1, -1 };

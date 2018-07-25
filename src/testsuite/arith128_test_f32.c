@@ -213,7 +213,7 @@ test_float_all_is (void)
   if (vec_all_isnanf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_all_isnan fail", i);
+      print_v4f32x ("vec_all_isnan fail 1", i);
     } else {
     }
 
@@ -226,7 +226,7 @@ test_float_all_is (void)
   if (vec_all_isnanf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_all_isnan fail", i);
+      print_v4f32x ("vec_all_isnan fail 2", i);
     } else {
     }
 
@@ -236,11 +236,12 @@ test_float_all_is (void)
 #ifdef __DEBUG_PRINT__
   print_v4f32x ("vec_all_isnan i=", i);
 #endif
+
   if (vec_all_isnanf32 (i))
     {
-    } else {
       rc += 1;
-      print_v4f32x ("vec_all_isnan fail", i);
+      print_v4f32x ("vec_all_isnan fail 3", i);
+    } else {
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
@@ -252,7 +253,7 @@ test_float_all_is (void)
   if (vec_all_isnanf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_all_isnan fail", i);
+      print_v4f32x ("vec_all_isnan fail 4", i);
     } else {
     }
 
@@ -265,8 +266,8 @@ test_float_all_is (void)
   if (vec_all_isnanf32 (i))
     {
     } else {
-	      rc += 1;
-	      print_v4f32x ("vec_all_isnan fail", i);
+      rc += 1;
+      print_v4f32x ("vec_all_isnan fail 5", i);
     }
 
   printf ("\n%s float is all Normal\n", __FUNCTION__);
@@ -722,7 +723,7 @@ test_float_any_is (void)
   if (vec_any_isnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 1", i);
     } else {
     }
 
@@ -736,7 +737,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 2", i);
     }
 
   i = (vf32_t) { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
@@ -749,7 +750,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 3", i);
     }
 
   i = (vf32_t) { __FLT_DENORM_MIN__, __FLT_DENORM_MIN__, __FLT_DENORM_MIN__,
@@ -761,7 +762,7 @@ test_float_any_is (void)
   if (vec_any_isnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 4", i);
     } else {
     }
 
@@ -775,7 +776,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 5", i);
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_NNAN, 0xff000000, 1,
@@ -788,7 +789,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 6", i);
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
@@ -800,7 +801,7 @@ test_float_any_is (void)
   if (vec_any_isnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 7", i);
     } else {
     }
 
@@ -813,8 +814,47 @@ test_float_any_is (void)
   if (vec_any_isnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_isnormal fail", i);
+      print_v4f32x ("vec_any_isnormal fail 8", i);
     } else {
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_INF, 0x7ffff,
+			       1);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isnormal i=", i);
+#endif
+  if (vec_any_isnormalf32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_any_isnormal fail 9", i);
+    } else {
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_INF, 0,
+			       1);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isnormal i=", i);
+#endif
+  if (vec_any_isnormalf32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_any_isnormal fail 10", i);
+    } else {
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_INF, 0x00800000,
+			       1);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isnormal i=", i);
+#endif
+  if (vec_any_isnormalf32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_any_isnormal fail 11", i);
     }
 
   printf ("\n%s float is any Subnormal\n", __FUNCTION__);
@@ -827,7 +867,7 @@ test_float_any_is (void)
   if (vec_any_issubnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 1", i);
     } else {
     }
 
@@ -837,10 +877,11 @@ test_float_any_is (void)
 #ifdef __DEBUG_PRINT__
   print_v4f32x ("vec_any_issubnormal i=", i);
 #endif
+
   if (vec_any_issubnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 2", i);
     } else {
     }
 
@@ -854,7 +895,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 3", i);
     }
 
   i = (vf32_t) CONST_VINT128_W(0x80000001, 0x007fffff, 1,
@@ -867,7 +908,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 4", i);
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_NNAN, 0xff000000, 1,
@@ -880,7 +921,7 @@ test_float_any_is (void)
     {
     } else {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 5", i);
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
@@ -892,7 +933,7 @@ test_float_any_is (void)
   if (vec_any_issubnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 6", i);
     } else {
     }
 
@@ -905,7 +946,7 @@ test_float_any_is (void)
   if (vec_any_issubnormalf32 (i))
     {
       rc += 1;
-      print_v4f32x ("vec_any_issubnormal fail", i);
+      print_v4f32x ("vec_any_issubnormal fail 7", i);
     } else {
     }
 

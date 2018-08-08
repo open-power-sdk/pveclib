@@ -23,19 +23,19 @@
 #ifndef VEC_F32_PPC_H_
 #define VEC_F32_PPC_H_
 
-#include <vec_common_ppc.h>
 /*!
  * \file  vec_f32_ppc.h
  * \brief Header package containing a collection of 128-bit SIMD
- * operations over 32-bit floating point elements.
+ * operations over 4x32-bit floating point elements.
  *
  * Most vector float (32-bit float) operations are implemented
  * with PowerISA VMX instructions either defined by the original VMX
- * (AKA Altivec) or added to later versions of the PowerISA.
+ * (a.k.a. Altivec) or added to later versions of the PowerISA.
  * POWER8 added the Vector Scalar Extended (VSX) with access to
- * additional vector (64) registers and operations.
- * Most of these intrinsic (compiler built-ins) operations are defined
- * in <altivec.h> and described in the compiler documentation.
+ * additional vector registers (64 total) and operations.
+ * Most of these operations (compiler built-ins, or  intrinsics) are
+ * defined in <altivec.h> and described in the
+ * <a href="https://gcc.gnu.org/onlinedocs/">compiler documentation</a>.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -46,33 +46,35 @@
  * substitutions, will generate the minimum code, appropriate for the
  * target, and produce correct results.
  *
+ * \note Most ppc64le compilers will default to -mcpu=power8 if not
+ * specified.
+ *
  * Most of these operations are implemented in a single instruction
  * on newer (POWER8/POWER9) processors.
  * This header serves to fill in functional gaps for older
- * (POWER7, POWER8) processors and provides a in-line assembler
+ * (POWER7, POWER8) processors and provides an inline assembler
  * implementation for older compilers that do not
- * provide the build-ins.
+ * provide the built-ins.
  *
- * This header covers operations that are either:
+ * This header covers operations that are any of the following:
  *
- * - Implemented in hardware instructions for later
- * processors and useful to programmers, on slightly older processors,
- * even if the equivalent function requires more instructions.
+ * - Implemented in hardware instructions in newer processors,
+ * but useful to programmers on slightly older processors
+ * (even if the equivalent function requires more instructions).
  * Examples include the multiply even/odd/modulo word operations.
  * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
- * <altivec.n> provided by available compilers in common use.
+ * <altivec.h> provided by available compilers in common use.
  * Examples include vector float even/odd.
- * - Provide special vector float tests for special conditions
+ * - Providing special vector float tests for special conditions
  * without generating extraneous floating-point exceptions.
  * This is important for implementing vectorized forms of ISO C99 Math
  * functions.
  * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
- * See example above.
  *
  * \section f32_perf_0_0 Performance data.
- * High performance estimates are provided a s an aid to function
+ * High performance estimates are provided as an aid to function
  * selection when evaluating algorithms. For background on how
  * <I>Latency</I> and <I>Throughput</I> are derived see:
  * \ref perf_data
@@ -80,7 +82,7 @@
 
 #include <vec_common_ppc.h>
 
-/*! \brief typedef __vbinary32 to vector of float elements. */
+/*! \brief typedef __vbinary32 to vector of 4 xfloat elements. */
 typedef vf32_t __vbinary32;
 
 /** \brief Vector float absolute value.
@@ -91,7 +93,7 @@ typedef vf32_t __vbinary32;
  *  |power9   | 2     | 2/cycle  |
  *
  *  @param vf32x vector float values containing the magnitudes.
- *  @return vector float absolute values of vf32x.
+ *  @return vector absolute values of 4x float elements of vf32x.
  */
 static inline vf32_t
 vec_absf32 (vf32_t vf32x)
@@ -212,7 +214,7 @@ vec_all_isnormalf32 (vf32_t vf32)
 					  0x7f800000);
   const vui32_t minnorm = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
 					  0x00800000);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
+//  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
   int result;
 
 #if _ARCH_PWR9
@@ -250,7 +252,7 @@ vec_all_isnormalf32 (vf32_t vf32)
 static inline int
 vec_all_issubnormalf32 (vf32_t vf32)
 {
-  vui32_t tmp, tmpz, tmp2;
+  vui32_t tmp2;
   const vui32_t explow = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
 					 0x00800000);
   const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
@@ -363,7 +365,7 @@ vec_any_isinff32 (vf32_t vf32)
  *  |power9   | 5-14  | 2/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
- *  @return a boolean int, true if aany of 4 vector float values are
+ *  @return a boolean int, true if any of 4 vector float values are
  *  NaN.
  */
 static inline int
@@ -496,7 +498,7 @@ vec_any_issubnormalf32 (vf32_t vf32)
  *  |power9   | 5     | 2/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
- *  @return a boolean int, true if aany of 4 vector float values are
+ *  @return a boolean int, true if any of 4 vector float values are
  *  +/- zero.
  */
 static inline int
@@ -536,6 +538,7 @@ static inline vf32_t
 vec_copysignf32 (vf32_t vf32x, vf32_t vf32y)
 {
 #if _ARCH_PWR7
+  /* P9 has a 2 cycle xvcpsgnsp and eliminates a const load. */
   return (vec_cpsgn (vf32x, vf32y));
 #else
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000,

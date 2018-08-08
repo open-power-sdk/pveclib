@@ -41,8 +41,8 @@
 #include <testsuite/vec_perf_f32.h>
 
 #define N 10
-const vf32_t data0 = { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
-	  __FLT_DENORM_MIN__ };
+static const vf32_t data0 =
+  { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__, __FLT_DENORM_MIN__ };
 
 extern __vector bool int
 test_pred_f32_inf (vf32_t value);
@@ -60,7 +60,6 @@ test_fpclassify_f32 (vf32_t value);
 int timed_is_f32 (void)
 {
   vb32_t accum = {0,0,0,0};
-  vb32_t result;
   int i;
 
   for (i=0; i<N; i++)
@@ -77,7 +76,6 @@ int timed_is_f32 (void)
 int timed_fpclassify_f32 (void)
 {
   vb32_t accum = {0,0,0,0};
-  vb32_t result;
   int i;
 
   for (i=0; i<N; i++)

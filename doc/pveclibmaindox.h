@@ -1058,13 +1058,13 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 * It is useful to provide basic performance data for each pveclib
 * function.  This is challenging as these functions are small and
 * intended to be in-lined within larger functions (algorithms).
-* As such they are subject to both the compilers instruction
+* As such they are subject to both the compiler's instruction
 * scheduling and common subexpression optimizations plus the
 * processors super-scalar and out-of-order execution design features.
 *
 * As pveclib functions are normally only a few
 * instructions, the actual timing will depend on the context it
-* is in (the instructions that is depends on for data and instructions
+* is in (the instructions that it depends on for data and instructions
 * that proceed them in the pipelines).
 *
 * The simplest approach is to use the same performance metrics as the
@@ -1394,7 +1394,9 @@ return (vb32_t )vec_nor (tmp, tmp2);
 * identify hazards the instruction trace driven performance simulator
 * is recommended.
 *
-* The IBM Advance Toolchain includes an updated (POWER enabled)
+* The
+* <a href="https://developer.ibm.com/linuxonpower/advance-toolchain/">IBM Advance Toolchain</a>
+* includes an updated (POWER enabled)
 * Valgrind tool and instruction trace plug-in (itrace). The itrace
 * tool (--tool=itrace) collects instruction traces for the whole
 * program or specific functions (via --fnname= option).
@@ -1403,14 +1405,14 @@ return (vb32_t )vec_nor (tmp, tmp2);
 * enabled for the latest POWER processor. Nor will it include the
 * itrace plug-in or the associated vgi2qt conversion tool.
 *
-* Instruction traces are processed by the performance simulator
+* Instruction trace files are processed by the
+* <a href="https://developer.ibm.com/linuxonpower/sdk-packages/">Performance Simulator</a>
 * (sim_ppc) models. Performance simulators are specific to each
 * processor generation (POWER7-9) and provides a cycle accurate
 * modeling for instruction trace streams. The results of the model
 * (a pipe file) can viewed via one the interactive display tools
 * (scrollpv, jviewer) or passed to an analysis tool like
-* <B>pipestat</B>.
-*
+* <a href="https://developer.ibm.com/linuxonpower/sdk-packages/">pipestat</a>.
 *
 **/
 

@@ -52,12 +52,12 @@ typedef union
        __f128_bool vbool1;
        __i128_bool vbool2;
        __binary128 vf1;
-     } VF_128;
+     } __VF_128;
 
 static inline vui16_t
 vec_xfer_bin128_2_vui16t (__binary128 f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vf1 = f128;
 
@@ -67,7 +67,7 @@ vec_xfer_bin128_2_vui16t (__binary128 f128)
 static inline vui32_t
 vec_xfer_bin128_2_vui32t (__binary128 f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vf1 = f128;
 
@@ -77,7 +77,7 @@ vec_xfer_bin128_2_vui32t (__binary128 f128)
 static inline vui64_t
 vec_xfer_bin128_2_vui64t (__binary128 f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vf1 = f128;
 
@@ -87,7 +87,7 @@ vec_xfer_bin128_2_vui64t (__binary128 f128)
 static inline __binary128
 vec_xfer_vui16t_2_bin128 (vui16_t f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vx8 = f128;
 
@@ -97,7 +97,7 @@ vec_xfer_vui16t_2_bin128 (vui16_t f128)
 static inline __binary128
 vec_xfer_vui32t_2_bin128 (vui32_t f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vx4 = f128;
 
@@ -107,7 +107,7 @@ vec_xfer_vui32t_2_bin128 (vui32_t f128)
 static inline __binary128
 vec_xfer_vui64t_2_bin128 (vui64_t f128)
 {
-	VF_128 vunion;
+	__VF_128 vunion;
 
 	vunion.vx2 = f128;
 

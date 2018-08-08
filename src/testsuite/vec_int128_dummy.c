@@ -403,6 +403,14 @@ __test_mulluq (vui128_t a, vui128_t b)
   return (vec_mulluq (a, b));
 }
 
+vui128_t
+__test_mulhuq (vui128_t a, vui128_t b)
+{
+  vui128_t mq, r;
+  r = vec_muludq (&mq, a, b);
+  return mq;
+}
+
 #ifdef _ARCH_PWR8
 vui128_t
 test_vec_subq (vui128_t a, vui128_t b)

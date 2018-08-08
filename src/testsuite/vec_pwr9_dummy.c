@@ -62,6 +62,14 @@ __test_muludq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
 }
 
 vui128_t
+__test_mulhuq_PWR9 (vui128_t a, vui128_t b)
+{
+  vui128_t mq, r;
+  r = vec_muludq (&mq, a, b);
+  return mq;
+}
+
+vui128_t
 __test_cmul10cuq_PWR9 (vui128_t *cout, vui128_t a)
 {
   return vec_cmul10cuq (cout, a);
@@ -138,6 +146,26 @@ vui32_t
 __test_revbw_PWR9 (vui32_t a)
 {
   return vec_revbw (a);
+}
+
+void
+test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11, vui128_t m12, vui128_t m13, vui128_t m2)
+{
+  vui128_t mq2, mq1, mq0, mq, mc;
+  vui128_t mpx0, mpx1, mpx2, mpx3;
+  mpx3 = vec_muludq (&mq2, m13, m2);
+  mpx2 = vec_muludq (&mq1, m12, m2);
+  mpx2 = vec_addcq (&mc, mpx2, mq2);
+  mpx1 = vec_muludq (&mq0, m11, m2);
+  mpx1 = vec_addeq (&mc, mpx1, mq1, mc);
+  mpx0 = vec_muludq (&mq, m10, m2);
+  mpx0 = vec_addeq (&mc, mpx0, mq0, mc);
+  mq   = vec_adduqm (mc, mq);
+
+  mulu[0] = mpx0;
+  mulu[1] = mpx1;
+  mulu[2] = mpx2;
+  mulu[3] = mpx3;
 }
 
 void

@@ -250,7 +250,7 @@ test_cvtbcd2c100 (void)
   vui8_t e;
   int rc = 0;
 
-  printf ("\ntest_48 Vector BCD convert\n");
+  printf ("\n%s Vector BCD convert\n", __FUNCTION__);
 
   i = (vui8_t){0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99};
   e = (vui8_t){99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
@@ -311,7 +311,7 @@ test_bcd_addsub (void)
   vui32_t e, ex;
   int rc = 0;
 
-  printf ("\ntest_3 Vector BCD +-\n");
+  printf ("\n%s Vector BCD +-\n", __FUNCTION__);
 
   i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
   j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
@@ -380,7 +380,7 @@ test_bcd_addsub (void)
   vui32_t e;
   int rc = 0;
 
-  printf ("\ntest_3 Vector BCD */\n");
+  printf ("\n%s Vector BCD */\n", __FUNCTION__);
 
   i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
   j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);

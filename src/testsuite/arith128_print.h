@@ -26,6 +26,18 @@
 #include "arith128.h"
 #include "vec_f128_ppc.h"
 
+static inline
+double
+TimeDeltaSec (uint64_t tb_delta)
+{
+	double temp,  result;
+
+	temp = tb_delta;
+	result = temp / 512.e+06;
+
+	return (result);
+}
+
 extern long tcount;
 
 extern void
@@ -90,6 +102,18 @@ print_v2int64 (char *prefix, vui64_t val128);
 
 extern void
 print_v2xint64 (char *prefix, vui64_t val128);
+
+extern void
+print_v4f32 (char *prefix, vf32_t val);
+
+extern void
+print_v4f32x (char *prefix, vf32_t val);
+
+extern void
+print_v4b32c (char *prefix, vb32_t val);
+
+extern void
+print_v4b32x (char *prefix, vb32_t val);
 
 extern int
 check_udiv128_64x (unsigned __int128 numerator, uint64_t divisor,
@@ -210,7 +234,7 @@ static inline int
 check_f128 (char *prefix, __float128 val128, __float128 f128is,
             __float128 shouldbe)
 {
-  VF_128 xfer;
+  __VF_128 xfer;
   __f128_bool boolis, boolshould;
   int rc = 0;
 
@@ -236,6 +260,18 @@ check_int128_priv (char *prefix, __int128 val128, __int128 shouldbe);
 
 extern int
 check_vui8_priv (char *prefix, vui8_t val128, vui8_t shouldbe);
+
+extern int
+check_v4b32c_priv (char *prefix, vb32_t val128, vb32_t shouldbe);
+
+extern int
+check_v4b32x_priv (char *prefix, vb32_t val128, vb32_t shouldbe);
+
+extern int
+check_v4f32_priv (char *prefix, vf32_t val128, vf32_t shouldbe);
+
+extern int
+check_v4f32x_priv (char *prefix, vf32_t val128, vf32_t shouldbe);
 
 extern int
 check_vuint128_priv (char *prefix, vui128_t val128, vui128_t shouldbe);
@@ -311,6 +347,58 @@ check_vui8 (char *prefix, vui8_t val128, vui8_t shouldbe)
     }
 
   return (rc);
+}
+
+static inline int
+check_v4b32c (char *prefix, vb32_t val128, vb32_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe))
+    {
+      rc = check_v4b32c_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v4b32x (char *prefix, vb32_t val128, vb32_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe))
+    {
+      rc = check_v4b32x_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v4f32 (char *prefix, vf32_t val128, vf32_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe))
+    {
+      rc = check_v4f32_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v4f32x (char *prefix, vf32_t val128, vf32_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe))
+    {
+      rc = check_v4f32x_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
 }
 
 static inline int

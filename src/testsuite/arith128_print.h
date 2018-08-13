@@ -115,6 +115,18 @@ print_v4b32c (char *prefix, vb32_t val);
 extern void
 print_v4b32x (char *prefix, vb32_t val);
 
+extern void
+print_v2f64 (char *prefix, vf64_t val);
+
+extern void
+print_v2f64x (char *prefix, vf64_t val);
+
+extern void
+print_v2b64c (char *prefix, vb64_t val);
+
+extern void
+print_v2b64x (char *prefix, vb64_t val);
+
 extern int
 check_udiv128_64x (unsigned __int128 numerator, uint64_t divisor,
                    uint64_t exp_q, uint64_t exp_r);
@@ -274,6 +286,18 @@ extern int
 check_v4f32x_priv (char *prefix, vf32_t val128, vf32_t shouldbe);
 
 extern int
+check_v2b64c_priv (char *prefix, vb64_t val128, vb64_t shouldbe);
+
+extern int
+check_v2b64x_priv (char *prefix, vb64_t val128, vb64_t shouldbe);
+
+extern int
+check_v2f64_priv (char *prefix, vf64_t val128, vf64_t shouldbe);
+
+extern int
+check_v2f64x_priv (char *prefix, vf64_t val128, vf64_t shouldbe);
+
+extern int
 check_vuint128_priv (char *prefix, vui128_t val128, vui128_t shouldbe);
 
 extern int
@@ -395,6 +419,58 @@ check_v4f32x (char *prefix, vf32_t val128, vf32_t shouldbe)
   if (vec_any_ne((vui32_t )val128, (vui32_t )shouldbe))
     {
       rc = check_v4f32x_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v2b64c (char *prefix, vb64_t val128, vb64_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t)val128, (vui32_t)shouldbe))
+    {
+      rc = check_v2b64c_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v2b64x (char *prefix, vb64_t val128, vb64_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui64_t )val128, (vui64_t )shouldbe))
+    {
+      rc = check_v2b64x_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v2f64 (char *prefix, vf64_t val128, vf64_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t)val128, (vui32_t)shouldbe))
+    {
+      rc = check_v2f64_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v2f64x (char *prefix, vf64_t val128, vf64_t shouldbe)
+{
+  int rc = 0;
+  if (vec_any_ne((vui32_t)val128, (vui32_t)shouldbe))
+    {
+      rc = check_v2f64x_priv (prefix, val128, shouldbe);
     }
 
   return (rc);

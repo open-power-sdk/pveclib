@@ -522,6 +522,54 @@ print_v4b32x (char *prefix, vb32_t boolval)
 }
 
 void
+print_v2f64 (char *prefix, vf64_t val)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s %16.6f,%16.6f\n", prefix, val[1], val[0]);
+#else
+  printf ("%s %16.6f,%16.6f\n", prefix, val[0], val[1]);
+#endif
+}
+
+void
+print_v2f64x (char *prefix, vf64_t val)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s %22.13a,%22.13a\n", prefix, val[1], val[0]);
+#else
+  printf ("%s %22.13a,%22.13a\n", prefix, val[0], val[1]);
+#endif
+}
+
+void
+print_v2b64c (char *prefix, vb64_t val)
+{
+  const vui64_t true =  { 'T', 'T' };
+  const vui64_t false = { 'F', 'F' };
+  vui64_t text;
+
+  text = vec_sel (false, true, val);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s %c,%c\n", prefix, (int)text[1], (int)text[0]);
+#else
+  printf ("%s %c,%c\n", prefix, (int)text[0], (int)text[1]);
+#endif
+}
+
+void
+print_v2b64x (char *prefix, vb64_t boolval)
+{
+  vui64_t val = (vui64_t)boolval;
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s %016lx,%016lx\n", prefix, val[1], val[0]);
+#else
+  printf ("%s %016lx,%016lx\n", prefix, val[0], val[1]);
+#endif
+}
+
+void
 print_v2int64 (char *prefix, vui64_t val128)
 {
   vui64_t val = (vui64_t) val128;
@@ -889,6 +937,74 @@ check_v4f32x_priv (char *prefix, vf32_t val128, vf32_t shouldbe)
       printf ("%s\n", prefix);
       print_v4f32x ("\tshould be: ", shouldbe);
       print_v4f32x ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_v2b64c_priv (char *prefix, vb64_t val128, vb64_t shouldbe)
+{
+  int rc = 0;
+
+
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_v2b64c ("\tshould be: ", shouldbe);
+      print_v2b64c ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_v2b64x_priv (char *prefix, vb64_t val128, vb64_t shouldbe)
+{
+  int rc = 0;
+
+
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_v2b64x ("\tshould be: ", shouldbe);
+      print_v2b64x ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_v2f64_priv (char *prefix, vf64_t val128, vf64_t shouldbe)
+{
+  int rc = 0;
+
+
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_v2f64 ("\tshould be: ", shouldbe);
+      print_v2f64 ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_v2f64x_priv (char *prefix, vf64_t val128, vf64_t shouldbe)
+{
+  int rc = 0;
+
+
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_v2f64x ("\tshould be: ", shouldbe);
+      print_v2f64x ("\t       is: ", val128);
     }
 
   return (rc);

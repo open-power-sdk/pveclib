@@ -51,8 +51,18 @@
  * quadword. But with a few extra (permutes and splat zero)
  * instructions you can get equivalent function.
  *
+ * \note The doubleword integer multiply implementations are included
+ * in vec_int128_ppc.h (see also vec_muleud(), vec_muloud(), and
+ * vec_msumudm()).  This resolves a circular dependency as 64-bit
+ * by 64-bit multiplies require 128-bit addition to produce the full
+ * product.
+ *
  * Most of these intrinsic (compiler built-in) operations are defined
  * in <altivec.h> and described in the compiler documentation.
+ * However it took several compiler releases for all the new POWER8
+ * 64-bit integer vector intrinsics to be added to <B>altivec.h</B>.
+ * This support started with the GCC 4.9 but was not complete across
+ * function/type and bug free until GCC 6.0.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -60,6 +70,15 @@
  * vec_vclzd will not be defined.  But vec_clzd is always defined in
  * this header, will generate the minimum code, appropriate for the
  * target, and produce correct results.
+ *
+ * 64-bit integer operations are commonly used in the implementation of
+ * optimized double float math library functions and this applies to the
+ * vector equivalents of math functions. So missing, incomplete or
+ * buggy support for vector long integer intrinsics can be a impediment
+ * to the implementation of optimized and portable vector double math
+ * libraries. This header is a prerequisite for vec_f64_ppc.h which
+ * together are intended to support the implementation of vector math
+ * libraries.
  *
  * Most of these
  * operations are implemented in a single instruction on newer
@@ -93,6 +112,11 @@
 /** \brief Vector Add Unsigned Doubleword Modulo.
  *
  *  Add two vector long int values and return modulo 64-bits result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 2     | 2/cycle  |
  *
  *  @param a 128-bit vector long int.
  *  @param b 128-bit vector long int.
@@ -131,13 +155,18 @@ vec_addudm(vui64_t a, vui64_t b)
 
 /** \brief Count leading zeros for a vector unsigned long int.
  *
- *	Count leading zeros for a vector __int128 and return the count in a
- *	vector suitable for use with vector shift (left|right) and vector
- *	shift (left|right) by octet instructions.
+ *  Count leading zeros for a vector __int128 and return the count in a
+ *  vector suitable for use with vector shift (left|right) and vector
+ *  shift (left|right) by octet instructions.
  *
- *	@param vra a 128-bit vector treated a __int128.
- *	@return a 128-bit vector with bits 121:127 containing the count of
- *	leading zeros.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated a __int128.
+ *  @return a 128-bit vector with bits 121:127 containing the count of
+ *  leading zeros.
  */
 static inline vui64_t
 vec_clzd (vui64_t vra)
@@ -172,14 +201,54 @@ vec_clzd (vui64_t vra)
   return (r);
 }
 
+static inline vi64_t vec_cmpgtsd (vi64_t a, vi64_t b);
+static inline vui64_t vec_cmpequd (vui64_t a, vui64_t b);
+static inline vui64_t vec_cmpgeud (vui64_t a, vui64_t b);
+static inline vui64_t vec_cmpgtud (vui64_t a, vui64_t b);
+static inline vui64_t vec_cmpneud (vui64_t a, vui64_t b);
+
+/** \brief Vector Compare Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return all '1's,
+ *  if a[i] == b[i], otherwise all '0's.
+ *
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare
+ *  Equal Unsigned DoubleWord (<B>vcmpequd</B>) instruction. Otherwise
+ *  use boolean logic using word compares.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  equal result for each element.
+ */
+static inline
+vi64_t
+vec_cmpeqsd (vi64_t a, vi64_t b)
+{
+  /* vcmpequd works for both signed and unsigned compares.  */
+  return (vi64_t)vec_cmpequd ((vui64_t) a, (vui64_t) b);
+}
+
 /** \brief Vector Compare Equal Unsigned Doubleword.
  *
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] == b[i], otherwise all '0's.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
- *  Count DoubleWord (<B>vcmpequd</B>) instruction. Otherwise use
- *  boolean logic using word compares.
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare
+ *  Equal Unsigned DoubleWord (<B>vcmpequd</B>) instruction. Otherwise
+ *  use boolean logic using word compares.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -194,8 +263,9 @@ vec_cmpequd (vui64_t a, vui64_t b)
 {
   vui64_t result;
 #ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = (vui64_t)vec_cmpeq((__vector bool long long)a, (__vector bool long long)b);
+#if __GNUC__ >= 6
+  result = (vui64_t)vec_cmpeq(a, b);
+//  result = (vui64_t)vec_cmpeq((__vector bool long long)a, (__vector bool long long)b);
 #else
   __asm__(
       "vcmpequd %0,%1,%2;\n"
@@ -227,34 +297,113 @@ vec_cmpequd (vui64_t a, vui64_t b)
   return (result);
 }
 
-/** \brief Vector Compare all Equal Unsigned Doubleword.
+/** \brief Vector Compare Greater Than or Equal Signed Doubleword.
+*
+*  Compare each signed long (64-bit) integer and return all '1's,
+*  if a[i] >= b[i], otherwise all '0's.
+*  Use vec_cmpgtsd with parameters reversed to implement vec_cmpltud,
+*  then return the logical inverse.
+*
+*  |processor|Latency|Throughput|
+*  |--------:|:-----:|:---------|
+*  |power8   | 4     | 2/cycle  |
+*  |power9   | 5     | 2/cycle  |
+*
+*  @param a 128-bit vector treated as 2 x 64-bit signed long
+*  integer (dword) elements.
+*  @param b 128-bit vector treated as 2 x 64-bit signed long
+*  integer (dword) elements.
+*  @return 128-bit vector with each dword boolean reflecting compare
+*  greater then or equal result for each element.
+*/
+static inline
+vi64_t
+vec_cmpgesd (vi64_t a, vi64_t b)
+{
+vi64_t r;
+/* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
+   is implemented as vec_cmpgt with parms reversed.  */
+r = vec_cmpgtsd (b, a);
+return vec_nor (r, r);
+}
+
+/** \brief Vector Compare Greater Than or Equal Unsigned Doubleword.
  *
- *  Compare each unsigned long (64-bit) integer and return true if all
- *  elements of a and b are equal.
+ *  Compare each unsigned long (64-bit) integer and return all '1's,
+ *  if a[i] >= b[i], otherwise all '0's.
+ *  Use vec_cmpgtud with parameters reversed to implement vec_cmpltud,
+ *  then return the logical inverse.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
- *  predicate directly.  Otherwise cast to unsigned word and use the
- *  same predicate generating (<B>vcmpequw</B>).
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
  *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
- *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  greater then or equal result for each element.
  */
 static inline
-int
-vec_cmpud_all_eq (vui64_t a, vui64_t b)
+vui64_t
+vec_cmpgeud (vui64_t a, vui64_t b)
 {
-  int result;
+  vui64_t r;
+  /* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
+     is implemented as vec_cmpgt with parms reversed.  */
+  r = vec_cmpgtud (b, a);
+  return vec_nor (r, r);
+}
+
+/** \brief Vector Compare Greater Than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return all '1's,
+ *  if a[i] > b[i], otherwise all '0's.
+ *
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare Greater
+ *  Than Unsigned DoubleWord (<B>vcmpgtsd</B>) instruction. Otherwise
+ *  use boolean logic using word compares.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  greater result for each element.
+ */
+static inline
+vi64_t
+vec_cmpgtsd (vi64_t a, vi64_t b)
+{
+  vi64_t result;
 #ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = vec_all_eq((__vector bool long long)a, (__vector bool long long)b);
+#if __GNUC__ >= 6
+  result = (vi64_t)vec_cmpgt(a, b);
 #else
-  result = vec_all_eq((vui32_t)a, (vui32_t)b);
+  __asm__(
+      "vcmpgtsd %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (a),
+      "v" (b)
+      : );
 #endif
 #else
-  result = vec_all_eq((vui32_t)a, (vui32_t)b);
+  vui64_t _A, _B;
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  /* For a signed compare we can flip the sign bits, which give
+     unsigned magnitudes, that retain the correct relative different.
+   */
+  _A = vec_xor ((vui64_t)a, signmask);
+  _B = vec_xor ((vui64_t)b, signmask);
+  result = (vi64_t)vec_cmpgtud (_A, _B);
 #endif
   return (result);
 }
@@ -264,9 +413,14 @@ vec_cmpud_all_eq (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] > b[i], otherwise all '0's.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
- *  Count DoubleWord (<B>vcmpgtud</B>) instruction. Otherwise use
- *  boolean logic using word compares.
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare Greater
+ *  Than Unsigned DoubleWord (<B>vcmpgtud</B>) instruction. Otherwise
+ *  use boolean logic using word compares.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -281,7 +435,7 @@ vec_cmpgtud (vui64_t a, vui64_t b)
 {
   vui64_t result;
 #ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
+#if __GNUC__ >= 6
   result = (vui64_t)vec_cmpgt(a, b);
 #else
   __asm__(
@@ -323,88 +477,46 @@ vec_cmpgtud (vui64_t a, vui64_t b)
   return (result);
 }
 
-/** \brief Vector Compare all Greater Than Unsigned Doubleword.
+/** \brief Vector Compare Less Than Equal Signed Doubleword.
  *
- *  Compare each unsigned long (64-bit) integer and return true if all
- *  elements of a > b.
+ *  Compare each signed long (64-bit) integer and return all '1's,
+ *  if a[i] > b[i], otherwise all '0's.
+ *  Use vec_cmpgtsd with parameters reversed to implement vec_cmpltsd
+ *  then return the logical inverse.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in predicate directly.
- *  Otherwise case to unsigned word and use the same predicate generating (<B>vcmpequw</B>).
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
  *
- *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
  *  integer (dword) elements.
- *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
  *  integer (dword) elements.
- *  @return boolean int for all 128-bits, true if all Greater Than,
- *  false otherwise.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  greater result for each element.
  */
 static inline
-int
-vec_cmpud_any_gt (vui64_t a, vui64_t b)
+vi64_t
+vec_cmplesd (vi64_t a, vi64_t b)
 {
-  int result;
-#ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = vec_any_gt(a, b);
-#else
-  vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpgtud (a, b);
-  result = vec_any_eq((vui32_t)gt_bool, wt);
-#endif
-#else
-  vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpgtud (a, b);
-  result = vec_any_eq((vui32_t)gt_bool, wt);
-#endif
-  return (result);
+  vi64_t result;
+  /* vec_cmple is implemented as the not of vec_cmpgt.   */
+  result = vec_cmpgtsd (a, b);
+  return vec_nor (result, result);
 }
-
-/** \brief Vector Compare all Greater Than Unsigned Doubleword.
- *
- *  Compare each unsigned long (64-bit) integer and return true if all
- *  elements of a > b.
- *
- *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
- *  predicate directly.  Otherwise cast to unsigned word and use the
- *  same predicate generating (<B>vcmpequw</B>).
- *
- *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
- *  integer (dword) elements.
- *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
- *  integer (dword) elements.
- *  @return boolean int for all 128-bits, true if all Greater Than,
- *  false otherwise.
- */
-static inline
-int
-vec_cmpud_all_gt (vui64_t a, vui64_t b)
-{
-  int result;
-#ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = vec_all_gt(a, b);
-#else
-  vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpgtud (a, b);
-  result = vec_all_eq((vui32_t)gt_bool, wt);
-#endif
-#else
-  vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpgtud (a, b);
-  result = vec_all_eq((vui32_t)gt_bool, wt);
-#endif
-  return (result);
-}
-
 
 /** \brief Vector Compare Less Than Equal Unsigned Doubleword.
  *
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] > b[i], otherwise all '0's.
+ *  Use vec_cmpgtud with parameters reversed to implement vec_cmpltud.
+ *  Use vec_cmpgtud then return the logical inverse.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
- *  Count DoubleWord (<B>vcmpgtud</B>) instruction. Otherwise use
- *  boolean logic using word compares.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -418,21 +530,544 @@ vui64_t
 vec_cmpleud (vui64_t a, vui64_t b)
 {
   vui64_t result;
-#ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = (vui64_t)vec_cmple(a, b);
+  /* vec_cmple is implemented as the not of vec_cmpgt.   */
+  result = vec_cmpgtud (a, b);
+  return vec_nor (result, result);
+}
+
+/** \brief Vector Compare less Than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return all '1's,
+ *  if a[i] < b[i], otherwise all '0's.
+ *  Use vec_cmpgtsd with parameters reversed to implement vec_cmpltsd.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  less result for each element.
+ */
+static inline
+vi64_t
+vec_cmpltsd (vi64_t a, vi64_t b)
+{
+  return vec_cmpgtsd (b, a);
+}
+
+/** \brief Vector Compare less Than Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return all '1's,
+ *  if a[i] < b[i], otherwise all '0's.
+ *  Use vec_cmpgtud with parameters reversed to implement vec_cmpltud.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  less result for each element.
+ */
+static inline
+vui64_t
+vec_cmpltud (vui64_t a, vui64_t b)
+{
+  return vec_cmpgtud (b, a);
+}
+
+/** \brief Vector Compare Not Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return all '1's,
+ *  if a[i] != b[i], otherwise all '0's.
+ *  Use vec_cmpequd then return the logical inverse.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  not equal result for each element.
+ */
+static inline
+vi64_t
+vec_cmpnesd (vi64_t a, vi64_t b)
+{
+  return (vi64_t)vec_cmpneud ((vui64_t) a, (vui64_t) b);
+}
+
+/** \brief Vector Compare Not Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return all '1's,
+ *  if a[i] != b[i], otherwise all '0's.
+ *  Use vec_cmpequd then return the logical inverse.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return 128-bit vector with each dword boolean reflecting compare
+ *  not equal result for each element.
+ */
+static inline
+vui64_t
+vec_cmpneud (vui64_t a, vui64_t b)
+{
+  vui64_t r;
+  /* vec_cmpne is implemented as the not of vec_cmpeq.  */
+  r = vec_cmpequd (a, b);
+  return vec_nor (r, r);
+}
+
+/** \brief Vector Compare all Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a and b are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_eq (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_eq(a, b);
 #else
-  __asm__(
-      "vcmpgtud %0,%1,%2;\n"
-      "xxlnor %0,%0,%0;\n"
-      : "=&v" (result)
-      : "v" (a),
-      "v" (b)
-      : );
+  result = vec_all_eq((vui32_t)a, (vui32_t)b);
 #endif
+  return (result);
+}
+
+/** \brief Vector Compare all Greater Than or Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a >= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_ge (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_ge(a, b);
 #else
-  vui64_t r = vec_cmpgtud (a, b);
-  result = vec_nor(r, r);;
+  vui32_t wt = { -1, -1, -1, -1};
+  vi64_t gt_bool = vec_cmpgesd (a, b);
+  result = vec_all_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare all Greater Than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a > b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_gt (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_gt(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vi64_t gt_bool = vec_cmpgtsd (a, b);
+  result = vec_all_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare all Less than equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a <= b.
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_le (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_ge (b, a);
+}
+
+/** \brief Vector Compare all Less than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a < b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_lt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_gt (b, a);
+}
+
+/** \brief Vector Compare all Not Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a and b are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpsd_all_ne (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_ne(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
+  result = vec_all_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare any Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if any
+ *  elements of a and b are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpsd_any_eq (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_eq(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpequd ((vui64_t)a, (vui64_t)b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare any Greater Than or Equal Signed Doubleword.
+*
+*  Compare each signed long (64-bit) integer and return true if any
+*  elements of a >= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+*
+*  @param a 128-bit vector treated as 2 x 64-bit signed long
+*  integer (dword) elements.
+*  @param b 128-bit vector treated as 2 x 64-bit signed long
+*  integer (dword) elements.
+*  @return boolean int for all 128-bits, true if all Greater Than,
+*  false otherwise.
+*/
+static inline
+int
+vec_cmpsd_any_ge (vi64_t a, vi64_t b)
+{
+int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+result = vec_any_ge(a, b);
+#else
+vui32_t wt = { -1, -1, -1, -1};
+vi64_t gt_bool = vec_cmpgesd (a, b);
+result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+return (result);
+}
+
+/** \brief Vector Compare any Greater Than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if all
+ *  elements of a > b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_any_gt (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_gt(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vi64_t gt_bool = vec_cmpgtsd (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare any Less than equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if any
+ *  elements of a <= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if any Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_any_le (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_ge (b, a);
+}
+
+/** \brief Vector Compare any Less than Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if any
+ *  elements of a < b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if any Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpsd_any_lt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_gt (b, a);
+}
+
+/** \brief Vector Compare any Not Equal Signed Doubleword.
+ *
+ *  Compare each signed long (64-bit) integer and return true if any
+ *  elements of a and b are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit signed long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpsd_any_ne (vi64_t a, vi64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_ne(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare all Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a and b are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpud_all_eq (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_eq(a, b);
+#else
+  result = vec_all_eq((vui32_t)a, (vui32_t)b);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare all Greater Than or Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a >= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_all_ge (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_ge(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpgeud (a, b);
+  result = vec_all_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare all Greater Than Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a > b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_all_gt (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_gt(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpgtud (a, b);
+  result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
 }
@@ -440,11 +1075,7 @@ vec_cmpleud (vui64_t a, vui64_t b)
 /** \brief Vector Compare all Less than equal Unsigned Doubleword.
  *
  *  Compare each unsigned long (64-bit) integer and return true if all
- *  elements of a > b.
- *
- *  For POWER8 (PowerISA 2.07B) or later use the vec_all_eq built-in
- *  predicate directly.  Otherwise cast to unsigned word and use the
- *  same predicate generating (<B>vcmpequw</B>).
+ *  elements of a <= b.
  *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
@@ -457,19 +1088,234 @@ static inline
 int
 vec_cmpud_all_le (vui64_t a, vui64_t b)
 {
+  return vec_cmpud_all_ge (b, a);
+}
+
+/** \brief Vector Compare all Less than Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a < b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_all_lt (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_gt (b, a);
+}
+
+/** \brief Vector Compare all Not Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a and b are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpud_all_ne (vui64_t a, vui64_t b)
+{
   int result;
-#ifdef _ARCH_PWR8
-#if __GNUC__ >= 7
-  result = vec_all_le(a, b);
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_all_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpleud (a, b);
+  vui64_t gt_bool = vec_cmpneud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
+  return (result);
+}
+
+/** \brief Vector Compare any Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if any
+ *  elements of a and b are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpud_any_eq (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_eq(a, b);
 #else
-  vui32_t wt= { -1, -1, -1, -1};
-  vui64_t gt_bool= vec_cmpleud (a, b);
-  result = vec_all_eq((vui32_t)gt_bool, wt);
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpequd (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare any Greater Than or Equal Unsigned Doubleword.
+*
+*  Compare each unsigned long (64-bit) integer and return true if any
+*  elements of a >= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+*
+*  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+*  integer (dword) elements.
+*  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+*  integer (dword) elements.
+*  @return boolean int for all 128-bits, true if all Greater Than,
+*  false otherwise.
+*/
+static inline
+int
+vec_cmpud_any_ge (vui64_t a, vui64_t b)
+{
+int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+result = vec_any_ge(a, b);
+#else
+vui32_t wt = { -1, -1, -1, -1};
+vui64_t gt_bool = vec_cmpgeud (a, b);
+result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+return (result);
+}
+
+/** \brief Vector Compare any Greater Than Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if all
+ *  elements of a > b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for all 128-bits, true if all Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_any_gt (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_gt(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpgtud (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
+#endif
+  return (result);
+}
+
+/** \brief Vector Compare any Less than equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if any
+ *  elements of a <= b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if any Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_any_le (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_ge (b, a);
+}
+
+/** \brief Vector Compare any Less than Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if any
+ *  elements of a < b.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if any Greater Than,
+ *  false otherwise.
+ */
+static inline
+int
+vec_cmpud_any_lt (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_gt (b, a);
+}
+
+/** \brief Vector Compare any Not Equal Unsigned Doubleword.
+ *
+ *  Compare each unsigned long (64-bit) integer and return true if any
+ *  elements of a and b are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
+ *  integer (dword) elements.
+ *  @return boolean int for any 128-bits, true if equal, false otherwise.
+ */
+static inline
+int
+vec_cmpud_any_ne (vui64_t a, vui64_t b)
+{
+  int result;
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+  result = vec_any_ne(a, b);
+#else
+  vui32_t wt = { -1, -1, -1, -1};
+  vui64_t gt_bool = vec_cmpneud (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
 }
@@ -480,6 +1326,11 @@ vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
 /** \brief Vector Merge High Doubleword.
  *  Merge the high doubleword elements from two vectors into the high
  *  and low doubleword elements of the result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
  *
  *  @param __VA a 128-bit vector as the source of the
  *  high order doubleword.
@@ -504,6 +1355,11 @@ vec_mrghd (vui64_t __VA, vui64_t __VB)
  *  Merge the low doubleword elements from two vectors into the high
  *  and low doubleword elements of the result.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
  *  @param __VA a 128-bit vector as the source of the
  *  high order doubleword.
  *  @param __VB a 128-bit vector as the source of the
@@ -524,15 +1380,20 @@ vec_mrgld (vui64_t __VA, vui64_t __VB)
 }
 
 /** \brief Vector doubleword paste.
- *	Concatenate the high doubleword of the 1st vector with the
- *	low double word of the 2nd vector.
+ *  Concatenate the high doubleword of the 1st vector with the
+ *  low double word of the 2nd vector.
  *
- *	@param __VH a 128-bit vector as the source of the
- * 	high order doubleword.
- *	@param __VL a 128-bit vector as the source of the
- * 	low order doubleword.
- *	@return The combined 128-bit vector composed of the high order
- *	doubleword of __VH and the low order doubleword of __VL.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param __VH a 128-bit vector as the source of the
+ *  high order doubleword.
+ *  @param __VL a 128-bit vector as the source of the
+ *  low order doubleword.
+ *  @return The combined 128-bit vector composed of the high order
+ *  doubleword of __VH and the low order doubleword of __VL.
  */
 static inline vui64_t
 vec_pasted (vui64_t __VH, vui64_t __VL)
@@ -559,6 +1420,11 @@ vec_pasted (vui64_t __VH, vui64_t __VL)
  *   1  |  vra[0:63]  | vrb[64:127]
  *   2  | vra[64:127] | vrb[0:63]
  *   3  | vra[64:127] | vrb[64:127]
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
  *
  *  @param vra a 128-bit vector as the source of the
  *  high order doubleword of the result.
@@ -638,6 +1504,11 @@ vec_permdi (vui64_t vra, vui64_t vrb, const int ctl)
  *  Count the number of '1' bits (0-64) within each doubleword element
  *  of a 128-bit vector.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   4   |2/2 cycles|
+ *  |power9   |   3   | 2/cycle  |
+ *
  *  For POWER8 (PowerISA 2.07B) or later use the Vector Population
  *  Count DoubleWord (<B>vpopcntd</B>) instruction. Otherwise use the
  *  pveclib vec_popcntw to count each word then sum across with Vector
@@ -680,12 +1551,17 @@ vec_popcntd (vui64_t vra)
 
 /*! \brief byte reverse each doubleword for a vector unsigned long int.
  *
- *	For each doubleword of the input vector, reverse the order of
- *	bytes / octets within the doubleword.
+ *  For each doubleword of the input vector, reverse the order of
+ *  bytes / octets within the doubleword.
  *
- *	@param vra a 128-bit vector unsigned long int.
- *	@return a 128-bit vector with the bytes of each doubleword
- *	reversed.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2-11 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector unsigned long int.
+ *  @return a 128-bit vector with the bytes of each doubleword
+ *  reversed.
  */
 static inline vui64_t
 vec_revbd (vui64_t vra)
@@ -724,15 +1600,20 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
 
 /** \brief Vector Shift left Doubleword Immediate.
  *
- *	Shift left each doubleword element [0-1], 0-63 bits,
- *	as specified by an immediate value.
- *	The shift amount is a const unsigned long int in the range 0-63.
- *	A shift count of 0 returns the original value of vra.
- *	Shift counts greater then 63 bits return zero.
+ *  Shift left each doubleword element [0-1], 0-63 bits,
+ *  as specified by an immediate value.
+ *  The shift amount is a const unsigned long int in the range 0-63.
+ *  A shift count of 0 returns the original value of vra.
+ *  Shift counts greater then 63 bits return zero.
  *
- *	@param vra a 128-bit vector treated as a vector unsigned long int.
- *	@param shb shift amount in the range 0-63.
- *	@return 128-bit vector unsigned long int, shifted left shb bits.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned long int.
+ *  @param shb shift amount in the range 0-63.
+ *  @return 128-bit vector unsigned long int, shifted left shb bits.
  */
 static inline vui64_t
 vec_sldi (vui64_t vra, const unsigned int shb)
@@ -772,6 +1653,11 @@ vec_sldi (vui64_t vra, const unsigned int shb)
  *   0  |  vra[0:63]  | vra[0:63]
  *   1  | vra[64:127] | vra[64:127]
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle |
+ *  |power9   |   3   | 2/cycle  |
+ *
  *  @param vra a 128-bit vector.
  *  @param ctl a const integer encoding the source doubleword.
  *  @return The original vector with the doubleword elements swapped.
@@ -805,15 +1691,20 @@ vec_spltd (vui64_t vra, const int ctl)
 
 /** \brief Vector Shift Right Doubleword Immediate.
  *
- *	Shift Right each doubleword element [0-1], 0-63 bits,
- *	as specified by an immediate value.
- *	The shift amount is a const unsigned int in the range 0-63.
- *	A shift count of 0 returns the original value of vra.
- *	Shift counts greater then 63 bits return zero.
+ *  Shift Right each doubleword element [0-1], 0-63 bits,
+ *  as specified by an immediate value.
+ *  The shift amount is a const unsigned int in the range 0-63.
+ *  A shift count of 0 returns the original value of vra.
+ *  Shift counts greater then 63 bits return zero.
  *
- *	@param vra a 128-bit vector treated as a vector unsigned long int.
- *	@param shb shift amount in the range 0-63.
- *	@return 128-bit vector unsigned long int, shifted right shb bits.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned long int.
+ *  @param shb shift amount in the range 0-63.
+ *  @return 128-bit vector unsigned long int, shifted right shb bits.
  */
 static inline vui64_t
 vec_srdi (vui64_t vra, const unsigned int shb)
@@ -851,6 +1742,11 @@ vec_srdi (vui64_t vra, const unsigned int shb)
  *  A shift count of 0 returns the original value of vra.
  *  Shift counts greater then 63 bits return the sign bit
  *  propagated to each bit of each element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed long int.
  *  @param shb shift amount in the range 0-63.
@@ -892,6 +1788,11 @@ vec_sradi (vi64_t vra, const unsigned int shb)
  *
  *  For each unsigned long (64-bit) integer element c[i] = a[i] +
  *  NOT(b[i]) + 1.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2     | 2/cycle  |
+ *  |power9   | 2     | 2/cycle  |
  *
  *  For POWER8 (PowerISA 2.07B) or later use the Vector Subtract
  *  Unsigned Doubleword Modulo (<B>vsubudm</B>) instruction. Otherwise
@@ -936,6 +1837,11 @@ vec_subudm(vui64_t a, vui64_t b)
 /** \brief Vector doubleword swap.
  *  Exchange the high and low doubleword elements of a vector.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle |
+ *  |power9   |   3   | 2/cycle  |
+ *
  *  @param vra a 128-bit vector.
  *  @return The original vector with the doubleword elements swapped.
  */
@@ -956,6 +1862,11 @@ vec_swapd (vui64_t vra)
  *
  *  Vector Shift Left Doubleword 0-63 bits.
  *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *
  *  \note Can not use vec_sld naming here as that would conflict
  *  with the generic Shift Left Double Vector. Use vec_vsld but only
@@ -1015,6 +1926,11 @@ vec_vsld (vui64_t vra, vui64_t vrb)
  *
  *  Vector Shift Right Algebraic Doubleword 0-63 bits.
  *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *
  *  \note Use the vec_vsrad for consistency with vec_vsld above.
  *  Define vec_vsrad only if the compiler does not define it in
@@ -1077,6 +1993,11 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
  *
  *  Vector Shift Right Doubleword 0-63 bits.
  *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *
  *  \note Use the vec_vsrd for consistency with vec_vsld above.
  *  Define vec_vsrd only if the compiler does not define it in

@@ -26,7 +26,7 @@
 #include <vec_int32_ppc.h>
 
 /*!
- * \file  vec_int64_ppc.h
+ * \file vec_int64_ppc.h
  * \brief Header package containing a collection of 128-bit SIMD
  * operations over 64-bit integer elements.
  *
@@ -52,10 +52,10 @@
  * instructions you can get equivalent function.
  *
  * \note The doubleword integer multiply implementations are included
- * in vec_int128_ppc.h (see also vec_muleud(), vec_muloud(), and
- * vec_msumudm()).  This resolves a circular dependency as 64-bit
- * by 64-bit multiplies require 128-bit addition to produce the full
- * product.
+ * in vec_int128_ppc.h.  This resolves a circular dependency as 64-bit
+ * by 64-bit integer multiplies require 128-bit integer addition to
+ * produce the full product.
+ * \sa vec_adduqm, vec_muleud, vec_muloud, and vec_msumudm
  *
  * Most of these intrinsic (compiler built-in) operations are defined
  * in <altivec.h> and described in the compiler documentation.
@@ -87,7 +87,7 @@
  * a in-line assembler implementation for older compilers that do not
  * provide the build-ins.
  *
- * This header covers operations that are either:
+ * This header covers operations that are any of the following:
  *
  * - Implemented in hardware instructions for later
  * processors and useful to programmers, on slightly older processors,
@@ -101,12 +101,11 @@
  * <altivec.h>, and require multiple instructions or
  * are not obvious.  Examples include the shift immediate operations.
  *
- * \note The Multiply even/odd doubleword operations are
- * currently implemented in <vec_int128_ppc.h> which resolves a
- * dependency on Add Quadword. These functions (vec_msumudm,
- * vec_muleud, vec_muloud) all produce a quadword results and need
- * vec_adduqm to sum partial products on earlier Power platforms.
- * \sa vec_adduqm, vec_muleud, vec_muloud, and vec_msumudm
+ * \section int64_perf_0_0 Performance data.
+ * High level performance estimates are provided as an aid to function
+ * selection when evaluating algorithms. For background on how
+ * <I>Latency</I> and <I>Throughput</I> are derived see:
+ * \ref perf_data
  */
 
 /** \brief Vector Add Unsigned Doubleword Modulo.
@@ -212,7 +211,7 @@ static inline vui64_t vec_cmpneud (vui64_t a, vui64_t b);
  *  Compare each signed long (64-bit) integer and return all '1's,
  *  if a[i] == b[i], otherwise all '0's.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare
+ *  For POWER8 (PowerISA 2.07B) or later, use the Vector Compare
  *  Equal Unsigned DoubleWord (<B>vcmpequd</B>) instruction. Otherwise
  *  use boolean logic using word compares.
  *
@@ -241,7 +240,7 @@ vec_cmpeqsd (vi64_t a, vi64_t b)
  *  Compare each unsigned long (64-bit) integer and return all '1's,
  *  if a[i] == b[i], otherwise all '0's.
  *
- *  For POWER8 (PowerISA 2.07B) or later use the Vector Compare
+ *  For POWER8 (PowerISA 2.07B) or later, use the Vector Compare
  *  Equal Unsigned DoubleWord (<B>vcmpequd</B>) instruction. Otherwise
  *  use boolean logic using word compares.
  *
@@ -320,11 +319,11 @@ static inline
 vi64_t
 vec_cmpgesd (vi64_t a, vi64_t b)
 {
-vi64_t r;
-/* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
-   is implemented as vec_cmpgt with parms reversed.  */
-r = vec_cmpgtsd (b, a);
-return vec_nor (r, r);
+  vi64_t r;
+  /* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
+     is implemented as vec_cmpgt with parms reversed.  */
+  r = vec_cmpgtsd (b, a);
+  return vec_nor (r, r);
 }
 
 /** \brief Vector Compare Greater Than or Equal Unsigned Doubleword.
@@ -736,6 +735,11 @@ vec_cmpsd_all_gt (vi64_t a, vi64_t b)
  *  Compare each signed long (64-bit) integer and return true if all
  *  elements of a <= b.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
  *  @param a 128-bit vector treated as 2 x 64-bit signed long
  *  integer (dword) elements.
  *  @param b 128-bit vector treated as 2 x 64-bit signed long
@@ -1077,6 +1081,11 @@ vec_cmpud_all_gt (vui64_t a, vui64_t b)
  *  Compare each unsigned long (64-bit) integer and return true if all
  *  elements of a <= b.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-9   | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
  *  @param a 128-bit vector treated as 2 x 64-bit unsigned long
  *  integer (dword) elements.
  *  @param b 128-bit vector treated as 2 x 64-bit unsigned long
@@ -1410,10 +1419,16 @@ vec_pasted (vui64_t __VH, vui64_t __VL)
 
 /** \brief Vector Permute Doubleword Immediate.
  *  Combine a doubleword selected from the 1st (vra) vector with
- *  a doubleword selected from the 2nd (vrb) vector. The 2-bit control
- *  operand (ctl) selects which doubleword from the 1st and 2nd
- *  vector operands are transfered to the result vector.
+ *  a doubleword selected from the 2nd (vrb) vector.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  The 2-bit control operand (ctl) selects which doubleword from the
+ *  1st and 2nd vector operands are transfered to the result vector.
+ *  Control table:
  *  ctl |  vrt[0:63]  | vrt[64:127]
  *  :-: | :---------: | :----------:
  *   0  |  vra[0:63]  | vrb[0:63]
@@ -1421,10 +1436,6 @@ vec_pasted (vui64_t __VH, vui64_t __VL)
  *   2  | vra[64:127] | vrb[0:63]
  *   3  | vra[64:127] | vrb[64:127]
  *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power8   |   2   | 2/cycle  |
- *  |power9   |   3   | 2/cycle  |
  *
  *  @param vra a 128-bit vector as the source of the
  *  high order doubleword of the result.
@@ -1648,15 +1659,18 @@ vec_sldi (vui64_t vra, const unsigned int shb)
  *  Duplicate the selected doubleword element across the doubleword
  *  elements of the result.
  *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  The 1-bit control operand (ctl) selects which (0:1) doubleword
+ *  element, from the vector operand, is replicated to both doublewords
+ *  of the result vector.  Control table:
  *  ctl |  vrt[0:63]  | vrt[64:127]
  *  :-: | :---------: | :----------:
  *   0  |  vra[0:63]  | vra[0:63]
  *   1  | vra[64:127] | vra[64:127]
- *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power8   |   2   | 2/cycle |
- *  |power9   |   3   | 2/cycle  |
  *
  *  @param vra a 128-bit vector.
  *  @param ctl a const integer encoding the source doubleword.

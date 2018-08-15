@@ -74,7 +74,7 @@
  * are not obvious.
  *
  * \section f32_perf_0_0 Performance data.
- * High performance estimates are provided as an aid to function
+ * High level performance estimates are provided as an aid to function
  * selection when evaluating algorithms. For background on how
  * <I>Latency</I> and <I>Throughput</I> are derived see:
  * \ref perf_data

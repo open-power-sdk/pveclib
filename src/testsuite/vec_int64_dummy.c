@@ -131,9 +131,147 @@ test_sradi_64 (vi64_t a)
 }
 
 int
+test_cmpud_all_eq (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_eq (a, b);
+}
+
+int
+test_cmpud_all_ge (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_ge (a, b);
+}
+
+int
 test_cmpud_all_gt (vui64_t a, vui64_t b)
 {
   return vec_cmpud_all_gt (a, b);
+}
+
+int
+test_cmpud_all_le (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_le (a, b);
+}
+
+int
+test_cmpud_all_lt (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_lt (a, b);
+}
+
+int
+test_cmpud_all_ne (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_all_ne (a, b);
+}
+
+int
+test_cmpud_any_eq (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_eq (a, b);
+}
+
+int
+test_cmpud_any_ge (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_ge (a, b);
+}
+
+int
+test_cmpud_any_gt (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_gt (a, b);
+}
+
+int
+test_cmpud_any_le (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_le (a, b);
+}
+
+int
+test_cmpud_any_lt (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_lt (a, b);
+}
+
+int
+test_cmpud_any_ne (vui64_t a, vui64_t b)
+{
+  return vec_cmpud_any_ne (a, b);
+}
+
+int
+test_cmpsd_all_eq (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_eq (a, b);
+}
+
+int
+test_cmpsd_all_ge (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_ge (a, b);
+}
+
+int
+test_cmpsd_all_gt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_gt (a, b);
+}
+
+int
+test_cmpsd_all_le (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_le (a, b);
+}
+
+int
+test_cmpsd_all_lt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_lt (a, b);
+}
+
+int
+test_cmpsd_all_ne (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_all_ne (a, b);
+}
+
+int
+test_cmpsd_any_eq (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_eq (a, b);
+}
+
+int
+test_cmpsd_any_ge (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_ge (a, b);
+}
+
+int
+test_cmpsd_any_gt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_gt (a, b);
+}
+
+int
+test_cmpsd_any_le (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_le (a, b);
+}
+
+int
+test_cmpsd_any_lt (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_lt (a, b);
+}
+
+int
+test_cmpsd_any_ne (vi64_t a, vi64_t b)
+{
+  return vec_cmpsd_any_ne (a, b);
 }
 
 vui64_t
@@ -143,12 +281,6 @@ test_cmpud_all_gt2 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
     return c;
   else
     return d;
-}
-
-int
-test_cmpud_all_eq (vui64_t a, vui64_t b)
-{
-  return vec_cmpud_all_eq (a, b);
 }
 
 vui64_t
@@ -173,9 +305,75 @@ test_addudm (vui64_t a, vui64_t b)
 }
 
 vui64_t
+test_cmpequd (vui64_t a, vui64_t b)
+{
+  return vec_cmpequd (a, b);
+}
+
+vui64_t
+test_cmpneud (vui64_t a, vui64_t b)
+{
+  return vec_cmpneud (a, b);
+}
+
+vui64_t
 test_cmpgtud (vui64_t a, vui64_t b)
 {
   return vec_cmpgtud (a, b);
+}
+
+vui64_t
+test_cmpltud (vui64_t a, vui64_t b)
+{
+  return vec_cmpltud (a, b);
+}
+
+vui64_t
+test_cmpgeud (vui64_t a, vui64_t b)
+{
+  return vec_cmpgeud (a, b);
+}
+
+vui64_t
+test_cmpleud (vui64_t a, vui64_t b)
+{
+  return vec_cmpleud (a, b);
+}
+
+vi64_t
+test_cmpeqsd (vi64_t a, vi64_t b)
+{
+  return vec_cmpeqsd (a, b);
+}
+
+vi64_t
+test_cmpnesd (vi64_t a, vi64_t b)
+{
+  return vec_cmpnesd (a, b);
+}
+
+vi64_t
+test_cmpgtsd (vi64_t a, vi64_t b)
+{
+  return vec_cmpgtsd (a, b);
+}
+
+vi64_t
+test_cmpltsd (vi64_t a, vi64_t b)
+{
+  return vec_cmpltsd (a, b);
+}
+
+vi64_t
+test_cmpgesd (vi64_t a, vi64_t b)
+{
+  return vec_cmpgesd (a, b);
+}
+
+vi64_t
+test_cmplesd (vi64_t a, vi64_t b)
+{
+  return vec_cmplesd (a, b);
 }
 
 vui64_t
@@ -255,3 +453,45 @@ __test_swapd (vui64_t __VH)
 {
   return vec_swapd (__VH);
 }
+
+#ifdef _ARCH_PWR8
+/* POWER 64-bit (vector long long) compiler tests.  */
+
+vb64_t
+__test_cmpequd (vui64_t a, vui64_t b)
+{
+  return vec_cmpeq (a, b);
+}
+
+vb64_t
+__test_cmpgtud (vui64_t a, vui64_t b)
+{
+  return vec_cmpgt (a, b);
+}
+
+vb64_t
+__test_cmpltud (vui64_t a, vui64_t b)
+{
+  return vec_cmplt (a, b);
+}
+
+vb64_t
+__test_cmpgeud (vui64_t a, vui64_t b)
+{
+  return vec_cmpge (a, b);
+}
+
+vb64_t
+__test_cmpleud (vui64_t a, vui64_t b)
+{
+  return vec_cmple (a, b);
+}
+
+#ifdef _ARCH_PWR9
+vb64_t
+__test_cmpneud (vui64_t a, vui64_t b)
+{
+  return vec_cmpne (a, b);
+}
+#endif
+#endif

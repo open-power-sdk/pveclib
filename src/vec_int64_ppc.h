@@ -182,7 +182,6 @@ vec_clzd (vui64_t vra)
   r = vec_vclzd (vra);
 #endif
 #else
-  //#warning Implememention pre power8
   vui32_t n, nt, y, x, m;
   vui32_t z = { 0, 0, 0, 0 };
   vui32_t dlwm = { 0, -1, 0, -1 };
@@ -264,7 +263,6 @@ vec_cmpequd (vui64_t a, vui64_t b)
 #ifdef _ARCH_PWR8
 #if __GNUC__ >= 6
   result = (vui64_t)vec_cmpeq(a, b);
-//  result = (vui64_t)vec_cmpeq((__vector bool long long)a, (__vector bool long long)b);
 #else
   __asm__(
       "vcmpequd %0,%1,%2;\n"
@@ -1546,7 +1544,6 @@ vec_popcntd (vui64_t vra)
   r = vec_vpopcntd (vra);
 #endif
 #else
-  //#warning Implememention pre power8
   vui32_t z= { 0,0,0,0};
   vui32_t x;
   x = vec_popcntw ((vui32_t)vra);
@@ -1922,7 +1919,6 @@ vec_vsld (vui64_t vra, vui64_t vrb)
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
   vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
-//  vsht_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
   /* Shift the high dword by vsh_h.  */
   vr_h = vec_vslo (vr_h,  vsh_h);
   vr_h = vec_vsl  (vr_h, vsh_h);
@@ -2049,7 +2045,6 @@ vec_vsrd (vui64_t vra, vui64_t vrb)
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
   vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
-//  vsht_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
   /* Shift the high dword by vsh_h.  */
   vr_h = vec_vsro ((vui8_t)vra,  vsh_h);
   vr_h = vec_vsr  (vr_h, vsh_h);

@@ -1,0 +1,85 @@
+/*
+ Copyright (c) [2018] IBM Corporation.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ vec_perf_f64.c
+
+ Contributors:
+      IBM Corporation, Steven Munroe
+      Created on: Jun 31, 2018
+ */
+
+
+#include <stdint.h>
+#include <stdio.h>
+#include <fenv.h>
+#include <float.h>
+#include <math.h>
+
+//#define __DEBUG_PRINT__
+#include <vec_f64_ppc.h>
+
+//#include "arith128.h"
+#include <testsuite/arith128_print.h>
+#include <testsuite/vec_perf_f64.h>
+
+#define N 10
+static const vf64_t data0 = { __DBL_MAX__, __DBL_MIN__ };
+static const vf64_t data1 = { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
+
+extern __vector bool long
+test_pred_f64_inf (vf64_t value);
+extern __vector bool long
+test_pred_f64_nan (vf64_t value);
+extern __vector bool long
+test_pred_f64_normal (vf64_t value);
+extern __vector bool long
+test_pred_f64_subnormal (vf64_t value);
+extern __vector bool long
+test_pred_f64_zero (vf64_t value);
+extern vui64_t
+test_fpclassify_f64 (vf64_t value);
+
+int timed_is_f64 (void)
+{
+  vb64_t accum = {0,0};
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      accum |= test_pred_f64_inf (data0);
+      accum |= test_pred_f64_inf (data1);
+      accum |= test_pred_f64_nan (data0);
+      accum |= test_pred_f64_nan (data1);
+      accum |= test_pred_f64_normal (data0);
+      accum |= test_pred_f64_normal (data1);
+      accum |= test_pred_f64_subnormal (data0);
+      accum |= test_pred_f64_subnormal (data1);
+      accum |= test_pred_f64_zero (data0);
+      accum |= test_pred_f64_zero (data1);
+    }
+   return 0;
+}
+
+int timed_fpclassify_f64 (void)
+{
+  vb64_t accum = {0,0};
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      accum |= test_fpclassify_f64 (data0);
+    }
+   return 0;
+}

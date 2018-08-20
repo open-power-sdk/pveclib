@@ -744,6 +744,7 @@ INPUT                  = $(SRCDIR)/doc/pveclibmaindox.h \
                          $(SRCDIR)/src/vec_bcd_ppc.h \
                          $(SRCDIR)/src/vec_char_ppc.h \
                          $(SRCDIR)/src/vec_f32_ppc.h \
+                         $(SRCDIR)/src/vec_f64_ppc.h \
                          $(SRCDIR)/src/vec_common_ppc.h
 
 # This tag can be used to specify the character encoding of the source files

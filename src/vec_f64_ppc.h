@@ -24,11 +24,63 @@
 #define VEC_F64_PPC_H_
 
 #include <vec_common_ppc.h>
+#include <vec_int64_ppc.h>
+/*!
+ * \file  vec_f64_ppc.h
+ * \brief Header package containing a collection of 128-bit SIMD
+ * operations over 64-bit double floating point elements.
+ *
+ * Most vector double (64-bit float) operations are implemented
+ * with PowerISA-2.06 (POWER7 and later) VSX instructions.
+ * Most of these operations (compiler built-ins, or intrinsics) are
+ * defined in <altivec.h> and described in the
+ * <a href="https://gcc.gnu.org/onlinedocs/">compiler documentation</a>.
+ *
+ * \note The compiler disables associated <altivec.h> built-ins if the
+ * <B>mcpu</B> target does not enable the specific instruction.
+ * For example if you compile with <B>-mcpu=power7</B>, most of the
+ * doubleword integer add, subtract, and compare operations useful
+ * for floating point classification are not defined.
+ * This header provides the appropriate substitutions,
+ * will generate the minimum code, appropriate for the target,
+ * and produce correct results.
+ *
+ * \note Most ppc64le compilers will default to -mcpu=power8 if not
+ * specified.
+ *
+ * Most of these operations are implemented in a few instructions
+ * on newer (POWER8/POWER9) processors.
+ * This header serves to fill in functional gaps for older
+ * (POWER7, POWER8) processors and provides an inline assembler
+ * implementation for older compilers that do not
+ * provide the built-ins.
+ *
+ * This header covers operations that are any of the following:
+ *
+ * - Implemented in hardware instructions in newer processors,
+ * but useful to programmers on slightly older processors
+ * (even if the equivalent function requires more instructions).
+ * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
+ * <altivec.h> provided by available compilers in common use.
+ * Examples include vector double even/odd.
+ * - Providing special vector float tests for special conditions
+ * without generating extraneous floating-point exceptions.
+ * This is important for implementing vectorized forms of ISO C99 Math
+ * functions. Examples include vector isnan, isinf, etc.
+ * - Commonly used operations, not covered by the ABI or
+ * <altivec.h>, and require multiple instructions or
+ * are not obvious.
+ * See example ISO C99 functions above.
+ *
+ * \section f64_perf_0_0 Performance data.
+ * High level performance estimates are provided as an aid to function
+ * selection when evaluating algorithms. For background on how
+ * <I>Latency</I> and <I>Throughput</I> are derived see:
+ * \ref perf_data
+ */
 
 typedef __vector double __vf64;
 typedef __vector double __vbinary64;
-
-typedef __vector __bool long __f64_bool;
 
 /** \brief Copy the pair of doubles from a IBM long double to a vector
  * double.
@@ -78,18 +130,498 @@ vec_pack_longdouble ( __vf64 lval)
 #endif
 }
 
-/** \brief Copy the sign bit from vf64y merged with magnitude from
- * vf64x and return the resulting vector double values.
+/** \brief Vector double absolute value.
  *
- *	@param vf64x vector double values containing the magnitudes.
- *	@param vf64y vector double values containing the sign bits.
- *	@return vector double values with magnitude from vf64x and the
- *	sign of vf64y.
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-7   | 2/cycle  |
+ *  |power9   | 2     | 2/cycle  |
+ *
+ *  @param vf64x vector double values containing the magnitudes.
+ *  @return vector double absolute values of vf64x.
+ */
+static inline vf64_t
+vec_absf64 (vf64_t vf64x)
+{
+#if _ARCH_PWR7
+  /* Requires VSX but eliminates a const load. */
+  return vec_abs (vf64x);
+#else
+  const vui32_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+                                            0x8000000000000000UL);
+  return (vf64_t)vec_andc ((vui32_t)vf64x, signmask);
+#endif
+}
+
+/** \brief Return true if all 2x64-bit vector double values
+ *  are infinity.
+ *
+ *  A IEEE Binary64 infinity has a exponent of 0x7ff and significand
+ *  of all zeros.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return boolean int, true if all 2 double values are infinity
+ */
+static inline int
+vec_all_isinff64 (vf64_t vf64)
+{
+  vui64_t tmp;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_all_eq(tmp, expmask);
+#else
+  result = vec_cmpud_all_eq(tmp, expmask);
+#endif
+  return (result);
+}
+
+/** \brief Return true if all 2x64-bit vector double
+ *  values are NaN.
+ *
+ *  A IEEE Binary64 NaN value has an exponent between 0x7ff and
+ *  the significand is nonzero.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if all 2 vector double values are
+ *  NaN.
+ */
+static inline int
+vec_all_isnanf64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_all_gt(tmp2, expmask);
+#else
+  result = vec_cmpud_all_gt(tmp2, expmask);
+#endif
+  return (result);
+}
+
+/** \brief Return true if all 2x64-bit vector double
+ *  values are normal (Not NaN, Inf, denormal, or zero).
+ *
+ *  A IEEE Binary64 normal value has an exponent between 0x001 and
+ *  0x7fe (a 0x7ff indicates NaN or Inf).  The significand can be
+ *  any value (expect 0 if the exponent is zero).
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-28 | 1/cycle  |
+ *  |power9   | 8-16  | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if all 2 vector double values are
+ *  normal.
+ */
+static inline int
+vec_all_isnormalf64 (vf64_t vf64)
+{
+  vui64_t tmp, tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+  tmp = vec_and ((vui64_t) vf64, expmask);
+#ifdef _ARCH_PWR8
+  result = vec_all_ge (tmp2, minnorm) && vec_all_ne (tmp, expmask);
+#else
+  result = vec_cmpud_all_ge (tmp2, minnorm) && !vec_cmpud_all_eq (tmp, expmask);
+#endif
+  return (result);
+}
+
+/** \brief Return true if all 2x64-bit vector double
+ *  values are subnormal (denormal).
+ *
+ *  A IEEE Binary64 subnormal has an exponent of 0x000 and a
+ *  nonzero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-30 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if all of 2 vector double values are
+ *  subnormal.
+ */
+static inline int
+vec_all_issubnormalf64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_all_lt (tmp2, minnorm) && !vec_all_eq (tmp2, vec_zero);
+#else
+  result = vec_cmpud_all_gt (minnorm, tmp2) && !vec_cmpud_all_eq (tmp2, vec_zero);
+#endif
+  return (result);
+}
+
+/** \brief Return true if all 2x64-bit vector double
+ *  values are +-0.0.
+ *
+ *  A IEEE Binary64 zero has an exponent of 0x000 and a
+ *  zero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if all 2 vector double values are
+ *  +/- zero.
+ */
+static inline int
+vec_all_iszerof64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_all_eq(tmp2, vec_zero);
+#else
+  result = vec_all_eq((vui32_t)tmp2, (vui32_t)vec_zero);
+#endif
+  return (result);
+}
+
+/** \brief Return true if any of 2x64-bit vector double values
+ *  are infinity.
+ *
+ *  A IEEE Binary64 infinity has a exponent of 0x7ff and significand
+ *  of all zeros.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf32 a vector of __binary32 values.
+ *  @return boolean int, true if any of 2 double values are infinity
+ */
+static inline int
+vec_any_isinff64 (vf64_t vf64)
+{
+  vui64_t tmp;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_any_eq(tmp, expmask);
+#else
+  result = vec_cmpud_any_eq(tmp, expmask);
+#endif
+  return (result);
+}
+
+/** \brief Return true if any of 2x64-bit vector double
+ *  values are NaN.
+ *
+ *  A IEEE Binary64 NaN value has an exponent between 0x7ff and
+ *  the significand is nonzero.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if any of 2 vector double values are
+ *  NaN.
+ */
+static inline int
+vec_any_isnanf64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  result = vec_any_gt(tmp2, expmask);
+#else
+  result = vec_cmpud_any_gt(tmp2, expmask);
+#endif
+  return (result);
+}
+
+/** \brief Return true if any of 2x64-bit vector double
+ *  values are normal (Not NaN, Inf, denormal, or zero).
+ *
+ *  A IEEE Binary64 normal value has an exponent between 0x001 and
+ *  0x7fe (a 0x7ff indicates NaN or Inf).  The significand can be
+ *  any value (expect 0 if the exponent is zero).
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-25 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if any of 2 vector double values are
+ *  normal.
+ */
+static inline int
+vec_any_isnormalf64 (vf64_t vf64)
+{
+  vui64_t tmp, tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  vui64_t vnorm;
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+  tmp = vec_and ((vui64_t) vf64, expmask);
+#ifdef _ARCH_PWR8
+  tmp2 = (vui64_t) vec_cmplt (tmp2, minnorm);
+  tmp = (vui64_t) vec_cmpeq (tmp, expmask);
+  vnorm = vec_nor (tmp, tmp2);
+  result = vec_any_eq (vnorm, vec_ones);
+#else
+  tmp2 = (vui64_t)vec_cmpltud(tmp2, minnorm);
+  tmp = (vui64_t)vec_cmpequd(tmp, expmask);
+  vnorm = (vui64_t)vec_nor (tmp, tmp2);
+  result = vec_any_eq((vui32_t)vnorm, (vui32_t)vec_ones);
+#endif
+  return (result);
+}
+
+/** \brief Return true if any of 2x64-bit vector double
+ *  values is subnormal (denormal).
+ *
+ *  A IEEE Binary64 subnormal has an exponent of 0x000 and a
+ *  nonzero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-18 | 1/cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return true if any of 2 vector double values are subnormal.
+ */
+static inline int
+vec_any_issubnormalf64 (vf64_t vf64)
+{
+  vui64_t tmp, tmpz, tmp2;
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  vb64_t vsubnorm;
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#ifdef _ARCH_PWR8
+  tmp = (vui64_t) vec_cmplt(tmp2, minnorm);
+  tmpz = (vui64_t) vec_cmpeq (tmp2, vec_zero);
+  vsubnorm = (vb64_t) vec_andc (tmp, tmpz);
+  result = vec_any_ne(vsubnorm, vec_zero);
+#else
+  tmp = (vui64_t) vec_cmpltud(tmp2, minnorm);
+  tmpz = (vui64_t) vec_cmpequd (tmp2, vec_zero);
+  vsubnorm = (vb64_t) vec_andc (tmp, tmpz);
+  result = vec_cmpud_any_ne((vui64_t)vsubnorm, vec_zero);
+#endif
+  return (result);
+}
+
+/** \brief Return true if any of 2x64-bit vector double
+ *  values are +-0.0.
+ *
+ *  A IEEE Binary64 zero has an exponent of 0x000 and a
+ *  zero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-20  | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a boolean int, true if any of 2 vector double values are
+ *  +/- zero.
+ */
+static inline int
+vec_any_iszerof64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  int result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+  result = vec_any_eq(tmp2, vec_zero);
+#if _ARCH_PWR8
+  /* P8 has Vector Compare Equal To Unsigned Doubleword. */
+  result = vec_any_eq(tmp2, vec_zero);
+#else
+  result = vec_cmpud_any_eq(tmp2, vec_zero);
+#endif
+  return (result);
+}
+
+/** \brief Copy the sign bit from vf64y merged with magnitude from
+ *  vf64x and return the resulting vector double values.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-7   | 2/cycle  |
+ *  |power9   | 2     | 2/cycle  |
+ *
+ *  @param vf64x vector double values containing the magnitudes.
+ *  @param vf64y vector double values containing the sign bits.
+ *  @return vector double values with magnitude from vf64x and the
+ *  sign of vf64y.
  */
 static inline __vf64
 vec_copysignf64 (__vf64 vf64x , __vf64 vf64y)
 {
 #if _ARCH_PWR7
+  /* P9 has a 2 cycle xvcpsgndp and eliminates a const load. */
 	return (vec_cpsgn (vf64x, vf64y));
 #else
 	const vui32_t signmask  = CONST_VINT128_W(0x80000000, 0, 0x80000000, 0);
@@ -106,27 +638,84 @@ vec_copysignf64 (__vf64 vf64x , __vf64 vf64y)
  *  A IEEE Binary64 infinity has a exponent of 0x7ff and significand
  *  of all zeros.
  *
- *	@param vf64 a vector of __binary64 values.
- *	@return a vector boolean long, each containing all 0s or 1s.
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-13  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a vector boolean long long, each containing all 0s(false)
+ *  or 1s(true).
  */
-static inline __f64_bool
+static inline vb64_t
 vec_isinff64 (__vf64 vf64)
 {
-	vui64_t tmp;
-	const vui64_t expmask  = CONST_VINT128_DW(0x7ff0000000000000, 0x7ff0000000000000);
-	__f64_bool result;
+  vui64_t tmp;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  vb64_t result;
 
-#if _ARCH_PWR7
-	/* Eliminate const load. */
-	tmp = (vui64_t)vec_abs (vf64);
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp = (vui64_t)vec_abs (vf64);
 #else
-	const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000, 0x8000000000000000);
-	tmp = vec_andc ((vui64_t)vf64, signmask);
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp = vec_andc ((vui64_t) vf64, signmask);
 #endif
-// TODO need a P7 equivalent to vcmpequd
-	result = (__f64_bool)vec_cmpeq ((vui32_t)tmp, (vui32_t)expmask);
+#if _ARCH_PWR8
+  /* P8 has Vector Compare Equal To Unsigned Doubleword. */
+  result = vec_cmpeq (tmp, expmask);
+#else
+  /* P7 and earlier only have word compares. */
+  result = (vb64_t)vec_cmpequd (tmp, expmask);
+#endif
+  return (result);
+}
 
-	return (result);
+/** \brief Return 2x64-bit vector boolean true values, for each double
+ *  NaN value.
+ *
+ *  A IEEE Binary64 NaN value has an exponent between 0x7ff and
+ *  the significand is nonzero.
+ *  The sign bit is ignored.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-13  | 2/cycle  |
+ *  |power9   | 5-14  | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a vector boolean long long, each containing all 0s(false)
+ *  or 1s(true).
+ */
+static inline vb64_t
+vec_isnanf64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  vb64_t result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vb64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  /* P8 has Vector Compare Equal To Unsigned Doubleword. */
+  result = vec_cmpgt (tmp2, expmask);
+#else
+  /* P7 and earlier only have word compares. */
+  result = (vb64_t)vec_cmpgtud (tmp2, expmask);
+#endif
+  return (result);
 }
 
 /** \brief Return 2x64-bit vector boolean true values, for each double
@@ -135,39 +724,140 @@ vec_isinff64 (__vf64 vf64)
  *  A IEEE Binary64 normal value has an exponent between 0x001 and
  *  0x7ffe (a 0x7ff indicates NaN or Inf).  The significand can be
  *  any value (expect 0 if the exponent is zero).
- *  The sign bit is ignored.
  *
- *	@param vf64 a vector of __binary64 values.
- *	@return a vector boolean long, each containing all 0s or 1s.
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-16  | 1/cycle  |
+ *  |power9   | 7-16  | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a vector boolean long long, each containing all 0s(false)
+ *  or 1s(true).
  */
-static inline __f64_bool
+static inline vb64_t
 vec_isnormalf64 (__vf64 vf64)
 {
-	vui64_t tmp, tmp2;
-	const vui64_t expmask  = CONST_VINT128_DW(0x7ff0000000000000, 0x7ff0000000000000);
-	const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-	__f64_bool result;
+  vui64_t tmp, tmp2;
+  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
+					   0x7ff0000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  vb64_t result;
 
-#if _ARCH_PWR7
-	/* Eliminate const load. */
-	tmp2 = (vui64_t)vec_abs (vf64);
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
 #else
-	const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000, 0x8000000000000000);
-	tmp2 = vec_andc ((vui64_t)vf64, signmask);
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
 #endif
-	tmp = vec_and ((vui64_t)vf64, expmask);
+  tmp = vec_and ((vui64_t) vf64, expmask);
 #ifdef _ARCH_PWR8
-	tmp2 = (vui64_t)vec_cmpeq(tmp2, vec_zero);
-	tmp = (vui64_t)vec_cmpeq(tmp, expmask);
-	result = (__f64_bool)vec_nor (tmp, tmp2);
+  tmp2 = (vui64_t) vec_cmplt (tmp2, minnorm);
+  tmp = (vui64_t) vec_cmpeq (tmp, expmask);
+  result = (vb64_t) vec_nor (tmp, tmp2);
 #else
-	tmp2 = (vui64_t)vec_cmpeq((vui32_t)tmp2, (vui32_t)vec_zero);
-	tmp = (vui64_t)vec_cmpeq((vui32_t)tmp, (vui32_t)expmask);
-	result = (__f64_bool)vec_nor (tmp, tmp2);
-	// TODO need a P7- equivallent to vmrgew
-//	result = (__f64_bool)vec_mergee ((vui32_t)result, (vui32_t)result);
+  tmp2 = (vui64_t)vec_cmpltud(tmp2, minnorm);
+  tmp = (vui64_t)vec_cmpequd(tmp, expmask);
+  result = (vb64_t)vec_nor (tmp, tmp2);
 #endif
-	return (result);
+  return (result);
+}
+
+/** \brief Return 2x64-bit vector boolean true values, for each double
+ *  value that is subnormal (denormal).
+ *
+ *  A IEEE Binary64 subnormal has an exponent of 0x000 and a
+ *  nonzero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-16  | 1/cycle  |
+ *  |power9   | 7-16  | 1/cycle  |
+ *
+ *  @param vf64 a vector of __binary64 values.
+ *  @return a vector boolean long long, each containing all 0s(false)
+ *  or 1s(true).
+ */
+static inline vb64_t
+vec_issubnormalf64 (vf64_t vf64)
+{
+  vui64_t tmp, tmpz, tmp2;
+  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
+					   0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  vb64_t result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui32_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t) vf64, signmask);
+#endif
+#ifdef _ARCH_PWR8
+  tmp = (vui64_t) vec_cmplt(tmp2, minnorm);
+  tmpz = (vui64_t) vec_cmpeq (tmp2, vec_zero);
+  result = (vb64_t) vec_andc (tmp, tmpz);
+#else
+  tmp = (vui64_t) vec_cmpltud(tmp2, minnorm);
+  tmpz = (vui64_t) vec_cmpequd (tmp2, vec_zero);
+  result = (vb64_t ) vec_andc (tmp, tmpz);
+#endif
+  return (result);
+}
+
+/** \brief Return 2x64-bit vector boolean true values, for each double
+ *  value that is +-0.0.
+ *
+ *  A IEEE Binary64 zero has an exponent of 0x000 and a
+ *  zero significand.
+ *  The sign bit is ignored.
+ *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal double compare can.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-13  | 2/cycle  |
+ *  |power9   | 5     | 2/cycle  |
+ *
+ *  @param vf64 a vector of __binary32 values.
+ *  @return a vector boolean int, each containing all 0s(false)
+ *  or 1s(true).
+ */
+static inline vb64_t
+vec_iszerof64 (vf64_t vf64)
+{
+  vui64_t tmp2;
+  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  vb64_t result;
+
+#if _ARCH_PWR9
+  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
+  tmp2 = (vui64_t) vec_abs (vf64);
+#else
+  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
+					    0x8000000000000000UL);
+  tmp2 = vec_andc ((vui64_t)vf64, signmask);
+#endif
+#if _ARCH_PWR8
+  /* P8 has Vector Compare Equal To Unsigned Doubleword. */
+  result = vec_cmpeq (tmp2, vec_zero);
+#else
+  /* P7 and earlier only have word compares has. */
+  result = (vb64_t)vec_cmpequd (tmp2, vec_zero);
+#endif
+  return (result);
 }
 
 #endif /* VEC_F64_PPC_H_ */

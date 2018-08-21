@@ -79,54 +79,55 @@
  * \ref perf_data
  */
 
-typedef __vector double __vf64;
+/*! \brief vector of 64-bit binary64 elements.
+ *  Same as vector double for PPC.  */
 typedef __vector double __vbinary64;
 
 /** \brief Copy the pair of doubles from a IBM long double to a vector
  * double.
  *
- *	@param lval IBM long double as FPR pair.
- *	@return vector double values containing the IBM long double.
+ *  @param lval IBM long double as FPR pair.
+ *  @return vector double values containing the IBM long double.
  */
-static inline __vf64
-vec_unpack_longdouble ( long double lval)
+static inline vf64_t
+vec_unpack_longdouble (long double lval)
 {
 #ifdef _ARCH_PWR7
-	__vf64     t;
-        __asm__(
-        	"xxmrghd %x0,%1,%L1;\n"
-            : "=wa" (t)
-            : "f" (lval)
-            : );
-        return (t);
+  vf64_t t;
+  __asm__(
+      "xxmrghd %x0,%1,%L1;\n"
+      : "=wa" (t)
+      : "f" (lval)
+      : );
+  return (t);
 #else
-        U_128   t;
-        t.ldbl128 = lval;
-        return (t.vf2);
+  U_128 t;
+  t.ldbl128 = lval;
+  return (t.vf2);
 #endif
 }
 
 /** \brief Copy the pair of doubles from a vector to IBM long double.
  *
- *	@param lval vector double values containing the IBM long double.
- *	@return IBM long double as FPR pair.
+ *  @param lval vector double values containing the IBM long double.
+ *  @return IBM long double as FPR pair.
  */
 static inline long double
-vec_pack_longdouble ( __vf64 lval)
+vec_pack_longdouble (vf64_t lval)
 {
 #ifdef _ARCH_PWR7
-	long double     t;
-        __asm__(
-        	"xxlor %0,%x1,%x1;\n"
-        	"\txxswapd %L0,%x1;\n"
-            : "=f" (t)
-            : "wa" (lval)
-            : );
-        return (t);
+  long double t;
+  __asm__(
+      "xxlor %0,%x1,%x1;\n"
+      "\txxswapd %L0,%x1;\n"
+      : "=f" (t)
+      : "wa" (lval)
+      : );
+  return (t);
 #else
-        U_128   t;
-        t.vf2 = lval;
-        return (t.ldbl128);
+  U_128 t;
+  t.vf2 = lval;
+  return (t.ldbl128);
 #endif
 }
 
@@ -617,17 +618,17 @@ vec_any_iszerof64 (vf64_t vf64)
  *  @return vector double values with magnitude from vf64x and the
  *  sign of vf64y.
  */
-static inline __vf64
-vec_copysignf64 (__vf64 vf64x , __vf64 vf64y)
+static inline vf64_t
+vec_copysignf64 (vf64_t vf64x , vf64_t vf64y)
 {
 #if _ARCH_PWR7
   /* P9 has a 2 cycle xvcpsgndp and eliminates a const load. */
 	return (vec_cpsgn (vf64x, vf64y));
 #else
 	const vui32_t signmask  = CONST_VINT128_W(0x80000000, 0, 0x80000000, 0);
-	__vf64 result;
+	vf64_t result;
 
-	result  = (__vf64)vec_sel ((vui32_t)vf64x, (vui32_t)vf64y, signmask);
+	result  = (vf64_t)vec_sel ((vui32_t)vf64x, (vui32_t)vf64y, signmask);
 	return (result);
 #endif
 }
@@ -651,7 +652,7 @@ vec_copysignf64 (__vf64 vf64x , __vf64 vf64y)
  *  or 1s(true).
  */
 static inline vb64_t
-vec_isinff64 (__vf64 vf64)
+vec_isinff64 (vf64_t vf64)
 {
   vui64_t tmp;
   const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
@@ -738,7 +739,7 @@ vec_isnanf64 (vf64_t vf64)
  *  or 1s(true).
  */
 static inline vb64_t
-vec_isnormalf64 (__vf64 vf64)
+vec_isnormalf64 (vf64_t vf64)
 {
   vui64_t tmp, tmp2;
   const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,

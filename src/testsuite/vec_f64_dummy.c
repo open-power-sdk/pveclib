@@ -40,7 +40,9 @@ test512_all_f64_nan (vf64_t val0, vf64_t val1, vf64_t val2, vf64_t val3)
   nan1 = vec_isnanf64 (val1);
   nan2 = vec_isnanf64 (val2);
   nan3 = vec_isnanf64 (val3);
-/* Only newest compilers support vec_and for vector bool long long.  */
+/* Only newest compilers support vec_and for vector bool long long.
+   So cast to vector bool int then back as a compiler work around.
+   Here we just want to see what the various compilers will do.  */
   nan0 = (vb64_t)vec_and ((vb32_t)nan0, (vb32_t)nan1);
   nan2 = (vb64_t)vec_and ((vb32_t)nan2, (vb32_t)nan3);
   nan0 = (vb64_t)vec_and ((vb32_t)nan2, (vb32_t)nan0);
@@ -83,7 +85,7 @@ test_all_f64_zero (vf64_t value)
 }
 
 __vector bool long
-test_pred_f64_inf (__vf64 value)
+test_pred_f64_inf (vf64_t value)
 {
   return (vec_isinff64 (value));
 }
@@ -95,7 +97,7 @@ test_pred_f64_nan (vf64_t value)
 }
 
 __vector bool long
-test_pred_f64_normal (__vf64 value)
+test_pred_f64_normal (vf64_t value)
 {
   return (vec_isnormalf64 (value));
 }

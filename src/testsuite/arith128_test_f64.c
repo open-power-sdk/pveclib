@@ -100,7 +100,7 @@ test_double_abs (void)
   print_v2f64x ("vec_absf64 i=", i);
   print_v2f64x ("           k=", k);
 #endif
-  rc += check_v2f64x ("vec_absf64 1:", k, e);
+  rc += check_v2f64x ("vec_absf64 2:", k, e);
 
   i = (vf64_t) { __DBL_EPSILON__, -(__DBL_DENORM_MIN__) };
   e = (vf64_t) { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
@@ -110,7 +110,7 @@ test_double_abs (void)
   print_v2f64x ("vec_absf64 i=", i);
   print_v2f64x ("           k=", k);
 #endif
-  rc += check_v2f64x ("vec_absf64 1:", k, e);
+  rc += check_v2f64x ("vec_absf64 3:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_INF);
@@ -120,7 +120,7 @@ test_double_abs (void)
   print_v2f64x ("vec_absf64 i=", i);
   print_v2f64x ("           k=", k);
 #endif
-  rc += check_v2f64x ("vec_absf64 1:", k, e);
+  rc += check_v2f64x ("vec_absf64 4:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NNAN);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NAN);
@@ -130,7 +130,7 @@ test_double_abs (void)
   print_v2f64x ("vec_absf64 i=", i);
   print_v2f64x ("           k=", k);
 #endif
-  rc += check_v2f64x ("vec_absf64 1:", k, e);
+  rc += check_v2f64x ("vec_absf64 5:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW( __DOUBLE_SNAN, __DOUBLE_NSNAN);
   e = (vf64_t) CONST_VINT128_DW( __DOUBLE_SNAN, __DOUBLE_SNAN);
@@ -1445,18 +1445,6 @@ test_double_cpsgn (void)
   print_v2f64x ("                j=", j);
   print_v2f64x ("                k=", k);
 #endif
-  rc += check_v2f64x ("vec_copysignf64 2:", k, e);
-
-  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
-  j = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
-  e = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
-  k = vec_copysignf64 (i, j);
-
-#ifdef __DEBUG_PRINT__
-  print_v2f64x ("vec_copysignf64 i=", i);
-  print_v2f64x ("                j=", j);
-  print_v2f64x ("                k=", k);
-#endif
   rc += check_v2f64x ("vec_copysignf64 3:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
@@ -1469,7 +1457,19 @@ test_double_cpsgn (void)
   print_v2f64x ("                j=", j);
   print_v2f64x ("                k=", k);
 #endif
-  rc += check_v2f64x ("vec_copysignf64 3:", k, e);
+  rc += check_v2f64x ("vec_copysignf64 4:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+  j = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
+  e = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+  k = vec_copysignf64 (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_copysignf64 i=", i);
+  print_v2f64x ("                j=", j);
+  print_v2f64x ("                k=", k);
+#endif
+  rc += check_v2f64x ("vec_copysignf64 5:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NNAN);
   j = (vf64_t) CONST_VINT64_DW( -0.0, 0.0 );
@@ -1481,7 +1481,7 @@ test_double_cpsgn (void)
   print_v2f64x ("                j=", j);
   print_v2f64x ("                k=", k);
 #endif
-  rc += check_v2f64x ("vec_copysignf64 4:", k, e);
+  rc += check_v2f64x ("vec_copysignf64 6:", k, e);
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NSNAN, __DOUBLE_SNAN);
   j = (vf64_t) CONST_VINT64_DW ( 0.0, -0.0 );
@@ -1493,7 +1493,7 @@ test_double_cpsgn (void)
   print_v2f64x ("                j=", j);
   print_v2f64x ("                k=", k);
 #endif
-  rc += check_v2f64x ("vec_copysignf64 4:", k, e);
+  rc += check_v2f64x ("vec_copysignf64 7:", k, e);
 
   return (rc);
 }
@@ -1894,7 +1894,7 @@ test_double_isnormal (void)
 
   return (rc);
 }
-#undef __DEBUG_PRINT__
+//#undef __DEBUG_PRINT__
 
 int
 test_double_issubnormal (void)
@@ -2161,8 +2161,7 @@ test_double_iszero (void)
 
   return (rc);
 }
-#define __DEBUG_PRINT__ 1
-#undef __DEBUG_PRINT__
+//#undef __DEBUG_PRINT__
 
 
 #define TIME_10_ITERATION 10

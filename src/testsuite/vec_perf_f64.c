@@ -30,7 +30,6 @@
 //#define __DEBUG_PRINT__
 #include <vec_f64_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_print.h>
 #include <testsuite/vec_perf_f64.h>
 

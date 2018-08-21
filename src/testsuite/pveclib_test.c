@@ -39,6 +39,7 @@
 #include <testsuite/arith128_test_char.h>
 #include <testsuite/arith128_test_bcd.h>
 #include <testsuite/arith128_test_f32.h>
+#include <testsuite/arith128_test_f64.h>
 
 int
 main (void)
@@ -63,6 +64,9 @@ main (void)
 #endif
 #if 1
   rc += test_vec_f32 ();
+#endif
+#if 1
+  rc += test_vec_f64 ();
 #endif
 
   if (rc > 0)

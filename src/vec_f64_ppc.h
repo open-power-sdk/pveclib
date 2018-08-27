@@ -386,7 +386,7 @@ vec_all_iszerof64 (vf64_t vf64)
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   | 5-14  | 2/cycle  |
  *
- *  @param vf32 a vector of __binary32 values.
+ *  @param vf64 a vector of __binary32 values.
  *  @return boolean int, true if any of 2 double values are infinity
  */
 static inline int

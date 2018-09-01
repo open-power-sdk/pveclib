@@ -68,6 +68,8 @@ typedef __vector __bool short vb16_t;
 typedef __vector __bool int vb32_t;
 /*! \brief vector of 64-bit bool long long elements. */
 typedef __vector __bool long long vb64_t;
+/*! \brief vector of 128-bit bool __int128 elements. */
+typedef __vector __bool __int128 vb128_t;
 
 /* did not get vector __int128 until GCC4.8.  */
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)

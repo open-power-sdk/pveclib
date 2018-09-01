@@ -199,11 +199,13 @@ vec_clzd (vui64_t vra)
   return (r);
 }
 
+///@cond INTERNAL
 static inline vi64_t vec_cmpgtsd (vi64_t a, vi64_t b);
 static inline vui64_t vec_cmpequd (vui64_t a, vui64_t b);
 static inline vui64_t vec_cmpgeud (vui64_t a, vui64_t b);
 static inline vui64_t vec_cmpgtud (vui64_t a, vui64_t b);
 static inline vui64_t vec_cmpneud (vui64_t a, vui64_t b);
+///@endcond
 
 /** \brief Vector Compare Equal Signed Doubleword.
  *

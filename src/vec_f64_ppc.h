@@ -262,28 +262,18 @@ vec_all_isnanf64 (vf64_t vf64)
 static inline int
 vec_all_isnormalf64 (vf64_t vf64)
 {
-  vui64_t tmp, tmp2;
+  vui64_t tmp;
   const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
 					   0x7ff0000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
-  int result;
+  const vui64_t veczero = CONST_VINT128_DW(0, 0);
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
-  tmp2 = (vui64_t) vec_abs (vf64);
-#else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  tmp2 = vec_andc ((vui64_t)vf64, signmask);
-#endif
   tmp = vec_and ((vui64_t) vf64, expmask);
 #ifdef _ARCH_PWR8
-  result = vec_all_ge (tmp2, minnorm) && vec_all_ne (tmp, expmask);
+  return !(vec_any_eq (tmp, expmask) || vec_any_eq(tmp, veczero));
 #else
-  result = vec_cmpud_all_ge (tmp2, minnorm) && !vec_cmpud_all_eq (tmp, expmask);
+  return !(vec_cmpud_any_eq (tmp, expmask)
+        || vec_cmpud_any_eq (tmp, veczero));
 #endif
-  return (result);
 }
 
 /** \brief Return true if all 2x64-bit vector double
@@ -469,8 +459,8 @@ vec_any_isnanf64 (vf64_t vf64)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 10-25 | 1/cycle  |
- *  |power9   | 10-19 | 1/cycle  |
+ *  |power8   | 6-20  | 1/cycle  |
+ *  |power9   | 5-14  | 1/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if any of 2 vector double values are
@@ -479,36 +469,20 @@ vec_any_isnanf64 (vf64_t vf64)
 static inline int
 vec_any_isnormalf64 (vf64_t vf64)
 {
-  vui64_t tmp, tmp2;
+  vui64_t tmp, res;
   const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
 					   0x7ff0000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
-  vui64_t vnorm;
-  int result;
+  const vui64_t veczero = CONST_VINT128_DW(0, 0);
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
-  tmp2 = (vui64_t) vec_abs (vf64);
-#else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  tmp2 = vec_andc ((vui64_t)vf64, signmask);
-#endif
   tmp = vec_and ((vui64_t) vf64, expmask);
 #ifdef _ARCH_PWR8
-  tmp2 = (vui64_t) vec_cmplt (tmp2, minnorm);
-  tmp = (vui64_t) vec_cmpeq (tmp, expmask);
-  vnorm = vec_nor (tmp, tmp2);
-  result = vec_any_eq (vnorm, vec_ones);
+  res = (vui64_t) vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, veczero));
+  return vec_any_gt(res, veczero);
 #else
-  tmp2 = (vui64_t)vec_cmpltud(tmp2, minnorm);
-  tmp = (vui64_t)vec_cmpequd(tmp, expmask);
-  vnorm = (vui64_t)vec_nor (tmp, tmp2);
-  result = vec_any_eq((vui32_t)vnorm, (vui32_t)vec_ones);
+  res = (vui64_t) vec_nor (vec_cmpequd (tmp, expmask),
+			   vec_cmpequd (tmp, veczero));
+  return vec_cmpud_any_gt (res, veczero);
 #endif
-  return (result);
 }
 
 /** \brief Return true if any of 2x64-bit vector double
@@ -731,7 +705,7 @@ vec_isnanf64 (vf64_t vf64)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 6-16  | 1/cycle  |
+ *  |power8   | 6-15  | 1/cycle  |
  *  |power9   | 7-16  | 1/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
@@ -741,30 +715,19 @@ vec_isnanf64 (vf64_t vf64)
 static inline vb64_t
 vec_isnormalf64 (vf64_t vf64)
 {
-  vui64_t tmp, tmp2;
   const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
 					   0x7ff0000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
+  const vui64_t veczero = CONST_VINT128_DW(0UL, 0UL);
+  vui64_t tmp;
   vb64_t result;
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
-  tmp2 = (vui64_t) vec_abs (vf64);
-#else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  tmp2 = vec_andc ((vui64_t)vf64, signmask);
-#endif
   tmp = vec_and ((vui64_t) vf64, expmask);
 #ifdef _ARCH_PWR8
-  tmp2 = (vui64_t) vec_cmplt (tmp2, minnorm);
-  tmp = (vui64_t) vec_cmpeq (tmp, expmask);
-  result = (vb64_t) vec_nor (tmp, tmp2);
+  result = (vb64_t) vec_nor (vec_cmpeq (tmp, expmask),
+			     vec_cmpeq (tmp, veczero));
 #else
-  tmp2 = (vui64_t)vec_cmpltud(tmp2, minnorm);
-  tmp = (vui64_t)vec_cmpequd(tmp, expmask);
-  result = (vb64_t)vec_nor (tmp, tmp2);
+  result = (vb64_t) vec_nor (vec_cmpequd (tmp, expmask),
+			     vec_cmpequd (tmp, veczero));
 #endif
   return (result);
 }

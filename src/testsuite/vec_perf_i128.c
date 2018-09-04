@@ -41,6 +41,7 @@ static const vui32_t c_two = CONST_VINT32_W(0, 0, 0, 2);
 static const vui32_t c_nine = CONST_VINT32_W(0, 0, 0, 9);
 static const vui32_t c_ten = CONST_VINT32_W(0, 0, 0, 10);
 
+/* 10^64th as a binary const requiring 256-bits.  */
 static const vui32_t ten_64h =
     CONST_VINT32_W(0x00000000, 0x00184f03, 0xe93ff9f4, 0xdaa797ed);
 static const vui32_t ten_64l =
@@ -194,8 +195,8 @@ timed_muludq (void)
 }
 
 //#define __DEBUG_PRINT__
-/* Older compilers ignore the "no-unroll-loops" pragma and make it
-   hard to isolate each iteration of vec_muludq.  This version
+/* Older (GCC6) compilers ignore the "no-unroll-loops" pragma and make
+   it hard to isolate each iteration of vec_muludq.  This version
    calls __test_muludq from vec_int128_dummy.c as a work around.  */
 extern vui128_t
 __test_muludq (vui128_t *mh, vui128_t a, vui128_t b);
@@ -233,5 +234,3 @@ timed_muludqx (void)
 
   return rc;
 }
-
-

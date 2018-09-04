@@ -642,7 +642,7 @@ print_vb128c (char *prefix, vb128_t val)
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   printf ("%s %c%c\n", prefix, (int) text[1], (int) text[0]);
 #else
-  printf ("%s %c%c\n", prefix, (int)text[0], (int)text[1]);
+  printf ("%s %c%c\n", prefix, (int) text[0], (int) text[1]);
 #endif
 }
 
@@ -1004,7 +1004,7 @@ check_vb128c_priv (char *prefix, vb128_t val128, vb128_t shouldbe)
 {
   int rc = 0;
 
-  if (vec_any_ne((vui32_t ) val128, (vui32_t ) shouldbe))
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
     {
       rc = 1;
       printf ("%s\n", prefix);
@@ -1020,7 +1020,7 @@ check_vb128x_priv (char *prefix, vb128_t val128, vb128_t shouldbe)
 {
   int rc = 0;
 
-  if (vec_any_ne((vui32_t ) val128, (vui32_t ) shouldbe))
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
     {
       rc = 1;
       printf ("%s\n", prefix);

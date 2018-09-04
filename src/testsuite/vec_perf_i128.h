@@ -25,6 +25,9 @@
 
 extern int timed_mul10uq (void);
 extern int timed_mul10uq2x (void);
+extern int timed_cmul10ecuq (void);
 extern int timed_mulluq (void);
+extern int timed_muludq (void);
+extern int timed_muludqx (void);
 
 #endif /* TESTSUITE_VEC_PERF_I128_H_ */

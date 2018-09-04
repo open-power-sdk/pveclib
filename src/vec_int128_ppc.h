@@ -2147,13 +2147,13 @@ vec_muloud (vui64_t a, vui64_t b)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 56    | 1/cycle  |
+ *  |power8   | 56-64 | 1/cycle  |
  *  |power9   | 33-39 | 1/cycle  |
  *
  *  @param *mulu pointer to upper 128-bits of the product.
  *  @param a 128-bit vector treated a __int128.
  *  @param b 128-bit vector treated a __int128.
- *  @return __int128 (lower 128-bits) a * b.
+ *  @return vector unsigned __int128 (lower 128-bits) of a * b.
  */
 static inline vui128_t
 vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
@@ -2441,7 +2441,7 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 42    | 1/cycle  |
+ *  |power8   | 42-48 | 1/cycle  |
  *  |power9   | 16-20 | 2/cycle  |
  *
  *  @param a 128-bit vector treated a __int128.

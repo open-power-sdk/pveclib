@@ -68,6 +68,188 @@ test_vec_adduqm_cuq (vui128_t *p, vui128_t a, vui128_t b)
 }
 
 vui128_t
+test_vec_subuqm (vui128_t a, vui128_t b)
+{
+  return (vec_subuqm (a, b));
+}
+
+vui128_t
+test_vec_subcuq (vui128_t a, vui128_t b)
+{
+  return (vec_subcuq (a, b));
+}
+
+vui128_t
+test_vec_subeuqm_ecuq (vui128_t *p, vui128_t a, vui128_t b, vui128_t ci)
+{
+  *p = vec_subecuq (a, b, ci);
+  return vec_subeuqm (a, b, ci);
+}
+
+vui128_t
+test_vec_subuqm_cuq (vui128_t *p, vui128_t a, vui128_t b)
+{
+  *p = vec_subcuq (a, b);
+  return vec_subuqm (a, b);
+}
+
+vi128_t
+test_vec_cmpeqsq (vi128_t a, vi128_t b)
+{
+  return (vec_cmpeqsq (a, b));
+}
+
+vi128_t
+test_vec_cmpgesq (vi128_t a, vi128_t b)
+{
+  return (vec_cmpgesq (a, b));
+}
+
+vi128_t
+test_vec_cmpgtsq (vi128_t a, vi128_t b)
+{
+  return (vec_cmpgtsq (a, b));
+}
+
+vi128_t
+test_vec_cmplesq (vi128_t a, vi128_t b)
+{
+  return (vec_cmplesq (a, b));
+}
+
+vi128_t
+test_vec_cmpltsq (vi128_t a, vi128_t b)
+{
+  return (vec_cmpltsq (a, b));
+}
+
+vui128_t
+test_vec_cmpequq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpequq (a, b));
+}
+
+vui128_t
+test_vec_cmpgtuq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpgtuq (a, b));
+}
+
+vui128_t
+test_vec_cmpltuq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpltuq (a, b));
+}
+
+vui128_t
+test_vec_cmpgeuq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpgeuq (a, b));
+}
+
+vui128_t
+test_vec_cmpleuq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpleuq (a, b));
+}
+
+vui128_t
+test_vec_cmpneuq (vui128_t a, vui128_t b)
+{
+  return (vec_cmpneuq (a, b));
+}
+
+int
+test_cmpsq_all_eq (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_eq (a, b);
+}
+
+int
+test_cmpsq_all_ge (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_ge (a, b);
+}
+
+int
+test_cmpsq_all_gt (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_gt (a, b);
+}
+
+int
+test_cmpsq_all_le (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_le (a, b);
+}
+
+int
+test_cmpsq_all_lt (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_lt (a, b);
+}
+
+int
+test_cmpsq_all_ne (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_ne (a, b);
+}
+
+int
+test_cmpuq_all_eq (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_eq (a, b);
+}
+
+int
+test_cmpuq_all_ge (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_ge (a, b);
+}
+
+int
+test_cmpuq_all_gt (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_gt (a, b);
+}
+
+int
+test_cmpuq_all_le (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_le (a, b);
+}
+
+int
+test_cmpuq_all_lt (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_lt (a, b);
+}
+
+int
+test_cmpuq_all_ne (vui128_t a, vui128_t b)
+{
+  return vec_cmpuq_all_ne (a, b);
+}
+
+vui128_t
+test_setb_cyq (vui128_t vcy)
+{
+  return vec_setb_cyq (vcy);
+}
+
+vui128_t
+test_setb_ncq (vui128_t vcy)
+{
+  return vec_setb_ncq (vcy);
+}
+
+vui128_t
+test_setb_sq (vi128_t vcy)
+{
+  return vec_setb_sq (vcy);
+}
+
+vui128_t
 test_vec_mul10uq_cuq (vui128_t *p, vui128_t a)
 {
   *p = vec_mul10cuq (a);
@@ -439,6 +621,110 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+/* alternative algorithms tested and not selected due to code size
+   and cycle latency.  */
+vi128_t
+__test_vec_cmpgesq (vi128_t vra, vi128_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vi128_t tand;
+  vui128_t a_b;
+  vui64_t axorb, torc, torc2;
+
+  /* vra >=vrb: (vrb | NOT(vra)) & ((vrb ~ vra) | NOT(vra - vrb)) */
+  a_b = vec_subuqm ((vui128_t)vra, (vui128_t)vrb);
+  axorb = vec_xor ((vui64_t)vra, (vui64_t)vrb);
+  torc = vec_orc (axorb, (vui64_t)a_b);
+  torc2 = vec_orc ((vui64_t)vrb, (vui64_t)vra);
+  tand = (vi128_t)vec_and (torc2, torc);
+  return (vi128_t)vec_setb_sq (tand);
+#else
+  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  vui32_t _a, _b;
+
+  _a = vec_xor ((vui32_t)vra, signbit);
+  _b = vec_xor ((vui32_t)vrb, signbit);
+  return (vi128_t)vec_cmpgeuq ((vui128_t)_a, (vui128_t)_b);
+#endif
+}
+
+vi128_t
+__test_vec_cmpgtsq (vi128_t vra, vi128_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vi128_t tor;
+  vui128_t b_a;
+  vui64_t aeqvb, tand, tandc;
+
+  /* vra >vrb: (vrb & NOT(vra)) | (NOT(vrb ~ vra) & (vrb - vra)) */
+  b_a = vec_subuqm ((vui128_t)vrb, (vui128_t)vra);
+  /* NOT(a XOR b) == (a EQV b).  */
+  aeqvb = vec_eqv ((vui64_t)vra, (vui64_t)vrb);
+  tand = vec_and (aeqvb, (vui64_t)b_a);
+  tandc = vec_andc ((vui64_t)vrb, (vui64_t)vra);
+  tor = (vi128_t)vec_or (tandc, tand);
+  return (vi128_t)vec_setb_sq (tor);
+#else
+  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  vui32_t _a, _b;
+
+  _a = vec_xor ((vui32_t)vra, signbit);
+  _b = vec_xor ((vui32_t)vrb, signbit);
+  return (vi128_t)vec_cmpgtuq ((vui128_t)_a, (vui128_t)_b);
+#endif
+}
+
+vi128_t
+__test_vec_cmplesq (vi128_t vra, vi128_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vi128_t tand;
+  vui128_t b_a;
+  vui64_t axorb, torc, torc2;
+
+  /* vra < vrb: (vra | NOT(vrb)) & ((vra ~ vrb) | NOT(vrb - vra)) */
+  b_a = vec_subuqm ((vui128_t)vrb, (vui128_t)vra);
+  axorb = vec_xor ((vui64_t)vra, (vui64_t)vrb);
+  torc = vec_orc (axorb, (vui64_t)b_a);
+  torc2 = vec_orc ((vui64_t)vra, (vui64_t)vrb);
+  tand = (vi128_t)vec_and (torc2, torc);
+  return (vi128_t)vec_setb_sq (tand);
+#else
+  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  vui32_t _a, _b;
+
+  _a = vec_xor ((vui32_t)vra, signbit);
+  _b = vec_xor ((vui32_t)vrb, signbit);
+  return (vi128_t)vec_cmpleuq ((vui128_t)_a, (vui128_t)_b);
+#endif
+}
+
+vi128_t
+__test_vec_cmpltsq (vi128_t vra, vi128_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vi128_t tor;
+  vui128_t a_b;
+  vui64_t aeqvb, tand, tandc;
+
+  /* vra < vrb: (vra & NOT(vrb)) | (NOT(vra ~ vrb) & (vra - vrb)) */
+  a_b = vec_subuqm ((vui128_t)vra, (vui128_t)vrb);
+  /* NOT(a XOR b) == (a EQV b).  */
+  aeqvb = vec_eqv ((vui64_t)vra, (vui64_t)vrb);
+  tand = vec_and (aeqvb, (vui64_t)a_b);
+  tandc = vec_andc ((vui64_t)vra, (vui64_t)vrb);
+  tor = (vi128_t)vec_or (tandc, tand);
+  return (vi128_t)vec_setb_sq (tor);
+#else
+  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  vui32_t _a, _b;
+
+  _a = vec_xor ((vui32_t)vra, signbit);
+  _b = vec_xor ((vui32_t)vrb, signbit);
+  return (vi128_t)vec_cmpltuq ((vui128_t)_a, (vui128_t)_b);
+#endif
 }
 
 #ifdef _ARCH_PWR8

@@ -631,6 +631,29 @@ print_vint256 (char *prefix, vui128_t val0_128, vui128_t val1_128)
 }
 
 void
+print_vb128c (char *prefix, vb128_t val)
+{
+  const vui64_t true = { 'T', 'T' };
+  const vui64_t false = { 'F', 'F' };
+  vui64_t text;
+
+  text = vec_sel (false, true, (vb64_t) val);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s %c%c\n", prefix, (int) text[1], (int) text[0]);
+#else
+  printf ("%s %c%c\n", prefix, (int)text[0], (int)text[1]);
+#endif
+}
+
+void
+print_vb128x (char *prefix, vb128_t boolval)
+{
+  vui128_t val = (vui128_t) boolval;
+  print_vint128x (prefix, val);
+}
+
+void
 print_vint384 (char *prefix, vui128_t val0_128, vui128_t val1_128,
                vui128_t val2_128)
 {
@@ -971,6 +994,38 @@ check_v2b64x_priv (char *prefix, vb64_t val128, vb64_t shouldbe)
       printf ("%s\n", prefix);
       print_v2b64x ("\tshould be: ", shouldbe);
       print_v2b64x ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_vb128c_priv (char *prefix, vb128_t val128, vb128_t shouldbe)
+{
+  int rc = 0;
+
+  if (vec_any_ne((vui32_t ) val128, (vui32_t ) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_vb128c ("\tshould be: ", shouldbe);
+      print_vb128c ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
+check_vb128x_priv (char *prefix, vb128_t val128, vb128_t shouldbe)
+{
+  int rc = 0;
+
+  if (vec_any_ne((vui32_t ) val128, (vui32_t ) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_vb128x ("\tshould be: ", shouldbe);
+      print_vb128x ("\t       is: ", val128);
     }
 
   return (rc);

@@ -199,8 +199,8 @@ vec_all_isnanf32 (vf32_t vf32)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 10-28 | 1/cycle  |
- *  |power9   | 8-16  | 1/cycle  |
+ *  |power8   | 6-20  | 1/cycle  |
+ *  |power9   | 5-14  | 1/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if all of 4 vector float values are
@@ -209,25 +209,14 @@ vec_all_isnanf32 (vf32_t vf32)
 static inline int
 vec_all_isnormalf32 (vf32_t vf32)
 {
-  vui32_t tmp, tmp2;
+  vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
 					  0x7f800000);
-  const vui32_t minnorm = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					  0x00800000);
-//  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  int result;
+  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabssp and eliminates a const load. */
-  tmp2 = (vui32_t) vec_abs (vf32);
-#else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000, 0x80000000);
-  tmp2 = vec_andc ((vui32_t)vf32, signmask);
-#endif
   tmp = vec_and ((vui32_t) vf32, expmask);
-  result = vec_all_ge (tmp2, minnorm) && vec_all_ne (tmp, expmask);
 
-  return (result);
+  return !(vec_any_eq (tmp, expmask) || vec_any_eq(tmp, vec_zero));
 }
 
 /** \brief Return true if all of 4x32-bit vector float
@@ -402,7 +391,7 @@ vec_any_isnanf32 (vf32_t vf32)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 10-25 | 1/cycle  |
+ *  |power8   | 10-24 | 1/cycle  |
  *  |power9   | 10-19 | 1/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
@@ -412,30 +401,15 @@ vec_any_isnanf32 (vf32_t vf32)
 static inline int
 vec_any_isnormalf32 (vf32_t vf32)
 {
-  vui32_t tmp, tmp2;
+  vui32_t tmp, res;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
 					  0x7f800000);
-  const vui32_t minnorm = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					  0x00800000);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  vb32_t vnorm;
-  int result;
+  const vui32_t veczero = CONST_VINT128_W(0, 0, 0, 0);
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabssp and eliminates a const load. */
-  tmp2 = (vui32_t) vec_abs (vf32);
-#else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000, 0x80000000);
-  tmp2 = vec_andc ((vui32_t)vf32, signmask);
-#endif
   tmp = vec_and ((vui32_t) vf32, expmask);
-  tmp2 = (vui32_t) vec_cmplt(tmp2, minnorm);
-  tmp = (vui32_t) vec_cmpeq (tmp, expmask);
-  vnorm = (vb32_t ) vec_nor (tmp, tmp2);
+  res = (vui32_t) vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, veczero));
 
-  result = vec_any_gt(vnorm, vec_zero);
-
-  return (result);
+  return vec_any_gt(res, veczero);
 }
 
 /** \brief Return true if any of 4x32-bit vector float
@@ -639,7 +613,7 @@ vec_isnanf32 (vf32_t vf32)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 6-16  | 1/cycle  |
+ *  |power8   | 6-15  | 1/cycle  |
  *  |power9   | 7-16  | 1/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
@@ -649,27 +623,14 @@ vec_isnanf32 (vf32_t vf32)
 static inline vb32_t
 vec_isnormalf32 (vf32_t vf32)
 {
-  vui32_t tmp, tmp2;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
 					  0x7f800000);
-  const vui32_t minnorm = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					  0x00800000);
-  vb32_t result;
+  const vui32_t veczero = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t tmp;
 
-#if _ARCH_PWR9
-  /* P9 has a 2 cycle xvabssp and eliminates a const load. */
-  tmp2 = (vui32_t) vec_abs (vf32);
-#else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
-  tmp2 = vec_andc ((vui32_t)vf32, signmask);
-#endif
   tmp = vec_and ((vui32_t) vf32, expmask);
-  tmp2 = (vui32_t) vec_cmplt (tmp2, minnorm);
-  tmp = (vui32_t) vec_cmpeq (tmp, expmask);
-  result = (vb32_t ) vec_nor (tmp, tmp2);
 
-  return (result);
+  return (vb32_t) vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, veczero));
 }
 
 /** \brief Return 4x32-bit vector boolean true values, for each float

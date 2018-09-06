@@ -257,6 +257,15 @@ test_vec_mul10uq_cuq (vui128_t *p, vui128_t a)
 }
 
 vui128_t
+test_vec_cmul10uq_ecuq (vui128_t *p, vui128_t a, vui128_t a2, vui128_t cin)
+{
+  vui128_t k, j;
+  k = vec_cmul10ecuq (&j, a, cin);
+  *p = vec_mul10euq ((vui128_t) a2, j);
+  return k;
+}
+
+vui128_t
 test_vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t c)
 {
   return (vec_addeq (cout, a, b, c));

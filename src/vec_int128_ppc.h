@@ -1329,7 +1329,7 @@ vec_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   __asm__(
       "vmul10ecuq %0,%2,%3;\n"
       "vmul10euq %1,%2,%3;\n"
-      : "=v" (t_carry),
+      : "=&v" (t_carry),
       "=v" (t)
       : "v" (a),
       "v" (cin)
@@ -1392,7 +1392,7 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
   __asm__(
       "vmul10cuq %0,%2;\n"
       "vmul10uq %1,%2;\n"
-      : "=v" (t_carry),
+      : "=&v" (t_carry),
       "=v" (t)
       : "v" (a)
       : );
@@ -1507,7 +1507,7 @@ vec_mul10ecuq (vui128_t a, vui128_t cin)
 #ifdef _ARCH_PWR9
   __asm__(
       "vmul10ecuq %0,%1,%2;\n"
-      : "=v" (t_carry)
+      : "=&v" (t_carry)
       : "v" (a),
       "v" (cin)
       : );

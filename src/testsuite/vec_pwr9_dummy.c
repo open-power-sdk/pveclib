@@ -70,6 +70,15 @@ __test_mulhuq_PWR9 (vui128_t a, vui128_t b)
 }
 
 vui128_t
+test_vec_cmul10cuq_256_PWR9 (vui128_t *p, vui128_t a, vui128_t a2, vui128_t cin)
+{
+  vui128_t k, j;
+  k = vec_cmul10ecuq (&j, a, cin);
+  *p = vec_mul10euq ((vui128_t) a2, j);
+  return k;
+}
+
+vui128_t
 __test_cmul10cuq_PWR9 (vui128_t *cout, vui128_t a)
 {
   return vec_cmul10cuq (cout, a);
@@ -147,6 +156,21 @@ __test_revbw_PWR9 (vui32_t a)
 {
   return vec_revbw (a);
 }
+
+#ifdef vec_cmpne
+vb64_t
+__test_cmpnedp_PWR9 (vf64_t a, vf64_t b)
+{
+  return vec_cmpne (a, b);
+}
+
+vb64_t
+__test_cmpneud_PWR9 (vui64_t a, vui64_t b)
+{
+  return vec_cmpne (a, b);
+}
+#endif
+
 
 void
 test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11, vui128_t m12, vui128_t m13, vui128_t m2)

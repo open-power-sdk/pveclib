@@ -84,31 +84,31 @@ test_all_f64_zero (vf64_t value)
 	return (vec_all_iszerof64 (value));
 }
 
-__vector bool long
+vb64_t
 test_pred_f64_inf (vf64_t value)
 {
   return (vec_isinff64 (value));
 }
 
-__vector bool long
+vb64_t
 test_pred_f64_nan (vf64_t value)
 {
   return (vec_isnanf64 (value));
 }
 
-__vector bool long
+vb64_t
 test_pred_f64_normal (vf64_t value)
 {
   return (vec_isnormalf64 (value));
 }
 
-__vector bool long
+vb64_t
 test_pred_f64_subnormal (vf64_t value)
 {
   return (vec_issubnormalf64 (value));
 }
 
-__vector bool long
+vb64_t
 test_pred_f64_zero (vf64_t value)
 {
   return (vec_iszerof64 (value));
@@ -255,12 +255,4 @@ __test_cmpledp (vf64_t a, vf64_t b)
 {
   return vec_cmple (a, b);
 }
-
-#ifdef _ARCH_PWR9
-vb64_t
-__test_cmpnedp (vf64_t a, vf64_t b)
-{
-  return vec_cmpne (a, b);
-}
-#endif
 #endif

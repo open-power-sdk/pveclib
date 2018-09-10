@@ -486,12 +486,4 @@ __test_cmpleud (vui64_t a, vui64_t b)
 {
   return vec_cmple (a, b);
 }
-
-#ifdef _ARCH_PWR9
-vb64_t
-__test_cmpneud (vui64_t a, vui64_t b)
-{
-  return vec_cmpne (a, b);
-}
-#endif
 #endif

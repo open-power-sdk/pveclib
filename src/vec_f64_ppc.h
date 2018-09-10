@@ -677,7 +677,7 @@ vec_isnanf64 (vf64_t vf64)
 
 #if _ARCH_PWR9
   /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
-  tmp2 = (vb64_t) vec_abs (vf64);
+  tmp2 = (vui64_t) vec_abs (vf64);
 #else
   const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
 					    0x8000000000000000UL);
@@ -762,7 +762,7 @@ vec_issubnormalf64 (vf64_t vf64)
 
 #if _ARCH_PWR9
   /* P9 has a 2 cycle xvabsdp and eliminates a const load. */
-  tmp2 = (vui32_t) vec_abs (vf64);
+  tmp2 = (vui64_t) vec_abs (vf64);
 #else
   const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
 					    0x8000000000000000UL);

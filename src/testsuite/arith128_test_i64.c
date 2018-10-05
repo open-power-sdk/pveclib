@@ -1099,7 +1099,7 @@ int
 test_cmpud (void)
 {
   vui64_t i1, i2, e;
-  vui64_t j;
+  vb64_t j;
   int rc = 0;
 
   printf ("\ntest_cmpud Vector Compare Unsigned doubleword\n");
@@ -1941,7 +1941,7 @@ test_cmpud_all (void)
 {
   vui64_t i1, i2;
 #ifdef __DEBUG_PRINT__
-  vui64_t j;
+  vb64_t j;
 #endif
   int rc = 0;
 
@@ -3696,7 +3696,7 @@ test_cmpud_any (void)
 {
   vui64_t i1, i2;
 #ifdef __DEBUG_PRINT__
-  vui64_t j;
+  vb64_t j;
 #endif
   int rc = 0;
 
@@ -5450,7 +5450,7 @@ int
 test_cmpsd (void)
 {
   vi64_t i1, i2, e;
-  vi64_t j;
+  vb64_t j;
   int rc = 0;
 
   printf ("\ntest_cmpsd Vector Compare Signed doubleword\n");
@@ -6580,7 +6580,7 @@ test_cmpsd_all (void)
 {
   vi64_t i1, i2;
 #ifdef __DEBUG_PRINT__
-  vi64_t j;
+  vb64_t j;
 #endif
   int rc = 0;
 
@@ -8335,7 +8335,7 @@ test_cmpsd_any (void)
 {
   vi64_t i1, i2;
 #ifdef __DEBUG_PRINT__
-  vi64_t j;
+  vb64_t j;
 #endif
   int rc = 0;
 

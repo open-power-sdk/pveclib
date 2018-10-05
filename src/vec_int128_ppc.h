@@ -550,12 +550,12 @@ vec_clzq (vui128_t vra)
   return ((vui128_t) result);
 }
 ///@cond INTERNAL
-static inline vui128_t vec_cmpequq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_cmpgeuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_cmpgtuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_cmpleuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpequq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpgeuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpgtuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpleuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
 static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
 static inline vb128_t vec_setb_cyq (vui128_t vcy);
@@ -581,11 +581,11 @@ static inline vui128_t vec_subuqm (vui128_t vra, vui128_t vrb);
  *  @return 128-bit vector boolean reflecting vector signed __int128
  *  compare equal.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmpeqsq (vi128_t vra, vi128_t vrb)
 {
   /* vec_cmpequq works for both signed and unsigned compares.  */
-  return (vi128_t)vec_cmpequq ((vui128_t) vra, (vui128_t) vrb);
+  return vec_cmpequq ((vui128_t) vra, (vui128_t) vrb);
 }
 
 /** \brief Vector Compare Equal Unsigned Quadword.
@@ -611,7 +611,7 @@ vec_cmpeqsq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare equal.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpequq (vui128_t vra, vui128_t vrb)
 {
 #ifdef _ARCH_PWR8
@@ -619,7 +619,7 @@ vec_cmpequq (vui128_t vra, vui128_t vrb)
 
   equd = (vui64_t) vec_cmpequd ((vui64_t) vra, (vui64_t) vrb);
   swapd = vec_swapd (equd);
-  return (vui128_t) vec_and (equd, swapd);
+  return (vb128_t) vec_and (equd, swapd);
 #else
   vui32_t equw, equ1, equ2, equ3;
 
@@ -651,7 +651,7 @@ vec_cmpequq (vui128_t vra, vui128_t vrb)
  *  @return 128-bit vector boolean reflecting vector signed __int128
  *  compare greater than.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmpgesq (vi128_t vra, vi128_t vrb)
 {
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
@@ -659,7 +659,7 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
 
   _a = vec_xor ((vui32_t)vra, signbit);
   _b = vec_xor ((vui32_t)vrb, signbit);
-  return (vi128_t)vec_cmpgeuq ((vui128_t)_a, (vui128_t)_b);
+  return vec_cmpgeuq ((vui128_t)_a, (vui128_t)_b);
 }
 
 /** \brief Vector Compare Greater Than or Equal Unsigned Quadword.
@@ -686,7 +686,7 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare greater than.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpgeuq (vui128_t vra, vui128_t vrb)
 {
   vui128_t a_b;
@@ -712,7 +712,7 @@ vec_cmpgeuq (vui128_t vra, vui128_t vrb)
  *  @return 128-bit vector boolean reflecting vector signed __int128
  *  compare greater than.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmpgtsq (vi128_t vra, vi128_t vrb)
 {
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
@@ -720,7 +720,7 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
 
   _a = vec_xor ((vui32_t)vra, signbit);
   _b = vec_xor ((vui32_t)vrb, signbit);
-  return (vi128_t)vec_cmpgtuq ((vui128_t)_a, (vui128_t)_b);
+  return vec_cmpgtuq ((vui128_t)_a, (vui128_t)_b);
 }
 
 /** \brief Vector Compare Greater Than Unsigned Quadword.
@@ -747,7 +747,7 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare greater than.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpgtuq (vui128_t vra, vui128_t vrb)
 {
   vui128_t b_a;
@@ -773,7 +773,7 @@ vec_cmpgtuq (vui128_t vra, vui128_t vrb)
  *  @return 128-bit vector boolean reflecting vector signed __int128
  *  compare less than or equal.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmplesq (vi128_t vra, vi128_t vrb)
 {
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
@@ -781,7 +781,7 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
 
   _a = vec_xor ((vui32_t)vra, signbit);
   _b = vec_xor ((vui32_t)vrb, signbit);
-  return (vi128_t)vec_cmpleuq ((vui128_t)_a, (vui128_t)_b);
+  return vec_cmpleuq ((vui128_t)_a, (vui128_t)_b);
 }
 
 /** \brief Vector Compare Less Than or Equal Unsigned Quadword.
@@ -808,7 +808,7 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare less than or equal.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpleuq (vui128_t vra, vui128_t vrb)
 {
   vui128_t b_a;
@@ -835,7 +835,7 @@ vec_cmpleuq (vui128_t vra, vui128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare less than.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmpltsq (vi128_t vra, vi128_t vrb)
 {
   const vui32_t signbit = CONST_VINT128_W(0x80000000, 0, 0, 0);
@@ -843,7 +843,7 @@ vec_cmpltsq (vi128_t vra, vi128_t vrb)
 
   _a = vec_xor ((vui32_t) vra, signbit);
   _b = vec_xor ((vui32_t) vrb, signbit);
-  return (vi128_t) vec_cmpltuq ((vui128_t) _a, (vui128_t) _b);
+  return vec_cmpltuq ((vui128_t) _a, (vui128_t) _b);
 }
 
 /** \brief Vector Compare Less Than Unsigned Quadword.
@@ -870,7 +870,7 @@ vec_cmpltsq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare less than.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpltuq (vui128_t vra, vui128_t vrb)
 {
   vui128_t  a_b;
@@ -895,11 +895,11 @@ vec_cmpltuq (vui128_t vra, vui128_t vrb)
  *  @return 128-bit vector boolean reflecting vector signed __int128
  *  compare not equal.
  */
-static inline vi128_t
+static inline vb128_t
 vec_cmpnesq (vi128_t vra, vi128_t vrb)
 {
   /* vec_cmpneuq works for both signed and unsigned compares.  */
-  return (vi128_t)vec_cmpneuq ((vui128_t) vra, (vui128_t) vrb);
+  return vec_cmpneuq ((vui128_t) vra, (vui128_t) vrb);
 }
 
 /** \brief Vector Compare Not Equal Unsigned Quadword.
@@ -927,7 +927,7 @@ vec_cmpnesq (vi128_t vra, vi128_t vrb)
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare equal.
  */
-static inline vui128_t
+static inline vb128_t
 vec_cmpneuq (vui128_t vra, vui128_t vrb)
 {
 #ifdef _ARCH_PWR8
@@ -936,7 +936,7 @@ vec_cmpneuq (vui128_t vra, vui128_t vrb)
   equd = (vui64_t) vec_cmpequd ((vui64_t) vra,
       (vui64_t) vrb);
   swapd = vec_swapd (equd);
-  return (vui128_t) vec_nand (equd, swapd);
+  return (vb128_t) vec_nand (equd, swapd);
 #else
   vui32_t equw, equ1, equ2, equ3;
 
@@ -949,7 +949,7 @@ vec_cmpneuq (vui128_t vra, vui128_t vrb)
   /* POWER7 does not have vnand nor xxlnand, so requires an extra vnor
      after the final vand.  */
   equw = vec_and (equw, equ2);
-  return (vui128_t) vec_nor (equw, equw);
+  return (vb128_t) vec_nor (equw, equw);
 #endif
 }
 

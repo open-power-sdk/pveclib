@@ -304,73 +304,73 @@ test_addudm (vui64_t a, vui64_t b)
   return vec_addudm (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpequd (vui64_t a, vui64_t b)
 {
   return vec_cmpequd (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpneud (vui64_t a, vui64_t b)
 {
   return vec_cmpneud (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpgtud (vui64_t a, vui64_t b)
 {
   return vec_cmpgtud (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpltud (vui64_t a, vui64_t b)
 {
   return vec_cmpltud (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpgeud (vui64_t a, vui64_t b)
 {
   return vec_cmpgeud (a, b);
 }
 
-vui64_t
+vb64_t
 test_cmpleud (vui64_t a, vui64_t b)
 {
   return vec_cmpleud (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmpeqsd (vi64_t a, vi64_t b)
 {
   return vec_cmpeqsd (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmpnesd (vi64_t a, vi64_t b)
 {
   return vec_cmpnesd (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmpgtsd (vi64_t a, vi64_t b)
 {
   return vec_cmpgtsd (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmpltsd (vi64_t a, vi64_t b)
 {
   return vec_cmpltsd (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmpgesd (vi64_t a, vi64_t b)
 {
   return vec_cmpgesd (a, b);
 }
 
-vi64_t
+vb64_t
 test_cmplesd (vi64_t a, vi64_t b)
 {
   return vec_cmplesd (a, b);

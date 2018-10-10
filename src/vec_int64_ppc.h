@@ -200,11 +200,11 @@ vec_clzd (vui64_t vra)
 }
 
 ///@cond INTERNAL
-static inline vi64_t vec_cmpgtsd (vi64_t a, vi64_t b);
-static inline vui64_t vec_cmpequd (vui64_t a, vui64_t b);
-static inline vui64_t vec_cmpgeud (vui64_t a, vui64_t b);
-static inline vui64_t vec_cmpgtud (vui64_t a, vui64_t b);
-static inline vui64_t vec_cmpneud (vui64_t a, vui64_t b);
+static inline vb64_t vec_cmpgtsd (vi64_t a, vi64_t b);
+static inline vb64_t vec_cmpequd (vui64_t a, vui64_t b);
+static inline vb64_t vec_cmpgeud (vui64_t a, vui64_t b);
+static inline vb64_t vec_cmpgtud (vui64_t a, vui64_t b);
+static inline vb64_t vec_cmpneud (vui64_t a, vui64_t b);
 ///@endcond
 
 /** \brief Vector Compare Equal Signed Doubleword.
@@ -229,11 +229,11 @@ static inline vui64_t vec_cmpneud (vui64_t a, vui64_t b);
  *  equal result for each element.
  */
 static inline
-vi64_t
+vb64_t
 vec_cmpeqsd (vi64_t a, vi64_t b)
 {
   /* vcmpequd works for both signed and unsigned compares.  */
-  return (vi64_t)vec_cmpequd ((vui64_t) a, (vui64_t) b);
+  return vec_cmpequd ((vui64_t) a, (vui64_t) b);
 }
 
 /** \brief Vector Compare Equal Unsigned Doubleword.
@@ -258,13 +258,13 @@ vec_cmpeqsd (vi64_t a, vi64_t b)
  *  equal result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpequd (vui64_t a, vui64_t b)
 {
-  vui64_t result;
+  vb64_t result;
 #ifdef _ARCH_PWR8
 #if __GNUC__ >= 6
-  result = (vui64_t)vec_cmpeq(a, b);
+  result = vec_cmpeq(a, b);
 #else
   __asm__(
       "vcmpequd %0,%1,%2;\n"
@@ -291,7 +291,7 @@ vec_cmpequd (vui64_t a, vui64_t b)
        rr = vec_perm (r, r, permute);
        r= vec_and (r, rr);
     }
-  result = (vui64_t)r;
+  result = (vb64_t)r;
 #endif
   return (result);
 }
@@ -316,10 +316,10 @@ vec_cmpequd (vui64_t a, vui64_t b)
 *  greater then or equal result for each element.
 */
 static inline
-vi64_t
+vb64_t
 vec_cmpgesd (vi64_t a, vi64_t b)
 {
-  vi64_t r;
+  vb64_t r;
   /* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
      is implemented as vec_cmpgt with parms reversed.  */
   r = vec_cmpgtsd (b, a);
@@ -346,10 +346,10 @@ vec_cmpgesd (vi64_t a, vi64_t b)
  *  greater then or equal result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpgeud (vui64_t a, vui64_t b)
 {
-  vui64_t r;
+  vb64_t r;
   /* vec_cmpge is implemented as the not of vec_cmplt. And vec_cmplt
      is implemented as vec_cmpgt with parms reversed.  */
   r = vec_cmpgtud (b, a);
@@ -378,13 +378,13 @@ vec_cmpgeud (vui64_t a, vui64_t b)
  *  greater result for each element.
  */
 static inline
-vi64_t
+vb64_t
 vec_cmpgtsd (vi64_t a, vi64_t b)
 {
-  vi64_t result;
+  vb64_t result;
 #ifdef _ARCH_PWR8
 #if __GNUC__ >= 6
-  result = (vi64_t)vec_cmpgt(a, b);
+  result = vec_cmpgt(a, b);
 #else
   __asm__(
       "vcmpgtsd %0,%1,%2;\n"
@@ -402,7 +402,7 @@ vec_cmpgtsd (vi64_t a, vi64_t b)
    */
   _A = vec_xor ((vui64_t)a, signmask);
   _B = vec_xor ((vui64_t)b, signmask);
-  result = (vi64_t)vec_cmpgtud (_A, _B);
+  result = vec_cmpgtud (_A, _B);
 #endif
   return (result);
 }
@@ -429,13 +429,13 @@ vec_cmpgtsd (vi64_t a, vi64_t b)
  *  greater result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpgtud (vui64_t a, vui64_t b)
 {
-  vui64_t result;
+  vb64_t result;
 #ifdef _ARCH_PWR8
 #if __GNUC__ >= 6
-  result = (vui64_t)vec_cmpgt(a, b);
+  result = vec_cmpgt(a, b);
 #else
   __asm__(
       "vcmpgtud %0,%1,%2;\n"
@@ -471,7 +471,7 @@ vec_cmpgtud (vui64_t a, vui64_t b)
   /* Duplicate result word to dword width.  */
   y = vec_sld (c0, x, 12);
   r = vec_sel (x, y, c01);
-  result = (vui64_t)r;
+  result = (vb64_t)r;
 #endif
   return (result);
 }
@@ -496,10 +496,10 @@ vec_cmpgtud (vui64_t a, vui64_t b)
  *  greater result for each element.
  */
 static inline
-vi64_t
+vb64_t
 vec_cmplesd (vi64_t a, vi64_t b)
 {
-  vi64_t result;
+  vb64_t result;
   /* vec_cmple is implemented as the not of vec_cmpgt.   */
   result = vec_cmpgtsd (a, b);
   return vec_nor (result, result);
@@ -525,10 +525,10 @@ vec_cmplesd (vi64_t a, vi64_t b)
  *  greater result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpleud (vui64_t a, vui64_t b)
 {
-  vui64_t result;
+  vb64_t result;
   /* vec_cmple is implemented as the not of vec_cmpgt.   */
   result = vec_cmpgtud (a, b);
   return vec_nor (result, result);
@@ -553,7 +553,7 @@ vec_cmpleud (vui64_t a, vui64_t b)
  *  less result for each element.
  */
 static inline
-vi64_t
+vb64_t
 vec_cmpltsd (vi64_t a, vi64_t b)
 {
   return vec_cmpgtsd (b, a);
@@ -578,7 +578,7 @@ vec_cmpltsd (vi64_t a, vi64_t b)
  *  less result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpltud (vui64_t a, vui64_t b)
 {
   return vec_cmpgtud (b, a);
@@ -603,10 +603,10 @@ vec_cmpltud (vui64_t a, vui64_t b)
  *  not equal result for each element.
  */
 static inline
-vi64_t
+vb64_t
 vec_cmpnesd (vi64_t a, vi64_t b)
 {
-  return (vi64_t)vec_cmpneud ((vui64_t) a, (vui64_t) b);
+  return vec_cmpneud ((vui64_t) a, (vui64_t) b);
 }
 
 /** \brief Vector Compare Not Equal Unsigned Doubleword.
@@ -628,10 +628,10 @@ vec_cmpnesd (vi64_t a, vi64_t b)
  *  not equal result for each element.
  */
 static inline
-vui64_t
+vb64_t
 vec_cmpneud (vui64_t a, vui64_t b)
 {
-  vui64_t r;
+  vb64_t r;
   /* vec_cmpne is implemented as the not of vec_cmpeq.  */
   r = vec_cmpequd (a, b);
   return vec_nor (r, r);
@@ -692,7 +692,7 @@ vec_cmpsd_all_ge (vi64_t a, vi64_t b)
   result = vec_all_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vi64_t gt_bool = vec_cmpgesd (a, b);
+  vb64_t gt_bool = vec_cmpgesd (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -724,7 +724,7 @@ vec_cmpsd_all_gt (vi64_t a, vi64_t b)
   result = vec_all_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vi64_t gt_bool = vec_cmpgtsd (a, b);
+  vb64_t gt_bool = vec_cmpgtsd (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -803,7 +803,7 @@ vec_cmpsd_all_ne (vi64_t a, vi64_t b)
   result = vec_all_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
+  vb64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -834,7 +834,7 @@ vec_cmpsd_any_eq (vi64_t a, vi64_t b)
   result = vec_any_eq(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpequd ((vui64_t)a, (vui64_t)b);
+  vb64_t gt_bool = vec_cmpequd ((vui64_t)a, (vui64_t)b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -861,15 +861,15 @@ static inline
 int
 vec_cmpsd_any_ge (vi64_t a, vi64_t b)
 {
-int result;
+  int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-result = vec_any_ge(a, b);
+  result = vec_any_ge(a, b);
 #else
-vui32_t wt = { -1, -1, -1, -1};
-vi64_t gt_bool = vec_cmpgesd (a, b);
-result = vec_any_eq((vui32_t)gt_bool, wt);
+  vui32_t wt = { -1, -1, -1, -1};
+  vb64_t gt_bool = vec_cmpgesd (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
-return (result);
+  return (result);
 }
 
 /** \brief Vector Compare any Greater Than Signed Doubleword.
@@ -898,7 +898,7 @@ vec_cmpsd_any_gt (vi64_t a, vi64_t b)
   result = vec_any_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vi64_t gt_bool = vec_cmpgtsd (a, b);
+  vb64_t gt_bool = vec_cmpgtsd (a, b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -977,7 +977,7 @@ vec_cmpsd_any_ne (vi64_t a, vi64_t b)
   result = vec_any_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
+  vb64_t gt_bool = vec_cmpneud ((vui64_t)a, (vui64_t)b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1038,7 +1038,7 @@ vec_cmpud_all_ge (vui64_t a, vui64_t b)
   result = vec_all_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpgeud (a, b);
+  vb64_t gt_bool = vec_cmpgeud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1070,7 +1070,7 @@ vec_cmpud_all_gt (vui64_t a, vui64_t b)
   result = vec_all_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpgtud (a, b);
+  vb64_t gt_bool = vec_cmpgtud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1149,7 +1149,7 @@ vec_cmpud_all_ne (vui64_t a, vui64_t b)
   result = vec_all_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpneud (a, b);
+  vb64_t gt_bool = vec_cmpneud (a, b);
   result = vec_all_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1180,7 +1180,7 @@ vec_cmpud_any_eq (vui64_t a, vui64_t b)
   result = vec_any_eq(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpequd (a, b);
+  vb64_t gt_bool = vec_cmpequd (a, b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1207,15 +1207,15 @@ static inline
 int
 vec_cmpud_any_ge (vui64_t a, vui64_t b)
 {
-int result;
+  int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-result = vec_any_ge(a, b);
+  result = vec_any_ge(a, b);
 #else
-vui32_t wt = { -1, -1, -1, -1};
-vui64_t gt_bool = vec_cmpgeud (a, b);
-result = vec_any_eq((vui32_t)gt_bool, wt);
+  vui32_t wt = { -1, -1, -1, -1};
+  vb64_t gt_bool = vec_cmpgeud (a, b);
+  result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
-return (result);
+  return (result);
 }
 
 /** \brief Vector Compare any Greater Than Unsigned Doubleword.
@@ -1244,7 +1244,7 @@ vec_cmpud_any_gt (vui64_t a, vui64_t b)
   result = vec_any_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpgtud (a, b);
+  vb64_t gt_bool = vec_cmpgtud (a, b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);
@@ -1323,7 +1323,7 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
   result = vec_any_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
-  vui64_t gt_bool = vec_cmpneud (a, b);
+  vb64_t gt_bool = vec_cmpneud (a, b);
   result = vec_any_eq((vui32_t)gt_bool, wt);
 #endif
   return (result);

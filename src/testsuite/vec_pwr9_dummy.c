@@ -24,6 +24,7 @@
 #pragma GCC target ("cpu=power9")
 
 #include <vec_int128_ppc.h>
+#include <vec_f128_ppc.h>
 
 vui8_t
 __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
@@ -157,6 +158,145 @@ __test_revbw_PWR9 (vui32_t a)
   return vec_revbw (a);
 }
 
+vb128_t
+test_vec_isfinitef128_PWR9 (__binary128 f128)
+{
+  return vec_isfinitef128 (f128);
+}
+
+vb128_t
+test_vec_isinff128_PWR9 (__binary128 f128)
+{
+  return vec_isinff128 (f128);
+}
+
+vb128_t
+test_vec_isnanf128_PWR9 (__binary128 f128)
+{
+  return vec_isnanf128 (f128);
+}
+
+vb128_t
+test_vec_isnormalf128_PWR9 (__binary128 f128)
+{
+  return vec_isnormalf128 (f128);
+}
+
+vb128_t
+test_vec_issubnormalf128_PWR9 (__binary128 f128)
+{
+  return vec_issubnormalf128 (f128);
+}
+
+vb128_t
+test_vec_iszerof128_PWR9 (__binary128 f128)
+{
+  return vec_iszerof128 (f128);
+}
+
+int
+test_vec_all_normalf128_PWR9 (__binary128 value)
+{
+  return (vec_all_isnormalf128 (value));
+}
+
+int
+test_vec_all_finitef128_PWR9 (__binary128 value)
+{
+  return (vec_all_isfinitef128 (value));
+}
+
+int
+test_vec_all_subnormalf128_PWR9 (__binary128 value)
+{
+  return (vec_all_issubnormalf128 (value));
+}
+
+int
+test_vec_all_inff128_PWR9 (__binary128 value)
+{
+  return (vec_all_isinff128 (value));
+}
+
+int
+test_vec_isinf_signf128_PWR9 (__binary128 value)
+{
+  return (vec_isinf_signf128 (value));
+}
+
+int
+test_vec_all_nanf128_PWR9 (__binary128 value)
+{
+  return (vec_all_isnanf128 (value));
+}
+
+int
+test_vec_all_zerof128_PWR9 (__binary128 value)
+{
+  return (vec_all_iszerof128 (value));
+}
+
+#ifdef __FLOAT128_TYPE__
+/* dummy sinf128 example. From Posix:
+ * If value is NaN then return a NaN.
+ * If value is +-0.0 then return value.
+ * If value is subnormal then return value.
+ * If value is +-Inf then return a NaN.
+ * Otherwise compute and return sin(value).
+ */
+__binary128
+test_sinf128_PWR9 (__binary128 value)
+{
+  __binary128 result;
+
+  if (vec_all_isnormalf128 (value))
+    {
+      /* body of taylor series.  */
+      result = 0.0q;
+    }
+  else
+    {
+      if (vec_all_isinff128 (value))
+	result = vec_const_nanf128 ();
+      else
+	result = value;
+    }
+
+  return result;
+}
+/* dummy codf128 example. From Posix:
+ * If value is NaN then return a NaN.
+ * If value is +-0.0 then return 1.0.
+ * If value is +-Inf then return a NaN.
+ * Otherwise compute and return sin(value).
+ */
+__binary128
+test_cosf128 (__binary128 value)
+{
+  __binary128 result;
+
+  if (vec_all_isfinitef128 (value))
+    {
+      if (vec_all_iszerof128 (value))
+	result = 1.0Q;
+      else
+	{
+	  /* body of taylor series.  */
+	  result = 0.0q;
+	}
+    }
+  else
+    {
+      if (vec_all_isinff128 (value))
+	result = vec_const_nanf128 ();
+      else
+	result = value;
+    }
+
+  return result;
+}
+#endif
+
 #ifdef vec_cmpne
 vb64_t
 __test_cmpnedp_PWR9 (vf64_t a, vf64_t b)
@@ -171,6 +311,154 @@ __test_cmpneud_PWR9 (vui64_t a, vui64_t b)
 }
 #endif
 
+#ifdef scalar_test_data_class
+int
+__test_scalar_test_data_class_f128 (__binary128 val)
+{
+  return scalar_test_data_class (val, 0x7f);
+}
+
+int
+__test_scalar_test_data_class_f64 (double val)
+{
+  return scalar_test_data_class (val, 0x7f);
+}
+
+int
+__test_scalar_test_data_class_f32 (float val)
+{
+  return scalar_test_data_class (val, 0x7f);
+}
+#endif
+
+#ifdef scalar_test_neg
+int
+__test_scalar_test_neg (__ieee128 val)
+{
+  return scalar_test_neg (val);
+}
+#endif
+
+#ifdef scalar_extract_exp
+long long int
+__test_scalar_extract_exp_f128 (__ieee128 val)
+{
+  return scalar_extract_exp (val);
+}
+
+int
+__test_scalar_extract_exp_f64 (double val)
+{
+  return scalar_extract_exp (val);
+}
+#endif
+
+#ifdef scalar_extract_sig
+__int128
+__test_scalar_extract_sig_f128 (__ieee128 val)
+{
+  return scalar_extract_sig (val);
+}
+
+long long int
+__test_scalar_extract_sig_f64 (double val)
+{
+  return scalar_extract_sig (val);
+}
+#endif
+
+#ifdef scalar_insert_exp
+__ieee128
+__test_scalar_insert_exp_f128 (__ieee128 sig, unsigned long long int exp)
+{
+  return scalar_insert_exp (sig, exp);
+}
+
+double
+__test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
+{
+  return scalar_insert_exp (sig, exp);
+}
+#endif
+
+#ifdef scalar_cmp_exp_eq
+#if 0 // there is an instruction for this, but not supported yet.  */
+int
+__test_scalar_cmp_exp_eq_f128 (__ieee128 vra, __ieee128 vrb)
+{
+  return scalar_cmp_exp_eq (vra, vrb);
+}
+#endif
+int
+__test_scalar_cmp_exp_eq_f64 (double vra, double vrb)
+{
+  return scalar_cmp_exp_eq (vra, vrb);
+}
+#endif
+
+#ifdef vec_insert_exp
+vf64_t
+__test_vec_insert_exp_f64b (vui64_t sig, vui64_t exp)
+{
+  return vec_insert_exp (sig, exp);
+}
+vf64_t
+__test_vec_insert_exp_f64 (vf64_t sig, vui64_t exp)
+{
+  return vec_insert_exp (sig, exp);
+}
+
+vf32_t
+__test_vec_insert_exp_f32b (vui32_t sig, vui32_t exp)
+{
+  return vec_insert_exp (sig, exp);
+}
+vf32_t
+__test_vec_insert_exp_f32 (vf32_t sig, vui32_t exp)
+{
+  return vec_insert_exp (sig, exp);
+}
+#endif
+
+#ifdef vec_test_data_class
+vb64_t
+__test_vec_test_data_class_f64 (vf64_t val)
+{
+  return vec_test_data_class (val, 0x7f);
+}
+
+vb32_t
+__test_vec_test_data_class_f32 (vf32_t val)
+{
+  return vec_test_data_class (val, 0x7f);
+}
+#endif
+
+#ifdef vec_extract_exp
+vui64_t
+__test_vec_extract_exp_f64 (vf64_t val)
+{
+  return vec_extract_exp (val);
+}
+vui32_t
+__test_vec_extract_exp_f32 (vf32_t val)
+{
+  return vec_extract_exp (val);
+}
+#endif
+
+#ifdef vec_extract_sig
+vui64_t
+__test_vec_extract_sig_f64 (vf64_t val)
+{
+  return vec_extract_sig (val);
+}
+vui32_t
+__test_vec_extract_sig_f32 (vf32_t val)
+{
+  return vec_extract_sig (val);
+}
+#endif
 
 void
 test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11, vui128_t m12, vui128_t m13, vui128_t m2)

@@ -50,19 +50,19 @@
  * vector logical instruction for earlier machines. So it seems
  * reasonable to add these to pveclib for both vector and scalar forms.
  *
- * While Quad-Precision is not supported in hardware until POWER9,
- * the compiler and runtime, support the __float128 type and arithmetic
- * operations via soft-float emulation.
- * The soft-float implementation follows the ABI and passes parameters
- * and return values vector vector registers.
+ * Quad-Precision is not supported in hardware until POWER9. However
+ * the compiler and runtime supports the __float128 type and arithmetic
+ * operations via soft-float emulation for earlier processors.
+ * The soft-float implementation follows the ABI and passes __float128
+ * parameters and return values in vector registers.
  *
  * So it is not unreasonable for this header to provide vector forms
  * of the __float128 classification functions
  * (isnormal/subnormal/finite/inf/nan/zero, copysign, and abs).
- * These functions can be implement directly using (one or more) POWER9
+ * These functions can be implemented directly using (one or more) POWER9
  * instructions, or a few vector logical and integer compare
  * instructions for POWER7/8. Each is comfortably small enough to be
- * in-lined and inherently faster than the equivalent Posix or compiler
+ * in-lined and inherently faster than the equivalent POSIX or compiler
  * built-in runtime functions. Performing these operations in-line and
  * directly in vector registers (VRs) avoids call/return and VR <-> GPR
  * transfer overhead.
@@ -95,7 +95,7 @@
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
  *
- * \section f128_expamples_0_0 Examples
+ * \section f128_examples_0_0 Examples
  * For example: using the the classification functions for implementing
  * the math library function sine and cosine.
  * The Posix specification requires that special input values are
@@ -109,7 +109,7 @@
  * - Otherwise compute and return sin(value).
  *
  * The following code example uses functions from this header to
- * address the Posix requirements for special values input to
+ * address the POSIX requirements for special values input to
  * sinf128():
  * \code
 __binary128
@@ -168,7 +168,7 @@ test_cosf128 (__binary128 value)
 }
  * \endcode
  *
- * Neither example raise floating point exceptions or sets
+ * Neither example raises floating point exceptions or sets
  * <B>errno</B>, as appropriate for a vector math library.
  *
  * \section f128_perf_0_0 Performance data
@@ -182,7 +182,7 @@ test_cosf128 (__binary128 value)
 #define VEC_F128_PPC_H_
 
 #include <vec_common_ppc.h>
-#include "vec_int128_ppc.h"
+#include <vec_int128_ppc.h>
 #include <vec_f64_ppc.h>
 
 /* __float128 was added in GCC 6.0.  But only with -mfloat128.
@@ -522,13 +522,10 @@ vec_all_isfinitef128 (__binary128 f128)
 #else
   vui32_t tmp, t128;
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  int result = 0;
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_and (t128, expmask);
-  result = !vec_all_eq(tmp, expmask);
-
-  return (result);
+  return !vec_all_eq(tmp, expmask);
 #endif
 }
 
@@ -559,13 +556,10 @@ vec_all_isinff128 (__binary128 f128)
   vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  int result = 0;
 
   tmp = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc (tmp, signmask);
-  result = vec_all_eq(tmp, expmask);
-
-  return (result);
+  return vec_all_eq(tmp, expmask);
 #endif
 }
 
@@ -597,14 +591,11 @@ vec_all_isnanf128 (__binary128 f128)
   vui32_t tmp, tmp2, t128;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  int result;
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc (t128, signmask);
   tmp2 = vec_and (t128, expmask);
-  result = (vec_all_eq (tmp2, expmask) && vec_any_gt(tmp, expmask));
-
-  return (result);
+  return (vec_all_eq (tmp2, expmask) && vec_any_gt(tmp, expmask));
 #endif
 }
 
@@ -708,15 +699,13 @@ vec_all_iszerof128 (__binary128 f128)
 #else
   vui64_t tmp2;
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  int result;
 
   tmp2 = vec_xfer_bin128_2_vui64t (vec_absf128 (f128));
 #if _ARCH_PWR8
-  result = vec_all_eq(tmp2, vec_zero);
+  return vec_all_eq(tmp2, vec_zero);
 #else
-  result = vec_all_eq((vui32_t)tmp2, (vui32_t)vec_zero);
+  return vec_all_eq((vui32_t)tmp2, (vui32_t)vec_zero);
 #endif
-  return (result);
 #endif
 }
 
@@ -838,15 +827,12 @@ vec_isfinitef128 (__binary128 f128)
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
   vui32_t tmp, t128;
   vb128_t tmp2, tmp3;
-  vb128_t result;
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_and (t128, expmask);
   tmp2 = (vb128_t) vec_cmpeq (tmp, expmask);
   tmp3 = (vb128_t) vec_splat ((vui32_t) tmp2, VEC_W_H);
-  result = (vb128_t) vec_nor ((vui32_t) tmp3, (vui32_t) tmp3); // vec_not
-
-  return (result);
+  return (vb128_t) vec_nor ((vui32_t) tmp3, (vui32_t) tmp3); // vec_not
 #endif
 }
 
@@ -934,15 +920,13 @@ vec_isinff128 (__binary128 f128)
 
   return (vb128_t)result;
 #else
-  vui32_t tmp, /*tmp2,*/t128;
+  vui32_t tmp, t128;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  vb128_t result = (vb128_t) CONST_VINT128_W(0, 0, 0, 0);
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc (t128, signmask);
-  result = vec_cmpequq ((vui128_t)tmp , (vui128_t)expmask);
-  return (result);
+  return vec_cmpequq ((vui128_t)tmp , (vui128_t)expmask);
 #endif
 }
 
@@ -982,12 +966,10 @@ vec_isnanf128 (__binary128 f128)
   vui32_t tmp, t128;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  vb128_t result;
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc (t128, signmask);
-  result = (vb128_t)vec_cmpgtuq ((vui128_t)tmp , (vui128_t)expmask);
-  return (result);
+  return vec_cmpgtuq ((vui128_t)tmp , (vui128_t)expmask);
 #endif
 }
 
@@ -1070,15 +1052,12 @@ vec_issubnormalf128 (__binary128 f128)
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
   const vui32_t minnorm = CONST_VINT128_W(0x00010000, 0, 0, 0);
-  vb128_t result;
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc (t128, signmask);
   tmp2 = (vui32_t) vec_cmpltuq ((vui128_t)tmp, (vui128_t)minnorm);
   tmpz = (vui32_t) vec_cmpequq ((vui128_t)tmp, (vui128_t)vec_zero);
-  result = (vb128_t ) vec_andc (tmp2, tmpz);
-
-  return (result);
+  return (vb128_t) vec_andc (tmp2, tmpz);
 #endif
 }
 

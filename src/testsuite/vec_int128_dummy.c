@@ -93,67 +93,67 @@ test_vec_subuqm_cuq (vui128_t *p, vui128_t a, vui128_t b)
   return vec_subuqm (a, b);
 }
 
-vi128_t
+vb128_t
 test_vec_cmpeqsq (vi128_t a, vi128_t b)
 {
   return (vec_cmpeqsq (a, b));
 }
 
-vi128_t
+vb128_t
 test_vec_cmpgesq (vi128_t a, vi128_t b)
 {
   return (vec_cmpgesq (a, b));
 }
 
-vi128_t
+vb128_t
 test_vec_cmpgtsq (vi128_t a, vi128_t b)
 {
   return (vec_cmpgtsq (a, b));
 }
 
-vi128_t
+vb128_t
 test_vec_cmplesq (vi128_t a, vi128_t b)
 {
   return (vec_cmplesq (a, b));
 }
 
-vi128_t
+vb128_t
 test_vec_cmpltsq (vi128_t a, vi128_t b)
 {
   return (vec_cmpltsq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpequq (vui128_t a, vui128_t b)
 {
   return (vec_cmpequq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpgtuq (vui128_t a, vui128_t b)
 {
   return (vec_cmpgtuq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpltuq (vui128_t a, vui128_t b)
 {
   return (vec_cmpltuq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpgeuq (vui128_t a, vui128_t b)
 {
   return (vec_cmpgeuq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpleuq (vui128_t a, vui128_t b)
 {
   return (vec_cmpleuq (a, b));
 }
 
-vui128_t
+vb128_t
 test_vec_cmpneuq (vui128_t a, vui128_t b)
 {
   return (vec_cmpneuq (a, b));

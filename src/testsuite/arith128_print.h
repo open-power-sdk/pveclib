@@ -232,15 +232,15 @@ check_isf128 (char *prefix, __float128 val128, int val, int shouldbe)
 }
 
 extern int
-check_f128bool_priv (char *prefix, __float128 val128, __f128_bool boolis,
-                     __f128_bool shouldbe);
+check_f128bool_priv (char *prefix, __float128 val128, vb128_t boolis,
+                     vb128_t shouldbe);
 
 static inline int
-check_f128bool (char *prefix, __float128 val128, __f128_bool boolis,
-                __f128_bool shouldbe)
+check_f128bool (char *prefix, __float128 val128, vb128_t boolis,
+                vb128_t shouldbe)
 {
   int rc = 0;
-  if (!vec_all_eq(boolis, shouldbe))
+  if (!vec_all_eq((vui32_t)boolis, (vui32_t)shouldbe))
     {
       rc = check_f128bool_priv (prefix, val128, boolis, shouldbe);
     }
@@ -253,7 +253,7 @@ check_f128 (char *prefix, __float128 val128, __float128 f128is,
             __float128 shouldbe)
 {
   __VF_128 xfer;
-  __f128_bool boolis, boolshould;
+  vb128_t boolis, boolshould;
   int rc = 0;
 
   xfer.vf1 = f128is;
@@ -261,7 +261,7 @@ check_f128 (char *prefix, __float128 val128, __float128 f128is,
   xfer.vf1 = shouldbe;
   boolshould = xfer.vbool1;
 
-  if (!vec_all_eq(boolis, boolshould))
+  if (!vec_all_eq((vui32_t)boolis, (vui32_t)boolshould))
     {
       rc = check_f128bool_priv (prefix, val128, boolis, boolshould);
     }

@@ -1176,11 +1176,11 @@ print_dfp128p2 (char *prefix, _Decimal128 val128, long exp)
 }
 
 int
-check_f128bool_priv (char *prefix, __float128 val128, __f128_bool boolis,
-                     __f128_bool shouldbe)
+check_f128bool_priv (char *prefix, __float128 val128, vb128_t boolis,
+                     vb128_t shouldbe)
 {
   int rc = 0;
-  if (!vec_all_eq (boolis, shouldbe))
+  if (!vec_all_eq ((vui32_t)boolis, (vui32_t)shouldbe))
     {
       rc = 1;
       print_vfloat128x (prefix, val128);

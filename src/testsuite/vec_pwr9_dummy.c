@@ -245,26 +245,27 @@ test_vec_all_zerof128_PWR9 (__binary128 value)
  * Otherwise compute and return sin(value).
  */
 __binary128
-test_sinf128_PWR9 (__binary128 value)
-{
-  __binary128 result;
+test_sinf128 (__binary128 value)
+  {
+    __binary128 result;
 
-  if (vec_all_isnormalf128 (value))
-    {
-      /* body of taylor series.  */
-      result = 0.0q;
-    }
-  else
-    {
-      if (vec_all_isinff128 (value))
-	result = vec_const_nanf128 ();
-      else
-	result = value;
-    }
+    if (vec_all_isnormalf128 (value))
+      {
+	/* body of vec_sin() computation elided for this example.  */
+	result = 0.0q;
+      }
+    else
+      {
+	if (vec_all_isinff128 (value))
+	  result = vec_const_nanf128 ();
+	else
+	  result = value;
+      }
 
-  return result;
-}
-/* dummy codf128 example. From Posix:
+    return result;
+  }
+
+/* dummy cosf128 example. From Posix:
  * If value is NaN then return a NaN.
  * If value is +-0.0 then return 1.0.
  * If value is +-Inf then return a NaN.
@@ -272,29 +273,29 @@ test_sinf128_PWR9 (__binary128 value)
  */
 __binary128
 test_cosf128 (__binary128 value)
-{
-  __binary128 result;
+  {
+    __binary128 result;
 
-  if (vec_all_isfinitef128 (value))
-    {
-      if (vec_all_iszerof128 (value))
-	result = 1.0Q;
-      else
-	{
-	  /* body of taylor series.  */
-	  result = 0.0q;
-	}
-    }
-  else
-    {
-      if (vec_all_isinff128 (value))
-	result = vec_const_nanf128 ();
-      else
-	result = value;
-    }
+    if (vec_all_isfinitef128 (value))
+      {
+	if (vec_all_iszerof128 (value))
+	  result = 1.0q;
+	else
+	  {
+	    /* body of vec_cos() computation elided for this example.  */
+	    result = 0.0q;
+	  }
+      }
+    else
+      {
+	if (vec_all_isinff128 (value))
+	  result = vec_const_nanf128 ();
+	else
+	  result = value;
+      }
 
-  return result;
-}
+    return result;
+  }
 #endif
 
 #ifdef vec_cmpne
@@ -382,7 +383,9 @@ __test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
 #endif
 
 #ifdef scalar_cmp_exp_eq
-#if 0 // there is an instruction for this, but not supported yet.  */
+#if 0
+/* there is an instruction for this, but is not supported in
+   GCC (8.2) yet.  */
 int
 __test_scalar_cmp_exp_eq_f128 (__ieee128 vra, __ieee128 vrb)
 {

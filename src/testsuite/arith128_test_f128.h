@@ -18,7 +18,6 @@
  Contributors:
       IBM Corporation, Steven Munroe
       Created on: Apr 18, 2016
-      Commited on: Oct 10, 2018
  */
 
 /* Collection function for all f128 unit tests.  */

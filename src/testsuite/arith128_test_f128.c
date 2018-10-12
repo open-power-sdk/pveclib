@@ -18,9 +18,7 @@
  Contributors:
       IBM Corporation, Steven Munroe
       Created on: Apr 18, 2016
-      Commited on: Oct 10, 2018
  */
-
 
 #define __STDC_WANT_DEC_FP__    1
 
@@ -61,7 +59,6 @@ db_vec_isfinitef128 (__binary128 f128)
 
 	return (result);
 }
-#else
 #endif
 
 const vui32_t signmask32  = {0x80000000, 0, 0, 0};
@@ -832,8 +829,6 @@ test_isinff128 (void)
   int rc = 0;
 
   printf ("\ntest_isinff128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -1052,8 +1047,6 @@ test_isnanf128 (void)
   int rc = 0;
 
   printf ("\ntest_isnanf128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -1272,8 +1265,6 @@ test_isfinitef128 (void)
   int rc = 0;
 
   printf ("\ntest_isfinitef128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -1492,8 +1483,6 @@ test_isnormalf128 (void)
   int rc = 0;
 
   printf ("\ntest_isnormalf128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -1717,8 +1706,6 @@ test_issubnormalf128 (void)
   int rc = 0;
 
   printf ("\ntest_issubnormalf128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -1963,8 +1950,6 @@ test_iszerof128 (void)
   int rc = 0;
 
   printf ("\ntest_iszerof128 f128 -> vector bool ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 
 #if 1
   tests_count++;
@@ -2741,8 +2726,6 @@ test_const_f128 (void)
   __float128 x, t, e;
   long tests_count = 0;
   int rc = 0;
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
 #if 1
   tests_count++;
   x = vec_const_huge_valf128 ();
@@ -2840,8 +2823,7 @@ test_all_isfinitef128 (void)
   int rc = 0;
 
   printf ("\ntest_all_isfinitef128 f128 -> bool int , ...\n");
-  /* this version (with #undef __DEBUG_PRINT__) is silent if there
-   * are no errors.  Better for profiling.  */
+
 #if 1
   tests_count++;
   x = (__float128)f128_zero;

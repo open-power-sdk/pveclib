@@ -151,25 +151,26 @@ test_vec_all_zerof128 (__binary128 value)
  */
 __binary128
 test_sinf128 (__binary128 value)
-{
-  __binary128 result;
+  {
+    __binary128 result;
 
-  if (vec_all_isnormalf128 (value))
-    {
-      /* body of taylor series.  */
-      result = 0.0q;
-    }
-  else
-    {
-      if (vec_all_isinff128 (value))
-	result = vec_const_nanf128 ();
-      else
-	result = value;
-    }
+    if (vec_all_isnormalf128 (value))
+      {
+	/* body of vec_sin() computation elided for this example.  */
+	result = 0.0q;
+      }
+    else
+      {
+	if (vec_all_isinff128 (value))
+	  result = vec_const_nanf128 ();
+	else
+	  result = value;
+      }
 
-  return result;
-}
-/* dummy codf128 example. From Posix:
+    return result;
+  }
+
+/* dummy cosf128 example. From Posix:
  * If value is NaN then return a NaN.
  * If value is +-0.0 then return 1.0.
  * If value is +-Inf then return a NaN.
@@ -177,33 +178,30 @@ test_sinf128 (__binary128 value)
  */
 __binary128
 test_cosf128 (__binary128 value)
-{
-  __binary128 result;
+  {
+    __binary128 result;
 
-  if (vec_all_isfinitef128 (value))
-    {
-      if (vec_all_iszerof128 (value))
-	result = 1.0Q;
-      else
-	{
-	  /* body of taylor series.  */
-	  result = 0.0q;
-	}
-    }
-  else
-    {
-      if (vec_all_isinff128 (value))
-	result = vec_const_nanf128 ();
-      else
-	result = value;
-    }
+    if (vec_all_isfinitef128 (value))
+      {
+	if (vec_all_iszerof128 (value))
+	  result = 1.0Q;
+	else
+	  {
+	    /* body of vec_cos() computation elided for this example.  */
+	    result = 0.0q;
+	  }
+      }
+    else
+      {
+	if (vec_all_isinff128 (value))
+	  result = vec_const_nanf128 ();
+	else
+	  result = value;
+      }
 
-  return result;
-}
+    return result;
+  }
 #endif
-
-/* Mostly compiler and library tests follow to see what the various
- * will do.  */
 
 vb128_t
 _test_f128_isinff128 (__Float128 value)
@@ -248,44 +246,48 @@ _test_xfer_bin128_2_vui16t (__binary128 f128)
 }
 
 #ifdef __FLOAT128_TYPE__
+/* Mostly compiler and library tests follow to see what the various
+ * compilers will do.  */
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 int
 test_gcc_f128_signbit (__Float128 value)
-{
-	return (__signbitf128(value));
-}
+  {
+    return (__signbitf128(value));
+  }
 
 int
 test_gcc_f128_isinf (__Float128 value)
-{
-	return (__isinff128(value));
-}
+  {
+    return (__isinff128(value));
+  }
 
 int
 test_gcc_float128_isnan (__Float128 value)
-{
-	return (__isnanf128(value));
-}
+  {
+    return (__isnanf128(value));
+  }
+
 __Float128
 test_gcc_f128_copysign (__Float128 valx, __Float128 valy)
-{
-	return (__copysignf128(valx, valy));
-}
+  {
+    return (__copysignf128(valx, valy));
+  }
+
 int
-
 test_glibc_f128_classify (__Float128 value)
-{
-	if (__finitef128(value))
-	return 1;
+  {
+    if (__finitef128(value))
+    return 1;
 
-	if (__isinff128(value))
-	return 2;
+    if (__isinff128(value))
+    return 2;
 
-	if (__isnanf128(value))
-	return 3;
-	/* finite */
-	return 0;
-}
+    if (__isnanf128(value))
+    return 3;
+    /* finite */
+    return 0;
+  }
 #endif
 #endif
 

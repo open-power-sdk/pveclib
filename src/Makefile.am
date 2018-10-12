@@ -9,6 +9,7 @@ libpvec_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
+	testsuite/vec_f128_dummy.c \
 	testsuite/vec_f64_dummy.c \
 	testsuite/vec_f32_dummy.c \
 	testsuite/vec_pwr9_dummy.c \
@@ -33,6 +34,7 @@ pveclib_testincludedir = $(includedir)/testsuite
 # on 'make install'
 pveclibinclude_HEADERS = \
 	vec_common_ppc.h \
+	vec_f128_ppc.h \
 	vec_f64_ppc.h \
 	vec_f32_ppc.h \
 	vec_int128_ppc.h \
@@ -60,6 +62,7 @@ pveclib_test_SOURCES = \
 	testsuite/vec_perf_f64.c \
 	testsuite/vec_perf_f32.c \
 	testsuite/vec_perf_i128.c \
+	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
 	testsuite/arith128_test_i128.c \

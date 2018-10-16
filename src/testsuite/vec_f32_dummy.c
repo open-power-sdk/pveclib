@@ -83,6 +83,17 @@ test_fpclassify_f32 (vf32_t value)
   return result;
 }
 
+void
+test_fpclassify_f32loop (vui32_t *out, vf32_t *in, int count)
+{
+  int i;
+
+  for (i=0; i<count; i++)
+    {
+      out[i] = test_fpclassify_f32 (in[i]);
+    }
+}
+
 int
 test512_any_f32_subnorm (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
 {
@@ -128,6 +139,95 @@ test512_all_f32_nan (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)
   return vec_all_eq(nan0, alltrue);
 }
 
+vf32_t
+test_vec_sinf32 (vf32_t value)
+{
+  const vf32_t vec_f0 =
+    { 0.0, 0.0, 0.0, 0.0 };
+  const vui32_t vec_f32_qnan =
+    { 0x7f800001, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
+  vf32_t result;
+  vb32_t normmask, infmask;
+
+  normmask = vec_isnormalf32 (value);
+  if (vec_any_isnormalf32 (value))
+    {
+      /* replace non-normal input values with safe values.  */
+      vf32_t safeval = vec_sel (vec_f0, value, normmask);
+      /* body of vec_sin(safeval) computation elided for this example.  */
+      result = vec_mul (safeval, safeval);
+    }
+  else
+    result = value;
+
+  /* merge non-normal input values back into result */
+  result = vec_sel (value, result, normmask);
+  /* Inf input value elements return quite-nan.  */
+  infmask = vec_isinff32 (value);
+  result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
+
+  return result;
+}
+
+/* dummy cosf32 example. From Posix:
+ * If value is NaN then return a NaN.
+ * If value is +-0.0 then return 1.0.
+ * If value is +-Inf then return a NaN.
+ * Otherwise compute and return sin(value).
+ */
+vf32_t
+test_vec_cosf32 (vf32_t value)
+{
+  vf32_t result;
+  const vf32_t vec_f0 =
+    { 0.0, 0.0, 0.0, 0.0 };
+  const vf32_t vec_f1 =
+    { 1.0, 1.0, 1.0, 1.0 };
+  const vui32_t vec_f32_qnan =
+    { 0x7f800001, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
+  vb32_t finitemask, infmask, zeromask;
+
+  finitemask = vec_isfinitef32 (value);
+  if (vec_any_isfinitef32 (value))
+    {
+      /* replace non-finite input values with safe values.  */
+      vf32_t safeval = vec_sel (vec_f0, value, finitemask);
+      /* body of vec_sin(safeval) computation elided for this example.  */
+      result = vec_mul (safeval, safeval);
+    }
+  else
+    result = value;
+
+  /* merge non-finite input values back into result */
+  result = vec_sel (value, result, finitemask);
+  /* Set +-0.0 input elements to exactly 1.0 in result.  */
+  zeromask = vec_iszerof32 (value);
+  result = vec_sel (result, vec_f1, zeromask);
+  /* Set Inf input elements to quite-nan in result.  */
+  infmask = vec_isinff32 (value);
+  result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
+
+  return result;
+}
+
+int
+test_all_f32_finite (vf32_t value)
+{
+  return (vec_all_isfinitef32 (value));
+}
+
+int
+test_any_f32_finite (vf32_t value)
+{
+  return (vec_any_isfinitef32 (value));
+}
+
+vb32_t
+test_pred_f32_finite (vf32_t value)
+{
+  return (vec_isfinitef32 (value));
+}
+
 int
 test_all_f32_inf (vf32_t value)
 {
@@ -140,10 +240,10 @@ test_any_f32_inf (vf32_t value)
 	return (vec_any_isinff32 (value));
 }
 
-__vector bool int
+vb32_t
 test_pred_f32_inf (vf32_t value)
 {
-	return (vec_isinff32 (value));
+  return (vec_isinff32 (value));
 }
 
 int

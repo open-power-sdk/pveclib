@@ -136,6 +136,71 @@ test_float_all_is (void)
 {
   vf32_t i;
   int rc = 0;
+  printf ("\n%s float is all finite\n", __FUNCTION__);
+
+  i = (vf32_t) { 0.0, -0.0, 0.0, -0.0 };
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_all_isfinite fail 1", i);
+    }
+
+  i = (vf32_t) { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
+		  __FLT_DENORM_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_all_isfinite fail 2", i);
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, 0,
+			       __FLOAT_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_all_isfinite fail 3", i);
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
+			       __FLOAT_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_all_isfinite fail 4", i);
+    } else {
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NAN, __FLOAT_SNAN,
+			       __FLOAT_SNAN);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_all_isfinite fail 5", i);
+    } else {
+    }
 
   printf ("\n%s float is all infinity\n", __FUNCTION__);
 
@@ -580,6 +645,71 @@ test_float_any_is (void)
 {
   vf32_t i;
   int rc = 0;
+  printf ("\n%s float is any finite\n", __FUNCTION__);
+
+  i = (vf32_t) { 0.0, -0.0, 0.0, -0.0 };
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_any_isfinite fail 1", i);
+    }
+
+  i = (vf32_t) { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
+		  __FLT_DENORM_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_any_isfinite fail 2", i);
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, 0,
+			       __FLOAT_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef32 (i))
+    {
+    } else {
+      rc += 1;
+      print_v4f32x ("vec_any_isfinite fail 3", i);
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
+			       __FLOAT_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_any_isfinite fail 4", i);
+    } else {
+    }
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NAN, __FLOAT_SNAN,
+			       __FLOAT_SNAN);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef32 (i))
+    {
+      rc += 1;
+      print_v4f32x ("vec_any_isfinite fail 5", i);
+    } else {
+    }
 
   printf ("\n%s float is any infinity\n", __FUNCTION__);
 
@@ -1288,6 +1418,96 @@ test_float_isnan (void)
 
   return (rc);
 }
+
+int
+test_float_isfinite (void)
+{
+  vf32_t i;
+  vb32_t e, k;
+  int rc = 0;
+
+  printf ("\n%s float isfinite\n", __FUNCTION__);
+
+  i = (vf32_t) { 0.0, -0.0, 0.0, -0.0 };
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_TRUE, __FLOAT_TRUE, __FLOAT_TRUE,
+			       __FLOAT_TRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 2:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NNAN, __FLOAT_NSNAN,
+			       __FLOAT_SNAN);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_NTRUE, __FLOAT_NTRUE, __FLOAT_NTRUE,
+			       __FLOAT_NTRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 3:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(0x7f7fffff, 0x00800000, 0x3f800000,
+		0x80000001);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_TRUE, __FLOAT_TRUE, __FLOAT_TRUE,
+			       __FLOAT_TRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 4:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, 0x00800000, 0x3f800000,
+		0x00000001);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_NTRUE, __FLOAT_TRUE, __FLOAT_TRUE,
+			       __FLOAT_TRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 5:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(0x7f7fffff, __FLOAT_NNAN, 0x3f800000,
+		0x80000001);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_TRUE, __FLOAT_NTRUE, __FLOAT_TRUE,
+			       __FLOAT_TRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 6:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_SNAN, 0x00800000, __FLOAT_NINF,
+		0x80000001);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_NTRUE, __FLOAT_TRUE, __FLOAT_NTRUE,
+			       __FLOAT_TRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 7:", k, e);
+
+  return (rc);
+}
+
 //#define __DEBUG_PRINT__ 1
 #ifdef __DEBUG_PRINT__
 #define test_vec_isnormalf32(_i)	db_vec_isnormalf32(_i)
@@ -1621,6 +1841,7 @@ test_vec_f32 (void)
   rc += test_float_isnormal ();
   rc += test_float_issubnormal ();
   rc += test_float_iszero ();
+  rc += test_float_isfinite ();
 
   rc += test_time_f32 ();
 

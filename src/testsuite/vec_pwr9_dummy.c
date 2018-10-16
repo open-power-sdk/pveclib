@@ -22,9 +22,15 @@
 
 //#pragma GCC push target
 #pragma GCC target ("cpu=power9")
+#include <stdint.h>
+#include <stdio.h>
+#include <fenv.h>
+#include <float.h>
+#include <math.h>
 
 #include <vec_int128_ppc.h>
 #include <vec_f128_ppc.h>
+#include <vec_f32_ppc.h>
 
 vui8_t
 __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
@@ -158,6 +164,113 @@ __test_revbw_PWR9 (vui32_t a)
   return vec_revbw (a);
 }
 
+int
+test_vec_all_finitef32_PWR9 (vf32_t value)
+{
+  return (vec_all_isfinitef32 (value));
+}
+
+int
+test_vec_all_inff32_PWR9 (vf32_t value)
+{
+  return (vec_all_isinff32 (value));
+}
+
+int
+test_vec_all_nanf32_PWR9 (vf32_t value)
+{
+  return (vec_all_isnanf32 (value));
+}
+
+int
+test_vec_all_normalf32_PWR9 (vf32_t value)
+{
+  return (vec_all_isnormalf32 (value));
+}
+
+int
+test_vec_all_subnormalf32_PWR9 (vf32_t value)
+{
+  return (vec_all_issubnormalf32 (value));
+}
+
+int
+test_vec_all_zerof32_PWR9 (vf32_t value)
+{
+  return (vec_all_iszerof32 (value));
+}
+int
+test_vec_any_finitef32_PWR9 (vf32_t value)
+{
+  return (vec_any_isfinitef32 (value));
+}
+
+int
+test_vec_any_inff32_PWR9 (vf32_t value)
+{
+  return (vec_any_isinff32 (value));
+}
+
+int
+test_vec_any_nanf32_PWR9 (vf32_t value)
+{
+  return (vec_any_isnanf32 (value));
+}
+
+int
+test_vec_any_normalf32_PWR9 (vf32_t value)
+{
+  return (vec_any_isnormalf32 (value));
+}
+
+int
+test_vec_any_subnormalf32_PWR9 (vf32_t value)
+{
+  return (vec_any_issubnormalf32 (value));
+}
+
+int
+test_vec_any_zerof32_PWR9 (vf32_t value)
+{
+  return (vec_any_iszerof32 (value));
+}
+
+vb32_t
+test_vec_isfinitef32_PWR9 (vf32_t value)
+{
+  return (vec_isfinitef32 (value));
+}
+
+vb32_t
+test_vec_isinff32_PWR9 (vf32_t value)
+{
+  return (vec_isinff32 (value));
+}
+
+vb32_t
+test_vec_isnanf32_PWR9 (vf32_t value)
+{
+  return (vec_isnanf32 (value));
+}
+
+vb32_t
+test_vec_isnormalf32_PWR9 (vf32_t value)
+{
+  return (vec_isnormalf32 (value));
+}
+
+vb32_t
+test_vec_issubnormalf32_PWR9 (vf32_t value)
+{
+  return (vec_issubnormalf32 (value));
+}
+
+vb32_t
+test_vec_iszerof32_PWR9 (vf32_t value)
+{
+  return (vec_iszerof32 (value));
+}
+
 vb128_t
 test_vec_isfinitef128_PWR9 (__binary128 f128)
 {
@@ -234,6 +347,143 @@ int
 test_vec_all_zerof128_PWR9 (__binary128 value)
 {
   return (vec_all_iszerof128 (value));
+}
+
+vf32_t
+test_f32_zero_demorm_PWR9 (vf32_t value)
+{
+  vf32_t result = value;
+  vui32_t mask;
+  vf32_t fzero = {0.0, 0.0, 0.0, 0.0};
+
+  mask = (vui32_t)vec_issubnormalf32 (value);
+  if (vec_any_issubnormalf32 (value))
+    {
+      result = vec_sel (value, fzero, mask);
+    }
+
+  return result;
+}
+
+vui32_t
+test_fpclassify_f32_PWR9 (vf32_t value)
+{
+  const vui32_t VFP_NAN =
+    { FP_NAN, FP_NAN, FP_NAN, FP_NAN };
+  const vui32_t VFP_INFINITE =
+    { FP_INFINITE, FP_INFINITE,
+    FP_INFINITE, FP_INFINITE };
+  const vui32_t VFP_ZERO =
+    { FP_ZERO, FP_ZERO, FP_ZERO, FP_ZERO };
+  const vui32_t VFP_SUBNORMAL =
+    { FP_SUBNORMAL, FP_SUBNORMAL,
+    FP_SUBNORMAL, FP_SUBNORMAL };
+  const vui32_t VFP_NORMAL =
+    { FP_NORMAL, FP_NORMAL, FP_NORMAL,
+    FP_NORMAL };
+  /* FP_NAN should be 0.  */
+  vui32_t result = VFP_NAN;
+  vui32_t mask;
+
+  mask = (vui32_t)vec_isinff32 (value);
+  result = vec_sel (result, VFP_INFINITE, mask);
+  mask = (vui32_t)vec_iszerof32 (value);
+  result = vec_sel (result, VFP_ZERO, mask);
+  mask = (vui32_t)vec_issubnormalf32 (value);
+  result = vec_sel (result, VFP_SUBNORMAL, mask);
+  mask = (vui32_t)vec_isnormalf32 (value);
+  result = vec_sel (result, VFP_NORMAL, mask);
+
+  return result;
+}
+
+void
+test_fpclassify_f32loop_PWR9 (vui32_t *out, vf32_t *in, int count)
+{
+  int i;
+
+  for (i=0; i<count; i++)
+    {
+      out[i] = test_fpclassify_f32_PWR9 (in[i]);
+    }
+}
+
+/* dummy sinf32 example. From Posix:
+ * If value is NaN then return a NaN.
+ * If value is +-0.0 then return value.
+ * If value is subnormal then return value.
+ * If value is +-Inf then return a NaN.
+ * Otherwise compute and return sin(value).
+ */
+vf32_t
+test_vec_sinf32_PWR9 (vf32_t value)
+{
+  const vf32_t vec_f0 =
+    { 0.0, 0.0, 0.0, 0.0 };
+  const vui32_t vec_f32_qnan =
+    { 0x7f800001, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
+  vf32_t result;
+  vb32_t normmask, infmask;
+
+  normmask = vec_isnormalf32 (value);
+  if (vec_any_isnormalf32 (value))
+    {
+      /* replace non-normal input values with safe values.  */
+      vf32_t safeval = vec_sel (vec_f0, value, normmask);
+      /* body of vec_sin(safeval) computation elided for this example.  */
+      result = vec_mul (safeval, safeval);
+    }
+  else
+    result = value;
+
+  /* merge non-normal input values back into result */
+  result = vec_sel (value, result, normmask);
+  /* Inf input value elements return quite-nan.  */
+  infmask = vec_isinff32 (value);
+  result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
+
+  return result;
+}
+
+/* dummy cosf32 example. From Posix:
+ * If value is NaN then return a NaN.
+ * If value is +-0.0 then return 1.0.
+ * If value is +-Inf then return a NaN.
+ * Otherwise compute and return sin(value).
+ */
+vf32_t
+test_vec_cosf32_PWR9 (vf32_t value)
+{
+  vf32_t result;
+  const vf32_t vec_f0 =
+    { 0.0, 0.0, 0.0, 0.0 };
+  const vf32_t vec_f1 =
+    { 1.0, 1.0, 1.0, 1.0 };
+  const vui32_t vec_f32_qnan =
+    { 0x7f800001, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
+  vb32_t finitemask, infmask, zeromask;
+
+  finitemask = vec_isfinitef32 (value);
+  if (vec_any_isfinitef32 (value))
+    {
+      /* replace non-finite input values with safe values.  */
+      vf32_t safeval = vec_sel (vec_f0, value, finitemask);
+      /* body of vec_sin(safeval) computation elided for this example.  */
+      result = vec_mul (safeval, safeval);
+    }
+  else
+    result = value;
+
+  /* merge non-finite input values back into result */
+  result = vec_sel (value, result, finitemask);
+  /* Set +-0.0 input elements to exactly 1.0 in result.  */
+  zeromask = vec_iszerof32 (value);
+  result = vec_sel (result, vec_f1, zeromask);
+  /* Set Inf input elements to quite-nan in result.  */
+  infmask = vec_isinff32 (value);
+  result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
+
+  return result;
 }
 
 #ifdef __FLOAT128_TYPE__

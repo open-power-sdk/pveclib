@@ -181,12 +181,13 @@
 *  - vec_f64_ppc.h Operations on vector double values
 *  - vec_f32_ppc.h Operations on vector float values
 *
-*  \note The list above is more of an aspiration at this time.
-*  You will not find all of these headers or complete operation set
-*  and platform coverage in the current public github.
-*  But many of these headers do exist in private trees as we work
-*  on completing function and testing across compilers and PowerISA
-*  versions.
+*  \note The list above is complete in the current public github as a
+*  first pass. A backlog of functions remain to be implemented
+*  across these headers. Development continues while we work on the
+*  backlog listed in:
+*  <a href="https://github.com/open-power-sdk/pveclib/issues/13">
+*  Issue #13 TODOs</a>
+*
 *
 *  The goal is to provide high quality implementations that adapt to
 *  the specifics of the compile target (-mcpu=) and compiler

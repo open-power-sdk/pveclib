@@ -40,6 +40,7 @@
 #include <testsuite/arith128_test_bcd.h>
 #include <testsuite/arith128_test_f32.h>
 #include <testsuite/arith128_test_f64.h>
+#include <testsuite/arith128_test_f128.h>
 
 int
 main (void)
@@ -68,6 +69,7 @@ main (void)
 #if 1
   rc += test_vec_f64 ();
 #endif
+  rc += test_vec_f128 ();
 
   if (rc > 0)
     printf ("%d failures reported\n", rc);

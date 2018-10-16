@@ -148,9 +148,9 @@ libvecdummy_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libvecdummy_la_OBJECTS = testsuite/vec_int128_dummy.lo \
 	testsuite/vec_int64_dummy.lo testsuite/vec_int32_dummy.lo \
-	testsuite/vec_f64_dummy.lo testsuite/vec_f32_dummy.lo \
-	testsuite/vec_pwr9_dummy.lo testsuite/vec_bcd_dummy.lo \
-	testsuite/vec_char_dummy.lo
+	testsuite/vec_f128_dummy.lo testsuite/vec_f64_dummy.lo \
+	testsuite/vec_f32_dummy.lo testsuite/vec_pwr9_dummy.lo \
+	testsuite/vec_bcd_dummy.lo testsuite/vec_char_dummy.lo
 libvecdummy_la_OBJECTS = $(am_libvecdummy_la_OBJECTS)
 am__EXEEXT_1 = pveclib_test$(EXEEXT) vec_dummy$(EXEEXT)
 am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
@@ -158,6 +158,7 @@ am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
 	testsuite/vec_perf_f64.$(OBJEXT) \
 	testsuite/vec_perf_f32.$(OBJEXT) \
 	testsuite/vec_perf_i128.$(OBJEXT) \
+	testsuite/arith128_test_f128.$(OBJEXT) \
 	testsuite/arith128_test_f64.$(OBJEXT) \
 	testsuite/arith128_test_f32.$(OBJEXT) \
 	testsuite/arith128_test_i128.$(OBJEXT) \
@@ -569,6 +570,7 @@ libpvec_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
+	testsuite/vec_f128_dummy.c \
 	testsuite/vec_f64_dummy.c \
 	testsuite/vec_f32_dummy.c \
 	testsuite/vec_pwr9_dummy.c \
@@ -587,6 +589,7 @@ pveclib_testincludedir = $(includedir)/testsuite
 # on 'make install'
 pveclibinclude_HEADERS = \
 	vec_common_ppc.h \
+	vec_f128_ppc.h \
 	vec_f64_ppc.h \
 	vec_f32_ppc.h \
 	vec_int128_ppc.h \
@@ -608,6 +611,7 @@ pveclib_test_SOURCES = \
 	testsuite/vec_perf_f64.c \
 	testsuite/vec_perf_f32.c \
 	testsuite/vec_perf_i128.c \
+	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
 	testsuite/arith128_test_i128.c \
@@ -716,6 +720,8 @@ testsuite/vec_int64_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_int32_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_f128_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_f64_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_f32_dummy.lo: testsuite/$(am__dirstamp) \
@@ -747,6 +753,8 @@ testsuite/vec_perf_f64.$(OBJEXT): testsuite/$(am__dirstamp) \
 testsuite/vec_perf_f32.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_perf_i128.$(OBJEXT): testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/arith128_test_f128.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/arith128_test_f64.$(OBJEXT): testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
@@ -788,6 +796,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_print.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_bcd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_char.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_f128.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_f32.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_f64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/arith128_test_i128.Po@am__quote@
@@ -798,6 +807,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_bcd_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_char_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_dummy_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_f128_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_f32_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_f64_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int128_dummy.Plo@am__quote@

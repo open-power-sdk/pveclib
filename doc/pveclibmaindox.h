@@ -182,7 +182,7 @@
 *  - vec_f32_ppc.h Operations on vector float values
 *
 *  \note The list above is complete in the current public github as a
-*  first pass. A backlog of functions remain to be implement
+*  first pass. A backlog of functions remain to be implemented
 *  across these headers. Development continues while we work on the
 *  backlog listed in:
 *  <a href="https://github.com/open-power-sdk/pveclib/issues/13">

@@ -171,9 +171,9 @@ test_float_all_is (void)
 #endif
   if (vec_all_isfinitef32 (i))
     {
-    } else {
       rc += 1;
       print_v4f32x ("vec_all_isfinite fail 3", i);
+    } else {
     }
 
   i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
@@ -1504,6 +1504,19 @@ test_float_isfinite (void)
   print_v4b32x ("             k=", k);
 #endif
   rc += check_v4b32c ("vec_isfinitef32 7:", k, e);
+
+  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, 0,
+			       __FLOAT_NINF);
+  e = (vb32_t) CONST_VINT128_W(__FLOAT_NTRUE, __FLOAT_NTRUE, __FLOAT_TRUE,
+			       __FLOAT_NTRUE);
+  k = vec_isfinitef32 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("vec_isfinitef32 i=", i);
+  print_v4b32c ("             k=", k);
+  print_v4b32x ("             k=", k);
+#endif
+  rc += check_v4b32c ("vec_isfinitef32 8:", k, e);
 
   return (rc);
 }

@@ -269,7 +269,7 @@ vec_all_isfinitef32 (vf32_t vf32)
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
 					  0x7f800000);
   tmp = vec_and ((vui32_t)vf32, expmask);
-  return !vec_all_eq(tmp, expmask);
+  return !vec_any_eq(tmp, expmask);
 #endif
 }
 
@@ -482,10 +482,10 @@ vec_all_iszerof32 (vf32_t vf32)
 #if _ARCH_PWR9
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
-  tmp = (vui32_t)vec_test_data_class (vf32, 0x03);
+  tmp = (vui32_t)vec_test_data_class (vf32, 0x0c);
 #else
   __asm__(
-      "xvtstdcsp %x0,%x1,0x03;\n"
+      "xvtstdcsp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
       : "wf" (vf32)
       :);
@@ -762,10 +762,10 @@ vec_any_iszerof32 (vf32_t vf32)
 #if _ARCH_PWR9
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
-  tmp = (vui32_t)vec_test_data_class (vf32, 0x03);
+  tmp = (vui32_t)vec_test_data_class (vf32, 0x0c);
 #else
   __asm__(
-      "xvtstdcsp %x0,%x1,0x03;\n"
+      "xvtstdcsp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
       : "wf" (vf32)
       :);

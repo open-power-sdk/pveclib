@@ -135,7 +135,7 @@ test_vec_sinf32 (vf32_t value)
 
   // merge non-normal input values back into result
   result = vec_sel (value, result, normmask);
-  // Inf input value elements return quite-nan
+  // Inf input value elements return quiet-nan
   infmask = vec_isinff32 (value);
   result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
 
@@ -181,7 +181,7 @@ test_vec_cosf32 (vf32_t value)
   // Set +-0.0 input elements to exactly 1.0 in result
   zeromask = vec_iszerof32 (value);
   result = vec_sel (result, vec_f1, zeromask);
-  // Set Inf input elements to quite-nan in result
+  // Set Inf input elements to quiet-nan in result
   infmask = vec_isinff32 (value);
   result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
 
@@ -242,9 +242,6 @@ vec_absf32 (vf32_t vf32x)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
- *
- *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
- *  exceptions. A normal __float128 compare can.
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return an int containing 0 or 1.
@@ -515,9 +512,6 @@ vec_all_iszerof32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
- *
- *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
- *  exceptions. A normal __float128 compare can.
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return an int containing 0 or 1.
@@ -819,13 +813,13 @@ vec_copysignf32 (vf32_t vf32x, vf32_t vf32y)
  *  NaN / Inf and then invert this for the finite condition.
  *  The sign bit is ignored.
  *
+ *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
+ *  exceptions. A normal float compare can.
+ *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-15  | 2/cycle  |
  *  |power9   |   5   | 2/cycle  |
- *
- *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
- *  exceptions. A normal __float128 compare can.
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)

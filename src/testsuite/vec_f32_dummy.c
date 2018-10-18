@@ -162,7 +162,7 @@ test_vec_sinf32 (vf32_t value)
 
   /* merge non-normal input values back into result */
   result = vec_sel (value, result, normmask);
-  /* Inf input value elements return quite-nan.  */
+  /* Inf input value elements return quiet-nan.  */
   infmask = vec_isinff32 (value);
   result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
 
@@ -203,7 +203,7 @@ test_vec_cosf32 (vf32_t value)
   /* Set +-0.0 input elements to exactly 1.0 in result.  */
   zeromask = vec_iszerof32 (value);
   result = vec_sel (result, vec_f1, zeromask);
-  /* Set Inf input elements to quite-nan in result.  */
+  /* Set Inf input elements to quiet-nan in result.  */
   infmask = vec_isinff32 (value);
   result = vec_sel (result, (vf32_t) vec_f32_qnan, infmask);
 

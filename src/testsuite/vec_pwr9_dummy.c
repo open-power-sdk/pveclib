@@ -270,6 +270,112 @@ test_vec_iszerof32_PWR9 (vf32_t value)
 {
   return (vec_iszerof32 (value));
 }
+int
+test_vec_all_finitef64_PWR9 (vf64_t value)
+{
+  return (vec_all_isfinitef64 (value));
+}
+
+int
+test_vec_all_inff64_PWR9 (vf64_t value)
+{
+  return (vec_all_isinff64 (value));
+}
+
+int
+test_vec_all_nanf64_PWR9 (vf64_t value)
+{
+  return (vec_all_isnanf64 (value));
+}
+
+int
+test_vec_all_normalf64_PWR9 (vf64_t value)
+{
+  return (vec_all_isnormalf64 (value));
+}
+
+int
+test_vec_all_subnormalf64_PWR9 (vf64_t value)
+{
+  return (vec_all_issubnormalf64 (value));
+}
+
+int
+test_vec_all_zerof64_PWR9 (vf64_t value)
+{
+  return (vec_all_iszerof64 (value));
+}
+int
+test_vec_any_finitef64_PWR9 (vf64_t value)
+{
+  return (vec_any_isfinitef64 (value));
+}
+
+int
+test_vec_any_inff64_PWR9 (vf64_t value)
+{
+  return (vec_any_isinff64 (value));
+}
+
+int
+test_vec_any_nanf64_PWR9 (vf64_t value)
+{
+  return (vec_any_isnanf64 (value));
+}
+
+int
+test_vec_any_normalf64_PWR9 (vf64_t value)
+{
+  return (vec_any_isnormalf64 (value));
+}
+
+int
+test_vec_any_subnormalf64_PWR9 (vf64_t value)
+{
+  return (vec_any_issubnormalf64 (value));
+}
+
+int
+test_vec_any_zerof64_PWR9 (vf64_t value)
+{
+  return (vec_any_iszerof64 (value));
+}
+
+vb64_t
+test_vec_isfinitef64_PWR9 (vf64_t value)
+{
+  return (vec_isfinitef64 (value));
+}
+
+vb64_t
+test_vec_isinff64_PWR9 (vf64_t value)
+{
+  return (vec_isinff64 (value));
+}
+
+vb64_t
+test_vec_isnanf64_PWR9 (vf64_t value)
+{
+  return (vec_isnanf64 (value));
+}
+
+vb64_t
+test_vec_isnormalf64_PWR9 (vf64_t value)
+{
+  return (vec_isnormalf64 (value));
+}
+
+vb64_t
+test_vec_issubnormalf64_PWR9 (vf64_t value)
+{
+  return (vec_issubnormalf64 (value));
+}
+
+vb64_t
+test_vec_iszerof64_PWR9 (vf64_t value)
+{
+  return (vec_iszerof64 (value));
+}
 
 vb128_t
 test_vec_isfinitef128_PWR9 (__binary128 f128)

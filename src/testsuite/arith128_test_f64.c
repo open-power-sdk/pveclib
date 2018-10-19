@@ -150,6 +150,91 @@ test_double_all_is (void)
 {
   vf64_t i;
   int rc = 0;
+  printf ("\n%s double is all finite\n", __FUNCTION__);
+
+  i = (vf64_t) { 0.0, -0.0 };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    }
+
+  i = (vf64_t) { __DBL_MAX__, __DBL_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    }
+
+  i = (vf64_t) { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    } else {
+    }
+
+  i = (vf64_t) CONST_VINT128_DW( 0, __DOUBLE_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    } else {
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    } else {
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_SNAN);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_isfinite i=", i);
+#endif
+  if (vec_all_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_all_isfinite fail", i);
+    } else {
+    }
 
   printf ("\n%s double is all infinity\n", __FUNCTION__);
 
@@ -736,6 +821,92 @@ test_double_any_is (void)
 {
   vf64_t i;
   int rc = 0;
+
+  printf ("\n%s double is any finite\n", __FUNCTION__);
+
+  i = (vf64_t) { 0.0, -0.0 };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    }
+
+  i = (vf64_t) { __DBL_MAX__, __DBL_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    }
+
+  i = (vf64_t) { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, 0 );
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    }
+
+  i = (vf64_t) CONST_VINT128_DW( __DOUBLE_NINF, 0 );
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+    } else {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    } else {
+    }
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_SNAN);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_any_isfinite i=", i);
+#endif
+  if (vec_any_isfinitef64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_any_isfinite fail", i);
+    } else {
+    }
 
   printf ("\n%s double is any infinity\n", __FUNCTION__);
 
@@ -1499,6 +1670,117 @@ test_double_cpsgn (void)
 }
 
 int
+test_double_isfinite (void)
+{
+  vf64_t i;
+  vb64_t e, k;
+  int rc = 0;
+
+  printf ("\n%s double isfinite\n", __FUNCTION__);
+
+  i = (vf64_t){ 0.0, -0.0 };
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_TRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 1:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_NTRUE, __DOUBLE_NTRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 2:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(0x7fefffffffffffffUL, 0x0001000000000000UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_TRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 3:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(0x3ff0000000000000UL, 0x8000000000000001UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_TRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 4:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, 0x0001000000000000UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_NTRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 5:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, 0x3ff0000000000000UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_NTRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 6:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, 0x8000000000000001UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_NTRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 7:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NINF, 0x3ff0000000000000UL);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_NTRUE, __DOUBLE_TRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 8:", k, e);
+
+  i = (vf64_t) CONST_VINT128_DW(0x3ff0000000000000UL, __DOUBLE_NINF);
+  e = (vb64_t) CONST_VINT128_DW(__DOUBLE_TRUE, __DOUBLE_NTRUE);
+  k = vec_isfinitef64 (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_isfinitef64 i=", i);
+  print_v2b64c ("             k=", k);
+  print_v2b64x ("             k=", k);
+#endif
+  rc += check_v2b64c ("vec_isfinitef64 9:", k, e);
+
+  return (rc);
+}
+
+int
 test_double_isinf (void)
 {
   vf64_t i;
@@ -2221,6 +2503,7 @@ test_vec_f64 (void)
   rc += test_double_isnormal ();
   rc += test_double_issubnormal ();
   rc += test_double_iszero ();
+  rc += test_double_isfinite ();
 
   rc += test_time_f64 ();
 

@@ -69,25 +69,25 @@ test_all_f64_inf (vf64_t value)
 int
 test_all_f64_nan (vf64_t value)
 {
-	return (vec_all_isnanf64 (value));
+  return (vec_all_isnanf64 (value));
 }
 
 int
 test_all_f64_norm (vf64_t value)
 {
-	return (vec_all_isnormalf64 (value));
+  return (vec_all_isnormalf64 (value));
 }
 
 int
 test_all_f64_subnorm (vf64_t value)
 {
-	return (vec_all_issubnormalf64 (value));
+  return (vec_all_issubnormalf64 (value));
 }
 
 int
 test_all_f64_zero (vf64_t value)
 {
-	return (vec_all_iszerof64 (value));
+  return (vec_all_iszerof64 (value));
 }
 
 int
@@ -104,25 +104,25 @@ test_any_f64_inf (vf64_t value)
 int
 test_any_f64_nan (vf64_t value)
 {
-	return (vec_any_isnanf64 (value));
+  return (vec_any_isnanf64 (value));
 }
 
 int
 test_any_f64_norm (vf64_t value)
 {
-	return (vec_any_isnormalf64 (value));
+  return (vec_any_isnormalf64 (value));
 }
 
 int
 test_any_f64_subnorm (vf64_t value)
 {
-	return (vec_any_issubnormalf64 (value));
+  return (vec_any_issubnormalf64 (value));
 }
 
 int
 test_any_f64_zero (vf64_t value)
 {
-	return (vec_any_iszerof64 (value));
+  return (vec_any_iszerof64 (value));
 }
 
 vb64_t
@@ -274,73 +274,73 @@ test_load_vf64 ( vf64_t *val)
 int
 test_f64_isfinite (double value)
 {
-	return (__builtin_isfinite(value));
+  return (__builtin_isfinite (value));
 }
 
 int
 test_f64_isinf (double value)
 {
-	return (__builtin_isinf(value));
+  return (__builtin_isinf (value));
 }
 
 int
 test_f64_isnan (double value)
 {
-	return (__builtin_isnan(value));
+  return (__builtin_isnan (value));
 }
 
 int
 test_f64_isnormal (double value)
 {
-	return (__builtin_isnormal(value));
+  return (__builtin_isnormal (value));
 }
 
 vf64_t
-test_ibm128_vf64_vec ( long double lval)
+test_ibm128_vf64_vec (long double lval)
 {
-	return ( vec_unpack_longdouble (lval) );
+  return (vec_unpack_longdouble (lval));
 }
 
 long double
-test_vf64_ibm128_vec ( vf64_t lval)
+test_vf64_ibm128_vec (vf64_t lval)
 {
-	return ( vec_pack_longdouble (lval) );
+  return (vec_pack_longdouble (lval));
 }
 
 vf64_t
-test_ibm128_vf64_asm ( long double lval)
+test_ibm128_vf64_asm (long double lval)
 {
 #ifdef _ARCH_PWR7
-	vf64_t     t;
-        __asm__(
-        	"xxmrghd %x0,%1,%L1;\n"
-            : "=wa" (t)
-            : "f" (lval)
-            : );
-        return (t);
+  vf64_t t;
+  __asm__(
+      "xxmrghd %x0,%1,%L1;\n"
+      : "=wa" (t)
+      : "f" (lval)
+      : );
+  return (t);
 #else
-        U_128   t;
-        t.ldbl128 = lval;
-        return (t.vf2);
+  U_128 t;
+  t.ldbl128 = lval;
+  return (t.vf2);
 #endif
 }
 
 long double
-test_vf64_ibm128_asm ( vf64_t lval)
+test_vf64_ibm128_asm (vf64_t lval)
 {
 #ifdef _ARCH_PWR7
-	long double     t;
-        __asm__(
-        	"xxlor %0,%x1,%x1;\n"
-        	"\txxswapd %L0,%x1;\n"
-            : "=f" (t)
-            : "wa" (lval)
-            : );
-        return (t);
+  long double t;
+  __asm__(
+      "xxlor %0,%x1,%x1;\n"
+      "\txxswapd %L0,%x1;\n"
+      : "=f" (t)
+      : "wa" (lval)
+      : );
+  return (t);
 #else
-        U_128   t;
-        t.vf2 = lval;
-        return (t.ldbl128);
+  U_128 t;
+  t.vf2 = lval;
+  return (t.ldbl128);
 #endif
 }
 

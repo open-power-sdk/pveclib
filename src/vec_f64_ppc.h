@@ -34,7 +34,7 @@
  * implemented with PowerISA-2.06 Vector Scalar Extended (VSX)
  * (POWER7 and later) instructions. Most VSX instructions provide
  * access to 64 combined scalar/vector registers.
- * PowerISA-3.0 (POWER9) provides additional vector double operations;
+ * PowerISA-3.0 (POWER9) provides additional vector double operations:
  * convert with round, convert to/from integer, insert/extract exponent
  * and significand, and test data class.
  * Most of these operations (compiler built-ins, or intrinsics) are
@@ -58,8 +58,8 @@
  * for float and double.
  * These built-ins are not defined in GCC 6.4. See
  * <a href="https://gcc.gnu.org/onlinedocs/">compiler documentation</a>.
- * These are useful operations and can be implement in a few
- * vector logical instruction for earlier machines.
+ * These are useful operations and can be implemented in a few
+ * vector logical instructions for earlier machines.
  *
  * So it is reasonable for this header to provide vector forms
  * of the double-precision floating point classification functions
@@ -91,11 +91,11 @@
  * functions. Examples include vector double isnan, isinf, etc.
  * - Commonly used operations, not covered by the ABI or <altivec.h>,
  * and require multiple instructions or are not obvious.
- * For example converts that change element size and imply
- * converting two vectors in to one vector of smaller elements, or
+ * For example, converts that change element size and imply
+ * converting two vectors into one vector of smaller elements, or
  * one vector into two vectors of larger elements.
- * Another example the special case of packing/unpacking am IBM long
- * double between a pair of Floating-point registers (FPRs) and a
+ * Another example is the special case of packing/unpacking an IBM long
+ * double between a pair of floating-point registers (FPRs) and a
  * single vector register (VR).
  *
  * \section f64_examples_0_0 Examples
@@ -104,7 +104,7 @@
  * The POSIX specification requires that special input values are
  * processed without raising extraneous floating point exceptions and
  * return specific floating point values in response.
- * For example the sin() function.
+ * For example, the sin() function.
  * - If the input <I>value</I> is NaN then return a NaN.
  * - If the input <I>value</I> is +-0.0 then return <I>value</I>.
  * - If the input <I>value</I> is subnormal then return <I>value</I>.
@@ -217,8 +217,8 @@ vec_absf64 (vf64_t vf64x)
   /* Requires VSX but eliminates a const load. */
   return vec_abs (vf64x);
 #else
-  const vui32_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-                                            0x8000000000000000UL);
+  const vui32_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+                                             0x8000000000000000UL);
   return (vf64_t)vec_andc ((vui32_t)vf64x, signmask);
 #endif
 }
@@ -247,7 +247,7 @@ vec_all_isfinitef64 (vf64_t vf64)
 {
   vui64_t tmp;
 #if _ARCH_PWR9
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x70);
 #else
@@ -259,8 +259,8 @@ vec_all_isfinitef64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_and ((vui64_t)vf64, expmask);
   return !vec_cmpud_any_eq(tmp, expmask);
 #endif
@@ -290,7 +290,7 @@ vec_all_isinff64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
 #else
@@ -302,10 +302,10 @@ vec_all_isinff64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_all_eq(tmp, expmask);
 #endif
@@ -336,7 +336,7 @@ vec_all_isnanf64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
 #else
@@ -348,10 +348,10 @@ vec_all_isnanf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_all_gt(tmp, expmask);
 #endif
@@ -381,7 +381,7 @@ static inline int
 vec_all_isnormalf64 (vf64_t vf64)
 {
   vui64_t tmp;
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 #if _ARCH_PWR9
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x7f);
@@ -394,8 +394,8 @@ vec_all_isnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_and ((vui64_t) vf64, expmask);
   return !(vec_cmpud_any_eq (tmp, expmask)
         || vec_cmpud_any_eq (tmp, vec_zero));
@@ -427,7 +427,7 @@ vec_all_issubnormalf64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x03);
 #else
@@ -439,11 +439,11 @@ vec_all_issubnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
+					    0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_all_gt (minnorm, tmp) && !vec_cmpud_all_eq (tmp, vec_zero);
@@ -475,7 +475,7 @@ vec_all_iszerof64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x0c);
 #else
@@ -487,9 +487,9 @@ vec_all_iszerof64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_all_eq((vui32_t)tmp, (vui32_t)vec_zero);
@@ -520,7 +520,7 @@ vec_any_isfinitef64 (vf64_t vf64)
 {
   vui64_t tmp;
 #if _ARCH_PWR9
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x70);
 #else
@@ -532,8 +532,8 @@ vec_any_isfinitef64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_and ((vui64_t)vf64, expmask);
   return !vec_cmpud_all_eq(tmp, expmask);
 #endif
@@ -562,7 +562,7 @@ vec_any_isinff64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x30);
 #else
@@ -574,10 +574,10 @@ vec_any_isinff64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_eq(tmp, expmask);
 #endif
@@ -608,7 +608,7 @@ vec_any_isnanf64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
 #else
@@ -620,10 +620,10 @@ vec_any_isnanf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_gt(tmp, expmask);
 #endif
@@ -652,7 +652,7 @@ vec_any_isnanf64 (vf64_t vf64)
 static inline int
 vec_any_isnormalf64 (vf64_t vf64)
 {
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
   vui64_t tmp;
 #if _ARCH_PWR9
 #ifdef vec_test_data_class
@@ -667,8 +667,8 @@ vec_any_isnormalf64 (vf64_t vf64)
   return vec_all_eq(tmp, vec_zero);
 #else
   vui64_t res;
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
 
   tmp = vec_and ((vui64_t) vf64, expmask);
   res = (vui64_t) vec_nor (vec_cmpequd (tmp, expmask),
@@ -701,7 +701,7 @@ vec_any_issubnormalf64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x03);
 #else
@@ -713,11 +713,11 @@ vec_any_issubnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
+					    0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
   vui64_t tmpz, tmp2, vsubnorm;
 
   tmp2 = vec_andc ((vui64_t)vf64, signmask);
@@ -753,7 +753,7 @@ vec_any_iszerof64 (vf64_t vf64)
   vui64_t tmp;
 
 #if _ARCH_PWR9
-  const vui64_t vec_ones = CONST_VINT128_DW(-1, -1);
+  const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x0c);
 #else
@@ -765,9 +765,9 @@ vec_any_iszerof64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_eq(tmp, vec_zero);
 #endif
@@ -840,8 +840,8 @@ vec_isfinitef64 (vf64_t vf64)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
   vui64_t tmp;
 
   tmp = vec_and ((vui64_t)vf64, expmask);
@@ -885,10 +885,10 @@ vec_isinff64 (vf64_t vf64)
 #endif
 #else
   vui64_t tmp;
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
   tmp = vec_andc ((vui64_t) vf64, signmask);
   result = (vb64_t)vec_cmpequd (tmp, expmask);
 #endif
@@ -928,10 +928,10 @@ vec_isnanf64 (vf64_t vf64)
 #endif
 #else
   vui64_t tmp;
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
   tmp = vec_andc ((vui64_t)vf64, signmask);
   result = (vb64_t)vec_cmpgtud (tmp, expmask);
 #endif
@@ -973,9 +973,9 @@ vec_isnormalf64 (vf64_t vf64)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui64_t expmask = CONST_VINT128_DW(0x7ff0000000000000UL,
-					   0x7ff0000000000000UL);
-  const vui64_t veczero = CONST_VINT128_DW(0UL, 0UL);
+  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
+					    0x7ff0000000000000UL);
+  const vui64_t veczero = CONST_VINT128_DW (0UL, 0UL);
   vui64_t tmp;
 
   tmp = vec_and ((vui64_t) vf64, expmask);
@@ -1020,11 +1020,11 @@ vec_issubnormalf64 (vf64_t vf64)
 #endif
 #else
   vui64_t tmp;
-  const vui64_t minnorm = CONST_VINT128_DW(0x0010000000000000UL,
-					   0x0010000000000000UL);
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
+  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
+					    0x0010000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
   tmp = vec_andc ((vui64_t) vf64, signmask);
   result = vec_andc (vec_cmpltud (tmp, minnorm),
 		     vec_cmpequd (tmp, vec_zero));
@@ -1068,9 +1068,9 @@ vec_iszerof64 (vf64_t vf64)
 #endif
 #else
   vui64_t tmp2;
-  const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  const vui64_t signmask = CONST_VINT128_DW(0x8000000000000000UL,
-					    0x8000000000000000UL);
+  const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
+  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
+					     0x8000000000000000UL);
   tmp2 = vec_andc ((vui64_t)vf64, signmask);
   result = (vb64_t)vec_cmpequd (tmp2, vec_zero);
 #endif

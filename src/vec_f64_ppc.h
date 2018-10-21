@@ -292,7 +292,7 @@ vec_all_isinff64 (vf64_t vf64)
 #if _ARCH_PWR9
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
-  tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
+  tmp = (vui64_t)vec_test_data_class (vf64, 0x30);
 #else
   __asm__(
       "xvtstdcdp %x0,%x1,0x30;\n"
@@ -439,14 +439,14 @@ vec_all_issubnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
+  const vui64_t explow = CONST_VINT128_DW (0x0010000000000000,
+					   0x0010000000000000);
   const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
 					     0x8000000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
-					    0x0010000000000000UL);
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 
   tmp = vec_andc ((vui64_t)vf64, signmask);
-  return vec_cmpud_all_gt (minnorm, tmp) && !vec_cmpud_all_eq (tmp, vec_zero);
+  return vec_cmpud_all_lt (tmp, explow) && vec_cmpud_all_ne (tmp, vec_zero);
 #endif
 }
 
@@ -572,7 +572,7 @@ vec_any_isinff64 (vf64_t vf64)
       : "wf" (vf64)
       :);
 #endif
-  return vec_all_eq(tmp, vec_ones);
+  return vec_any_eq(tmp, vec_ones);
 #else
   const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
 					    0x7ff0000000000000UL);
@@ -618,7 +618,7 @@ vec_any_isnanf64 (vf64_t vf64)
       : "wf" (vf64)
       :);
 #endif
-  return vec_all_eq(tmp, vec_ones);
+  return vec_any_eq(tmp, vec_ones);
 #else
   const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
 					     0x8000000000000000UL);
@@ -664,7 +664,7 @@ vec_any_isnormalf64 (vf64_t vf64)
       : "wf" (vf64)
       :);
 #endif
-  return vec_all_eq(tmp, vec_zero);
+  return vec_any_eq(tmp, vec_zero);
 #else
   vui64_t res;
   const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
@@ -711,7 +711,7 @@ vec_any_issubnormalf64 (vf64_t vf64)
       : "wf" (vf64)
       :);
 #endif
-  return vec_all_eq(tmp, vec_ones);
+  return vec_any_eq(tmp, vec_ones);
 #else
   const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
 					     0x8000000000000000UL);
@@ -763,7 +763,7 @@ vec_any_iszerof64 (vf64_t vf64)
       : "wf" (vf64)
       :);
 #endif
-  return vec_all_eq(tmp, vec_ones);
+  return vec_any_eq(tmp, vec_ones);
 #else
   const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
 					     0x8000000000000000UL);

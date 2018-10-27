@@ -630,7 +630,7 @@ test_double_all_is (void)
     } else {
     }
 
-  i = (vf64_t) { -0.0, __DBL_DENORM_MIN__ };
+  i = (vf64_t) { __DBL_DENORM_MIN__, __DBL_DENORM_MIN__ };
 
 #ifdef __DEBUG_PRINT__
   print_v2f64x ("vec_all_issubnormal i=", i);
@@ -640,6 +640,18 @@ test_double_all_is (void)
     } else {
       rc += 1;
       print_v2f64x ("vec_all_issubnormal fail", i);
+    }
+
+  i = (vf64_t) { -0.0, __DBL_DENORM_MIN__ };
+
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("vec_all_issubnormal i=", i);
+#endif
+  if (vec_all_issubnormalf64 (i))
+    {
+      rc += 1;
+      print_v2f64x ("vec_all_issubnormal fail", i);
+    } else {
     }
 
   i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NNAN, 1);

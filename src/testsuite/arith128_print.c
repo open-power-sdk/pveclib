@@ -385,27 +385,45 @@ print_int128_carry (char *prefix,
 void
 print_vint32d (char *prefix, vui32_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%10d,%10d,%10d,%10d\n", prefix, val[3], val[2], val[1], val[0]);
+#else
   printf ("%s%10d,%10d,%10d,%10d\n", prefix, val[0], val[1], val[2], val[3]);
+#endif
 }
 
 void
 print_vint32x (char *prefix, vui32_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%08x,%08x,%08x,%08x\n", prefix, val[3], val[2], val[1], val[0]);
+#else
   printf ("%s%08x,%08x,%08x,%08x\n", prefix, val[0], val[1], val[2], val[3]);
+#endif
 }
 
 void
 print_vint16d (char *prefix, vui16_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%5d,%5d,%5d,%5d,%5d,%5d,%5d,%5d\n", prefix, val[7], val[6], val[5],
+	  val[4], val[3], val[2], val[1], val[0]);
+#else
   printf ("%s%5d,%5d,%5d,%5d,%5d,%5d,%5d,%5d\n", prefix, val[0], val[1], val[2],
 	  val[3], val[4], val[5], val[6], val[7]);
+#endif
 }
 
 void
 print_vint16x (char *prefix, vui16_t val)
 {
-  printf ("%s%04x,%4x,%4x,%4x,%4x,%4x,%4x,%4x\n", prefix, val[0], val[1],
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%04x,%04x,%04x,%04x,%04x,%04x,%04x,%04x\n", prefix, val[7], val[6],
+	  val[5], val[4], val[3], val[2], val[1], val[0]);
+#else
+  printf ("%s%04x,%04x,%04x,%04x,%04x,%04x,%04x,%04x\n", prefix, val[0], val[1],
 	  val[2], val[3], val[4], val[5], val[6], val[7]);
+#endif
 }
 
 void
@@ -420,27 +438,46 @@ print_vint8 (char *prefix, vui8_t val)
 void
 print_vint8c (char *prefix, vui8_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#else
+  printf ("%s%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c\n", prefix,
+	  val[15],val[14], val[13], val[12], val[11], val[10], val[9], val[8],
+	  val[7], val[6], val[5], val[4], val[3], val[2], val[1], val[0]);
   printf ("%s%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c\n", prefix, val[0],
 	  val[1], val[2], val[3], val[4], val[5], val[6], val[7], val[8],
 	  val[9], val[10], val[11], val[12], val[13], val[14], val[15]);
+#endif
 }
 
 void
 print_vint8x (char *prefix, vui8_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf (
+      "%s%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
+      prefix, val[15],val[14], val[13], val[12], val[11], val[10], val[9], val[8],
+      val[7], val[6], val[5], val[4], val[3], val[2], val[1], val[0]);
+#else
   printf (
       "%s%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
       prefix, val[0], val[1], val[2], val[3], val[4], val[5], val[6], val[7],
       val[8], val[9], val[10], val[11], val[12], val[13], val[14], val[15]);
+#endif
 }
 
 void
 print_vint8d (char *prefix, vui8_t val)
 {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d\n",
+	  prefix, val[15],val[14], val[13], val[12], val[11], val[10], val[9], val[8],
+	  val[7], val[6], val[5], val[4], val[3], val[2], val[1], val[0]);
+#else
   printf ("%s%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d\n",
 	  prefix, val[0], val[1], val[2], val[3], val[4], val[5], val[6],
 	  val[7], val[8], val[9], val[10], val[11], val[12], val[13], val[14],
 	  val[15]);
+#endif
 }
 
 void

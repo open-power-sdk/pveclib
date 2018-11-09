@@ -439,10 +439,10 @@ void
 print_vint8c (char *prefix, vui8_t val)
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#else
   printf ("%s%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c\n", prefix,
 	  val[15],val[14], val[13], val[12], val[11], val[10], val[9], val[8],
 	  val[7], val[6], val[5], val[4], val[3], val[2], val[1], val[0]);
+#else
   printf ("%s%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c\n", prefix, val[0],
 	  val[1], val[2], val[3], val[4], val[5], val[6], val[7], val[8],
 	  val[9], val[10], val[11], val[12], val[13], val[14], val[15]);

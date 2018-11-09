@@ -322,35 +322,35 @@ test_mulhuw (void)
 
   printf ("\ntest_mmulhuw Vector Multiply High unsigned Words\n");
 
-  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
-  j = (vui32_t)CONST_VINT32_W(1, 2, 3, 4);
-  e = (vui32_t)CONST_VINT32_W(0, 1, 2, 3);
-  k = vec_mulhuw(i, j);
+  i = (vui32_t) CONST_VINT32_W (-1, -1, -1, -1);
+  j = (vui32_t) CONST_VINT32_W (1, 2, 3, 4);
+  e = (vui32_t) CONST_VINT32_W (0, 1, 2, 3);
+  k = vec_mulhuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mulhuw({-1, -1, -1, -1}, {1, 2, 3, 4}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mulhuw:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mulhuw:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t)CONST_VINT32_W(0x10000, 0x10000, 0x10000, 0x10000);
-  j = (vui32_t)CONST_VINT32_W(0x10000, 0x20000, 0x30000, 0x40000);
-  e = (vui32_t)CONST_VINT32_W(1, 2, 3, 4);
-  k = vec_mulhuw(i, j);
+  i = (vui32_t) CONST_VINT32_W (0x10000, 0x10000, 0x10000, 0x10000);
+  j = (vui32_t) CONST_VINT32_W (0x10000, 0x20000, 0x30000, 0x40000);
+  e = (vui32_t) CONST_VINT32_W (1, 2, 3, 4);
+  k = vec_mulhuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mulhuw({2^16,2^16,2^16,2^16}, {2^16,2^17,3*2^16,2^18}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mulhuw:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mulhuw:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t)CONST_VINT32_W(1000000000, 1000000000, 1000000000, 1000000000);
-  j = (vui32_t)CONST_VINT32_W(5, 4295, 4294968, 429496730);
-  e = (vui32_t)CONST_VINT32_W(1, 1000, 1000000, 100000000);
-  k = vec_mulhuw(i, j);
+  i = (vui32_t) CONST_VINT32_W (1000000000, 1000000000, 1000000000, 1000000000);
+  j = (vui32_t) CONST_VINT32_W (5, 4295, 4294968, 429496730);
+  e = (vui32_t) CONST_VINT32_W (1, 1000, 1000000, 100000000);
+  k = vec_mulhuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mulhuw({10^9,10^9,10^9,10^9}, {10^-9,10^-6,10^-3,10^-1}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mulhuw:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mulhuw:", (vui128_t) k, (vui128_t) e);
 
   return (rc);
 }
@@ -364,23 +364,23 @@ test_mrgahlw (void)
 
   printf ("\ntest_mrgahw Vector Merge Algebraic High/Low Words\n");
 
-  i = (vui64_t)(vui32_t)CONST_VINT32_W(100, 1, 200, 2);
-  j = (vui64_t)(vui32_t)CONST_VINT32_W(300, 3, 400, 4);
-  e = (vui32_t)CONST_VINT32_W(100, 300, 200, 400);
-  k = vec_mrgahw(i, j);
+  i = (vui64_t) (vui32_t) CONST_VINT32_W (100, 1, 200, 2);
+  j = (vui64_t) (vui32_t) CONST_VINT32_W (300, 3, 400, 4);
+  e = (vui32_t) CONST_VINT32_W (100, 300, 200, 400);
+  k = vec_mrgahw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mrgahw({100, 1, 200, 2}, {300, 3, 400, 4}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mrgahw:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mrgahw:", (vui128_t) k, (vui128_t) e);
 
-  e = (vui32_t)CONST_VINT32_W(1, 3, 2, 4);
-  k = vec_mrgalw(i, j);
+  e = (vui32_t) CONST_VINT32_W (1, 3, 2, 4);
+  k = vec_mrgalw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mrgalw({100, 1, 200, 2}, {300, 3, 400, 4}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mrgalw:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mrgalw:", (vui128_t) k, (vui128_t) e);
 
   return (rc);
 }
@@ -394,23 +394,23 @@ test_mrgeow (void)
 
   printf ("\ntest_mrgeow Vector Merge Even/Odd Words\n");
 
-  i = (vui32_t){100, 1, 200, 2};
-  j = (vui32_t){300, 3, 400, 4};
-  e = (vui32_t){100, 300, 200, 400};
-  k = vec_mrgew(i, j);
+  i = (vui32_t) { 100, 1, 200, 2 };
+  j = (vui32_t) { 300, 3, 400, 4 };
+  e = (vui32_t) { 100, 300, 200, 400 };
+  k = vec_mrgew (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mrgew({100, 1, 200, 2}, {300, 3, 400, 4}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mrgew:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mrgew:", (vui128_t) k, (vui128_t) e);
 
-  e = (vui32_t){1, 3, 2, 4};
-  k = vec_mrgow(i, j);
+  e = (vui32_t) { 1, 3, 2, 4 };
+  k = vec_mrgow (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint32d ("mrgow({100, 1, 200, 2}, {300, 3, 400, 4}) ", k);
 #endif
-  rc += check_vuint128x ("vec_mrgew:", (vui128_t)k, (vui128_t) e);
+  rc += check_vuint128x ("vec_mrgew:", (vui128_t) k, (vui128_t) e);
 
   return (rc);
 }
@@ -425,110 +425,110 @@ test_muleuw (void)
 
   printf ("\ntest_muleuw Vector Multiply Even Unsigned words\n");
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 20, 30, 40};
-  e = (vui64_t){10, 90};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 20, 30, 40};
+  e = (vui64_t) {10, 90};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({1, 2, 3, 4}, {10, 20, 30, 40}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){3, 4, 1, 2};
-  e = (vui64_t){3, 3};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {3, 4, 1, 2};
+  e = (vui64_t) {3, 3};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({1, 2, 3, 4}, {3, 4, 1, 2}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){4, 3, 2, 1};
-  e = (vui64_t){4, 6};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {4, 3, 2, 1};
+  e = (vui64_t) {4, 6};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({1, 2, 3, 4}, {4, 3, 2, 1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 10, 30, 30};
-  e = (vui64_t){10, 90};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 10, 30, 30};
+  e = (vui64_t) {10, 90};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({1, 2, 3, 4}, {10, 10, 30, 30}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){-1, -1, -1, -1};
-  j = (vui32_t){-1, -1, -1, -1};
-  e = (vui64_t){-8589934591, -8589934591};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {-1, -1, -1, -1};
+  j = (vui32_t) {-1, -1, -1, -1};
+  e = (vui64_t) {-8589934591, -8589934591};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({-1, -1, -1, -1}, {-1, -1, -1, -1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  e = (vui64_t){9999999800000001UL, 9999999800000001UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  e = (vui64_t) {9999999800000001UL, 9999999800000001UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({9s, 9s, 9s, 9s}, {9s, 9s, 9s, 9s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui64_t){7901234409876544UL, 7901234409876544UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui64_t) {7901234409876544UL, 7901234409876544UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({8s, 8s, 8s, 8s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui64_t){8888888711111112UL, 8888888711111112UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui64_t) {8888888711111112UL, 8888888711111112UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({9s, 9s, 9s, 9s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 99999999, 0, 99999999};
-  j = (vui32_t){0, 99999999, 0, 99999999};
-  e = (vui64_t){0UL, 0UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {0, 99999999, 0, 99999999};
+  j = (vui32_t) {0, 99999999, 0, 99999999};
+  e = (vui64_t) {0UL, 0UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({0, 99999999, 0, 99999999}, {0, 99999999, 0, 99999999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 9999, 0, 9999};
-  j = (vui32_t){0, 9999, 0, 9999};
-  e = (vui64_t){0UL, 0UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {0, 9999, 0, 9999};
+  j = (vui32_t) {0, 9999, 0, 9999};
+  e = (vui64_t) {0UL, 0UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({0, 9999, 0, 9999}, {0, 9999, 0, 9999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleuw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 196612, 0, 65538};
-  j = (vui32_t){0, 196612, 0, 65538};
-  e = (vui64_t){0UL, 0UL};
-  k = vec_muleuw(i, j);
+  i = (vui32_t) {0, 196612, 0, 65538};
+  j = (vui32_t) {0, 196612, 0, 65538};
+  e = (vui64_t) {0UL, 0UL};
+  k = vec_muleuw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleuw({0, 196612, 0, 65538}, {0, 196612, 0, 65538}) ", (vui128_t)k);
@@ -547,116 +547,110 @@ test_mulouw (void)
   int rc = 0;
 
   printf ("\ntest_mulouw Vector Multiply Odd Unsigned words\n");
-#if 0
-  i = (vui32_t)CONST_VINT32_W(1, 2, 3, 4);
-  j = (vui32_t)CONST_VINT32_W(10, 20, 30, 40);
-  e = (vui64_t)CONST_VINT64_DW(40, 160);
-#else
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 20, 30, 40};
-  e = (vui64_t){40, 160};
-#endif
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 20, 30, 40};
+  e = (vui64_t) {40, 160};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({1, 2, 3, 4}, {10, 20, 30, 40}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){3, 4, 1, 2};
-  e = (vui64_t){8, 8};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {3, 4, 1, 2};
+  e = (vui64_t) {8, 8};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({1, 2, 3, 4}, {3, 4, 1, 2}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){4, 3, 2, 1};
-  e = (vui64_t){6, 4};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {4, 3, 2, 1};
+  e = (vui64_t) {6, 4};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({1, 2, 3, 4}, {4, 3, 2, 1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 10, 30, 30};
-  e = (vui64_t){20, 120};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 10, 30, 30};
+  e = (vui64_t) {20, 120};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({1, 2, 3, 4}, {10, 10, 30, 30}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){-1, -1, -1, -1};
-  j = (vui32_t){-1, -1, -1, -1};
-  e = (vui64_t){-8589934591, -8589934591};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {-1, -1, -1, -1};
+  j = (vui32_t) {-1, -1, -1, -1};
+  e = (vui64_t) {-8589934591, -8589934591};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({-1, -1, -1, -1}, {-1, -1, -1, -1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  e = (vui64_t){9999999800000001UL, 9999999800000001UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  e = (vui64_t) {9999999800000001UL, 9999999800000001UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({9s, 9s, 9s, 9s}, {9s, 9s, 9s, 9s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui64_t){7901234409876544UL, 7901234409876544UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui64_t) {7901234409876544UL, 7901234409876544UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({8s, 8s, 8s, 8s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui64_t){8888888711111112UL, 8888888711111112UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui64_t) {8888888711111112UL, 8888888711111112UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({9s, 9s, 9s, 9s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 99999999, 0, 99999999};
-  j = (vui32_t){0, 99999999, 0, 99999999};
-  e = (vui64_t){9999999800000001UL, 9999999800000001UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {0, 99999999, 0, 99999999};
+  j = (vui32_t) {0, 99999999, 0, 99999999};
+  e = (vui64_t) {9999999800000001UL, 9999999800000001UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({0, 99999999, 0, 99999999}, {0, 99999999, 0, 99999999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 9999, 0, 9999};
-  j = (vui32_t){0, 9999, 0, 9999};
-  e = (vui64_t){99980001UL, 99980001UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {0, 9999, 0, 9999};
+  j = (vui32_t) {0, 9999, 0, 9999};
+  e = (vui64_t) {99980001UL, 99980001UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({0, 9999, 0, 9999}, {0, 9999, 0, 9999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_mulouw:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 196612, 0, 65538};
-  j = (vui32_t){0, 196612, 0, 65538};
-  e = (vui64_t){38656278544UL, 4295229444UL};
-  k = vec_mulouw(i, j);
+  i = (vui32_t) {0, 196612, 0, 65538};
+  j = (vui32_t) {0, 196612, 0, 65538};
+  e = (vui64_t) {38656278544UL, 4295229444UL};
+  k = vec_mulouw (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("mulouw({0, 196612, 0, 65538}, {0, 196612, 0, 65538}) ", (vui128_t)k);
@@ -674,110 +668,110 @@ test_muluwm (void)
   int rc = 0;
 
   printf ("\ntest_muluwm Vector Multiply Unsigned Word Modulo\n");
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 20, 30, 40};
-  e = (vui32_t){10, 40, 90, 160};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 20, 30, 40};
+  e = (vui32_t) {10, 40, 90, 160};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({1, 2, 3, 4}, {10, 20, 30, 40}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){3, 4, 1, 2};
-  e = (vui32_t){3, 8, 3, 8};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {3, 4, 1, 2};
+  e = (vui32_t) {3, 8, 3, 8};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({1, 2, 3, 4}, {3, 4, 1, 2}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){4, 3, 2, 1};
-  e = (vui32_t){4, 6, 6, 4};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {4, 3, 2, 1};
+  e = (vui32_t) {4, 6, 6, 4};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({1, 2, 3, 4}, {4, 3, 2, 1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){1, 2, 3, 4};
-  j = (vui32_t){10, 10, 30, 30};
-  e = (vui32_t){10, 20, 90, 120};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {1, 2, 3, 4};
+  j = (vui32_t) {10, 10, 30, 30};
+  e = (vui32_t) {10, 20, 90, 120};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({1, 2, 3, 4}, {10, 10, 30, 30}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){-1, -1, -1, -1};
-  j = (vui32_t){-1, -1, -1, -1};
-  e = (vui32_t){1, 1, 1, 1};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {-1, -1, -1, -1};
+  j = (vui32_t) {-1, -1, -1, -1};
+  e = (vui32_t) {1, 1, 1, 1};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({-1, -1, -1, -1}, {-1, -1, -1, -1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  e = (vui32_t){0x63d53e01, 0x63d53e01, 0x63d53e01, 0x63d53e01};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  e = (vui32_t) {0x63d53e01, 0x63d53e01, 0x63d53e01, 0x63d53e01};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({9s, 9s, 9s, 9s}, {9s, 9s, 9s, 9s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui32_t){0x7e49ac40, 0x7e49ac40, 0x7e49ac40, 0x7e49ac40};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui32_t) {0x7e49ac40, 0x7e49ac40, 0x7e49ac40, 0x7e49ac40};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({8s, 8s, 8s, 8s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){99999999, 99999999, 99999999, 99999999};
-  j = (vui32_t){88888888, 88888888, 88888888, 88888888};
-  e = (vui32_t){0xae12e1c8, 0xae12e1c8, 0xae12e1c8, 0xae12e1c8};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vui32_t) {88888888, 88888888, 88888888, 88888888};
+  e = (vui32_t) {0xae12e1c8, 0xae12e1c8, 0xae12e1c8, 0xae12e1c8};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({9s, 9s, 9s, 9s}, {8s, 8s, 8s, 8s}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 99999999, 0, 99999999};
-  j = (vui32_t){0, 99999999, 0, 99999999};
-  e = (vui32_t){0, 0x63d53e01, 0, 0x63d53e01};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {0, 99999999, 0, 99999999};
+  j = (vui32_t) {0, 99999999, 0, 99999999};
+  e = (vui32_t) {0, 0x63d53e01, 0, 0x63d53e01};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({0, 99999999, 0, 99999999}, {0, 99999999, 0, 99999999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 9999, 0, 9999};
-  j = (vui32_t){0, 9999, 0, 9999};
-  e = (vui32_t){0, 99980001, 0, 99980001};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {0, 9999, 0, 9999};
+  j = (vui32_t) {0, 9999, 0, 9999};
+  e = (vui32_t) {0, 99980001, 0, 99980001};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({0, 9999, 0, 9999}, {0, 9999, 0, 9999}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muluwm:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui32_t){0, 196612, 0, 65538};
-  j = (vui32_t){0, 196612, 0, 65538};
-  e = (vui32_t){0, 0x00180010, 0, 0x00040004};
-  k = vec_muluwm(i, j);
+  i = (vui32_t) {0, 196612, 0, 65538};
+  j = (vui32_t) {0, 196612, 0, 65538};
+  e = (vui32_t) {0, 0x00180010, 0, 0x00040004};
+  k = vec_muluwm (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muluwm({0, 196612, 0, 65538}, {0, 196612, 0, 65538}) ", (vui128_t)k);

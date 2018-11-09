@@ -38,6 +38,12 @@ __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
   return vec_absdub (__A, __B);
 }
 
+vui32_t
+__test_absduw_PWR9 (vui32_t a, vui32_t b)
+{
+  return vec_absduw (a, b);
+}
+
 vui128_t
 __test_msumudm_PWR9 (vui64_t a, vui64_t b, vui128_t c)
 {

@@ -148,9 +148,10 @@ libvecdummy_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libvecdummy_la_OBJECTS = testsuite/vec_int128_dummy.lo \
 	testsuite/vec_int64_dummy.lo testsuite/vec_int32_dummy.lo \
-	testsuite/vec_f128_dummy.lo testsuite/vec_f64_dummy.lo \
-	testsuite/vec_f32_dummy.lo testsuite/vec_pwr9_dummy.lo \
-	testsuite/vec_bcd_dummy.lo testsuite/vec_char_dummy.lo
+	testsuite/vec_int16_dummy.lo testsuite/vec_f128_dummy.lo \
+	testsuite/vec_f64_dummy.lo testsuite/vec_f32_dummy.lo \
+	testsuite/vec_pwr9_dummy.lo testsuite/vec_bcd_dummy.lo \
+	testsuite/vec_char_dummy.lo
 libvecdummy_la_OBJECTS = $(am_libvecdummy_la_OBJECTS)
 am__EXEEXT_1 = pveclib_test$(EXEEXT) vec_dummy$(EXEEXT)
 am_pveclib_test_OBJECTS = testsuite/pveclib_test.$(OBJEXT) \
@@ -570,6 +571,7 @@ libpvec_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
+	testsuite/vec_int16_dummy.c \
 	testsuite/vec_f128_dummy.c \
 	testsuite/vec_f64_dummy.c \
 	testsuite/vec_f32_dummy.c \
@@ -720,6 +722,8 @@ testsuite/vec_int64_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_int32_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/vec_int16_dummy.lo: testsuite/$(am__dirstamp) \
+	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_f128_dummy.lo: testsuite/$(am__dirstamp) \
 	testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/vec_f64_dummy.lo: testsuite/$(am__dirstamp) \
@@ -811,6 +815,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_f32_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_f64_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int128_dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int16_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int32_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_int64_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_perf_f32.Po@am__quote@

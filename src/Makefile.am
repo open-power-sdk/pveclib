@@ -9,6 +9,7 @@ libpvec_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
+	testsuite/vec_int16_dummy.c \
 	testsuite/vec_f128_dummy.c \
 	testsuite/vec_f64_dummy.c \
 	testsuite/vec_f32_dummy.c \

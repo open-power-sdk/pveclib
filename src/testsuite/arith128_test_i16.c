@@ -209,6 +209,224 @@ test_revbh (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__
+int
+test_muluhm (void)
+{
+  vui16_t i, j, k, e;
+  int rc = 0;
+
+  printf ("\ntest_muluhm Vector Multiply Unsigned Halfword Modulo\n");
+
+  i = (vui16_t) {1, 2, 3, 4, 5, 6, 7, 8};
+  j = (vui16_t) {10, 20, 30, 40, 50, 60, 70, 80};
+  e = (vui16_t) {10, 40, 90, 160, 250, 360, 490, 640};
+  k = vec_muluhm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("muluhm(\t{1, 2, 3, 4, ....},\n\t {10, 20, 30, 40, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_muluhm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t ){-1, -2, -3, -4, -5, -6, -7, -8};
+  j = (vui16_t) {10, 20, 30, 40, 50, 60, 70, 80};
+  e = (vui16_t) {-10, -40, -90, -160, -250, -360, -490, -640};
+  k = vec_muluhm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("muluhm(\t{-1, -2, -3, -4, ....},\n\t {10, 20, 30, 40, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_muluhm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t) {1, 2, 3, 4, 5, 6, 7, 8};
+  j = (vui16_t) {-10, -20, -30, -40, -50,- 60, -70, -80};
+  e = (vui16_t) {-10, -40, -90, -160, -250, -360, -490, -640};
+  k = vec_muluhm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("muluhm(\t{1, 2, 3, 4, ....},\n\t {-10, -20, -30, -40, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_muluhm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t) {-1, -2, -3, -4, -5, -6, -7, -8};
+  j = (vui16_t) {-10, -20, -30, -40, -50,- 60, -70, -80};
+  e = (vui16_t) {10, 40, 90, 160, 250, 360, 490, 640};
+  k = vec_muluhm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("muluhm(\t{-1, -2, -3, 14, ....},\n\t {-10, -20, -30, -40, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_muluhm:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mulhsh (void)
+{
+  vi16_t i, j;
+  vi16_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mmulhsh Vector Multiply High Signed Halfwords\n");
+
+  i = (vi16_t) CONST_VINT128_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  j = (vi16_t) CONST_VINT128_H(1, 2, 3, 4, 5, 6, 7, 8);
+  e = (vi16_t) CONST_VINT128_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhsh(\t{-1,-1,-1,-1,-1,-1,-1,-1},\n\t {1,2,3,4,5,6,7,8})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi16_t) CONST_VINT128_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  j = (vi16_t) CONST_VINT128_H(-1, -2, -3, -4, -5, -6, -7, -8);
+  e = (vi16_t) CONST_VINT128_H(0, 0, 0, 0, 0, 0, 0, 0);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhsh(\t{-1,-1,-1,-1,-1,-1,-1,-1},\n\t {-1,-2,-3,-4,-5,-6,-7,-8})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi16_t) CONST_VINT128_H(256, 256, 256, 256, 256, 256, 256, 256);
+  j = (vi16_t) CONST_VINT128_H(256, 512, 768, 1024, 1280, 1536, 1792, 2048);
+  e = (vi16_t) CONST_VINT128_H(1, 2, 3, 4, 5, 6, 7, 8);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhsh(\t{256,256, ...},\n\t {2^8,2^9,3*2^8,2^10, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi16_t) CONST_VINT128_H(-256, -256, -256, -256, -256, -256, -256, -256);
+  j = (vi16_t) CONST_VINT128_H(256, 512, 768, 1024, 1280, 1536, 1792, 2048);
+  e = (vi16_t) CONST_VINT128_H(-1, -2, -3, -4, -5, -6, -7, -8);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhsh(\t{-256,-256, ...},\n\t {2^8,2^9,3*2^8,2^10, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi16_t) CONST_VINT128_H(-256, -256, -256, -256, -256, -256, -256, -256);
+  j = (vi16_t) CONST_VINT128_H(-256, -512, -768, -1024, -1280, -1536, -1792, -2048);
+  e = (vi16_t) CONST_VINT128_H(1, 2, 3, 4, 5, 6, 7, 8);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhsh(\t{-256,-256, ...},\n\t {-2^8,-2^9,-3*2^8,-2^10, ...})\n\t ", (vui16_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mulhuh (void)
+{
+  vui16_t i, j;
+  vui16_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mmulhuh Vector Multiply High unsigned Halfwords\n");
+
+  i = (vui16_t) CONST_VINT128_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  j = (vui16_t) CONST_VINT128_H(1, 2, 3, 4, 5, 6, 7, 8);
+  e = (vui16_t) CONST_VINT128_H(0, 1, 2, 3, 4, 5, 6, 7);
+  k = vec_mulhuh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhuh(\t{-1,-1,-1,-1,-1,-1,-1,-1},\n\t {1,2,3,4,5,6,7,8})\n\t ", k);
+#endif
+  rc += check_vuint128x ("vec_mulhuh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t) CONST_VINT128_H(0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x100);
+  j = (vui16_t) CONST_VINT128_H(0x100, 0x200, 0x300, 0x400, 0x500, 0x600, 0x700, 0x800);
+  e = (vui16_t) CONST_VINT128_H(1, 2, 3, 4, 5, 6, 7, 8);
+  k = vec_mulhuh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhuh(\t{2^8,2^8,2^8,2^8, ...},\n\t {2^8,2^9,3*2^8,2^10,...})\n\t ", k);
+#endif
+  rc += check_vuint128x ("vec_mulhuh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t) CONST_VINT128_H(10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000);
+  j = (vui16_t) CONST_VINT128_H(7, 68, 661, 6554, 7, 68, 661, 6554);
+  e = (vui16_t) CONST_VINT128_H(1, 10, 100, 1000, 1, 10, 100, 1000);
+  k = vec_mulhuh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mulhuh(\t{10^4,10^4,10^4,10^4, ...},\n\t {10^-4,10^-3,10^-2,10^-1})\n\t ", k);
+#endif
+  rc += check_vuint128x ("vec_mulhuh:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mrgeoh (void)
+{
+  vui16_t i, j;
+  vui16_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mrgeoh Vector Merge Even/Odd Halfwords\n");
+
+  i = (vui16_t ) {100, 1, 200, 2, 300, 3, 400, 4};
+  j = (vui16_t ) {500, 5, 600, 6, 700, 7, 800, 8};
+  e = (vui16_t ) {100, 500, 200, 600, 300, 700, 400, 800};
+  k = vec_mrgeh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mrgeh(\t{100, 1, 200, 2, 300, 3, 400, 4},\n\t    {500, 5, 600, 6, 700, 7, 800, 8})\n\t", k);
+  print_vint16x ("\t", k);
+#endif
+  rc += check_vuint128x ("vec_mrgeh:", (vui128_t)k, (vui128_t) e);
+
+  e = (vui16_t ) {1, 5, 2, 6, 3, 7, 4, 8};
+  k = vec_mrgoh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16d ("mrgoh(\t{100, 1, 200, 2, 300, 3, 400, 4},\n\t    {500, 5, 600, 6, 700, 7, 800, 8})\n\t", k);
+  print_vint16x ("\t", k);
+#endif
+  rc += check_vuint128x ("vec_mrgoh:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mrgahlh (void)
+{
+  vui32_t i, j;
+  vui16_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mrgahlh Vector Merge Algebraic High/Low Halfwords\n");
+
+  i = (vui32_t) CONST_VINT32_W (0x00f10001, 0x00f20002, 0x00f30003, 0x00f40004);
+  j = (vui32_t) CONST_VINT32_W (0x00f50005, 0x00f60006, 0x00f70007, 0x00f80008);
+  e = (vui16_t) CONST_VINT128_H (0xf1, 0xf5, 0xf2, 0xf6, 0xf3, 0xf7, 0xf4, 0xf8);
+  k = vec_mrgahh(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x ("mrgahh( {00f10001 00f20002 00f30003 00f40004},\n\t{00f50005 00f60006 00f70007 00f80008})\n\t", k);
+#endif
+  rc += check_vuint128x ("vec_mrgahh:", (vui128_t)k, (vui128_t) e);
+
+  e = (vui16_t) CONST_VINT128_H (0x1, 0x5, 0x2, 0x6, 0x3, 0x7, 0x4, 0x8);
+  k = vec_mrgalh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x ("mrgalh( {00f10001 00f20002 00f30003 00f40004},\n\t{00f50005 00f60006 00f70007 00f80008})\n\t", k);
+#endif
+  rc += check_vuint128x ("vec_mrgalh:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i16 (void)
 {
@@ -219,6 +437,11 @@ test_vec_i16 (void)
   rc += test_revbh ();
   rc += test_clzh ();
   rc += test_popcnth();
+  rc += test_mrgeoh();
+  rc += test_mrgahlh();
+  rc += test_mulhuh();
+  rc += test_mulhsh();
+  rc += test_muluhm();
 #endif
   return (rc);
 }

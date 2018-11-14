@@ -296,7 +296,7 @@ test_popcntb (void)
   return (rc);
 }
 
-#define __DEBUG_PRINT__ 1
+//#define __DEBUG_PRINT__ 1
 int
 test_mrgeob (void)
 {

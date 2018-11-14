@@ -28,14 +28,173 @@
 /*!
  * \file  vec_common_ppc.h
  * \brief Common definitions and typedef used by the collection of
- * Power Vector Library headers.
+ * Power Vector Library (pveclib) headers.
  *
- *  \section includes
- *  - Typedefs as short names of common vector types.
- *  - Union used to transfer 128-bit data between vector and
- *  non-vector types.
- *  - Helper macros that make declaring constants and accessing
- *  elements, a little easier.
+ * This includes:
+ * - Typedefs as short names of common vector types.
+ * - Union used to transfer 128-bit data between vector and
+ * non-vector types.
+ * - Helper macros that make declaring constants and accessing
+ * elements, a little easier.
+ *
+ * \section common_type_naming_0_0 Consistent vector type naming
+ *
+ * Type names should be short, concise, and consistent. The ABI
+ * defines the vector types as extensions of the existing C
+ * Language types. So while <I>vector unsigned long long</I> is
+ * consistent it is neither short or concise.
+ * Pveclib uses the following naming convention for typedefs used in
+ * its operations, function prototypes, and internal variables.
+ * - Starting with the <B>v</B> prefix for vector.
+ * - followed by one of the element classes:
+ *   -  <B>i</B> for signed integer.
+ *   -  <B>ui</B> for unsigned integer.
+ *   -  <B>f</B> for floating-point.
+ *   -  <B>b</B> for bool.
+ * - followed by the element size in bits:
+ *   - 8, 16, 32, 64, 128
+ * - Ending with the <B>_t</B> suffix signifying a typedef.
+ *
+ * For example: \ref vi32_t is a vector int,
+ * \ref vui32_t is a vector unsigned int,
+ * \ref vb32_t is a vector bool int,
+ * and \ref vf32_t is vector float.
+ *
+ * \section common_type_xfer_0_0 Transferring 128-bit types
+ *
+ * The OpenPOWER ABI and the GCC compiler define a number of 128-bit
+ * scalar types that are not vector types:
+ * - __int128 (a general purpose register pair)
+ * - _Decimal128 (a floating-point even/odd register pair)
+ * - __ibm128 (a floating-point register pair)
+ * - __float128 (a vector register)
+ *
+ * These are not cast nor assignment compatible with any vector type.
+ * However it may be useful to transfer to/from vector types for
+ * conversion or manipulation within an operation.
+ * For example:
+ * - Conversions between __float128 and __int128, __ibm128,
+ * and _Decimal128 types.
+ * - Conversions between vector BCD integers and __int128
+ * and _Decimal128 types.
+ * - Conversions between vector __int128 and __float128, __ibm128,
+ * and _Decimal128 types.
+ *
+ * Here we use the __VEC_U_128 union to affect the transfer between
+ * the various types. We assume (fervently hope) that the compiler will
+ * recognize and optimize these as registers to registers transfers
+ * using the hardware instructions provided.
+ *
+ * The vector to/from __float128 transfer should be the simplest
+ * as __float128 operations are defined over the vector register set.
+ * However __float128 types are defined in the PowerISA and OpenPOWER
+ * ABI,  as scalars that just happens to use vector
+ * registers for parameter passing and operations.
+ * This distinction between scalars and vector prevents a direct cast
+ * between types. The __VEC_U_128 union is the simplest work around
+ * but in most cases no code should generated for this transfer.
+ * For example: vec_xfer_bin128_2_vui128t() and vec_xfer_vui128t_2_bin128().
+ *
+ * Any vector to/from __int128 transfer requires a transfer between
+ * vector and general purpose registers. POWER8 (PowerISA 2.07B) added
+ * Move to/from Vector Scalar Register (mfvsr, mtvsr) instructions.
+ * Again the __VEC_U_128 union is used to effect the transfer and the
+ * compiler should leverage the move instructions in the generate code.
+ *
+ * Any vector to/from __ibm128 or _Decimal128 requires a transfer
+ * between a pair of FPRs and a Vector Scalar Register (VSR).
+ * Technically this is transfer between the upper doubleword of two
+ * VSRs in the lower bank (VSR0-31) and another VSR.
+ * POWER7 (PowerISA 2.06B) provides the
+ * Permute Doubleword Immediate (xxpermdi) instruction.
+ * Again the __VEC_U_128 union is used to effect the transfer and the
+ * compiler should leverage the Permute Doubleword Immediate
+ * instructions in the generate code.
+ * For example: vec_BCD2DFP() and vec_DFP2BCD().
+ *
+ * \section common_endian_issues_0_0 Endian and vector constants
+ *
+ * Vector constants are often need to for; masking operations,
+ * range checks, permute selection, and radix conversion.
+ * Also compiler support for large integer and floating-point
+ * constants may be limited by the compiler.
+ * For example the GCC compilers support the (vector) __int128 type
+ * but do not directly support __int128 (39 digit) decimal constants.
+ * Another example is __float128 where the type and Q suffix constants
+ * are recent additions.
+ * In both cases we need to construct; large numeric constants,
+ * special values (infinity and NaN), masks for manipulating the sign
+ * bit and exponent bits.
+ * Often these values will be constructed from vectors of word or
+ * doubleword constants.
+ *
+ * \note GCC does not support expressing an integer constant of type
+ * __int128 for targets where long long integer is less than 128
+ * bits wide.  This applies to the PowerPC target as the long long
+ * type is reserved for 64-bit integers.
+ *
+ * \note GCC __float128 support for the PowerPC target began with
+ * GCC 6. In GCC 6 __float128 support is off by default and has to be
+ * explicitly enabled via the '-mfloat128' option. Starting with GCC 7,
+ * __float128 is enabled by default with VSX support.
+ *
+ * Defining large constants for vectors is
+ * complicated by <I>little-endian</I> (LE) support as
+ * specified in the OpenPOWER ABI and as implemented in the compilers.
+ * Little-endian changes the effective vector element numbering and
+ * the order of constant elements in initializers.  But the __int128
+ * numerical order of magnitude or floating-point format does not
+ * change in registers. The high order bits are on the left and the
+ * low order bits are on the right.
+ *
+ * So for example:
+ * \code
+  const vui32_t signmask = { 0x80000000, 0, 0, 0 };
+  const vui32_t expmask = { 0x7fff0000, 0, 0, 0 };
+ * \endcode
+ * are correct sign and exponent masks for __float128 in big
+ * endian (BE) but would be incorrect for little endian (LE).
+ * To get correct results for both endians, one could code something
+ * like this:
+ * \code
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui32_t signmask = { 0, 0, 0, 0x80000000 };
+  const vui32_t expmask = { 0, 0, 0, 0x7fff0000 };
+#else
+  const vui32_t signmask = { 0x80000000, 0, 0, 0 };
+  const vui32_t expmask = { 0x7fff0000, 0, 0, 0 };
+#endif
+ * \endcode
+ * But this gets tedious after the first dozen times.
+ * Also this can be confusing because it does not appear to the match
+ * the floating-point format diagrams in the PowerISA. The sign-bit
+ * and the exponent are always on the left.
+ *
+ * So this header provides endian sensitive macros that maintain
+ * consistent "magnitude" order. For example:
+ * \code
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+ * \endcode
+ * This is always correct in either endian.
+ *
+ * Another example; the multiplicative inverse for __int128 10**32
+ * is 211857340822306639531405861550393824741.
+ * The GCC compiler will not accept this constant in a vector __int128
+ * initializer. The next best thing would be
+ * \code
+  // The multiplicative inverse for 1 / 10**32 is
+  // 211857340822306639531405861550393824741
+  const vui128_t mulinv_10to32 =
+           (vui128_t) CONST_VINT128_DW128 ( 0x9f623d5a8a732974UL,
+                                            0xcfbc31db4b0295e5UL );
+ * \endcode
+ * Here we use the CONST_VINT128_DW128 macro to maintain magnitude
+ * order across endian. Again the high order bits are on the left
+ * and the low order bits are on the right.
+ *
+ * \sa \ref i32_endian_issues_0_0
+ * \sa \ref mainpage_endian_issues_1_1
  */
 
 /*! \brief vector of 8-bit unsigned char elements. */
@@ -135,13 +294,20 @@ typedef union
 #define CONST_VINT128_W(__w0, __w1, __w2, __w3) (vui32_t){__w3, __w2, __w1, __w0}
 /*! \brief Arrange elements of word initializer in high->low order.  */
 #define CONST_VINT32_W(__w0, __w1, __w2, __w3) {__w3, __w2, __w1, __w0}
-/*! \brief Arrange word elements of a unsigned int initializer in
+/*! \brief Arrange halfword elements of a unsigned int initializer in
  * high->low order.  May require an explicit cast.  */
 #define CONST_VINT128_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
-    {__hw7, __hw6, __hw5, __hw4, __hw3, __hw2, __hw1, __hw0}
-/*! \brief Arrange elements of word initializer in high->low order.  */
+    (vui16_t){__hw7, __hw6, __hw5, __hw4, __hw3, __hw2, __hw1, __hw0}
+/*! \brief Arrange elements of halfword initializer in high->low order.  */
 #define CONST_VINT16_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
     {__hw7, __hw6, __hw5, __hw4, __hw3, __hw2, __hw1, __hw0}
+/*! \brief Arrange byte elements of a unsigned int initializer in
+ * high->low order.  May require an explicit cast.  */
+#define CONST_VINT128_B(_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15) \
+    (vui8_t){_b15, _b14, _b13, _b12, _b11, _b10, _b9, _b8, _b7, _b6, _b5, _b4, _b3, _b2, _b1, _b0}
+/*! \brief Arrange elements of byte initializer in high->low order.  */
+#define CONST_VINT8_B(_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15) \
+    {_b15, _b14, _b13, _b12, _b11, _b10, _b9, _b8, _b7, _b6, _b5, _b4, _b3, _b2, _b1, _b0}
 /*! \brief Element index for high order dword.  */
 #define VEC_DW_H 1
 /*! \brief Element index for low order dword.  */
@@ -181,10 +347,17 @@ typedef union
 /*! \brief Arrange word elements of a unsigned int initializer in
  * high->low order.  May require an explicit cast.  */
 #define CONST_VINT128_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
-    {__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7}
+    (vui16_t){__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7}
 /*! \brief Arrange elements of word initializer in high->low order.  */
 #define CONST_VINT16_H(__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7) \
     {__hw0, __hw1, __hw2, __hw3, __hw4, __hw5, __hw6, __hw7}
+/*! \brief Arrange byte elements of a unsigned int initializer in
+ * high->low order.  May require an explicit cast.  */
+#define CONST_VINT128_B(_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15) \
+    (vui8_t){_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15}
+/*! \brief Arrange elements of byte initializer in high->low order.  */
+#define CONST_VINT8_B(_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15) \
+    {_b0, _b1, _b2, _b3, _b4, _b5, _b6, _b7, _b8, _b9, _b10, _b11, _b12, _b13, _b14, _b15}
 #define VEC_DW_H 0
 #define VEC_DW_L 1
 #define VEC_W_H 0

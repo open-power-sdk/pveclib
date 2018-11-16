@@ -97,7 +97,7 @@
  *
  * As a prerequisite we need to provide the merge even/odd halfword
  * operations.
- * While PowerISA has added these operations for word and doubleword
+ * While PowerISA has added these operations for word and doubleword,
  * instructions are nor defined for byte and halfword.
  * Fortunately vector merge operations are
  * just a special case of vector permute.  So the vec_vmrgoh() and
@@ -136,12 +136,12 @@ test_mulhw (vui16_t vra, vui16_t vrb)
  * A couple problems with this:
  * - vec_mergee is only defined for vector int/long and float/double
  * (word/doubleword) types.
- * - vec_mergee is endian sensitive and would product the wrong
+ * - vec_mergee is endian sensitive and would produce the wrong
  * results in LE mode.
- * - vec_mule/vec_mulo are endian sensitive and product the wrong
+ * - vec_mule/vec_mulo are endian sensitive and produce the wrong
  * results in LE mode.
  *
- * The first step is the provide implement Vector Merge Even Halfword operation:
+ * The first step is to implement Vector Merge Even Halfword operation:
  * \code
 static inline vui16_t
 vec_vmrgeh (vui16_t vra, vui16_t vrb)
@@ -201,7 +201,7 @@ vec_mrgahh  (vui32_t vra, vui32_t vrb)
  * \note The inputs are defined as 32-bit to match the results from
  * multiply even/odd halfword.
  *
- * How we have all the parts we need to implement multiply high/low halfword.
+ * Now we have all the parts we need to implement multiply high/low halfword.
  * For example Multiply High Unsigned Halfword:
  * \code
 static inline vui16_t
@@ -284,15 +284,15 @@ __test_mulhuh (vui16_t a, vui16_t b)
  * Suppose we have a requirement to convert an array of 16-bit
  * unsigned short values to decimal. The classic <I>itoa</I>
  * implementation performs a sequence of divide / modulo by 10
- * operations that produce on (decimal) per iteration,
+ * operations that produce one (decimal) value per iteration,
  * until the divide returns 0.
  *
  * For this example we want to vectorize the operation and the
- * PowerISA (and and most other platforms) does not provide a
+ * PowerISA (and most other platforms) does not provide a
  * vector integer divide instruction. But we do have vector integer
- * multiply as we will see the multiply high defined above is very
+ * multiply.  As we will see the multiply high defined above is very
  * handy for applying the multiplicative inverse.
- * Also we the conversion divide is a constant value applied across
+ * Also, the conversion divide is a constant value applied across
  * the vector which simplifies the coding.
  *
  * Here we can use the multiplicative inverse which is a
@@ -307,7 +307,7 @@ __test_mulhuh (vui16_t a, vui16_t b)
  * It turns out that generating the multiplicative inverse can be
  * tricky.  To produce correct results over the full range, requires
  * possible pre-scaling and post-shifting, and sometimes a corrective
- * addition. Fortunately the mathematics are well
+ * addition. Fortunately, the mathematics are well
  * understood and are commonly used in optimizing compilers.
  * Even better, Henry Warren's book has a whole chapter on this topic.
  * \see "Hacker's Delight, 2nd Edition,"
@@ -319,8 +319,8 @@ __test_mulhuh (vui16_t a, vui16_t b)
  * <BLOCKQUOTE>Figure 10-2 Computing the magic number for unsigned division.</BLOCKQUOTE>
  * provides a sample C function for generating the magic number
  * (actually a struct containing; the magic multiplicative inverse,
- * "add" indicator, and the shift amount.).
- * For the 16-bit unsigned divisor 10 this is {  52429, 0, 3 }:
+ * "add" indicator, and the shift amount).
+ * For the 16-bit unsigned divisor 10, this is {  52429, 0, 3 }:
  * - the multiplier is 52429.
  * - no corrective add of the dividend is required.
  * - the final shift is 3-bits right.
@@ -340,7 +340,7 @@ __test_div10 (vui16_t n)
 }
  * \endcode
  *
- * But we need also need the modulo to extract each digit. This simplest and oldest technique is to
+ * But we also need the modulo to extract each digit. The simplest and oldest technique is to
  * multiply the quotient by the divisor (constant 10) and subtract that from the original dividend.
  * Here we can use the vec_muluhm() operation we defined above.
  * Which could look like this:
@@ -368,9 +368,7 @@ __test_mod10 (vui16_t n)
  *
  * \subsection int16_examples_0_1_2 Divide by constant 10000 example
  * As we mentioned above, some divisors require an add before the shift
- * as a correction. For example for 16-bit divide by 10000 the magic
- * number (actually a struct containing; the magic multiplicative inverse,
- * "add" indicator, and the shift amount.).
+ * as a correction.
  * For the 16-bit unsigned divisor 10000 this is { 41839, 1, 14 }:
  * - the multiplier is 41839.
  * - corrective add of the dividend is required.
@@ -683,9 +681,9 @@ static inline vui16_t
 vec_mrgeh  (vui16_t vra, vui16_t vrb)
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return vec_vmrgoh ((vui16_t) vrb, (vui16_t) vra);
+  return vec_vmrgoh ( vrb, vra );
 #else
-  return vec_vmrgeh ((vui16_t) vra, (vui16_t) vrb);
+  return vec_vmrgeh ( vra, vrb );
 #endif
 }
 
@@ -711,9 +709,9 @@ static inline vui16_t
 vec_mrgoh  (vui16_t vra, vui16_t vrb)
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return vec_vmrgeh ((vui16_t) vrb, (vui16_t) vra);
+  return vec_vmrgeh ( vrb, vra );
 #else
-  return vec_vmrgoh ((vui16_t) vra, (vui16_t) vrb);
+  return vec_vmrgoh ( vra, vrb );
 #endif
 }
 
@@ -747,7 +745,7 @@ vec_mulhsh (vi16_t vra, vi16_t vrb)
 
 /** \brief Vector Multiply High Unsigned halfword.
  *
- *  Multiple the corresponding halfword elements of two vector unsigned
+ *  Multiply the corresponding halfword elements of two vector unsigned
  *  short values and return the high order 16-bits, for each
  *  32-bit product element.
  *
@@ -773,7 +771,7 @@ vec_mulhuh (vui16_t vra, vui16_t vrb)
 
 /** \brief Vector Multiply Unsigned halfword Modulo.
  *
- *  Multiple the corresponding halfword elements of two vector unsigned
+ *  Multiply the corresponding halfword elements of two vector unsigned
  *  short values and return the low order 16-bits of the 32-bit product
  *  for each element.
  *

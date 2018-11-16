@@ -254,7 +254,9 @@ test_muluhm (void)
   k = vec_muluhm (i, j);
 
 #ifdef __DEBUG_PRINT__
-  print_vint16d ("muluhm(\t{-1, -2, -3, 14, ....},\n\t {-10, -20, -30, -40, ...})\n\t ", (vui16_t)k);
+  print_vint16x ("muluhm(\t{", i);
+  print_vint16x ("\t\t{", j);
+  print_vint16x ("\t\t{", k);
 #endif
   rc += check_vuint128x ("vec_muluhm:", (vui128_t)k, (vui128_t) e);
 
@@ -320,6 +322,18 @@ test_mulhsh (void)
 #endif
   rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
 
+  i = (vi16_t) CONST_VINT128_H(-32768,-32768,-32768,-32768, 32767, 32767, 32767, 32767);
+  j = (vi16_t) CONST_VINT128_H(-32768, 32767,-16384, 16384,-32768, 32767,-16384, 16384);
+  e = (vi16_t) CONST_VINT128_H( 16384,-16384,  8192, -8192,-16384, 16383, -8192,  8191);
+  k = vec_mulhsh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x ("mulhsh(\t{", (vui16_t) i);
+  print_vint16x ("\t\t{", (vui16_t) j);
+  print_vint16x ("\t\t{", (vui16_t) k);
+#endif
+  rc += check_vuint128x ("vec_mulhsh:", (vui128_t)k, (vui128_t) e);
+
   return (rc);
 }
 
@@ -359,6 +373,18 @@ test_mulhuh (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint16d ("mulhuh(\t{10^4,10^4,10^4,10^4, ...},\n\t {10^-4,10^-3,10^-2,10^-1})\n\t ", k);
+#endif
+  rc += check_vuint128x ("vec_mulhuh:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui16_t) CONST_VINT128_H(65535, 65535, 65535, 65535, 32768, 32767, 16384, 16383);
+  j = (vui16_t) CONST_VINT128_H(65535, 32768, 16384, 16383, 32768, 16384, 16384, 16383);
+  e = (vui16_t) CONST_VINT128_H(65534, 32767, 16383, 16382, 16384,  8191,  4096,  4095);
+  k = vec_mulhuh (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x ("mulhuh(\t{", i);
+  print_vint16x ("\t\t{", j);
+  print_vint16d ("\t\t{", k);
 #endif
   rc += check_vuint128x ("vec_mulhuh:", (vui128_t)k, (vui128_t) e);
 

@@ -27,6 +27,12 @@ __test_absdub (vui8_t __A, vui8_t __B)
   return vec_absdub (__A, __B);
 }
 
+vui8_t
+__test_sldo (vui8_t __A, vui8_t __B, vui8_t __C)
+{
+  return vec_shift_leftdo (__A, __B, __C);
+}
+
 
 vui8_t
 __test_clzb (vui8_t a)
@@ -115,4 +121,16 @@ vui8_t
 test_vec_tolower (vui8_t a)
 {
   return vec_tolower (a);
+}
+
+vui8_t
+test_vec_mergel  (vui8_t a, vui8_t b)
+{
+  return vec_mergel (a, b);
+}
+
+vui8_t
+test_vec_vmrglb  (vui8_t a, vui8_t b)
+{
+  return vec_vmrglb (a, b);
 }

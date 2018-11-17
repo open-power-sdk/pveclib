@@ -300,24 +300,23 @@ test_popcntb (void)
 int
 test_mrgeob (void)
 {
-  vui8_t i, j;
-  vui8_t k, e;
+  vui8_t i, j, k, e;
   int rc = 0;
 
   printf ("\ntest_mrgeob Vector Merge Even/Odd Bytes\n");
 
   i = (vui8_t) { 10, 1, 20, 2, 30, 3, 40, 4,
 		50, 5, 60, 6, 70, 7, 80, 8 };
-  j = (vui8_t) { 90, 9, 0xa0, 10, 0xb0, 11, 0xc0, 12,
-		 0xd0, 13, 0xe0, 14, 0xf0, 15, 0xff, 0 };
-  e = (vui8_t) { 10, 90, 20, 160, 30, 0xb0, 40, 0xc0,
-		 50, 0xd0, 60, 0xe0, 70, 0xf0, 80, 0xff };
+  j = (vui8_t) { 90, 9, 160, 10, 176, 11, 192, 12,
+                208, 13, 224, 14, 240, 15, 255, 0 };
+  e = (vui8_t) { 10, 90, 20, 160, 30, 176, 40, 192,
+		 50, 208, 60, 224, 70, 240, 80, 255 };
   k = vec_mrgeb (i, j);
 
 #ifdef __DEBUG_PRINT__
-  print_vint8x ("mrgeb(\t{", i);
-  print_vint8x ("\t\t{", j);
-  print_vint8x ("\t\t{", k);
+  print_vint8d ("mrgeb(\t{", i);
+  print_vint8d ("\t\t{", j);
+  print_vint8d ("\t\t{", k);
 #endif
   rc += check_vuint128x ("vec_mrgeb:", (vui128_t) k, (vui128_t) e);
 
@@ -326,9 +325,9 @@ test_mrgeob (void)
   k = vec_mrgob (i, j);
 
 #ifdef __DEBUG_PRINT__
-  print_vint8x ("mrgeo(\t{", i);
-  print_vint8x ("\t\t{", j);
-  print_vint8x ("\t\t{", k);
+  print_vint8d ("mrgob(\t{", i);
+  print_vint8d ("\t\t{", j);
+  print_vint8d ("\t\t{", k);
 #endif
   rc += check_vuint128x ("vec_mrgob:", (vui128_t) k, (vui128_t) e);
 
@@ -357,7 +356,6 @@ test_mrgahlb (void)
 #endif
   rc += check_vuint128x ("vec_mrgahb:", (vui128_t)k, (vui128_t) e);
 
-  e = (vui8_t)CONST_VINT128_H(0x1, 0x5, 0x2, 0x6, 0x3, 0x7, 0x4, 0x8);
   e = (vui8_t)(vui16_t)CONST_VINT128_H(0x0109, 0x020a, 0x030b, 0x040c,
 			      0x050d, 0x060e, 0x070f, 0x0800);
   k = vec_mrgalb(i, j);
@@ -381,8 +379,8 @@ test_mulhub (void)
 
   printf ("\ntest_mulhub Vector Multiply High Unsigned Bytes\n");
 
-  i = (vui8_t)
-	  { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+  // Same as vec_splats ((unsigned char)255), only faster
+  i = (vui8_t) vec_splat_u8 (-1);
   j = (vui8_t)
 	  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
   e = (vui8_t)
@@ -403,7 +401,8 @@ test_mulhub (void)
 	  { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0,
 	      0xc0, 0xd0, 0xe0, 0xf0, 0x00, };
   e = (vui8_t)
-	  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0 };
+	  { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd,
+              0xe, 0xf, 0x0 };
   k = vec_mulhub (i, j);
 
 #ifdef __DEBUG_PRINT__
@@ -421,13 +420,31 @@ test_mulhub (void)
             85, 51, 42, 36, 25, 23, 19, 17 };
   e = (vui8_t)
 	  { 33, 19, 16, 14, 9, 8, 7, 6,
-            84, 50, 41, 35, 24, 22, 18, 16 };
+	    84, 50, 41, 35, 24, 22, 18, 16 };
   k = vec_mulhub (i, j);
 
 #ifdef __DEBUG_PRINT__
-  print_vint8x ("mulhub(\t{", i);
-  print_vint8x ("\t\t{", j);
-  print_vint8x ("\t\t{", k);
+  print_vint8d ("mulhub(\t{", i);
+  print_vint8d ("\t\t{", j);
+  print_vint8d ("\t\t{", k);
+#endif
+  rc += check_vuint128x ("vec_mulhub:", (vui128_t) k, (vui128_t) e);
+
+  i = (vui8_t)
+	  { 100, 100, 100, 100, 100, 100, 100, 100,
+            255, 255, 255, 255, 255, 255, 255, 255 };
+  j = (vui8_t)
+	  { 255, 128, 127, 64, 63, 32, 31, 16,
+	    255, 128, 127, 64, 63, 32, 31, 16 };
+  e = (vui8_t)
+          { 99, 50, 49, 25, 24, 12, 12, 6,
+           254, 127, 126, 63, 62, 31, 30, 15 };
+  k = vec_mulhub (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("mulhub(\t{", i);
+  print_vint8d ("\t\t{", j);
+  print_vint8d ("\t\t{", k);
 #endif
   rc += check_vuint128x ("vec_mulhub:", (vui128_t) k, (vui128_t) e);
 

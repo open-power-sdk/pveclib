@@ -35,7 +35,7 @@
  * - Union used to transfer 128-bit data between vector and
  * non-vector types.
  * - Helper macros that make declaring constants and accessing
- * elements, a little easier.
+ * elements a little easier.
  *
  * \section common_type_naming_0_0 Consistent vector type naming
  *
@@ -88,7 +88,7 @@
  * The vector to/from __float128 transfer should be the simplest
  * as __float128 operations are defined over the vector register set.
  * However __float128 types are defined in the PowerISA and OpenPOWER
- * ABI,  as scalars that just happens to use vector
+ * ABI, as scalars that just happens to use vector
  * registers for parameter passing and operations.
  * This distinction between scalars and vector prevents a direct cast
  * between types. The __VEC_U_128 union is the simplest work around
@@ -99,7 +99,7 @@
  * vector and general purpose registers. POWER8 (PowerISA 2.07B) added
  * Move to/from Vector Scalar Register (mfvsr, mtvsr) instructions.
  * Again the __VEC_U_128 union is used to effect the transfer and the
- * compiler should leverage the move instructions in the generate code.
+ * compiler should leverage the move instructions in the generated code.
  *
  * Any vector to/from __ibm128 or _Decimal128 requires a transfer
  * between a pair of FPRs and a Vector Scalar Register (VSR).
@@ -114,7 +114,7 @@
  *
  * \section common_endian_issues_0_0 Endian and vector constants
  *
- * Vector constants are often need to for; masking operations,
+ * Vector constants are often needed for: masking operations,
  * range checks, permute selection, and radix conversion.
  * Also compiler support for large integer and floating-point
  * constants may be limited by the compiler.
@@ -122,7 +122,7 @@
  * but do not directly support __int128 (39 digit) decimal constants.
  * Another example is __float128 where the type and Q suffix constants
  * are recent additions.
- * In both cases we need to construct; large numeric constants,
+ * In both cases we need to construct: large numeric constants,
  * special values (infinity and NaN), masks for manipulating the sign
  * bit and exponent bits.
  * Often these values will be constructed from vectors of word or
@@ -131,7 +131,7 @@
  * \note GCC does not support expressing an integer constant of type
  * __int128 for targets where long long integer is less than 128
  * bits wide.  This applies to the PowerPC target as the long long
- * type is reserved for 64-bit integers.
+ * type is reserved for 64-bit integers. This was verified in GCC 8.2,
  *
  * \note GCC __float128 support for the PowerPC target began with
  * GCC 6. In GCC 6 __float128 support is off by default and has to be
@@ -185,6 +185,7 @@
  * \code
   // The multiplicative inverse for 1 / 10**32 is
   // 211857340822306639531405861550393824741
+  // or 0x9f623d5a8a732974cfbc31db4b0295e5
   const vui128_t mulinv_10to32 =
            (vui128_t) CONST_VINT128_DW128 ( 0x9f623d5a8a732974UL,
                                             0xcfbc31db4b0295e5UL );

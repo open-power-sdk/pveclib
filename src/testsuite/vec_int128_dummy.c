@@ -688,7 +688,7 @@ example_dw_convert_timebase (vui64_t *tb, vui32_t *timespec, int n)
       seconds = vec_srdi (tmp, shift_clock);
       /* Extract remainder in tb clocks. */
       tmp = vec_muludm (seconds, tb_clock_sec);
-      tb_clocks = vec_sub (tb_v, tmp);
+      tb_clocks = vec_subudm (tb_v, tmp);
       /* Convert 512MHz timebase to nanoseconds.  */
       /* nseconds = tb_clocks * 1000000000 / 512000000 */
       /* reduces to (tb_clocks * 1000) >> 9 */

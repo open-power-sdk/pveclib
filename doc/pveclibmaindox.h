@@ -84,6 +84,8 @@
 *  https://ibm.ent.box.com/s/649rlau0zjcc0yrulqf4cgx5wk3pgbfk
 *  - POWER9 Processor User’s Manual
 *  https://ibm.ent.box.com/s/8uj02ysel62meji4voujw29wwkhsz6a4
+*  -  Warren, Henry S. Jr, Hacker's Delight, 2nd Edition, Upper Saddle River, NJ:
+*  Addison Wesley, 2013.
 *
 *  \section mainpage_rationale Rationale
 *
@@ -414,6 +416,93 @@
 *  provides inspiration for SIMD versions of; count leading zeros,
 *  population count, parity, etc.
 *
+*  \subsubsection mainpage_endian_issues_1_1 General Endian Issues
+*
+*  For POWER8, IBM made the explicit decision to support Little Endian
+*  (<B>LE</B>) data format in the Linux ecosystem.  The goal was to
+*  enhance application code portability across Linux platforms.
+*  This goal was integrated into the OpenPOWER ELF V2
+*  Application Binary Interface <B>ABI</B> specification.
+*
+*  The POWER8 processor architecturally supports an <I>Endian Mode</I>
+*  and supports both BE and LE storage access in hardware.
+*  However register to register operations do not change
+*  (are not effected by endian mode).  The ABI extends the LE
+*  storage format to vector register (logical)
+*  element numbering.
+*
+*  This has no effect for most altivec.h
+*  operations where the input elements and the results "stay in their
+*  lanes".  For operations of the form (T[n] = A[n] op B[n]),
+*  it does not matter if elements are numbered [0, 1, 2, 3] or
+*  [3, 2, 1, 0].
+*
+*  But there are cases where element renumbering can change the
+*  results.  Changing element numbering does change the even / odd
+*  relationship for merge and integer multiply.  For <B>LE</B>
+*  targets, operations accessing even vector elements are
+*  implemented using the equivalent odd instruction (and visa versa)
+*  and inputs are swapped.  Similarly for high and low merges.
+*  Inputs are also swapped for Pack, Unpack, and Permute operations
+*  and the permute select vector is inverted.
+*  The above is just a sampling of a larger list <I>LE transforms</I>.
+*  The OpenPOWER ABI specification provides a helpful table of
+*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_90667.html"
+*  >Endian-Sensitive Operations</a>.
+*
+*  \note This means that the vector built-ins provided by altivec.h
+*  may not generate the instructions you expect.
+*
+*  This does matter when doing extended precision arithmetic.
+*  Here we need to maintain most-to-least significant byte order and
+*  align "digit" columns for summing partial products.  Many of these
+*  operation where defined long before Little Endian was seriously
+*  considered and are decidedly Big Endian in register format.
+*  Basically any operation where the element
+*  size changes from input to output is suspect for <B>LE</B>
+*  targets.
+*
+*  The coding for these higher level operations
+*  is complicated by <I>Little Endian</I> (LE) support as
+*  specified in the OpenPOWER ABI and as implemented in the compilers.
+*  Little Endian changes the effective vector element numbering and
+*  the location of even and odd elements.
+*
+*  This is a general problem for using vectors to implement extended
+*  precision arithmetic.
+*  The multiply even/odd operations being the primary example.
+*  The products are double-wide and in BE order in the vector register.
+*  This is reinforced by the Vector Add/Subtract Unsigned Quadword
+*  instructions.
+*  And the products from even multiply instruction are always
+*  <I>algebraically</I> higher then the odd products.
+*  The pack, unpack, and sum operations have similar issues.
+*
+*  This matters when you need to align (shift) the partial products
+*  or select the <I>algebraically</I> high or lower portion of the products.
+*  The (high to low) order of elements for the multiply has to match
+*  the order of the largest element size used in accumulating partial
+*  sums. This is normally a quadword (vadduqm instruction).
+*
+*  So the element order is fixed while
+*  the element numbering and the partial products (between even and
+*  odd) will change between BE and LE. This effects splatting and octet
+*  shift operations required to align partial product for summing.
+*  These are the places where careful programming is
+*  required, to nullify the compilers LE transforms, so we will get
+*  the correct numerical answer.
+*
+*  So what can the Power Vector Library do to help?
+*  - Be aware of these mandated LE transforms and if required provide
+*  compliant inline assembler implementations for LE.
+*  - Where required for correctness provide LE specific implementations
+*  that have the effect of nullifying the unwanted transforms.
+*  - Provide higher level operations that help pveclib and
+*  applications code in an endian neutral way and get correct results.
+*
+*  \sa \ref i32_endian_issues_0_0
+*  \sa \ref mainpage_para_1_2_1
+*
 *  \subsubsection  mainpage_sub_1_2 So what can the Power Vector Library project do?
 *
 *  Clearly the PowerISA provides multiple, extensive, and powerful
@@ -451,6 +540,7 @@
 *  programming to exploiting larger data width (128-bit and beyond),
 *  and larger register space (64 x 128 Vector Scalar Registers)
 *
+*  \paragraph mainpage_para_1_2_0 Vector Add Unsigned Quadword Modulo example
 *  Here is an example of what can be done: \code
 static inline vui128_t
 vec_adduqm (vui128_t a, vui128_t b)
@@ -540,7 +630,12 @@ vec_adduqm (vui128_t a, vui128_t b)
 *  support wider (256, 512, 1024, ...) extended arithmetic.
 *  \sa vec_addcuq, vec_addeuqm, and vec_addecuq
 *
-*  Another example <B>Vector Multiply-by-10 Unsigned Quadword</B>:
+*  \paragraph mainpage_para_1_2_1 Vector Multiply-by-10 Unsigned Quadword example
+*
+*  PowerISA 3.0 (POWER9) added this instruction and it's extend / carry
+*  forms to speed up decimal to binary conversion for large numbers.
+*  But this operation is general useful and not that hard to implement
+*  for earlier processors.
 *  \code
 static inline vui128_t
 vec_mul10uq (vui128_t a)
@@ -576,8 +671,6 @@ vec_mul10uq (vui128_t a)
 }
 *  \endcode
 *
-*  PowerISA 3.0 added this instruction and it's extend / carry forms
-*  to speed up decimal to binary conversion for large numbers.
 *
 *  Notice that under the <B>_ARCH_PWR9</B> conditional, there is no
 *  check for the specific <B>vec_vmul10uq</B> built-in.  As of this
@@ -613,21 +706,17 @@ vec_mul10uq (vui128_t a)
 *  <B>vec_vmulouh</B> and <B>vec_vmuleuh</B> built-ins: \code
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 *  \endcode
-*  This is due to the explicit decision to support little endian
-*  (<B>LE</B>) element ordering for ELF V2 LE targets. This also
-*  changes the meaning of even / odd element numbering and the
-*  relationship to high and low (digit ordering).
-*  Basically in <B>LE</B> it is the opposite of what the corresponding
-*  instructions actually do.  So EVF V2 compilers will swap even and
-*  odd during code generation.  This can be helpful for porting Intel
-*  vector intrinsic codes to PowerISA.
 *
-*  But this is the wrong thing to do for this computation.  For LE
-*  targets the compiler will generate code that swaps the high and low
-*  order partial products. This misaligns the digit columns and
-*  produces incorrect results.  So the pveclib implementation needs to
-*  be endian sensitive and pre-swaps the partial product multiplies
-*  for LE, to get the correct results.
+*  Little endian (<B>LE</B>) changes the element numbering.
+*  This also changes the meaning of even / odd and this
+*  effects the code generated by compilers. But the relationship
+*  of high and low order bytes, within multiplication products,
+*  is defined by the hardware and does not change.
+*  (See: \ref mainpage_endian_issues_1_1)
+*  So the pveclib implementation needs to pre-swap the even/odd
+*  partial product multiplies for LE.  This in effect nullifies the
+*  even / odd swap hidden in the compilers <B>LE</B> code generation
+*  and the resulting code gives the correct results.
 *
 *  Now we are ready to sum the partial product <I>digits</I> while
 *  propagating the digit carries across the 128-bit product.
@@ -651,6 +740,8 @@ vec_mul10uq (vui128_t a)
 *  with the add quadword carry / extended forms above can be used to
 *  implement wider (256, 512, 1024, ...) multiply operations.
 *  \sa vec_mulluq and vec_muludq
+*  \sa \ref i32_example_0_0_0
+*  \sa \ref i32_example_0_0_1
 *
 *  \subsubsection  mainpage_sub_1_3 Returning extended quadword results.
 *

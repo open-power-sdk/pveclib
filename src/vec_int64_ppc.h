@@ -3063,10 +3063,10 @@ vec_vpkudum (vui64_t vra, vui64_t vrb)
 	"v" (vrb)
       : );
 #else
-  const vui8_t vconstp =
+  const vui32_t vconstp =
       CONST_VINT128_W(0x04050607, 0x0c0d0e0f, 0x14151617, 0x1c1d1e1f);
 
-  r = (vui_t) vec_perm ((vui32_t) vra, (vui32_t) vrb, (vui8_t) vconstp);
+  r = vec_perm ((vui32_t) vra, (vui32_t) vrb, (vui8_t) vconstp);
 #endif
   return (r);
 }

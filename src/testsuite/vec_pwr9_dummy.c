@@ -62,6 +62,30 @@ __test_muleud_PWR9 (vui64_t a, vui64_t b)
   return vec_muleud (a, b);
 }
 
+vui64_t
+__test_mulhud_PWR9 (vui64_t a, vui64_t b)
+{
+  return vec_mulhud (a, b);
+}
+
+vui64_t
+__test_muludm_PWR9 (vui64_t a, vui64_t b)
+{
+  return vec_muludm (a, b);
+}
+
+vui128_t
+__test_vmuloud_PWR9 (vui64_t a, vui64_t b)
+{
+  return vec_vmuloud (a, b);
+}
+
+vui128_t
+__test_vmuleud_PWR9 (vui64_t a, vui64_t b)
+{
+  return vec_vmuleud (a, b);
+}
+
 vui128_t
 __test_mulluq_PWR9 (vui128_t a, vui128_t b)
 {

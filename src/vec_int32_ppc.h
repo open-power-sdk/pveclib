@@ -29,6 +29,7 @@
  * \file  vec_int32_ppc.h
  * \brief Header package containing a collection of 128-bit SIMD
  * operations over 32-bit integer elements.
+ *
  * Most of these operations are implemented in a single instruction
  * on newer (POWER8/POWER9) processors.
  * This header serves to fill in functional gaps for older

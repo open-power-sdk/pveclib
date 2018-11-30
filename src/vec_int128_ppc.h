@@ -563,6 +563,8 @@ static inline vb128_t vec_setb_ncq (vui128_t vcy);
 static inline vb128_t vec_setb_sq (vi128_t vra);
 static inline vui128_t vec_subcuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_subuqm (vui128_t vra, vui128_t vrb);
+static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
+static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
 ///@endcond
 
 /** \brief Vector Compare Equal Signed Quadword.
@@ -1789,7 +1791,7 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 44    | 1/cycle  |
+ *  |power8   | 30-32 | 1/cycle  |
  *  |power9   | 5-7   | 2/cycle  |
  *
  *  @param a 128-bit vector treated as __vector unsigned long int.
@@ -1827,316 +1829,133 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
  *  values and return the unsigned __int128 product of the even
  *  doublewords.
  *
+ *  \note The element numbering changes between big and little-endian.
+ *  So the compiler and this implementation adjusts the generated code
+ *  to reflect this.
+ *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
- *  |power9   | 8-10  | 2/cycle  |
+ *  |power9   | 8-13  | 2/cycle  |
  *
  *  @param a 128-bit vector unsigned long.
  *  @param b 128-bit vector unsigned long.
- *  @return vector unsigned __int128 product of the even double words of a and b.
+ *  @return vector unsigned __int128 product of the even double words
+ *  of a and b.
  */
 static inline vui128_t
 vec_muleud (vui64_t a, vui64_t b)
 {
-  vui64_t res;
-
-#ifdef _ARCH_PWR9
-  const vui64_t zero = { 0, 0 };
-  vui64_t b_eud = vec_mergeh (b, zero);
-  __asm__(
-      "vmsumudm %0,%1,%2,%3;\n"
-      : "=v" (res)
-      : "v" (a), "v" (b_eud), "v" (zero)
-      : );
-#else
-#ifdef _ARCH_PWR8
-  const vui64_t zero = { 0, 0 };
-  vui64_t p0, p1, pp10, pp01;
-  vui32_t m0, m1;
-
-  m0 = vec_mergeh ((vui32_t) b, (vui32_t) b);
-  m1 = (vui32_t) vec_splat ((vui64_t) a, 0);
-
-  p0 = vec_muleuw (m1, m0);
-  p1 = vec_mulouw (m1, m0);
-  /* res[1] = p1[1];  res[0] = p0[0];  */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  res = vec_pasted (p1, p0);
+  return vec_vmuloud (a, b);
 #else
-  res = vec_pasted (p0, p1);
+  return vec_vmuleud (a, b);
 #endif
-  /*
-   pp10[1] = p1[0]; pp10[0] = 0;
-   pp01[1] = p0[1]; pp01[0] = 0;
-   */
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  pp10 = (vui64_t) vec_mergeh ((vui64_t) p1, (vui64_t) zero);
-  pp01 = (vui64_t) vec_mergel ((vui64_t) p0, (vui64_t) zero);
-#else
-  pp10 = (vui64_t) vec_mergeh ((vui64_t) zero, (vui64_t) p1);
-  pp01 = (vui64_t) vec_mergel ((vui64_t) zero, (vui64_t) p0);
-#endif
-  /* pp01 = pp01 + pp10.  */
-  pp01 = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) pp10);
+}
 
-  /* res = res + (pp01 << 32)  */
-  pp01 = (vui64_t) vec_sld ((vi32_t) pp01, (vi32_t) pp01, 4);
-  res = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) res);
-#else
-  const vui32_t zero = {0,0,0,0};
-//  const vui32_t ones = {-1,-1,-1,-1};
-//  const vui32_t cd01 = {0,0,-1,-1};
-  vui32_t p0, p1;
-  vui32_t resw;
-  vui16_t m0, m1, mm;
-
-  m0 = (vui16_t)vec_mergeh (a, (vui64_t)zero);
-  mm = (vui16_t)vec_mergeh (b, (vui64_t)zero);
-
-  m1 = vec_splat (mm, 3);
-
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  resw = vec_sld (zero, p1, 14);
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 2);
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 1);
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 0);
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  res = (vui64_t)resw;
-#endif
-#endif
-  return ((vui128_t) res);
+/** \brief Vector Multiply High Unsigned Doubleword.
+ *
+ *  Multiple the corresponding doubleword elements of two vector
+ *  unsigned long values and return the high order 64-bits, from each
+ *  128-bit product.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-32 | 1/cycle  |
+ *  |power9   | 11-16 | 1/cycle  |
+ *
+ *  \note This operation can be used to effectively perform a divide
+ *  by multiplying by the scaled multiplicative inverse (reciprocal).
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 10, Integer Division by Constants.
+ *
+ *  @param vra 128-bit vector unsigned long.
+ *  @param vrb 128-bit vector unsigned long.
+ *  @return vector of the high order 64-bits of the signed product
+ *  of the doubleword elements from vra and vrb.
+ */
+static inline vui64_t
+vec_mulhud (vui64_t vra, vui64_t vrb)
+{
+  return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 }
 
 /** \brief Vector multiply odd unsigned doublewords.
  *
- *  Multiple the odd 64-bit doublewords of two vector unsigned long values and return
- *  the unsigned __int128 product of the odd doublewords.
+ *  Multiple the odd 64-bit doublewords of two vector unsigned
+ *  long values and return the unsigned __int128 product of the odd
+ *  doublewords.
+ *
+ *  \note The element numbering changes between big and little-endian.
+ *  So the compiler and this implementation adjusts the generated code
+ *  to reflect this.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
- *  |power9   | 5-7   | 2/cycle  |
+ *  |power9   | 8-13  | 2/cycle  |
  *
  *  @param a 128-bit vector unsigned long.
  *  @param b 128-bit vector unsigned long.
- * @ return vector unsigned __int128 product of the odd double words of a and b.
+ *  @ return vector unsigned __int128 product of the odd double words
+ *  of a and b.
  */
 static inline vui128_t
 vec_muloud (vui64_t a, vui64_t b)
 {
-  vui64_t res;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return vec_vmuleud (a, b);
+#else
+  return vec_vmuloud (a, b);
+#endif
+}
 
+/** \brief Vector Multiply Unsigned Doubleword Modulo.
+ *
+ *  Multiple the corresponding doubleword elements of two vector
+ *  unsigned long values and return the low order 64-bits of the
+ *  128-bit product for each element.
+ *
+ *  \note vec_muludm can be used for unsigned or signed integers.
+ *  It is the vector equivalent of Multiply Low Doubleword.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 19-28 | 1/cycle  |
+ *  |power9   | 11-16 | 1/cycle  |
+ *
+ *  @param vra 128-bit vector unsigned long.
+ *  @param vrb 128-bit vector unsigned long.
+ *  @return vector of the low order 64-bits of the unsigned product
+ *  of the doubleword elements from vra and vrb.
+ */
+static inline vui64_t
+vec_muludm (vui64_t vra, vui64_t vrb)
+{
 #ifdef _ARCH_PWR9
-  const vui64_t zero = { 0, 0 };
-  vui64_t b_oud = vec_mergel (zero, b);
-  __asm__(
-      "vmsumudm %0,%1,%2,%3;\n"
-      : "=v" (res)
-      : "v" (a), "v" (b_oud), "v" (zero)
-      : );
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #else
 #ifdef _ARCH_PWR8
-  const vui64_t zero = { 0, 0 };
-  vui64_t p0, p1, pp10, pp01;
-  vui32_t m0, m1;
+  vui64_t s32 = { 32, 32 }; // shift / rotate amount.
+  vui64_t z = { 0, 0 };
+  vui64_t t2, t3, t4;
+  vui32_t t1;
 
-  m0 = vec_mergel ((vui32_t) b, (vui32_t) b);
-  m1 = (vui32_t) vec_splat ((vui64_t) a, 1);
-  p0 = vec_muleuw (m1, m0);
-  p1 = vec_mulouw (m1, m0);
-
-  /* res[1] = p1[1];  res[0] = p0[0];  */
+  t1 = (vui32_t)vec_vrld (vrb, s32);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  res = vec_pasted (p1, p0);
+  // Nullify the little endian transform
+  t2 = vec_muleuw ((vui32_t)vra, (vui32_t)vrb);
 #else
-  res = vec_pasted (p0, p1);
+  t2 = vec_mulouw ((vui32_t)vra, (vui32_t)vrb);
 #endif
-  /*
-   pp10[0] = p1[0]; pp10[1] = 0;
-   pp01[0] = p0[1]; pp01[1] = 0;
-   */
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  pp10 = (vui64_t) vec_mergeh ((vui64_t) p1, (vui64_t) zero);
-  pp01 = (vui64_t) vec_mergel ((vui64_t) p0, (vui64_t) zero);
+  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
+  t4 = vec_vsld (t3, s32);
+  return (vui64_t)vec_vaddudm (t4, t2);
 #else
-  pp10 = (vui64_t)vec_mergeh ((vui64_t)zero, (vui64_t)p1);
-  pp01 = (vui64_t)vec_mergel ((vui64_t)zero, (vui64_t)p0);
-#endif
-
-  pp01 = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) pp10);
-
-  pp01 = (vui64_t) vec_sld ((vi32_t) pp01, (vi32_t) pp01, 4);
-
-  res = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) res);
-#else
-
-  const vui32_t zero = {0,0,0,0};
-//  const vui32_t ones = {-1,-1,-1,-1};
-//  const vui32_t cd01 = {0,0,-1,-1};
-  vui32_t p0, p1;
-  vui32_t resw;
-  vui16_t m0, m1, mm;
-
-  m0 = (vui16_t)vec_mergel (a, (vui64_t)zero);
-  mm = (vui16_t)vec_mergel (b, (vui64_t)zero);
-
-  m1 = vec_splat (mm, 3);
-
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  resw = vec_sld (zero, p1, 14);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 2);
-
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 1);
-
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  m1 = vec_splat (mm, 0);
-
-  p0 = vec_vmuleuh (m0, m1);
-  p1 = vec_vmulouh (m0, m1);
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p1);
-    resw = vec_vadduwm (resw, p1);
-
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-    resw = vec_sld (c, resw, 14);
-  }
-
-  {
-    vui32_t c;
-    c    = vec_vaddcuw (resw, p0);
-    resw = vec_vadduwm (resw, p0);
-    c    = vec_sld (c, c, 4);
-    resw = vec_vadduwm (resw, c);
-  }
-
-  res = (vui64_t)resw;
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #endif
 #endif
-  return ((vui128_t) res);
 }
 
 /** \brief Vector Multiply Unsigned double Quadword.
@@ -3229,6 +3048,346 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
   t = (vui32_t)vec_addeuqm (vra, (vui128_t)_b, (vui128_t)ci);
 #endif
   return ((vui128_t) t);
+}
+
+
+/** \brief Vector multiply even unsigned doublewords.
+ *
+ *  Multiple the even 64-bit doublewords of two vector unsigned long
+ *  values and return the unsigned __int128 product of the even
+ *  doublewords.
+ *
+ *  \note This function implements the operation of a Vector Multiply
+ *  Even Doubleword instruction, if the PowerISA included such an
+ *  instruction.
+ *  This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 21-23 | 1/cycle  |
+ *  |power9   | 8-13  | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned long.
+ *  @param b 128-bit vector unsigned long.
+ *  @return vector unsigned __int128 product of the even double words of a and b.
+ */
+static inline vui128_t
+vec_vmuleud (vui64_t a, vui64_t b)
+{
+  vui64_t res;
+
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  __asm__(
+      "vmsumudm %0,%1,%2,%3;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b_eud), "v" (zero)
+      : );
+#else
+#ifdef _ARCH_PWR8
+  const vui64_t zero = { 0, 0 };
+  vui64_t p0, p1, pp10, pp01;
+  vui32_t m0, m1;
+
+// Need the endian invariant merge word high here
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+// Nullify the little endian transform
+  m0 = vec_mergel ((vui32_t) b, (vui32_t) b);
+#else
+  m0 = vec_mergeh ((vui32_t) b, (vui32_t) b);
+#endif
+  m1 = (vui32_t) vec_xxspltd ((vui64_t) a, 0);
+
+  // Need the endian invariant multiply even/odd word here
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Nullify the little endian transform
+  p1 = vec_muleuw (m1, m0);
+  p0 = vec_mulouw (m1, m0);
+#else
+  p0 = vec_muleuw (m1, m0);
+  p1 = vec_mulouw (m1, m0);
+#endif
+  /* res[1] = p1[1];  res[0] = p0[0];  */
+  res = vec_pasted (p0, p1);
+  /*
+   pp10[1] = p1[0]; pp10[0] = 0;
+   pp01[1] = p0[1]; pp01[0] = 0;
+   */
+  // Need the endian invariant merge algebraic high/low here
+  pp10 = (vui64_t) vec_mrgahd ((vui128_t) zero, (vui128_t) p1);
+  pp01 = (vui64_t) vec_mrgald ((vui128_t) zero, (vui128_t) p0);
+  /* pp01 = pp01 + pp10.  */
+  pp01 = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) pp10);
+
+  /* res = res + (pp01 << 32)  */
+  pp01 = (vui64_t) vec_sld ((vi32_t) pp01, (vi32_t) pp01, 4);
+  res = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) res);
+#else
+  const vui32_t zero = {0,0,0,0};
+  vui32_t p0, p1;
+  vui32_t resw;
+  vui16_t m0, m1, mm;
+
+  m0 = (vui16_t)vec_mergeh (a, (vui64_t)zero);
+  mm = (vui16_t)vec_mergeh (b, (vui64_t)zero);
+
+  m1 = vec_splat (mm, 3);
+
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  resw = vec_sld (zero, p1, 14);
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 2);
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 1);
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 0);
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  res = (vui64_t)resw;
+#endif
+#endif
+  return ((vui128_t) res);
+}
+
+/** \brief Vector multiply odd unsigned doublewords.
+ *
+ *  Multiple the odd 64-bit doublewords of two vector unsigned long
+ *  values and return the unsigned __int128 product of the odd
+ *  doublewords.
+ *
+ *  \note This function implements the operation of a Vector Multiply
+ *  Odd Doubleword instruction, if the PowerISA included such an
+ *  instruction.
+ *  This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 21-23 | 1/cycle  |
+ *  |power9   | 8-13  | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned long.
+ *  @param b 128-bit vector unsigned long.
+ *  @ return vector unsigned __int128 product of the odd double words
+ *  of a and b.
+ */
+static inline vui128_t
+vec_vmuloud (vui64_t a, vui64_t b)
+{
+  vui64_t res;
+
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
+  __asm__(
+      "vmsumudm %0,%1,%2,%3;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b_oud), "v" (zero)
+      : );
+#else
+#ifdef _ARCH_PWR8
+  const vui64_t zero = { 0, 0 };
+  vui64_t p0, p1, pp10, pp01;
+  vui32_t m0, m1;
+
+  // Need the endian invariant merge word low here
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Nullify the little endian transform
+  m0 = vec_mergeh ((vui32_t) b, (vui32_t) b);
+#else
+  m0 = vec_mergel ((vui32_t) b, (vui32_t) b);
+#endif
+  m1 = (vui32_t) vec_xxspltd ((vui64_t) a, 1);
+
+  // Need the endian invariant multiply even/odd word here
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Nullify the little endian transform
+  p1 = vec_muleuw (m1, m0);
+  p0 = vec_mulouw (m1, m0);
+#else
+  p0 = vec_muleuw (m1, m0);
+  p1 = vec_mulouw (m1, m0);
+#endif
+
+  /* res[1] = p1[1];  res[0] = p0[0];  */
+  res = vec_pasted (p0, p1);
+  /*
+   pp10[0] = p1[0]; pp10[1] = 0;
+   pp01[0] = p0[1]; pp01[1] = 0;
+   */
+  // Need the endian invariant merge algebraic high/low here
+  pp10 = (vui64_t) vec_mrgahd ((vui128_t) zero, (vui128_t) p1);
+  pp01 = (vui64_t) vec_mrgald ((vui128_t) zero, (vui128_t) p0);
+
+  pp01 = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) pp10);
+
+  pp01 = (vui64_t) vec_sld ((vi32_t) pp01, (vi32_t) pp01, 4);
+
+  res = (vui64_t) vec_adduqm ((vui128_t) pp01, (vui128_t) res);
+#else
+// POWER7 and earlier are big Endian only
+  const vui32_t zero = {0,0,0,0};
+  vui32_t p0, p1;
+  vui32_t resw;
+  vui16_t m0, m1, mm;
+
+  m0 = (vui16_t)vec_mergel (a, (vui64_t)zero);
+  mm = (vui16_t)vec_mergel (b, (vui64_t)zero);
+
+  m1 = vec_splat (mm, 3);
+
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  resw = vec_sld (zero, p1, 14);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 2);
+
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 1);
+
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  m1 = vec_splat (mm, 0);
+
+  p0 = vec_vmuleuh (m0, m1);
+  p1 = vec_vmulouh (m0, m1);
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p1);
+    resw = vec_vadduwm (resw, p1);
+
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+    resw = vec_sld (c, resw, 14);
+  }
+
+  {
+    vui32_t c;
+    c    = vec_vaddcuw (resw, p0);
+    resw = vec_vadduwm (resw, p0);
+    c    = vec_sld (c, c, 4);
+    resw = vec_vadduwm (resw, c);
+  }
+
+  res = (vui64_t)resw;
+#endif
+#endif
+  return ((vui128_t) res);
 }
 #endif /* VEC_INT128_PPC_H_ */
 

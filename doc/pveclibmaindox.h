@@ -425,11 +425,13 @@
 *  Application Binary Interface <B>ABI</B> specification.
 *
 *  The POWER8 processor architecturally supports an <I>Endian Mode</I>
-*  and supports both BE and LE storage access in hardware.
-*  However register to register operations do not change
-*  (are not effected by endian mode).  The ABI extends the LE
-*  storage format to vector register (logical)
+*  and supports both BE and LE storage access in hardware.  However,
+*  register to register operations are not effected by endian mode.
+*  The ABI extends the LE storage format to vector register (logical)
 *  element numbering.
+*  See OpenPOWER ABI specification
+*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_pgfId-1095944.html"
+*  >Chapter 6. Vector Programming Interfaces</a> for details.
 *
 *  This has no effect for most altivec.h
 *  operations where the input elements and the results "stay in their
@@ -445,7 +447,8 @@
 *  and inputs are swapped.  Similarly for high and low merges.
 *  Inputs are also swapped for Pack, Unpack, and Permute operations
 *  and the permute select vector is inverted.
-*  The above is just a sampling of a larger list <I>LE transforms</I>.
+*  The above is just a sampling of a larger list of
+*  <I>LE transforms</I>.
 *  The OpenPOWER ABI specification provides a helpful table of
 *  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_90667.html"
 *  >Endian-Sensitive Operations</a>.
@@ -456,11 +459,11 @@
 *  This does matter when doing extended precision arithmetic.
 *  Here we need to maintain most-to-least significant byte order and
 *  align "digit" columns for summing partial products.  Many of these
-*  operation where defined long before Little Endian was seriously
+*  operations where defined long before Little Endian was seriously
 *  considered and are decidedly Big Endian in register format.
-*  Basically any operation where the element
-*  size changes from input to output is suspect for <B>LE</B>
-*  targets.
+*  Basically, any operation where the element changes size
+*  (truncated, extended, converted, subseted) from input to output
+*  is suspect for <B>LE</B> targets.
 *
 *  The coding for these higher level operations
 *  is complicated by <I>Little Endian</I> (LE) support as
@@ -474,12 +477,12 @@
 *  The products are double-wide and in BE order in the vector register.
 *  This is reinforced by the Vector Add/Subtract Unsigned Quadword
 *  instructions.
-*  And the products from even multiply instruction are always
-*  <I>algebraically</I> higher then the odd products.
+*  And the products from multiply even instructions are always
+*  <I>numerically</I> higher digits then multiply odd products.
 *  The pack, unpack, and sum operations have similar issues.
 *
 *  This matters when you need to align (shift) the partial products
-*  or select the <I>algebraically</I> high or lower portion of the products.
+*  or select the <I>numeric</I> high or lower portion of the products.
 *  The (high to low) order of elements for the multiply has to match
 *  the order of the largest element size used in accumulating partial
 *  sums. This is normally a quadword (vadduqm instruction).
@@ -634,7 +637,7 @@ vec_adduqm (vui128_t a, vui128_t b)
 *
 *  PowerISA 3.0 (POWER9) added this instruction and it's extend / carry
 *  forms to speed up decimal to binary conversion for large numbers.
-*  But this operation is general useful and not that hard to implement
+*  But this operation is generally useful and not that hard to implement
 *  for earlier processors.
 *  \code
 static inline vui128_t

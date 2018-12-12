@@ -280,6 +280,7 @@ example_convert_timebase (vui32_t *tb, vui32_t *timespec, int n)
 
 /* these are test to see exactly what the compilers will generate for
    specific built-ins.  */
+
 #if defined _ARCH_PWR8 && (__GNUC__ > 7)
 vui64_t
 __test_mulew (vui32_t vra, vui32_t vrb)
@@ -292,11 +293,12 @@ __test_mulow (vui32_t vra, vui32_t vrb)
 {
   return vec_mulo (vra, vrb);
 }
+#endif
 
+#if defined _ARCH_PWR7 && (__GNUC__ > 6)
 vui32_t
-__test_mulhw (vui32_t vra, vui32_t vrb)
+__test_mulluw (vui32_t vra, vui32_t vrb)
 {
-  return vec_mergee ((vui32_t)vec_mule (vra, vrb),
-		     (vui32_t)vec_mulo (vra, vrb));
+  return vec_mul (vra, vrb);
 }
 #endif

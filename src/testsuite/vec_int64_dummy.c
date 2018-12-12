@@ -23,6 +23,12 @@
 #include <vec_int64_ppc.h>
 
 vui64_t
+__test_vrld (vui64_t a, vui64_t b)
+{
+  return vec_vrld (a, b);
+}
+
+vui64_t
 __test_vsld (vui64_t a, vui64_t b)
 {
   return vec_vsld (a, b);
@@ -38,6 +44,24 @@ vi64_t
 __test_vsrad (vi64_t a, vui64_t b)
 {
   return vec_vsrad (a, b);
+}
+
+vui64_t
+test_rldi_1 (vui64_t a)
+{
+  return vec_rldi (a, 1);
+}
+
+vui64_t
+test_rldi_15 (vui64_t a)
+{
+  return vec_rldi (a, 15);
+}
+
+vui64_t
+test_rldi_32 (vui64_t a)
+{
+  return vec_rldi (a, 32);
 }
 
 vui64_t
@@ -304,6 +328,12 @@ test_addudm (vui64_t a, vui64_t b)
   return vec_addudm (a, b);
 }
 
+vui64_t
+test_absdud (vui64_t a, vui64_t b)
+{
+  return vec_absdud (a, b);
+}
+
 vb64_t
 test_cmpequd (vui64_t a, vui64_t b)
 {
@@ -394,6 +424,42 @@ __test_revbd (vui64_t vra)
   return vec_revbd (vra);
 }
 
+vi64_t
+__test_maxsd (vi64_t __VH, vi64_t __VL)
+{
+  return vec_maxsd (__VH, __VL);
+}
+
+vui64_t
+__test_maxud (vui64_t __VH, vui64_t __VL)
+{
+  return vec_maxud (__VH, __VL);
+}
+
+vi64_t
+__test_minsd (vi64_t __VH, vi64_t __VL)
+{
+  return vec_minsd (__VH, __VL);
+}
+
+vui64_t
+__test_minud (vui64_t __VH, vui64_t __VL)
+{
+  return vec_minud (__VH, __VL);
+}
+
+vui64_t
+__test_mrgahd (vui128_t __VH, vui128_t __VL)
+{
+  return vec_mrgahd (__VH, __VL);
+}
+
+vui64_t
+__test_mrgald (vui128_t __VH, vui128_t __VL)
+{
+  return vec_mrgald (__VH, __VL);
+}
+
 vui64_t
 __test_mrghd (vui64_t __VH, vui64_t __VL)
 {
@@ -439,13 +505,13 @@ __test_vpaste (vui64_t __VH, vui64_t __VL)
 vui64_t
 __test_spltd_0 (vui64_t __VH)
 {
-  return vec_spltd (__VH, 0);
+  return vec_xxspltd (__VH, 0);
 }
 
 vui64_t
 __test_spltd_1 (vui64_t __VH)
 {
-  return vec_spltd (__VH, 1);
+  return vec_xxspltd (__VH, 1);
 }
 
 vui64_t
@@ -486,4 +552,138 @@ __test_cmpleud (vui64_t a, vui64_t b)
 {
   return vec_cmple (a, b);
 }
+
+vui64_t
+__test_vmuludm (vui64_t vra, vui64_t vrb)
+{
+  vui64_t s32 = (vui64_t) { 32, 32 };
+  vui64_t z = (vui64_t) { 0, 0 };
+  vui64_t t4;
+  vui64_t t2, t3;
+  vui32_t t1;
+
+  t1 = (vui32_t)vec_vrld (vrb, s32);
+  t2 = vec_mulouw ((vui32_t)vra, (vui32_t)vrb);
+  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
+  t4 = vec_vsld (t3, s32);
+  return (vui64_t)vec_addudm (t4, t2);
+}
+#endif
+
+#ifdef _ARCH_PWR7
+/* POWER 64-bit (vector long long) compiler tests.  */
+
+vui64_t
+__test_vrld_PWR7 (vui64_t a, vui64_t b)
+{
+  vui64_t r, hd, ld;
+  vui32_t t1, t2;
+  vui8_t shh, shl;
+
+  shh = vec_splat ((vui8_t)b, 7);
+  shl = vec_splat ((vui8_t)b, 15);
+  hd = vec_xxspltd (a, 0);
+  ld = vec_xxspltd (a, 1);
+  t1 = vec_vslo ((vui32_t)hd, shh);
+  t1 = vec_vsl (t1, shh);
+  t2 = vec_vslo ((vui32_t)ld, shl);
+  t2 = vec_vsl (t2, shl);
+  r = vec_mrghd ((vui64_t)t1, (vui64_t)t2);
+
+  return r;
+}
+
+vui64_t
+__test_xxpermdi_0 (vui64_t vra, vui64_t vrb)
+{
+  return vec_xxpermdi (vra, vrb, 0);
+}
+
+vui64_t
+__test_xxpermdi_1 (vui64_t vra, vui64_t vrb)
+{
+  return vec_xxpermdi (vra, vrb, 1);
+}
+
+vui64_t
+__test_xxpermdi_2 (vui64_t vra, vui64_t vrb)
+{
+  return vec_xxpermdi (vra, vrb, 2);
+}
+
+vui64_t
+__test_xxpermdi_3 (vui64_t vra, vui64_t vrb)
+{
+  return vec_xxpermdi (vra, vrb, 3);
+}
+
+vui64_t
+__test_mergeh (vui64_t a, vui64_t b)
+{
+  return vec_mergeh (a, b);
+}
+
+vui64_t
+__test_mergel (vui64_t a, vui64_t b)
+{
+  return vec_mergel (a, b);
+}
+
+#if (__GNUC__ > 6)
+
+vui64_t
+__test_vmsumuwm (vui32_t vra, vui32_t vrb, vui64_t vrc)
+{
+  return vec_vmsumuwm (vra, vrb, vrc);
+}
+
+vui64_t
+__test_splatd0 (vui64_t a)
+{
+  return vec_splat (a, 0);
+}
+
+vui64_t
+__test_splatd1 (vui64_t a)
+{
+  return vec_splat (a, 1);
+}
+
+#if (__GNUC__ > 7)
+
+vui64_t
+__test_mergee (vui64_t a, vui64_t b)
+{
+  return vec_mergee (a, b);
+}
+
+vui64_t
+__test_mergeo (vui64_t a, vui64_t b)
+{
+  return vec_mergeo (a, b);
+}
+
+vui64_t
+__test_mul (vui64_t a, vui64_t b)
+{
+  return vec_mul (a, b);
+}
+
+vui64_t
+__test_vmuludm_PWR7 (vui64_t vra, vui64_t vrb)
+{
+  vui64_t s32 = (vui64_t) { 32, 32 };
+  vui64_t z = (vui64_t) { 0, 0 };
+  vui64_t t4;
+  vui64_t t2, t3;
+  vui32_t t1;
+
+  t1 = (vui32_t)vec_vrld (vrb, s32);
+  t2 = vec_mulouw ((vui32_t)vra, (vui32_t)vrb);
+  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
+  t4 = vec_vsld (t3, s32);
+  return (vui64_t)vec_addudm (t4, t2);
+}
+#endif
+#endif
 #endif

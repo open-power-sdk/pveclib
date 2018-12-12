@@ -571,6 +571,12 @@ test_vec_slq  (vui128_t a, vui128_t sh)
 }
 
 vui128_t
+__test_vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
+{
+  return (vec_msumudm (a, b, c));
+}
+
+vui128_t
 __test_muloud (vui64_t a, vui64_t b)
 {
   return (vec_muloud (a, b));
@@ -580,6 +586,30 @@ vui128_t
 __test_muleud (vui64_t a, vui64_t b)
 {
   return (vec_muleud (a, b));
+}
+
+vui64_t
+__test_muludm (vui64_t a, vui64_t b)
+{
+  return (vec_muludm (a, b));
+}
+
+vui64_t
+__test_mulhud (vui64_t a, vui64_t b)
+{
+  return (vec_mulhud (a, b));
+}
+
+vui128_t
+__test_vmuloud (vui64_t a, vui64_t b)
+{
+  return (vec_vmuloud (a, b));
+}
+
+vui128_t
+__test_vmuleud (vui64_t a, vui64_t b)
+{
+  return (vec_vmuleud (a, b));
 }
 
 vui128_t
@@ -630,6 +660,48 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+void
+example_dw_convert_timebase (vui64_t *tb, vui32_t *timespec, int n)
+{
+  /* Magic numbers for multiplicative inverse to divide by 512,000,000
+     are 4835703278458516699 and shift right 27 bits.  */
+  const vui64_t mul_invs_clock =
+    { 4835703278458516699UL, 4835703278458516699UL };
+  const int shift_clock = 27;
+  /* Need const for TB clocks/second to extract remainder.  */
+  const vui64_t tb_clock_sec =
+    { 512000000, 512000000};
+  const int shift_512 = 9;
+  const vui64_t nano_512 =
+    { 1000, 1000};
+  vui64_t tb_v, tmp, tb_clocks, seconds, nseconds;
+  vui64_t timespec1, timespec2;
+  int i;
+
+  for (i = 0; i < n; i++)
+    {
+      tb_v = *tb++;
+      /* extract integer seconds from timebase vector.  */
+      tmp = vec_mulhud (tb_v, mul_invs_clock);
+      seconds = vec_srdi (tmp, shift_clock);
+      /* Extract remainder in tb clocks. */
+      tmp = vec_muludm (seconds, tb_clock_sec);
+      tb_clocks = vec_subudm (tb_v, tmp);
+      /* Convert 512MHz timebase to nanoseconds.  */
+      /* nseconds = tb_clocks * 1000000000 / 512000000 */
+      /* reduces to (tb_clocks * 1000) >> 9 */
+      tmp = vec_muludm (tb_clocks, nano_512);
+      nseconds = vec_srdi (tmp, shift_512);
+      /* Use merge high/low to interleave seconds and nseconds
+       * into timespec.  */
+      timespec1 = vec_mergeh (seconds, nseconds);
+      timespec2 = vec_mergel (seconds, nseconds);
+      /* seconds and nanoseconds fit int 32-bits after conversion.
+       * So pack results and store the timespec.  */
+      *timespec++ = vec_vpkudum (timespec1, timespec2);
+    }
 }
 
 /* alternative algorithms tested and not selected due to code size

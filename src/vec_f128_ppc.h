@@ -1116,7 +1116,7 @@ vec_iszerof128 (__binary128 f128)
 static inline vb128_t
 vec_setb_qp (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC > 7)
+#if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
 
   if (scalar_test_neg (f128))

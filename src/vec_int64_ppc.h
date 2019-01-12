@@ -35,7 +35,7 @@
  * This header serves to fill in functional gaps for older
  * (POWER7, POWER8) processors and provides a in-line assembler
  * implementation for older compilers that do not
- * provide the build-ins.
+ * provide the built-ins.
  *
  * The original VMX (AKA Altivec) did not define any doubleword element
  * (long long integer or double float) operations.
@@ -74,7 +74,7 @@
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
- * For example if you compile with <B>-mcpu=power7</B>, vec_vclz and
+ * For example, if you compile with <B>-mcpu=power7</B>, vec_vclz and
  * vec_vclzd will not be defined.  But vec_clzd is always defined in
  * this header, will generate the minimum code, appropriate for the
  * target, and produce correct results.
@@ -93,7 +93,7 @@
  * (POWER8/POWER9) processors. So this header serves to fill in
  * functional gaps for older (POWER7, POWER8) processors and provides
  * a in-line assembler implementation for older compilers that do not
- * provide the build-ins.
+ * provide the built-ins.
  *
  * This header covers operations that are any of the following:
  *
@@ -101,11 +101,11 @@
  * processors and useful to programmers, on slightly older processors,
  * even if the equivalent function requires more instructions.
  * Examples include the doubleword operations:
- * Add, Compare, Maximum, Minimum and subtract.
+ * Add, Compare, Maximum, Minimum and Subtract.
  * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
  * <altivec.n> provided by available compilers in common use.
  * Examples include doubleword forms of:
- * Multiply even/odd/modulo, Count Leading Zeros, Population Count,
+ * Multiply Even/Odd/Modulo, Count Leading Zeros, Population Count,
  * and Byte Reverse  operations.
  * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
@@ -132,15 +132,15 @@
  * largely duplicates of the existing Floating-Point Facility
  * operations, extended to access the whole (64) VSX register set.
  * Similarly the VSX vector single precision floating-point
- * (<B>xv</B> prefix, <B>sp</B> suffix) instructions where added to
+ * (<B>xv</B> prefix, <B>sp</B> suffix) instructions were added to
  * give vectorized float code access to 64 VSX registers.
  *
  * The addition of VSX vector double-precision (<B>xv</B> prefix)
  * instructions was the most significant addition.  This added
  * vector doubleword floating-point operations and provided
  * access to all 64 VSX registers.
- * Alas there are no doubleword (64-bit long) integer operations in the
- * initial VSX.  A few logical and permute class (<B>xx</B> prefix)
+ * Alas, there are no doubleword (64-bit long) integer operations in
+ * the initial VSX.  A few logical and permute class (<B>xx</B> prefix)
  * operations on word/doubleword elements where tacked on.
  * These apply equally to float and integer elements.
  * But nothing for 64-bit integer arithmetic.
@@ -164,13 +164,13 @@
  * - Add and Subtract modulo/extend/write-carry
  * - Decimal Add and Subtract modulo
  *
- * And some specialize operations;
+ * And some specialized operations;
  * - Crypto, Raid, Polynomial multiply-sum
  *
  * \note The operations above are all Vector Category and can only
  * access the 32 original vector registers (VSRs 32-63).
  *
- * The new VSX operations (with access to all 64 VSRs) where not
+ * The new VSX operations (with access to all 64 VSRs) were not
  * directly applicable to 64-bit integer arithmetic:
  * - Scalar single precision floating-point
  * - Direct move between GPRs and VSRs
@@ -179,7 +179,7 @@
  * PowerISA 3.0 (POWER9) adds a few more doubleword
  * (64-bit) integer operations. Including;
  * - Compare not equal
- * - Count Trailing zeros and parity
+ * - Count trailing zeros and parity
  * - Extract and Insert
  * - Multiply-sum modulo
  * - Negate
@@ -195,7 +195,7 @@
  * - Decimal convert from/to zoned (ASCII char)
  * - Decimal shift/round/truncate
  *
- * The new VSX operations (with access to all 64 VSRs) where not
+ * The new VSX operations (with access to all 64 VSRs) were not
  * directly applicable to 64-bit integer arithmetic:
  * - Scalar quad-precision floating-point
  * - Scalar and Vector convert with rounding
@@ -203,7 +203,7 @@
  * - Scalar and Vector test data class
  * - Permute and Permute right index
  *
- * An impressive list of operation that can be used for;
+ * An impressive list of operations that can be used for;
  * - Vectorizing long integer loops
  * - Implementing useful quadword integer operations which do not have
  * corresponding PowerISA instructions
@@ -214,11 +214,11 @@
  * need equivalent implementations for POWER8 and POWER7.  Similarly
  * for operations introduced for POWER8 will need POWER7
  * implementations.  Also there are some obvious missing operations;
- * - Absolute Difference doubleword (we have  byte, halfword, and word)
- * - Average doubleword (we have byte, halfword, and word)
- * - Extend Sign doubleword to quadword (we have byte, halfword, and word)
- * - Multiply-sum word (we have byte, halfword, and doubleword)
- * - Multiply even/odd doublewords (we have byte, halfword, and word)
+ * - Absolute Difference Doubleword (we have byte, halfword, and word)
+ * - Average Doubleword (we have byte, halfword, and word)
+ * - Extend Sign Doubleword to quadword (we have byte, halfword, and word)
+ * - Multiply-sum Word (we have byte, halfword, and doubleword)
+ * - Multiply Even/Odd Doublewords (we have byte, halfword, and word)
  *
  * \subsection i64_missing_ops_0_1 Challenges and opportunities
  *
@@ -228,8 +228,8 @@
  *  - Provide complete arithmetic operations across supported C types.
  *
  * So the first step is to provide implementations for the
- * key POWER8 doubleword integer operations for older compiles.
- * For example some of the generic doubleword integer operations
+ * key POWER8 doubleword integer operations for older compilers.
+ * For example, some of the generic doubleword integer operations
  * were not defined until GCC 6.0.
  * Here we define the specific Compare Equal Unsigned
  * Doubleword implementation:
@@ -256,7 +256,7 @@ vec_cmpequd (vui64_t a, vui64_t b)
   return (result);
 }
  * \endcode
- * The implementation checks of the compile target is POWER8 then
+ * The implementation checks if the compile target is POWER8 then
  * checks of the compiler is new enough to use the generic vector
  * compare built-in. If the generic built-in is not defined in
  * <altivec.h> then we provide the equivalent inline assembler.
@@ -272,8 +272,8 @@ vec_cmpequd (vui64_t a, vui64_t b)
     { 0x04,0x05,0x06,0x07, 0x00,0x01,0x02,0x03,
       0x0C,0x0D,0x0E,0x0F, 0x08,0x09,0x0A,0x0B};
   vui32_t r, rr;
-  r = (vui32_t)vec_cmpeq((vui32_t)a, (vui32_t)b);
-  if (vec_any_ne((vui32_t)a, (vui32_t)b))
+  r = (vui32_t) vec_cmpeq ((vui32_t) a, (vui32_t) b);
+  if (vec_any_ne ((vui32_t) a, (vui32_t) b))
     {
        rr = vec_perm (r, r, permute);
        r= vec_and (r, rr);
@@ -281,9 +281,9 @@ vec_cmpequd (vui64_t a, vui64_t b)
   result = (vb64_t)r;
 #endif
  * \endcode
- * Here we use compare equal unsigned word. If all words are equal
+ * Here we use Compare Equal Unsigned Word. If all words are equal,
  * use the result as is.  Otherwise, if any word elements are not
- * equal we do some extra work. For each doubleword, rotate the word
+ * equal, we do some extra work. For each doubleword, rotate the word
  * compare result by 32-bits (here we use permute as we don't
  * have rotate doubleword either). Then logical and the original word
  * compare and rotated results to get the final doubleword compare
@@ -294,8 +294,8 @@ vec_cmpequd (vui64_t a, vui64_t b)
  * count leading zeros, population count, and Byte reverse.
  *
  * \subsection i64_missing_ops_0_2 More Challenges
- * Now we can look at the case where vector doubleword operations,
- * of interest, don't have an equivalent instruction.
+ * Now we can look at the case where vector doubleword operations
+ * of interest don't have an equivalent instruction.
  * Here interesting operations include those that are supported
  * for other element sizes and types.
  *
@@ -317,18 +317,18 @@ vec_absdud (vui64_t vra, vui64_t vrb)
  *
  * Now we need to look at the multiply doubleword situation. We need
  * implementations for vec_msumudm(), vec_muleud(), vec_mulhud(),
- * vec_muloud(), and vec_muludm(). As we saw in the implementations of
+ * vec_muloud(), and vec_muludm(). We saw in the implementations of
  * vec_int32_ppc.h that multiply high and low/modulo can implemented
  * using multiply and merge even/odd of that element size.
- * Multiply low can also be implemented using the multiply-sum and
+ * Multiply low can also be implemented using the multiply sum and
  * multiply odd of the next smaller element size. Also multiply-sum
  * can be implemented using multiply even/odd and a couple of adds.
- * And multiply even/odd can be implemented using multiply-sum by
+ * And multiply even/odd can be implemented using multiply sum by
  * supplying zeros to appropriate inputs/elements.
  *
  * The above discussion has many circular dependencies. Eventually we
  * need to get down to an implementation on each processor using actual
- * hardware instructions. So what multiply doubleword operations,
+ * hardware instructions. So what multiply doubleword operations
  * does the PowerISA actually have from the list above:
  * - POWER9 added multiply-sum unsigned doubleword modulo but no multiply
  * doubleword even/odd/modulo instructions.
@@ -446,8 +446,8 @@ vec_vmuleud (vui64_t a, vui64_t b)
   p1 = vec_muleuw (m1, m0);
   p0 = vec_mulouw (m1, m0);
 #else
-  p0 = vec_muleuw (m1, m0);
   p1 = vec_mulouw (m1, m0);
+  p0 = vec_muleuw (m1, m0);
 #endif
   // res[1] = p1[1];  res[0] = p0[0];
   res = vec_pasted (p0, p1);
@@ -475,11 +475,10 @@ vec_vmuleud (vui64_t a, vui64_t b)
  * contents of doubleword element 1 of [VRB] and the contents of
  * [VRC] to 0.
  *
- * The _ARCH_PWR8
- * implementation looks ugly but it works. It starts with some merges
- * and splats to get inputs columns lined up for the multiply.
- * Then we use (POWER8 instructions) Multiply even/odd unsigned word
- * to generate doubleword partial products. Then more
+ * The _ARCH_PWR8 implementation looks ugly but it works. It starts
+ * with some merges and splats to get inputs columns lined up for the
+ * multiply.  Then we use (POWER8 instructions) Multiply Even/Odd
+ * Unsigned Word to generate doubleword partial products.  Then more
  * merges and a rotate to line up the partial products for summation
  * as the final quadword product.
  *
@@ -488,7 +487,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
  * scheduled together as in the POWER8 implementation of vec_msumudm()
  * or vec_mulhud(). Good scheduling by the compiler and pipelining
  * keeps the POWER8 latency in the 28-32 cycle range.
- * For example the vec_mulhud() implementation:
+ * For example, the vec_mulhud() implementation:
  * \code
 static inline vui64_t
 vec_mulhud (vui64_t vra, vui64_t vrb)
@@ -522,10 +521,10 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
 	xxmrghd vs34,vs34,vs32
  * \endcode
  *
- * The POWER9 latencies for this operations range from 5-7 (for
+ * The POWER9 latencies for this operation range from 5-7 (for
  * vmsumudm itself) to 11-16 (for vec_mulhud()).
- * The additional latency reflects generate of zero constant vector
- * and merges requires to condition the inputs and output. For these
+ * The additional latency reflects zero constant vector generation and
+ * merges required to condition the inputs and output. For these
  * operations the vec_msumudm(), <I>vrc</I> operand is always zero.
  * Selecting the even/odd doubleword for input requires a merge
  * low/high. And selecting the high doubleword for multiply high
@@ -566,7 +565,7 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
  * 32-bits (discarding the unneeded high order 32-bits).
  * Finally sum the low and middle order partial doubleword products
  * to produce the multiply-low doubleword result.
- * For example this POWER8 only implementation:
+ * For example, this POWER8 only implementation:
  * \code
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb)
@@ -576,16 +575,16 @@ vec_muludm (vui64_t vra, vui64_t vrb)
   vui64_t t2, t3, t4;
   vui32_t t1;
 
-  t1 = (vui32_t)vec_vrld (vrb, s32);
+  t1 = (vui32_t) vec_vrld (vrb, s32);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   // Nullify the little endian transform, really want mulouw here.
-  t2 = vec_muleuw ((vui32_t)vra, (vui32_t)vrb);
+  t2 = vec_muleuw ((vui32_t) vra, (vui32_t) vrb);
 #else
-  t2 = vec_mulouw ((vui32_t)vra, (vui32_t)vrb);
+  t2 = vec_mulouw ((vui32_t) vra, (vui32_t) vrb);
 #endif
-  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
+  t3 = vec_vmsumuwm ((vui32_t) vra, t1, z);
   t4 = vec_vsld (t3, s32);
-  return (vui64_t)vec_vaddudm (t4, t2);
+  return (vui64_t) vec_vaddudm (t4, t2);
 }
  * \endcode
  * Which generates the following for POWER8:
@@ -647,8 +646,8 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  * \ref i32_endian_issues_0_0 the little endian transforms applied by
  * the compiler can cause problems for developers of multi-precision
  * libraries. The doubleword forms of the generic merge/splat
- * operations etc. are no exception. This especially annoying when the
- * endian sensitive transformd are applied between releases of the
+ * operations etc. are no exception. This is especially annoying when
+ * the endian sensitive transforms are applied between releases of the
  * compiler.
  *
  * So we need a strategy to provide endian invariant merge/splat/swap
@@ -656,13 +655,19 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  * And another set of endian sensitive operations that are mandated by
  * the OpenPOWER ABI.
  *
- * First we need a safely endian invariant version of xxpermdi to use in building other variants:
- * - vec_permdi() provides the basic xxpermdi operation but nullifies the little endian transforms.
+ * First we need a safely endian invariant version of xxpermdi to use
+ * in building other variants:
+ * - vec_permdi() provides the basic xxpermdi operation but nullifies
+ * the little endian transforms.
  *
- * Then build the core set of endian invariant permute doubleword operations using vec_permdi():
- * - Merge algebraic high/low doubleword operations vec_mrgahd() and vec_mrgald().
- * - Merge the left and right most doublewords from a double quadword operation vec_pasted().
- * - Splat from the high/even or low/odd doubleword operation vec_xxspltd().
+ * Then build the core set of endian invariant permute doubleword
+ * operations using vec_permdi():
+ * - Merge algebraic high/low doubleword operations vec_mrgahd() and
+ * vec_mrgald().
+ * - Merge the left and right most doublewords from a double quadword
+ * operation vec_pasted().
+ * - Splat from the high/even or low/odd doubleword operation
+ * vec_xxspltd().
  * - Swap high and low doublewords operation vec_swapd().
  *
  * We use the merge algebraic high/low doubleword operations in the
@@ -675,7 +680,7 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  * We use the swap doubleword operation in the implementation of
  * vec_cmpequq(), vec_cmpneuq(), vec_muludq(), and vec_mulluq().
  *
- * Then use the compilers <B>__BYTE_ORDER__ = __ORDER_LITTLE_ENDIAN__</B>
+ * Then use the compilers <B>__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__</B>
  * conditional to invert the vec_permdi() select control for
  * endian sensitive merge/splat doubleword operations:
  * - Merge even/odd doubleword operations vec_mrged() and vec_mrgod().
@@ -697,7 +702,7 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  * TimeBase values of adjacent events are subtracted to generate the
  * intervals stored in the array.
  *
- * The timespec format it a struct of unsigned int fields for seconds
+ * The timespec format is a struct of unsigned int fields for seconds
  * and nanoseconds.  So the task is to convert the 512MHz 64-bit
  * TimeBase intervals to seconds and remaining clock ticks.
  * Then convert the remaining (subsecond) clock ticks from 512MHz to
@@ -860,14 +865,14 @@ static inline vb64_t vec_cmpequd (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgeud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgtud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpneud (vui64_t a, vui64_t b);
-static inline vui64_t vec_maxud(vui64_t vra, vui64_t vrb);
-static inline vui64_t vec_minud(vui64_t vra, vui64_t vrb);
+static inline vui64_t vec_maxud (vui64_t vra, vui64_t vrb);
+static inline vui64_t vec_minud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
-static inline vui64_t vec_subudm(vui64_t a, vui64_t b);
+static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
 static inline vui64_t vec_xxspltd (vui64_t vra, const int ctl);
 ///@endcond
 
-/** \brief Vector Absolute Difference Unsigned doubleword.
+/** \brief Vector Absolute Difference Unsigned Doubleword.
  *
  *  Compute the absolute difference for each doubleword.
  *  For each unsigned doubleword, subtract VRB[i] from VRA[i] and
@@ -974,7 +979,7 @@ vec_clzd (vui64_t vra)
   nt = vec_or (x, y);
 
   n = vec_clzw (nt);
-  r = (vui64_t)vec_sum2s ((vi32_t)n, (vi32_t)z);
+  r = (vui64_t) vec_sum2s ((vi32_t) n, (vi32_t) z);
 #endif
   return (r);
 }
@@ -1057,8 +1062,8 @@ vec_cmpequd (vui64_t a, vui64_t b)
   vui8_t permute =
     { 0x04,0x05,0x6,0x7, 0x00,0x01,0x2,0x03, 0x0C,0x0D,0x0E,0x0F, 0x08,0x09,0x0A,0x0B};
   vui32_t r, rr;
-  r = (vui32_t)vec_cmpeq((vui32_t)a, (vui32_t)b);
-  if (vec_any_ne((vui32_t)a, (vui32_t)b))
+  r = (vui32_t) vec_cmpeq ((vui32_t) a, (vui32_t) b);
+  if (vec_any_ne ((vui32_t) a, (vui32_t) b))
     {
        rr = vec_perm (r, r, permute);
        r= vec_and (r, rr);
@@ -2117,7 +2122,7 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
  */
 static inline
 vi64_t
-vec_maxsd(vi64_t vra, vi64_t vrb)
+vec_maxsd (vi64_t vra, vi64_t vrb)
 {
   vi64_t r;
 
@@ -2157,7 +2162,7 @@ vec_maxsd(vi64_t vra, vi64_t vrb)
  */
 static inline
 vui64_t
-vec_maxud(vui64_t vra, vui64_t vrb)
+vec_maxud (vui64_t vra, vui64_t vrb)
 {
   vui64_t r;
 
@@ -2197,7 +2202,7 @@ vec_maxud(vui64_t vra, vui64_t vrb)
  */
 static inline
 vi64_t
-vec_minsd(vi64_t vra, vi64_t vrb)
+vec_minsd (vi64_t vra, vi64_t vrb)
 {
   vi64_t r;
 
@@ -2237,7 +2242,7 @@ vec_minsd(vi64_t vra, vi64_t vrb)
  */
 static inline
 vui64_t
-vec_minud(vui64_t vra, vui64_t vrb)
+vec_minud (vui64_t vra, vui64_t vrb)
 {
   vui64_t r;
 
@@ -2264,10 +2269,10 @@ vec_minud(vui64_t vra, vui64_t vrb)
 /** \brief Vector Merge Algebraic High Doublewords.
  *
  * Merge only the high doublewords from 2 x Algebraic quadwords
- * across vectors vra and vrb. This effectively the Vector Merge
- * Even doubleword operation that is not modified for endian.
+ * across vectors vra and vrb. This is effectively the Vector Merge
+ * Even Doubleword operation that is not modified for endian.
  *
- * For example merge the high 64-bits from 2 x 128-bit products
+ * For example, merge the high 64-bits from 2 x 128-bit products
  * as generated by vec_muleud/vec_muloud. This result is effectively
  * a vector multiply high unsigned doubleword.
  *
@@ -2284,7 +2289,7 @@ vec_minud(vui64_t vra, vui64_t vrb)
 static inline vui64_t
 vec_mrgahd (vui128_t vra, vui128_t vrb)
 {
-  return vec_permdi ((vui64_t)vra, (vui64_t) vrb, 0);
+  return vec_permdi ((vui64_t) vra, (vui64_t) vrb, 0);
 }
 
 /** \brief Vector Merge Algebraic Low Doublewords.
@@ -2293,7 +2298,7 @@ vec_mrgahd (vui128_t vra, vui128_t vrb)
  * across vectors vra and vrb. This effectively the Vector Merge
  * Odd doubleword operation that is not modified for endian.
  *
- * For example merge the low 64-bits from 2 x 128-bit products
+ * For example, merge the low 64-bits from 2 x 128-bit products
  * as generated by vec_muleud/vec_muloud. This result is effectively
  * a vector multiply low unsigned doubleword.
  *
@@ -2310,13 +2315,13 @@ vec_mrgahd (vui128_t vra, vui128_t vrb)
 static inline vui64_t
 vec_mrgald (vui128_t vra, vui128_t vrb)
 {
-  return vec_permdi ((vui64_t)vra, (vui64_t) vrb, 3);
+  return vec_permdi ((vui64_t) vra, (vui64_t) vrb, 3);
 }
 
 /** \brief Vector Merge Even Doubleword.
  *  Merge the even doubleword elements from two vectors into the high
  *  and low doubleword elements of the result. This is effectively the
- *  VSX Permute doubleword Immediate operation modified for endian.
+ *  VSX Permute Doubleword Immediate operation modified for endian.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -2349,7 +2354,7 @@ vec_mrged (vui64_t __VA, vui64_t __VB)
 /** \brief Vector Merge High Doubleword.
  *  Merge the high doubleword elements from two vectors into the high
  *  and low doubleword elements of the result. This is effectively the
- *  VSX Permute doubleword Immediate operation modified for endian.
+ *  VSX Permute Doubleword Immediate operation modified for endian.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -2382,7 +2387,7 @@ vec_mrghd (vui64_t __VA, vui64_t __VB)
 /** \brief Vector Merge Low Doubleword.
  *  Merge the low doubleword elements from two vectors into the high
  *  and low doubleword elements of the result. This is effectively the
- *  VSX Permute doubleword Immediate operation modified for endian.
+ *  VSX Permute Doubleword Immediate operation modified for endian.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -2416,7 +2421,7 @@ vec_mrgld (vui64_t __VA, vui64_t __VB)
 /** \brief Vector Merge Odd Doubleword.
  *  Merge the odd doubleword elements from two vectors into the high
  *  and low doubleword elements of the result. This is effectively the
- *  VSX Permute doubleword Immediate operation modified for endian.
+ *  VSX Permute Doubleword Immediate operation modified for endian.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -2611,8 +2616,8 @@ vec_popcntd (vui64_t vra)
 #else
   vui32_t z= { 0,0,0,0};
   vui32_t x;
-  x = vec_popcntw ((vui32_t)vra);
-  r = (vui64_t)vec_sum2s ((vi32_t)x, (vi32_t)z);
+  x = vec_popcntw ((vui32_t) vra);
+  r = (vui64_t) vec_sum2s ((vi32_t) x, (vi32_t) z);
 #endif
   return (r);
 }
@@ -3030,9 +3035,8 @@ vec_swapd (vui64_t vra)
  *
  *  The doubleword source is the concatination of vra and vrb.
  *  For each integer word from 0 to 3, of the result vector, do the
- *  following. The contents of bits 32:63 of the corresponding
- *  doubleword source element [i] placed into word element [i] of the
- *  result.
+ *  following: place the contents of bits 32:63 of the corresponding
+ *  doubleword source element [i] into word element [i] of the result.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -3106,8 +3110,8 @@ vec_vrld (vui64_t vra, vui64_t vrb)
   vui32_t t1, t2;
   vui8_t shh, shl;
 
-  shh = vec_splat ((vui8_t)vrb, VEC_BYTE_L_DWH);
-  shl = vec_splat ((vui8_t)vrb, VEC_BYTE_L_DWL);
+  shh = vec_splat ((vui8_t) vrb, VEC_BYTE_L_DWH);
+  shl = vec_splat ((vui8_t) vrb, VEC_BYTE_L_DWL);
   hd = vec_xxspltd (vra, VEC_DW_H);
   ld = vec_xxspltd (vra, VEC_DW_L);
   t1 = vec_vslo ((vui32_t)hd, shh);
@@ -3158,14 +3162,14 @@ vec_vsld (vui64_t vra, vui64_t vrb)
   vui64_t shft_mask = CONST_VINT128_DW(63, 63);
 
   /* constrain the dword shift amounts to 0-63.  */
-  vsh_l = vec_and ((vui8_t)vrb, (vui8_t)shft_mask);
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
   /* Isolate the high dword so that bits from the low dword
    * do not contaminate the result.  */
-  vr_h = vec_andc ((vui8_t)vra, (vui8_t)sel_mask);
+  vr_h = vec_andc ((vui8_t) vra, (vui8_t) sel_mask);
   /* The low dword is just vra as the 128-bit shift left generates
    * '0's on the right and the final merge (vec_sel)
    * cleans up 64-bit overflow on the left.  */
-  vr_l  = (vui8_t)vra;
+  vr_l  = (vui8_t) vra;
   /* The vsr instruction only works correctly if the bit shift
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
@@ -3177,7 +3181,7 @@ vec_vsld (vui64_t vra, vui64_t vrb)
   vr_l = vec_vslo (vr_l,  vsh_l);
   vr_l = vec_vsl  (vr_l, vsh_l);
   /* Merge the dwords after shift.  */
-  result = (vui64_t)vec_sel (vr_h, vr_l, (vui8_t)sel_mask);
+  result = (vui64_t) vec_sel (vr_h, vr_l, (vui8_t) sel_mask);
 #endif
   return ((vui64_t) result);
 }
@@ -3224,27 +3228,27 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
 
   /* Need to extend each signed long int to __int128. So the unsigned
    * (128-bit) shift right behaves as a arithmetic (64-bit) shift.  */
-  exsa = vec_vsraw ((vi32_t)vra, shw31);
-  exsah = (vui64_t)vec_vmrghw (exsa, exsa);
-  exsal = (vui64_t)vec_vmrglw (exsa, exsa);
+  exsa = vec_vsraw ((vi32_t) vra, shw31);
+  exsah = (vui64_t) vec_vmrghw (exsa, exsa);
+  exsal = (vui64_t) vec_vmrglw (exsa, exsa);
   /* constrain the dword shift amounts to 0-63.  */
-  vsh_l = vec_and ((vui8_t)vrb, (vui8_t)shft_mask);
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
   /* The vsr instruction only works correctly if the bit shift
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
   vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
   /* Merge the extended sign with high dword.  */
-  exsah = vec_mrghd (exsah, (vui64_t)vra);
+  exsah = vec_mrghd (exsah, (vui64_t) vra);
   /* Shift the high dword by vsh_h.  */
-  vr_h = vec_vsro ((vui8_t)exsah,  vsh_h);
+  vr_h = vec_vsro ((vui8_t) exsah,  vsh_h);
   vr_h = vec_vsr  (vr_h, vsh_h);
   /* Merge the extended sign with high dword.  */
-  exsal = vec_pasted (exsal, (vui64_t)vra);
+  exsal = vec_pasted (exsal, (vui64_t) vra);
   /* Shift the low dword by vsh_l.  */
-  vr_l = vec_vsro ((vui8_t)exsal, vsh_l);
+  vr_l = vec_vsro ((vui8_t) exsal, vsh_l);
   vr_l = vec_vsr  (vr_l, vsh_l);
   /* Merge the dwords after shift.  */
-  result = (vi64_t)vec_mrgld ((vui64_t)vr_h, (vui64_t)vr_l);
+  result = (vi64_t) vec_mrgld ((vui64_t) vr_h, (vui64_t) vr_l);
 #endif
   return ((vi64_t) result);
 }
@@ -3288,22 +3292,22 @@ vec_vsrd (vui64_t vra, vui64_t vrb)
   vui64_t shft_mask = CONST_VINT128_DW(63, 63);
 
   /* constrain the dword shift amounts to 0-63.  */
-  vsh_l = vec_and ((vui8_t)vrb, (vui8_t)shft_mask);
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
   /* Isolate the low dword so that bits from the high dword,
    * do not contaminate the result.  */
-  vr_l  = vec_and ((vui8_t)vra, (vui8_t)sel_mask);
+  vr_l  = vec_and ((vui8_t) vra, (vui8_t) sel_mask);
   /* The vsr instruction only works correctly if the bit shift
    * value is splatted to each byte of the vector.  */
   vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
   vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
   /* Shift the high dword by vsh_h.  */
-  vr_h = vec_vsro ((vui8_t)vra,  vsh_h);
+  vr_h = vec_vsro ((vui8_t) vra,  vsh_h);
   vr_h = vec_vsr  (vr_h, vsh_h);
   /* Shift the low dword by vsh_l.  */
   vr_l = vec_vsro (vr_l,  vsh_l);
   vr_l = vec_vsr  (vr_l, vsh_l);
   /* Merge the dwords after shift.  */
-  result = (vui64_t)vec_sel (vr_h, vr_l, (vui8_t)sel_mask);
+  result = (vui64_t) vec_sel (vr_h, vr_l, (vui8_t) sel_mask);
 #endif
   return ((vui64_t) result);
 }
@@ -3357,7 +3361,7 @@ vec_xxspltd (vui64_t vra, const int ctl)
 /** \brief Vector Multiply-Sum Unsigned Word Modulo
  *
  *  Multiply the unsigned word elements of vra and vrb, internally
- *  generating doubleword products. Then generate three way sum of
+ *  generating doubleword products. Then generate three-way sum of
  *  adjacent doubleword product pairs, plus the doubleword elements
  *  from vrc. The final summation is modulo 64-bits.
  *

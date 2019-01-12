@@ -106,7 +106,7 @@
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
- * For example if you compile with <B>-mcpu=power7</B>, vec_vadduqm and
+ * For example, if you compile with <B>-mcpu=power7</B>, vec_vadduqm and
  * vec_vsubudm will not be defined.  But vec_adduqm() and vec_subudm()
  * and always be defined in this header, will generate the minimum code,
  * appropriate for the target, and produce correct results.
@@ -482,7 +482,7 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
   return ((vui128_t) t);
 }
 
-/** \brief Count leading zeros for a vector __int128.
+/** \brief Vector Count Leading Zeros Quadword.
  *
  *  Count leading zeros for a vector __int128 and return the count in a
  *  vector suitable for use with vector shift (left|right) and vector
@@ -534,17 +534,17 @@ vec_clzq (vui128_t vra)
   vui32_t r32, gt32, gt32sr32, gt64sr64;
 
   c0 = vec_splat_u32 (0);
-  gt32 = (vui32_t)vec_cmpgt((vui32_t)vra, c0);
+  gt32 = (vui32_t) vec_cmpgt ((vui32_t) vra, c0);
   gt32sr32 = vec_sld (c0, gt32, 12);
   gt64sr64 = vec_sld (c0, gt32, 8);
   gt32 = vec_sld (c0, gt32, 4);
 
   gt32sr32 = vec_or (gt32sr32, gt32);
-  gt64sr64 = vec_or (gt64sr64, (vui32_t)vra);
+  gt64sr64 = vec_or (gt64sr64, (vui32_t) vra);
   r32 = vec_or (gt32sr32, gt64sr64);
 
   clz = vec_clzw (r32);
-  result = (vui64_t)vec_sums ((vi32_t)clz, (vi32_t)c0);
+  result = (vui64_t) vec_sums ((vi32_t) clz, (vi32_t) c0);
 #endif
 
   return ((vui128_t) result);
@@ -659,9 +659,9 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
-  _a = vec_xor ((vui32_t)vra, signbit);
-  _b = vec_xor ((vui32_t)vrb, signbit);
-  return vec_cmpgeuq ((vui128_t)_a, (vui128_t)_b);
+  _a = vec_xor ((vui32_t) vra, signbit);
+  _b = vec_xor ((vui32_t) vrb, signbit);
+  return vec_cmpgeuq ((vui128_t) _a, (vui128_t) _b);
 }
 
 /** \brief Vector Compare Greater Than or Equal Unsigned Quadword.
@@ -720,9 +720,9 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
-  _a = vec_xor ((vui32_t)vra, signbit);
-  _b = vec_xor ((vui32_t)vrb, signbit);
-  return vec_cmpgtuq ((vui128_t)_a, (vui128_t)_b);
+  _a = vec_xor ((vui32_t) vra, signbit);
+  _b = vec_xor ((vui32_t) vrb, signbit);
+  return vec_cmpgtuq ((vui128_t) _a, (vui128_t) _b);
 }
 
 /** \brief Vector Compare Greater Than Unsigned Quadword.
@@ -781,9 +781,9 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
-  _a = vec_xor ((vui32_t)vra, signbit);
-  _b = vec_xor ((vui32_t)vrb, signbit);
-  return vec_cmpleuq ((vui128_t)_a, (vui128_t)_b);
+  _a = vec_xor ((vui32_t) vra, signbit);
+  _b = vec_xor ((vui32_t) vrb, signbit);
+  return vec_cmpleuq ((vui128_t) _a, (vui128_t) _b);
 }
 
 /** \brief Vector Compare Less Than or Equal Unsigned Quadword.
@@ -1009,8 +1009,8 @@ vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t a_b, _a, _b;
 
-  _a = (vui128_t)vec_xor ((vui32_t)vra, signbit);
-  _b = (vui128_t)vec_xor ((vui32_t)vrb, signbit);
+  _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
+  _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   a_b = vec_subcuq (_a, _b);
   return vec_all_eq((vui32_t)a_b, carry128);
@@ -1040,8 +1040,8 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t b_a, _a, _b;
 
-  _a = (vui128_t)vec_xor ((vui32_t)vra, signbit);
-  _b = (vui128_t)vec_xor ((vui32_t)vrb, signbit);
+  _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
+  _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   b_a = vec_subcuq (_b, _a);
   return vec_all_eq((vui32_t)b_a, ncarry128);
@@ -1071,8 +1071,8 @@ vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t b_a, _a, _b;
 
-  _a = (vui128_t)vec_xor ((vui32_t)vra, signbit);
-  _b = (vui128_t)vec_xor ((vui32_t)vrb, signbit);
+  _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
+  _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   b_a = vec_subcuq (_b, _a);
   return vec_all_eq((vui32_t)b_a, carry128);
@@ -1102,8 +1102,8 @@ vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t a_b, _a, _b;
 
-  _a = (vui128_t)vec_xor ((vui32_t)vra, signbit);
-  _b = (vui128_t)vec_xor ((vui32_t)vrb, signbit);
+  _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
+  _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   a_b = vec_subcuq (_a, _b);
   return vec_all_eq((vui32_t)a_b, ncarry128);
@@ -1132,9 +1132,9 @@ vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-  result = !vec_all_eq((vui64_t)vra, (vui64_t)vrb);
+  result = !vec_all_eq((vui64_t) vra, (vui64_t) vrb);
 #else
-  result = !vec_all_eq((vui32_t)vra, (vui32_t)vrb);
+  result = !vec_all_eq((vui32_t) vra, (vui32_t) vrb);
 #endif
   return (result);
 }
@@ -1162,9 +1162,9 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-  result = vec_all_eq((vui64_t)vra, (vui64_t)vrb);
+  result = vec_all_eq((vui64_t) vra, (vui64_t) vrb);
 #else
-  result = vec_all_eq((vui32_t)vra, (vui32_t)vrb);
+  result = vec_all_eq((vui32_t) vra, (vui32_t) vrb);
 #endif
   return (result);
 }
@@ -1193,7 +1193,7 @@ vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
   vui128_t a_b;
 
   a_b = vec_subcuq (vra, vrb);
-  return vec_all_eq((vui32_t)a_b, carry128);
+  return vec_all_eq ((vui32_t) a_b, carry128);
 }
 
 /** \brief Vector Compare any Greater Than Unsigned Quadword.
@@ -1220,7 +1220,7 @@ vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
-  return vec_all_eq((vui32_t)b_a, ncarry128);
+  return vec_all_eq ((vui32_t) b_a, ncarry128);
 }
 
 /** \brief Vector Compare any Less Than or Equal Unsigned Quadword.
@@ -1247,7 +1247,7 @@ vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
-  return vec_all_eq((vui32_t)b_a, carry128);
+  return vec_all_eq ((vui32_t) b_a, carry128);
 }
 
 /** \brief Vector Compare any Less Than Unsigned Quadword.
@@ -1274,7 +1274,7 @@ vec_cmpuq_all_lt (vui128_t vra, vui128_t vrb)
   vui128_t  a_b;
 
   a_b = vec_subcuq (vra, vrb);
-  return vec_all_eq((vui32_t)a_b, ncarry128);
+  return vec_all_eq ((vui32_t) a_b, ncarry128);
 }
 
 /** \brief Vector Compare all Not Equal Unsigned Quadword.
@@ -1300,9 +1300,9 @@ vec_cmpuq_all_ne (vui128_t vra, vui128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-  result = !vec_all_eq((vui64_t)vra, (vui64_t)vrb);
+  result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
-  result = !vec_all_eq((vui32_t)vra, (vui32_t)vrb);
+  result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
 #endif
   return (result);
 }
@@ -1347,8 +1347,8 @@ vec_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   t_even = vec_vmulouh (ts, t10);
   t_odd = vec_vmuleuh (ts, t10);
 #else
-  t_even = vec_vmuleuh(ts, t10);
-  t_odd = vec_vmulouh(ts, t10);
+  t_even = vec_vmuleuh (ts, t10);
+  t_odd = vec_vmulouh (ts, t10);
 #endif
   /* Shift t_even left 16-bits (right 112-bits) for the partial carry.  */
   t_high = vec_sld (z, t_even, 2);
@@ -1549,7 +1549,7 @@ vec_mul10ecuq (vui128_t a, vui128_t cin)
   return ((vui128_t) t_carry);
 }
 
-/** \brief Vector Multiply by 10 extended Unsigned Quadword.
+/** \brief Vector Multiply by 10 Extended Unsigned Quadword.
  *
  *  compute the product of a 128 bit value a * 10 + digit(cin).
  *  Only the low order 128 bits of the extended product are returned.
@@ -1680,7 +1680,7 @@ vec_cmul100cuq (vui128_t *cout, vui128_t a)
   tc1 = vec_mul10cuq (t0);
   t1  = vec_mul10uq (t0);
   /* 1st carry times 10 plus 2nd carry.  */
-  t_carry  = (vui32_t)vec_mul10euq (tc0, tc1);
+  t_carry  = (vui32_t) vec_mul10euq (tc0, tc1);
   t = (vui32_t)t1;
 #else
   vui16_t ts = (vui16_t) a;
@@ -1745,10 +1745,10 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   tc1 = vec_mul10cuq (t0);
   t1  = vec_mul10uq (t0);
   /* 1st carry times 10 plus 2nd carry.  */
-  t_carry  = (vui32_t)vec_mul10euq (tc0, tc1);
+  t_carry  = (vui32_t) vec_mul10euq (tc0, tc1);
   /* Add cin to the low bits of a * 100.  If cin is in valid range
    * (0-99) then can not generate carry out of low 128-bits.  */
-  t = (vui32_t)vec_vadduqm ((vui128_t)t1, cin);
+  t = (vui32_t) vec_vadduqm ((vui128_t) t1, cin);
 #else
   vui16_t ts = (vui16_t) a;
   vui32_t tc;
@@ -1760,8 +1760,8 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   t_even = vec_vmulouh (ts, t100);
   t_odd = vec_vmuleuh (ts, t100);
 #else
-  t_even = vec_vmuleuh(ts, t100);
-  t_odd = vec_vmulouh(ts, t100);
+  t_even = vec_vmuleuh (ts, t100);
+  t_odd = vec_vmulouh (ts, t100);
 #endif
   /* Shift t_even left 16-bits (right 112-bits) for the partial carry.  */
   t_high = vec_sld (z, t_even, 2);
@@ -1823,7 +1823,7 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
   return (res);
 }
 
-/** \brief Vector multiply even unsigned doublewords.
+/** \brief Vector Multiply Even Unsigned Doublewords.
  *
  *  Multiple the even 64-bit doublewords of two vector unsigned long
  *  values and return the unsigned __int128 product of the even
@@ -1881,7 +1881,7 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
   return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 }
 
-/** \brief Vector multiply odd unsigned doublewords.
+/** \brief Vector Multiply Odd Unsigned Doublewords.
  *
  *  Multiple the odd 64-bit doublewords of two vector unsigned
  *  long values and return the unsigned __int128 product of the odd
@@ -1942,7 +1942,7 @@ vec_muludm (vui64_t vra, vui64_t vrb)
   vui64_t t2, t3, t4;
   vui32_t t1;
 
-  t1 = (vui32_t)vec_vrld (vrb, s32);
+  t1 = (vui32_t) vec_vrld (vrb, s32);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   // Nullify the little endian transform
   t2 = vec_muleuw ((vui32_t)vra, (vui32_t)vrb);
@@ -1951,14 +1951,14 @@ vec_muludm (vui64_t vra, vui64_t vrb)
 #endif
   t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
   t4 = vec_vsld (t3, s32);
-  return (vui64_t)vec_vaddudm (t4, t2);
+  return (vui64_t) vec_vaddudm (t4, t2);
 #else
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #endif
 #endif
 }
 
-/** \brief Vector Multiply Unsigned double Quadword.
+/** \brief Vector Multiply Unsigned Double Quadword.
  *
  *  compute the 256 bit product of two 128 bit values a, b.
  *  The low order 128 bits of the product are returned, while
@@ -1991,39 +1991,39 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  tmq = (vui32_t)vec_muleud ((vui64_t)a, (vui64_t)b);
+  tmq = (vui32_t) vec_muleud ((vui64_t) a, (vui64_t) b);
 #else
-  tmq = (vui32_t)vec_muloud ((vui64_t)a, (vui64_t)b);
+  tmq = (vui32_t) vec_muloud ((vui64_t) a, (vui64_t) b);
 #endif
   /* compute the 2 middle partial projects.  Can't directly use
    * vmsumudm here because the sum of partial products can overflow.  */
-  tab = vec_muloud ((vui64_t)a, b_swap);
-  tba = vec_muleud ((vui64_t)a, b_swap);
-  t   = (vui32_t)vec_addcq  (&tc1, tab, tba);
-  tmh   = (vui128_t)vec_sld ((vui32_t)zero, tmq, 8);
-  t   = (vui32_t)vec_addcq  (&tc2, (vui128_t)t, tmh);
-  tc1 = (vui128_t)vec_vadduwm ((vui32_t)tc1, (vui32_t)tc2);
+  tab = vec_muloud ((vui64_t) a, b_swap);
+  tba = vec_muleud ((vui64_t) a, b_swap);
+  t   = (vui32_t) vec_addcq (&tc1, tab, tba);
+  tmh = (vui128_t) vec_sld ((vui32_t) zero, tmq, 8);
+  t   = (vui32_t) vec_addcq (&tc2, (vui128_t) t, tmh);
+  tc1 = (vui128_t) vec_vadduwm ((vui32_t) tc1, (vui32_t) tc2);
   /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t)vec_mrgld ((vui64_t)t, (vui64_t)tmq);
+  tmq = (vui32_t) vec_mrgld ((vui64_t) t, (vui64_t) tmq);
   /* we can use multiply sum here because the high product plus the
    * high sum of middle partial products can't overflow.  */
-  t   = (vui32_t)vec_sld ((vui32_t)tc1, (vui32_t)t, 8);
-  tb0 = (vui128_t)vec_mrghd ((vui64_t)b, zero);
+  t   = (vui32_t) vec_sld ((vui32_t) tc1, (vui32_t) t, 8);
+  tb0 = (vui128_t) vec_mrghd ((vui64_t) b, zero);
   /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
-  t   = (vui32_t)vec_msumudm ((vui64_t)a, (vui64_t)tb0, (vui128_t)t);
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
 #else
 #ifdef _ARCH_PWR8
   vui32_t tsw;
   vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
-  /* We use the Vector Multiple Even/Odd Unsigned word to compute
+  /* We use the Vector Multiply Even/Odd Unsigned Word to compute
    * the 128 x 32 partial (160-bit) product of value a with the
    * word splat of b. These instructions (vmuleum, vmuloum)
    * product four 64-bit 32 x 32 partial products where even
    * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword.
+   * shifting the high 128 bits can be summed via Vector Add
+   * Unsigned Quadword.
    */
 
   tsw = vec_splat ((vui32_t) b, VEC_WE_3);
@@ -2031,8 +2031,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Rotate the low 32-bits (right) into tmq. This is actually
    * implemented as 96-bit (12-byte) shift left. */
@@ -2048,8 +2048,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Sum the low 128 bits of odd previous partial products */
   tc = (vui32_t) vec_addcuq ((vui128_t) t_odd, (vui128_t) t);
@@ -2068,8 +2068,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Sum the low 128 bits of odd previous partial products */
   tc = (vui32_t) vec_addcuq ((vui128_t) t_odd, (vui128_t) t);
@@ -2088,8 +2088,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
@@ -2118,12 +2118,12 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
   tsw = vec_splat ((vui16_t) b, 7);
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Rotate the low 16-bits (right) into tmq. This is actually
    * implemented as 112-bit (14-byte) shift left. */
-  tmq = (vui32_t)vec_sld (t_odd, z, 14);
+  tmq = (vui32_t) vec_sld (t_odd, z, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the high 128 bits of even / odd partial products */
@@ -2131,15 +2131,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 6);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2148,15 +2148,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 5);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2165,15 +2165,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 4);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2182,15 +2182,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 3);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2199,15 +2199,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 2);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2216,15 +2216,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 1);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2233,15 +2233,15 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 
   tsw = vec_splat ((vui16_t) b, 0);
 
-  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
-  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+  t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
+  t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
   /* Sum the low 128 bits of odd previous partial products,
    * generate the carry.  */
   t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
 
   /* rotate right the low 16-bits into tmq */
-  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  tmq = (vui32_t) vec_sld (t_odd, (vui16_t) tmq, 14);
   /* shift the low 128 bits (with carry) of partial product right
    * 16-bits */
   t_odd = vec_sld (tc, t_odd, 14);
@@ -2280,21 +2280,21 @@ vec_mulluq (vui128_t a, vui128_t b)
   const vui64_t zero = { 0, 0 };
   vui64_t b_swap = vec_swapd ((vui64_t)b);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  tmq = (vui32_t)vec_muleud ((vui64_t)a, (vui64_t)b);
-  t   = (vui32_t)vec_sld ((vui32_t)zero, tmq, 8);
-  t   = (vui32_t)vec_msumudm ((vui64_t)a, b_swap, (vui128_t)t);
-  tmq = (vui32_t)vec_mergeh ((vui64_t)tmq, (vui64_t)t);
+  tmq = (vui32_t) vec_muleud ((vui64_t) a, (vui64_t) b);
+  t   = (vui32_t) vec_sld ((vui32_t) zero, tmq, 8);
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) t);
+  tmq = (vui32_t) vec_mergeh ((vui64_t)tmq, (vui64_t)t);
 #else
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
-  tmq = (vui32_t)vec_muloud ((vui64_t)a, (vui64_t)b);
+  tmq = (vui32_t) vec_muloud ((vui64_t) a, (vui64_t) b);
   /* we can use multiply sum here because we only need the low 64-bits
    * and don't care if we lose the carry / overflow.  */
-  t   = (vui32_t)vec_mergeh (zero, (vui64_t)tmq);
+  t   = (vui32_t) vec_mergeh (zero, (vui64_t) tmq);
   /* sum = (a[h] * b[l]) + (a[l] * b[h]) + (zero || tmq[h]).  */
-  t   = (vui32_t)vec_msumudm ((vui64_t)a, b_swap, (vui128_t)t);
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) t);
   /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t)vec_mergel ((vui64_t)t, (vui64_t)tmq);
+  tmq = (vui32_t) vec_mergel ((vui64_t) t, (vui64_t) tmq);
 #endif
 #else
 #ifdef _ARCH_PWR8
@@ -2317,8 +2317,8 @@ vec_mulluq (vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Rotate the low 32-bits (right) into tmq. This is actually
    * implemented as 96-bit (12-byte) shift left. */
@@ -2333,8 +2333,8 @@ vec_mulluq (vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* Sum the low 128 bits of odd previous partial products */
   t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
@@ -2350,8 +2350,8 @@ vec_mulluq (vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* add the low 128 bits of odd / previous partial products */
   t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
@@ -2368,8 +2368,8 @@ vec_mulluq (vui128_t a, vui128_t b)
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
   t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
 #else
-  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
-  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+  t_even = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
 #endif
   /* add the low 128 bits of odd / previous partial products */
   t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
@@ -2382,13 +2382,13 @@ vec_mulluq (vui128_t a, vui128_t b)
 #else
 //#warning implementation pre power8
 
-  tmq = (vui32_t)vec_muludq ((vui128_t*)&t, a, b);
+  tmq = (vui32_t) vec_muludq ((vui128_t*) &t, a, b);
 #endif
 #endif
   return ((vui128_t) tmq);
 }
 
-/** \brief Population Count vector __int128.
+/** \brief Vector Population Count Quadword.
  *
  *  Count the number of '1' bits within a vector __int128 and return
  *  the count (0-128) in a vector __int128.
@@ -2425,17 +2425,17 @@ vec_popcntq (vui128_t vra)
   vui32_t z= { 0,0,0,0};
   vui32_t x;
   x = vec_popcntw ((vui32_t)vra);
-  result = (vui64_t)vec_sums ((vi32_t)x, (vi32_t)z);
+  result = (vui64_t) vec_sums ((vi32_t) x, (vi32_t) z);
 #endif
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   result = (vui64_t) vec_sld (
-      (__vector unsigned char) result, (__vector unsigned char) result, 4);
+      (vui8_t) result, (vui8_t) result, 4);
 #endif
   return ((vui128_t) result);
 }
 
-/*! \brief byte reverse quadword for a vector __int128.
+/*! \brief Vector Byte Reverse Quadword.
  *
  *  Return the bytes / octets of a 128-bit vector in reverse order.
  *
@@ -2508,7 +2508,7 @@ vec_setb_cyq (vui128_t vcy)
   vui32_t rcy;
 
   rcy = vec_and ((vui32_t)vcy, ones);
-  rcy = (vui32_t)vec_cmpeq (rcy, ones);
+  rcy = (vui32_t) vec_cmpeq (rcy, ones);
   rcy = vec_splat (rcy, VEC_W_L);
 
   return (vb128_t) rcy;
@@ -2548,7 +2548,7 @@ vec_setb_ncq (vui128_t vcy)
   vui32_t rcy;
 
   rcy = vec_and ((vui32_t)vcy, ones);
-  rcy = (vui32_t)vec_cmplt (rcy, ones);
+  rcy = (vui32_t) vec_cmplt (rcy, ones);
   rcy = vec_splat (rcy, VEC_W_L);
 
   return (vb128_t) rcy;
@@ -2578,7 +2578,7 @@ vec_setb_sq (vi128_t vra)
   return (vb128_t) vec_sra (splat, shift);
 }
 
-/** \brief Vector Shift Left double Quadword.
+/** \brief Vector Shift Left Double Quadword.
  *
  *  Vector Shift Left double Quadword 0-127 bits.
  *  Return a vector __int128 that is the left most 128-bits after
@@ -2896,7 +2896,7 @@ vec_srq5 (vui128_t vra)
   return ((vui128_t) result);
 }
 
-/** \brief Vector Subtract and Write Carry Unsigned Quadword.
+/** \brief Vector Subtract and write Carry Unsigned Quadword.
  *
  *  Generate the carry-out of the sum (vra + NOT(vrb) + 1).
  *
@@ -2926,15 +2926,15 @@ vec_subcuq (vui128_t vra, vui128_t vrb)
 #endif
 #else
   /* vsubcuq is defined as (vra + NOT(vrb) + 1) >> 128.  */
-  vui32_t _b = vec_nor ((vui32_t)vrb, (vui32_t)vrb);
+  vui32_t _b = vec_nor ((vui32_t) vrb, (vui32_t) vrb);
   const vui32_t ci= { 0,0,0,1 };
 
-  t = (vui32_t)vec_addecuq (vra, (vui128_t)_b, (vui128_t)ci);
+  t = (vui32_t) vec_addecuq (vra, (vui128_t) _b, (vui128_t) ci);
 #endif
   return ((vui128_t) t);
 }
 
-/** \brief Vector Subtract Extended and Write Carry Unsigned Quadword.
+/** \brief Vector Subtract Extended and write Carry Unsigned Quadword.
  *
  *  Generate the carry-out of the sum (vra + NOT(vrb) + vrc.bit[127]).
  *
@@ -2966,9 +2966,9 @@ vec_subecuq (vui128_t vra, vui128_t vrb, vui128_t vrc)
 #endif
 #else
   /* vsubcuq is defined as (vra + NOT(vrb) + vrc.bit[127]) >> 128.  */
-  vui32_t _b = vec_nor ((vui32_t)vrb, (vui32_t)vrb);
+  vui32_t _b = vec_nor ((vui32_t) vrb, (vui32_t) vrb);
 
-  t = (vui32_t)vec_addecuq (vra, (vui128_t)_b, vrc);
+  t = (vui32_t) vec_addecuq (vra, (vui128_t) _b, vrc);
 #endif
   return ((vui128_t) t);
 }
@@ -3005,14 +3005,14 @@ vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc)
 #endif
 #else
   /* vsubeuqm is defined as vra + NOT(vrb) + vrc.bit[127].  */
-  vui32_t _b = vec_nor ((vui32_t)vrb, (vui32_t)vrb);
+  vui32_t _b = vec_nor ((vui32_t) vrb, (vui32_t) vrb);
 
-  t = (vui32_t)vec_addeuqm (vra, (vui128_t)_b, vrc);
+  t = (vui32_t) vec_addeuqm (vra, (vui128_t) _b, vrc);
 #endif
   return ((vui128_t) t);
 }
 
-/** \brief Vector subtract Unsigned Quadword Modulo.
+/** \brief Vector Subtract Unsigned Quadword Modulo.
  *
  *  Subtract two vector __int128 values and return result modulo 128-bits.
  *
@@ -3042,18 +3042,18 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
 #endif
 #else
   /* vsubuqm is defined as vra + NOT(vrb) + 1.  */
-  vui32_t _b = vec_nor ((vui32_t)vrb, (vui32_t)vrb);
+  vui32_t _b = vec_nor ((vui32_t) vrb, (vui32_t) vrb);
   const vui32_t ci= { 0,0,0,1 };
 
-  t = (vui32_t)vec_addeuqm (vra, (vui128_t)_b, (vui128_t)ci);
+  t = (vui32_t) vec_addeuqm (vra, (vui128_t) _b, (vui128_t) ci);
 #endif
   return ((vui128_t) t);
 }
 
 
-/** \brief Vector multiply even unsigned doublewords.
+/** \brief Vector Multiply Even Unsigned Doublewords.
  *
- *  Multiple the even 64-bit doublewords of two vector unsigned long
+ *  Multiply the even 64-bit doublewords of two vector unsigned long
  *  values and return the unsigned __int128 product of the even
  *  doublewords.
  *
@@ -3106,8 +3106,8 @@ vec_vmuleud (vui64_t a, vui64_t b)
   p1 = vec_muleuw (m1, m0);
   p0 = vec_mulouw (m1, m0);
 #else
-  p0 = vec_muleuw (m1, m0);
   p1 = vec_mulouw (m1, m0);
+  p0 = vec_muleuw (m1, m0);
 #endif
   /* res[1] = p1[1];  res[0] = p0[0];  */
   res = vec_pasted (p0, p1);
@@ -3130,8 +3130,8 @@ vec_vmuleud (vui64_t a, vui64_t b)
   vui32_t resw;
   vui16_t m0, m1, mm;
 
-  m0 = (vui16_t)vec_mergeh (a, (vui64_t)zero);
-  mm = (vui16_t)vec_mergeh (b, (vui64_t)zero);
+  m0 = (vui16_t) vec_mergeh (a, (vui64_t) zero);
+  mm = (vui16_t) vec_mergeh (b, (vui64_t) zero);
 
   m1 = vec_splat (mm, 3);
 
@@ -3216,7 +3216,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
   return ((vui128_t) res);
 }
 
-/** \brief Vector multiply odd unsigned doublewords.
+/** \brief Vector Multiply Odd Unsigned Doublewords.
  *
  *  Multiple the odd 64-bit doublewords of two vector unsigned long
  *  values and return the unsigned __int128 product of the odd
@@ -3298,8 +3298,8 @@ vec_vmuloud (vui64_t a, vui64_t b)
   vui32_t resw;
   vui16_t m0, m1, mm;
 
-  m0 = (vui16_t)vec_mergel (a, (vui64_t)zero);
-  mm = (vui16_t)vec_mergel (b, (vui64_t)zero);
+  m0 = (vui16_t) vec_mergel (a, (vui64_t) zero);
+  mm = (vui16_t) vec_mergel (b, (vui64_t) zero);
 
   m1 = vec_splat (mm, 3);
 

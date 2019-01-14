@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2017] IBM Corporation.
+ Copyright (c) [2017, 2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@
 #include <vec_int32_ppc.h>
 #include <vec_int64_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_test_i64.h>
 
 //#define __DEBUG_PRINT__ 1
@@ -53,8 +52,8 @@ db_vec_vsld (vui64_t vra, vui64_t vrb)
 #else
   vui8_t  vsh_h, vsh_l;
   vui8_t  vr_h, vr_l;
-  vui64_t sel_mask = CONST_VINT128_DW(0, -1LL);
-  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+  vui64_t sel_mask = CONST_VINT128_DW (0, -1LL);
+  vui64_t shft_mask = CONST_VINT128_DW (63, 63);
   print_v2xint64 ("db_vec_vsld (", vra);
   print_v2xint64 ("             ", vrb);
 
@@ -100,8 +99,8 @@ db_vec_vsrd (vui64_t vra, vui64_t vrb)
 #else
   vui8_t  vsh_h, vsh_l;
   vui8_t  vr_h, vr_l;
-  vui64_t sel_mask = CONST_VINT128_DW(0, -1LL);
-  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+  vui64_t sel_mask = CONST_VINT128_DW (0, -1LL);
+  vui64_t shft_mask = CONST_VINT128_DW (63, 63);
   print_v2xint64 ("db_vec_vsrd (", vra);
   print_v2xint64 ("             ", vrb);
 
@@ -149,8 +148,8 @@ db_vec_vsrad (vi64_t vra, vui64_t vrb)
   vi32_t exsa;
   vui32_t shw31 = CONST_VINT128_W (31, 31, 31, 31);
   vui64_t exsah, exsal;
-//  vui64_t sel_mask = CONST_VINT128_DW(0, -1LL);
-  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+//  vui64_t sel_mask = CONST_VINT128_DW (0, -1LL);
+  vui64_t shft_mask = CONST_VINT128_DW (63, 63);
   print_v2xint64 ("db_vec_vsrad (", (vui64_t)vra);
   print_v2xint64 ("              ", vrb);
 
@@ -195,6 +194,66 @@ db_vec_vsrad (vi64_t vra, vui64_t vrb)
 }
 #endif
 
+int
+test_vrld (void)
+{
+  vui64_t i1, i2, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_vrld Vector Rotate Left Doubleword\n");
+
+  i1 = (vui64_t) CONST_VINT64_DW (1, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 1);
+  e = (vui64_t) CONST_VINT64_DW (4, 4);
+  j = vec_vrld(i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrld   ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_vrld:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x0800000000000010UL);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 2);
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000003UL, 0x2000000000000040UL);
+  j = vec_vrld(i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrld   ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_vrld:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x0800000000000010UL);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 4);
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000006UL, 0x8000000000000100UL);
+  j = vec_vrld(i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrld   ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_vrld:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x0800000000000010UL);
+  i2 = (vui64_t) CONST_VINT64_DW (32, 32);
+  e = (vui64_t) CONST_VINT64_DW (0x0000000180000000UL, 0x0000001008000000UL);
+  j = vec_vrld(i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrld   ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_vrld:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
 #ifdef __DEBUG_PRINT__
 #define test_vec_vsld(_i, _j)	db_vec_vsld(_i, _j)
 #else
@@ -207,11 +266,11 @@ test_vsld (void)
   vui64_t j;
   int rc = 0;
 
-  printf ("\ntest_vsld Vector shift left doubleword\n");
+  printf ("\ntest_vsld Vector Shift Left Doubleword\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 1);
-  e = (vui64_t )CONST_VINT64_DW(4, 4);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 1);
+  e = (vui64_t) CONST_VINT64_DW (4, 4);
   j = test_vec_vsld(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -219,11 +278,11 @@ test_vsld (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsld:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsld:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vui64_t )CONST_VINT64_DW(33, 31);
-  e = (vui64_t )CONST_VINT64_DW(0xfffffffe00000000, 0xffffffff80000000);
+  i1 = (vui64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vui64_t) CONST_VINT64_DW (33, 31);
+  e = (vui64_t) CONST_VINT64_DW (0xfffffffe00000000, 0xffffffff80000000);
   j = test_vec_vsld(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -231,11 +290,11 @@ test_vsld (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsld:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsld:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vui64_t )CONST_VINT64_DW(63, 60);
-  e = (vui64_t )CONST_VINT64_DW(0x8000000000000000, 0xf000000000000000);
+  i1 = (vui64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vui64_t) CONST_VINT64_DW (63, 60);
+  e = (vui64_t) CONST_VINT64_DW (0x8000000000000000, 0xf000000000000000);
   j = test_vec_vsld(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -243,7 +302,7 @@ test_vsld (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsld:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsld:", (vui128_t) j, (vui128_t) e);
 
   return (rc);
 }
@@ -260,11 +319,11 @@ test_vsrd (void)
   vui64_t j;
   int rc = 0;
 
-  printf ("\ntest_vsrd Vector shift right doubleword\n");
+  printf ("\ntest_vsrd Vector Shift Right Doubleword\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(4, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 1);
-  e = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (4, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 1);
+  e = (vui64_t) CONST_VINT64_DW (1, 1);
   j = test_vec_vsrd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -272,11 +331,11 @@ test_vsrd (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsrd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrd:", (vui128_t) j, (vui128_t) e);
 #if 1
-  i1 = (vui64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vui64_t )CONST_VINT64_DW(33, 31);
-  e = (vui64_t )CONST_VINT64_DW(0x000000007fffffff, 0x00000001ffffffff);
+  i1 = (vui64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vui64_t) CONST_VINT64_DW (33, 31);
+  e = (vui64_t) CONST_VINT64_DW (0x000000007fffffff, 0x00000001ffffffff);
   j = test_vec_vsrd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -284,11 +343,11 @@ test_vsrd (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsrd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrd:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vui64_t )CONST_VINT64_DW(63, 60);
-  e = (vui64_t )CONST_VINT64_DW(0x1, 0xf);
+  i1 = (vui64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vui64_t) CONST_VINT64_DW (63, 60);
+  e = (vui64_t) CONST_VINT64_DW (0x1, 0xf);
   j = test_vec_vsrd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -296,11 +355,11 @@ test_vsrd (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsrd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrd:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(100000000000, 100000000000);
-  i2 = (vui64_t )CONST_VINT64_DW(33, 31);
-  e = (vui64_t )CONST_VINT64_DW(11, 46);
+  i1 = (vui64_t) CONST_VINT64_DW (100000000000, 100000000000);
+  i2 = (vui64_t) CONST_VINT64_DW (33, 31);
+  e = (vui64_t) CONST_VINT64_DW (11, 46);
   j = test_vec_vsrd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -308,11 +367,11 @@ test_vsrd (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsrd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrd:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(100000000000, 100000000000);
-  i2 = (vui64_t )CONST_VINT64_DW(48, 40);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (100000000000, 100000000000);
+  i2 = (vui64_t) CONST_VINT64_DW (48, 40);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = test_vec_vsrd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -320,7 +379,7 @@ test_vsrd (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_vsrd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrd:", (vui128_t) j, (vui128_t) e);
 #endif
   return (rc);
 }
@@ -338,11 +397,11 @@ test_vsrad (void)
   vi64_t j;
   int rc = 0;
 
-  printf ("\ntest_vsrd Vector shift right arithmetic doubleword\n");
+  printf ("\ntest_vsrd Vector Shift Right Arithmetic Doubleword\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(4, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 1);
-  e = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (4, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 1);
+  e = (vi64_t) CONST_VINT64_DW (1, 1);
   j = test_vec_vsrad(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -350,11 +409,11 @@ test_vsrad (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", (vui64_t)j);
 #endif
-  rc += check_vuint128x ("vec_vsrad:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrad:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-4, -2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-4, -2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = test_vec_vsrad(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -362,11 +421,11 @@ test_vsrad (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", (vui64_t)j);
 #endif
-  rc += check_vuint128x ("vec_vsrad:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrad:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000, 0x7fffffffffffffff);
-  i2 = (vui64_t )CONST_VINT64_DW(63, 63);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000, 0x7fffffffffffffff);
+  i2 = (vui64_t) CONST_VINT64_DW (63, 63);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = test_vec_vsrad(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -374,11 +433,11 @@ test_vsrad (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", (vui64_t)j);
 #endif
-  rc += check_vuint128x ("vec_vsrad:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrad:", (vui128_t) j, (vui128_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x7fffffffffffffff, 0x8000000000000000);
-  i2 = (vui64_t )CONST_VINT64_DW(63, 63);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0x7fffffffffffffff, 0x8000000000000000);
+  i2 = (vui64_t) CONST_VINT64_DW (63, 63);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = test_vec_vsrad(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -386,11 +445,180 @@ test_vsrad (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("       )=", (vui64_t)j);
 #endif
-  rc += check_vuint128x ("vec_vsrad:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_vsrad:", (vui128_t) j, (vui128_t) e);
 
   return (rc);
 }
 #undef __DEBUG_PRINT__
+
+int
+test_mrghld (void)
+{
+  vui64_t i1, i2, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_merge Vector Merge High/Low Doubleword\n");
+
+  i1 = (vui64_t) { 1, 2 };
+  i2 = (vui64_t) { 101, 102 };
+
+  e = (vui64_t) { 1, 101 };
+  j = vec_mrghd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrghd  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrghd :", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) { 2, 102 };
+  j = vec_mrgld (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrgld  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrgld :", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mrgeod (void)
+{
+  vui64_t i1, i2, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_merge Vector Merge Even/Odd Doubleword\n");
+
+  i1 = (vui64_t) { 1, 2 };
+  i2 = (vui64_t) { 101, 102 };
+
+  e = (vui64_t) { 1, 101 };
+  j = vec_mrged (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrged  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrged :", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) { 2, 102 };
+  j = vec_mrgod (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrgod  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrgod :", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_mrgahld (void)
+{
+  vui64_t i1, i2, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_mrgahld Vector Merge Algebraic High/Low Doubleword\n");
+
+  i1 = (vui64_t) CONST_VINT64_DW (1, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (101, 102);
+
+  e = (vui64_t) CONST_VINT64_DW (1, 101);
+  j = vec_mrgahd ((vui128_t)i1, (vui128_t)i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrgahd  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrgahd :", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (2, 102);
+  j = vec_mrgald ((vui128_t)i1, (vui128_t)i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("mrgald  ( ", i1);
+  print_v2xint64 ("        ,", i2);
+  print_v2xint64 ("       )=", j);
+#endif
+  rc += check_vuint128x ("vec_mrgald :", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_splatd (void)
+{
+  vui64_t i1, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_splatd Vector Splat Doubleword Immediate\n");
+
+  i1 = (vui64_t) { 1, 2 };
+
+  e = (vui64_t) { 1, 1 };
+  j = vec_splatd(i1, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("splatd  ( ", i1);
+  print_v2xint64 ("     ,0)=", j);
+#endif
+  rc += check_vuint128x ("vec_splatd (x,0):", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) { 2, 2 };
+  j = vec_splatd(i1, 1);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("splatd  ( ", i1);
+  print_v2xint64 ("     ,1)=", j);
+#endif
+  rc += check_vuint128x ("vec_splatd (x,1):", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_xxspltd (void)
+{
+  vui64_t i1, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_xxspltd Vector Splat Doubleword Immediate\n");
+
+  i1 = (vui64_t) CONST_VINT64_DW (1, 2);
+
+  e = (vui64_t) CONST_VINT64_DW (1, 1);
+  j = vec_xxspltd(i1, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("spltd  ( ", i1);
+  print_v2xint64 ("     ,0)=", j);
+#endif
+  rc += check_vuint128x ("vec_xxspltd (x,0):", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
+  j = vec_xxspltd(i1, 1);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("spltd  ( ", i1);
+  print_v2xint64 ("     ,1)=", j);
+#endif
+  rc += check_vuint128x ("vec_xxspltd (x,1):", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
 
 int
 test_permdi (void)
@@ -399,11 +627,11 @@ test_permdi (void)
   vui64_t j;
   int rc = 0;
 
-  printf ("\ntest_permdi Vector permute doubleword immediate\n");
+  printf ("\ntest_permdi Vector Permute Doubleword Immediate\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(101, 102);
-  e = (vui64_t )CONST_VINT64_DW(1, 101);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (101, 102);
+  e = (vui64_t) CONST_VINT64_DW (1, 101);
   j = vec_permdi(i1, i2, 0);
 
 #ifdef __DEBUG_PRINT__
@@ -411,9 +639,9 @@ test_permdi (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("     ,0)=", j);
 #endif
-  rc += check_vuint128x ("vec_permdi:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_permdi:", (vui128_t) j, (vui128_t) e);
 
-  e = (vui64_t )CONST_VINT64_DW(1, 102);
+  e = (vui64_t) CONST_VINT64_DW (1, 102);
   j = vec_permdi(i1, i2, 1);
 
 #ifdef __DEBUG_PRINT__
@@ -421,9 +649,9 @@ test_permdi (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("     ,1)=", j);
 #endif
-  rc += check_vuint128x ("vec_permdi:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_permdi:", (vui128_t) j, (vui128_t) e);
 
-  e = (vui64_t )CONST_VINT64_DW(2, 101);
+  e = (vui64_t) CONST_VINT64_DW (2, 101);
   j = vec_permdi(i1, i2, 2);
 
 #ifdef __DEBUG_PRINT__
@@ -431,9 +659,9 @@ test_permdi (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("     ,2)=", j);
 #endif
-  rc += check_vuint128x ("vec_permdi:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_permdi:", (vui128_t) j, (vui128_t) e);
 
-  e = (vui64_t )CONST_VINT64_DW(2, 102);
+  e = (vui64_t) CONST_VINT64_DW (2, 102);
   j = vec_permdi(i1, i2, 3);
 
 #ifdef __DEBUG_PRINT__
@@ -441,54 +669,16 @@ test_permdi (void)
   print_v2xint64 ("        ,", i2);
   print_v2xint64 ("     ,3)=", j);
 #endif
-  rc += check_vuint128x ("vec_permdi:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_permdi:", (vui128_t) j, (vui128_t) e);
 
-  e = (vui64_t )CONST_VINT64_DW(1, 1);
-  j = vec_spltd(i1, 0);
-
-#ifdef __DEBUG_PRINT__
-  print_v2xint64 ("spltd  ( ", i1);
-  print_v2xint64 ("     ,0)=", j);
-#endif
-  rc += check_vuint128x ("vec_spltd (x,0):", (vui128_t)j, (vui128_t) e);
-
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
-  j = vec_spltd(i1, 1);
-
-#ifdef __DEBUG_PRINT__
-  print_v2xint64 ("spltd  ( ", i1);
-  print_v2xint64 ("     ,1)=", j);
-#endif
-  rc += check_vuint128x ("vec_spltd (x,1):", (vui128_t)j, (vui128_t) e);
-
-  e = (vui64_t )CONST_VINT64_DW(2, 1);
+  e = (vui64_t) CONST_VINT64_DW (2, 1);
   j = vec_swapd(i1);
 
 #ifdef __DEBUG_PRINT__
   print_v2xint64 ("swapd  ( ", i1);
   print_v2xint64 ("       )=", j);
 #endif
-  rc += check_vuint128x ("vec_swapd (x):", (vui128_t)j, (vui128_t) e);
-
-  e = (vui64_t )CONST_VINT64_DW(1, 101);
-  j = vec_mrghd(i1, i2);
-
-#ifdef __DEBUG_PRINT__
-  print_v2xint64 ("mrghd  ( ", i1);
-  print_v2xint64 ("        ,", i2);
-  print_v2xint64 ("       )=", j);
-#endif
-  rc += check_vuint128x ("vec_mrghd :", (vui128_t)j, (vui128_t) e);
-
-  e = (vui64_t )CONST_VINT64_DW(2, 102);
-  j = vec_mrgld(i1, i2);
-
-#ifdef __DEBUG_PRINT__
-  print_v2xint64 ("mrgld  ( ", i1);
-  print_v2xint64 ("        ,", i2);
-  print_v2xint64 ("       )=", j);
-#endif
-  rc += check_vuint128x ("vec_mrgld :", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_swapd (x):", (vui128_t) j, (vui128_t) e);
 
   return (rc);
 }
@@ -503,7 +693,7 @@ test_revbd (void)
       0xc3 };
   int rc = 0;
 
-  printf ("\ntest_revbd Reverse Bytes in doublewords\n");
+  printf ("\ntest_revbd Reverse Bytes in Doublewords\n");
 
   i = (vui32_t ) { 0, 1, 2, 3 };
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -554,187 +744,187 @@ test_popcntd (void)
   vui64_t j;
   int rc = 0;
 
-  printf ("\ntest_popcntd Vector Pop Count doubleword\n");
+  printf ("\ntest_popcntd Vector Pop Count Doubleword\n");
 
-  i = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({0, 0) ", (vui128_t)j);
+  print_vint128 ("popcntd({0, 0) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(0, -1);
-  e = (vui64_t )CONST_VINT64_DW(0, 64);
+  i = (vui64_t) CONST_VINT64_DW (0, -1);
+  e = (vui64_t) CONST_VINT64_DW (0, 64);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({0, -1) ", (vui128_t)j);
+  print_vint128 ("popcntd({0, -1) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(-1, 0);
-  e = (vui64_t )CONST_VINT64_DW(64, 0);
+  i = (vui64_t) CONST_VINT64_DW (-1, 0);
+  e = (vui64_t) CONST_VINT64_DW (64, 0);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({-1, 0) ", (vui128_t)j);
+  print_vint128 ("popcntd({-1, 0) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(-1, -1);
-  e = (vui64_t )CONST_VINT64_DW(64, 64);
+  i = (vui64_t) CONST_VINT64_DW (-1, -1);
+  e = (vui64_t) CONST_VINT64_DW (64, 64);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({-1, -1) ", (vui128_t)j);
+  print_vint128 ("popcntd({-1, -1) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(1, 8589934596);
-  e = (vui64_t )CONST_VINT64_DW(1, 2);
+  i = (vui64_t) CONST_VINT64_DW (1, 8589934596);
+  e = (vui64_t) CONST_VINT64_DW (1, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({1, 8589934596) ", (vui128_t)j);
+  print_vint128 ("popcntd({1, 8589934596) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(34359738384, 137438953536);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (34359738384, 137438953536);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({34359738384, 137438953536) ", (vui128_t)j);
+  print_vint128 ("popcntd({34359738384, 137438953536) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(549755814144, 2199023256576);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (549755814144, 2199023256576);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({549755814144, 2199023256576) ", (vui128_t)j);
+  print_vint128 ("popcntd({549755814144, 2199023256576) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(8796093026304, 35184372105216);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (8796093026304, 35184372105216);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({8796093026304, 35184372105216) ", (vui128_t)j);
+  print_vint128 ("popcntd({8796093026304, 35184372105216) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(140737488420864, 562949953683456);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (140737488420864, 562949953683456);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({140737488420864, 562949953683456) ", (vui128_t)j);
+  print_vint128 ("popcntd({140737488420864, 562949953683456) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(2251799814733824, 9007199258935296);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (2251799814733824, 9007199258935296);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({2251799814733824, 9007199258935296) ", (vui128_t)j);
+  print_vint128 ("popcntd({2251799814733824, 9007199258935296) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(36028797035741184, 144115188142964736);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (36028797035741184, 144115188142964736);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({36028797035741184, 144115188142964736) ", (vui128_t)j);
+  print_vint128 ("popcntd({36028797035741184, 144115188142964736) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(576460752571858944, 2305843010287435776);
-  e = (vui64_t )CONST_VINT64_DW(2, 2);
+  i = (vui64_t) CONST_VINT64_DW (576460752571858944, 2305843010287435776);
+  e = (vui64_t) CONST_VINT64_DW (2, 2);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({576460752571858944, 2305843010287435776) ", (vui128_t)j);
+  print_vint128 ("popcntd({576460752571858944, 2305843010287435776) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(429496725405032703, 429496725405032703);
-  e = (vui64_t )CONST_VINT64_DW(38, 38);
+  i = (vui64_t) CONST_VINT64_DW (429496725405032703, 429496725405032703);
+  e = (vui64_t) CONST_VINT64_DW (38, 38);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({429496725405032703, 429496725405032703) ", (vui128_t)j);
+  print_vint128 ("popcntd({429496725405032703, 429496725405032703) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(381774867026695736, 381774867026695736);
-  e = (vui64_t )CONST_VINT64_DW(24, 24);
+  i = (vui64_t) CONST_VINT64_DW (381774867026695736, 381774867026695736);
+  e = (vui64_t) CONST_VINT64_DW (24, 24);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({381774867026695736, 381774867026695736) ", (vui128_t)j);
+  print_vint128 ("popcntd({381774867026695736, 381774867026695736) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(1000000000, 1000000000);
-  e = (vui64_t )CONST_VINT64_DW(13, 13);
+  i = (vui64_t) CONST_VINT64_DW (1000000000, 1000000000);
+  e = (vui64_t) CONST_VINT64_DW (13, 13);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({1000000000, 1000000000) ", (vui128_t)j);
+  print_vint128 ("popcntd({1000000000, 1000000000) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(10000000000, 1000000000);
-  e = (vui64_t )CONST_VINT64_DW(11, 13);
+  i = (vui64_t) CONST_VINT64_DW (10000000000, 1000000000);
+  e = (vui64_t) CONST_VINT64_DW (11, 13);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({10000000000, 1000000000) ", (vui128_t)j);
+  print_vint128 ("popcntd({10000000000, 1000000000) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(1000000000, 10000000000);
-  e = (vui64_t )CONST_VINT64_DW(13, 11);
+  i = (vui64_t) CONST_VINT64_DW (1000000000, 10000000000);
+  e = (vui64_t) CONST_VINT64_DW (13, 11);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({1000000000, 10000000000) ", (vui128_t)j);
+  print_vint128 ("popcntd({1000000000, 10000000000) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(1000000000000000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(24, 0);
+  i = (vui64_t) CONST_VINT64_DW (1000000000000000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (24, 0);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({1000000000000000000, 0) ", (vui128_t)j);
+  print_vint128 ("popcntd({1000000000000000000, 0) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(0, 1000000000000000000);
-  e = (vui64_t )CONST_VINT64_DW(0, 24);
+  i = (vui64_t) CONST_VINT64_DW (0, 1000000000000000000);
+  e = (vui64_t) CONST_VINT64_DW (0, 24);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({0, 1000000000000000000) ", (vui128_t)j);
+  print_vint128 ("popcntd({0, 1000000000000000000) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(0, 1000000000000000000);
-  e = (vui64_t )CONST_VINT64_DW(0, 24);
+  i = (vui64_t) CONST_VINT64_DW (0, 1000000000000000000);
+  e = (vui64_t) CONST_VINT64_DW (0, 24);
   j = vec_popcntd(i);
 
 #ifdef __DEBUG_PRINT__
-  print_vint128 ("popcntd({0, 1000000000000000000) ", (vui128_t)j);
+  print_vint128 ("popcntd({0, 1000000000000000000) ", (vui128_t) j);
 #endif
-  rc += check_vuint128x ("vec_popcntd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_popcntd:", (vui128_t) j, (vui128_t) e);
 
   return (rc);
 }
@@ -747,115 +937,115 @@ test_clzd (void)
   vui64_t j;
   int rc = 0;
 
-  printf ("\ntest_clzd Vector Count Leading Zeros in doublewords\n");
+  printf ("\ntest_clzd Vector Count Leading Zeros in Doublewords\n");
 
-  i = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(64, 64);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (64, 64);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(0, 0) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(-1, -1);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (-1, -1);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(-1, -1) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(0, -1);
-  e = (vui64_t )CONST_VINT64_DW(64, 0);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (0, -1);
+  e = (vui64_t) CONST_VINT64_DW (64, 0);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(0, -1) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(-1, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 64);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (-1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 64);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(-1, 0) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(1, 8589934596);
-  e = (vui64_t )CONST_VINT64_DW(63, 30);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (1, 8589934596);
+  e = (vui64_t) CONST_VINT64_DW (63, 30);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(1, 8589934596) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(34359738384, 137438953536);
-  e = (vui64_t )CONST_VINT64_DW(28, 26);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (34359738384, 137438953536);
+  e = (vui64_t) CONST_VINT64_DW (28, 26);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(34359738384, 137438953536) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(549755814144, 2199023256576);
-  e = (vui64_t )CONST_VINT64_DW(24, 22);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (549755814144, 2199023256576);
+  e = (vui64_t) CONST_VINT64_DW (24, 22);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(549755814144, 2199023256576) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(8796093026304, 35184372105216);
-  e = (vui64_t )CONST_VINT64_DW(20, 18);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (8796093026304, 35184372105216);
+  e = (vui64_t) CONST_VINT64_DW (20, 18);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(8796093026304, 35184372105216) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(140737488420864, 562949953683456);
-  e = (vui64_t )CONST_VINT64_DW(16, 14);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (140737488420864, 562949953683456);
+  e = (vui64_t) CONST_VINT64_DW (16, 14);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(140737488420864, 562949953683456) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(2251799814733824, 9007199258935296);
-  e = (vui64_t )CONST_VINT64_DW(12, 10);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (2251799814733824, 9007199258935296);
+  e = (vui64_t) CONST_VINT64_DW (12, 10);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(2251799814733824, 9007199258935296) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(36028797035741184, 144115188142964736);
-  e = (vui64_t )CONST_VINT64_DW(8, 6);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (36028797035741184, 144115188142964736);
+  e = (vui64_t) CONST_VINT64_DW (8, 6);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(36028797035741184, 144115188142964736) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui64_t )CONST_VINT64_DW(576460752571858944, 2305843010287435776);
-  e = (vui64_t )CONST_VINT64_DW(4, 2);
-  j = vec_clzd((vui64_t )i);
+  i = (vui64_t) CONST_VINT64_DW (576460752571858944, 2305843010287435776);
+  e = (vui64_t) CONST_VINT64_DW (4, 2);
+  j = vec_clzd((vui64_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(576460752571858944, 2305843010287435776) ", j);
 #endif
-  rc += check_vuint128x ("vec_clzd:", (vui128_t)j, (vui128_t) e);
+  rc += check_vuint128x ("vec_clzd:", (vui128_t) j, (vui128_t) e);
 
   return (rc);
 }
@@ -867,107 +1057,101 @@ test_muleud (void)
   vui128_t k, e;
   int rc = 0;
 
-  printf ("\ntest_muleud Vector Multiply Even Unsigned doublewords\n");
-#if 0
-  i = (vui64_t )CONST_VINT32_W(1, 2, 3, 4);
-  j = (vui64_t )CONST_VINT32_W(10, 20, 30, 40);
-  e = (vui128_t )CONST_VINT128_DW128(10, 90);
-#else
-  i = (vui64_t ){1, 2};
-  j = (vui64_t ){101, 102};
-  e = (vui128_t )CONST_VINT128_DW128(0, 101);
-#endif
-  k = vec_muleud(i, j);
+  printf ("\ntest_muleud Vector Multiply Even Unsigned Doublewords\n");
+  i = (vui64_t){1, 2};
+  j = (vui64_t){101, 102};
+  e = (vui128_t) CONST_VINT128_DW128(0, 101);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({1, 2, 3, 4}, {10, 20, 30, 40}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){1000000000, 1000000000};
-  j = (vui64_t ){1000000000, 1000000000};
-  e = (vui128_t )CONST_VINT128_DW128(0, 1000000000000000000UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){1000000000, 1000000000};
+  j = (vui64_t){1000000000, 1000000000};
+  e = (vui128_t) CONST_VINT128_DW128(0, 1000000000000000000UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({1000000000, 1000000000}, {1000000000, 1000000000}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){10000000000, 1000000000};
-  j = (vui64_t ){10000000000, 1000000000};
-  e = (vui128_t )CONST_VINT128_DW128(0x5, 0x6bc75e2d63100000UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){10000000000, 1000000000};
+  j = (vui64_t){10000000000, 1000000000};
+  e = (vui128_t) CONST_VINT128_DW128(0x5, 0x6bc75e2d63100000UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({10000000000, 1000000000}, {10000000000, 1000000000}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){1000000000000000000UL, 0};
-  j = (vui64_t ){1000000000000000000UL, 0};
-  e = (vui128_t )CONST_VINT128_DW128(0x00c097ce7bc90715UL, 0xb34b9f1000000000UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){1000000000000000000UL, 0};
+  j = (vui64_t){1000000000000000000UL, 0};
+  e = (vui128_t) CONST_VINT128_DW128(0x00c097ce7bc90715UL, 0xb34b9f1000000000UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({10**18, 0}, {10**18, 0}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0, 1000000000000000000UL};
-  j = (vui64_t ){0, 1000000000000000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0x0UL, 0x0UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){0, 1000000000000000000UL};
+  j = (vui64_t){0, 1000000000000000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0x0UL, 0x0UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({0, 10**18}, {0, 10**18}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){100000000000UL, 100000000000UL};
-  j = (vui64_t ){100000000000UL, 100000000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0x021eUL, 0x19e0c9bab2400000UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){100000000000UL, 100000000000UL};
+  j = (vui64_t){100000000000UL, 100000000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0x021eUL, 0x19e0c9bab2400000UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({10**11, 10**11}, {10**11, 10**11}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0x00000000ffffffffUL, 0x00000000ffffffffUL};
-  j = (vui64_t ){0x00000000ffffffffUL, 0x00000000ffffffffUL};
-  e = (vui128_t )CONST_VINT128_DW128(0x0UL, 0xfffffffe00000001UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){0x00000000ffffffffUL, 0x00000000ffffffffUL};
+  j = (vui64_t){0x00000000ffffffffUL, 0x00000000ffffffffUL};
+  e = (vui128_t) CONST_VINT128_DW128(0x0UL, 0xfffffffe00000001UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({2**32-1, 2**32-1}, {2**32-1, 2**32-1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0xffffffff00000000UL, 0xffffffff00000000UL};
-  j = (vui64_t ){0xffffffff00000000UL, 0xffffffff00000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0xfffffffe00000001UL, 0x0UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){0xffffffff00000000UL, 0xffffffff00000000UL};
+  j = (vui64_t){0xffffffff00000000UL, 0xffffffff00000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0xfffffffe00000001UL, 0x0UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({2**64-2**32 , 2**64-2**32}, {2**64-2**32 , 2**64-2**32}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0xffffffffffffffffUL, 0x0000000000000000UL};
-  j = (vui64_t ){0xffffffffffffffffUL, 0x0000000000000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0xfffffffffffffffeUL, 0x0000000000000001UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){0xffffffffffffffffUL, 0x0000000000000000UL};
+  j = (vui64_t){0xffffffffffffffffUL, 0x0000000000000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0xfffffffffffffffeUL, 0x0000000000000001UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({2**64-1 , 0}, {2**64-1 , 0}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){2000000000000000000UL, 1000000000000000000UL};
-  j = (vui64_t ){1UL, -1UL};
-  e = (vui128_t )CONST_VINT128_DW128(0UL, 2000000000000000000UL);
-  k = vec_muleud(i, j);
+  i = (vui64_t){2000000000000000000UL, 1000000000000000000UL};
+  j = (vui64_t){1UL, -1UL};
+  e = (vui128_t) CONST_VINT128_DW128(0UL, 2000000000000000000UL);
+  k = vec_muleud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muleud({2**64-1 , 0}, {2**64-1 , 0}) ", (vui128_t)k);
@@ -984,107 +1168,101 @@ test_muloud (void)
   vui128_t k, e;
   int rc = 0;
 
-  printf ("\ntest_muloud Vector Multiply Odd Unsigned doublewords\n");
-#if 0
-  i = (vui64_t )CONST_VINT32_W(1, 2, 3, 4);
-  j = (vui64_t )CONST_VINT32_W(10, 20, 30, 40);
-  e = (vui128_t )CONST_VINT128_DW128(10, 90);
-#else
-  i = (vui64_t ){1, 2};
-  j = (vui64_t ){101, 102};
-  e = (vui128_t )CONST_VINT128_DW128(0, 204);
-#endif
-  k = vec_muloud(i, j);
+  printf ("\ntest_muloud Vector Multiply Odd Unsigned Doublewords\n");
+  i = (vui64_t){1, 2};
+  j = (vui64_t){101, 102};
+  e = (vui128_t) CONST_VINT128_DW128(0, 204);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({1, 2, 3, 4}, {10, 20, 30, 40}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){1000000000, 1000000000};
-  j = (vui64_t ){1000000000, 1000000000};
-  e = (vui128_t )CONST_VINT128_DW128(0, 1000000000000000000UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){1000000000, 1000000000};
+  j = (vui64_t){1000000000, 1000000000};
+  e = (vui128_t) CONST_VINT128_DW128(0, 1000000000000000000UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({1000000000, 1000000000}, {1000000000, 1000000000}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){10000000000, 1000000000};
-  j = (vui64_t ){10000000000, 1000000000};
-  e = (vui128_t )CONST_VINT128_DW128(0x0, 0x0de0b6b3a7640000UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){10000000000, 1000000000};
+  j = (vui64_t){10000000000, 1000000000};
+  e = (vui128_t) CONST_VINT128_DW128(0x0, 0x0de0b6b3a7640000UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({10000000000, 1000000000}, {10000000000, 1000000000}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){1000000000000000000UL, 0};
-  j = (vui64_t ){1000000000000000000UL, 0};
-  e = (vui128_t )CONST_VINT128_DW128(0, 0);
-  k = vec_muloud(i, j);
+  i = (vui64_t){1000000000000000000UL, 0};
+  j = (vui64_t){1000000000000000000UL, 0};
+  e = (vui128_t) CONST_VINT128_DW128(0, 0);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({10**18, 0}, {10**18, 0}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0, 1000000000000000000UL};
-  j = (vui64_t ){0, 1000000000000000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0x00c097ce7bc90715UL, 0xb34b9f1000000000UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){0, 1000000000000000000UL};
+  j = (vui64_t){0, 1000000000000000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0x00c097ce7bc90715UL, 0xb34b9f1000000000UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({0, 10**18}, {0, 10**18}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){100000000000UL, 100000000000UL};
-  j = (vui64_t ){100000000000UL, 100000000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0x021eUL, 0x19e0c9bab2400000UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){100000000000UL, 100000000000UL};
+  j = (vui64_t){100000000000UL, 100000000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0x021eUL, 0x19e0c9bab2400000UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({10**11, 10**11}, {10**11, 10**11}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0x00000000ffffffffUL, 0x00000000ffffffffUL};
-  j = (vui64_t ){0x00000000ffffffffUL, 0x00000000ffffffffUL};
-  e = (vui128_t )CONST_VINT128_DW128(0x0UL, 0xfffffffe00000001UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){0x00000000ffffffffUL, 0x00000000ffffffffUL};
+  j = (vui64_t){0x00000000ffffffffUL, 0x00000000ffffffffUL};
+  e = (vui128_t) CONST_VINT128_DW128(0x0UL, 0xfffffffe00000001UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({2**32-1, 2**32-1}, {2**32-1, 2**32-1}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){0xffffffff00000000UL, 0xffffffff00000000UL};
-  j = (vui64_t ){0xffffffff00000000UL, 0xffffffff00000000UL};
-  e = (vui128_t )CONST_VINT128_DW128(0xfffffffe00000001UL, 0x0UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){0xffffffff00000000UL, 0xffffffff00000000UL};
+  j = (vui64_t){0xffffffff00000000UL, 0xffffffff00000000UL};
+  e = (vui128_t) CONST_VINT128_DW128(0xfffffffe00000001UL, 0x0UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({2**64-2**32 , 2**64-2**32}, {2**64-2**32 , 2**64-2**32}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){ 0x0000000000000000UL, 0xffffffffffffffffUL};
-  j = (vui64_t ){ 0x0000000000000000UL, 0xffffffffffffffffUL};
-  e = (vui128_t )CONST_VINT128_DW128(0xfffffffffffffffeUL, 0x0000000000000001UL);
-  k = vec_muloud(i, j);
+  i = (vui64_t){ 0x0000000000000000UL, 0xffffffffffffffffUL};
+  j = (vui64_t){ 0x0000000000000000UL, 0xffffffffffffffffUL};
+  e = (vui128_t) CONST_VINT128_DW128(0xfffffffffffffffeUL, 0x0000000000000001UL);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({2**64-1 , 0}, {2**64-1 , 0}) ", (vui128_t)k);
 #endif
   rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
 
-  i = (vui64_t ){2000000000000000000UL, 1000000000000000000UL};
-  j = (vui64_t ){1UL, -1L};
-  e = (vui128_t )CONST_VINT128_DW128(0x0de0b6b3a763ffffUL, -1000000000000000000L);
-  k = vec_muloud(i, j);
+  i = (vui64_t){2000000000000000000UL, 1000000000000000000UL};
+  j = (vui64_t){1UL, -1L};
+  e = (vui128_t) CONST_VINT128_DW128(0x0de0b6b3a763ffffUL, -1000000000000000000L);
+  k = vec_muloud (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("muloud({2**64-1 , 0}, {2**64-1 , 0}) ", (vui128_t)k);
@@ -1094,6 +1272,758 @@ test_muloud (void)
   return (rc);
 }
 
+int
+test_mulhud (void)
+{
+  vui64_t i, j;
+  vui64_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mulhud Vector Multiply High Unsigned Doublewords\n");
+
+  i = (vui64_t) { 1, 2 };
+  j = (vui64_t) { 101, 102 };
+  e = (vui64_t) { 0, 0 };
+  k = vec_mulhud ( i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) {-1, -1 };
+  j = (vui64_t) { 1, 2 };
+  e = (vui64_t) { 0, 1 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ -1, -1 };
+  j = (vui64_t){ 3, 4 };
+  e = (vui64_t){ 2, 3 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ 0x100000000, 0x100000000 };
+  j = (vui64_t){ 0x100000000, 0x200000000 };
+  e = (vui64_t){ 0x1, 0x2 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ 0x200000000, 0x200000000 };
+  j = (vui64_t){ 0x300000000, 0x400000000 };
+  e = (vui64_t){ 0x6, 0x8 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ 1000000000000000000, 1000000000000000000 };
+  j = (vui64_t){ 19, 18447 };
+  e = (vui64_t){ 1, 1000 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ 1000000000000000000, 1000000000000000000 };
+  j = (vui64_t){ 18446745, 18446744074 };
+  e = (vui64_t){ 1000000, 1000000000 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ __UINT64_MAX__, __UINT64_MAX__ };
+  j = (vui64_t){ 19, 18447 };
+  e = (vui64_t){ 18, 18446 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ __UINT64_MAX__, __UINT64_MAX__ };
+  j = (vui64_t){ 18446745, 18446744074 };
+  e = (vui64_t){ 18446744, 18446744073 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ __UINT64_MAX__, __UINT64_MAX__ };
+  j = (vui64_t){ __UINT64_MAX__, __UINT64_MAX__ };
+  e = (vui64_t){ __UINT64_MAX__-1, __UINT64_MAX__-1 };
+  k = vec_mulhud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("mulhud  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulhud:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_muludm (void)
+{
+  vui64_t i, j;
+  vui64_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_muludm Vector Multiply Unsigned Doubleword Modulo\n");
+  i = (vui64_t){1, 2};
+  j = (vui64_t){101, 102};
+  e = (vui64_t){101, 204};
+  k = vec_muludm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("muludm  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muludm:", (vui128_t)k, (vui128_t) e);
+  i = (vui64_t){0x8000000000000000, 0x4000000000000000};
+  j = (vui64_t){0x2000000000000000, 0x4000000000000000};
+  e = (vui64_t){0x0000000000000000, 0x0000000000000000};
+  k = vec_muludm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("muludm  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muludm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ __UINT64_MAX__, __INT64_MAX__ };
+  j = (vui64_t){ __UINT64_MAX__, __UINT64_MAX__ };
+  e = (vui64_t){ 1, -(__INT64_MAX__)};
+  k = vec_muludm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("muludm  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muludm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){ __UINT64_MAX__, __INT64_MAX__ };
+  j = (vui64_t){ __INT64_MAX__, __INT64_MAX__ };
+  e = (vui64_t){ -(__INT64_MAX__), 1 };
+  k = vec_muludm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("muludm  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muludm:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t){1, 20};
+  j = (vui64_t){4000, 300};
+  e = (vui64_t){4000, 6000};
+  k = vec_muludm (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("muludm  ( ", i);
+  print_v2int64 ("         ,", j);
+  print_v2int64 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muludm:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_vmuleud (void)
+{
+  vui64_t i, j;
+  vui128_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_vmuleud Vector Multiply Even Unsigned Doublewords\n");
+  i = (vui64_t) CONST_VINT64_DW (1, 2);
+  j = (vui64_t) CONST_VINT64_DW (101, 102);
+  e = (vui128_t) CONST_VINT128_DW128(0, 101);
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128  ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (1000000000, 1000000000 );
+  j = (vui64_t) CONST_VINT64_DW (1000000000, 1000000000 );
+  e = (vui128_t) CONST_VINT128_DW128 (0, 1000000000000000000UL);
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (10000000000, 1000000000 );
+  j = (vui64_t) CONST_VINT64_DW (10000000000, 1000000000 );
+  e = (vui128_t) CONST_VINT128_DW128 (0x5, 0x6bc75e2d63100000UL);
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 1000000000000000000UL, 0 );
+  j = (vui64_t) CONST_VINT64_DW ( 1000000000000000000UL, 0 );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x00c097ce7bc90715UL, 0xb34b9f1000000000UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0, 1000000000000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 0, 1000000000000000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x0UL, 0x0UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 100000000000UL, 100000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 100000000000UL, 100000000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x021eUL, 0x19e0c9bab2400000UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0x00000000ffffffffUL, 0x00000000ffffffffUL );
+  j = (vui64_t) CONST_VINT64_DW ( 0x00000000ffffffffUL, 0x00000000ffffffffUL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x0UL, 0xfffffffe00000001UL );
+  k = vec_muleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0xffffffff00000000UL, 0xffffffff00000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 0xffffffff00000000UL, 0xffffffff00000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0xfffffffe00000001UL, 0x0UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0xffffffffffffffffUL, 0x0000000000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 0xffffffffffffffffUL, 0x0000000000000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 (0xfffffffffffffffeUL, 0x0000000000000001UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 2000000000000000000UL, 1000000000000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 1UL, -1UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0UL, 2000000000000000000UL );
+  k = vec_vmuleud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuleud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuleud:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_vmuloud (void)
+{
+  vui64_t i, j;
+  vui128_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_vmuloud Vector Multiply Odd Unsigned Doublewords\n");
+  i = (vui64_t) CONST_VINT64_DW ( 1, 2 );
+  j = (vui64_t) CONST_VINT64_DW ( 101, 102 );
+  e = (vui128_t) CONST_VINT128_DW128 (0, 204);
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 1000000000, 1000000000 );
+  j = (vui64_t) CONST_VINT64_DW ( 1000000000, 1000000000 );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0, 1000000000000000000UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 10000000000, 1000000000 );
+  j = (vui64_t) CONST_VINT64_DW ( 10000000000, 1000000000 );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x0, 0x0de0b6b3a7640000UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 1000000000000000000UL, 0 );
+  j = (vui64_t) CONST_VINT64_DW ( 1000000000000000000UL, 0 );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0, 0 );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0, 1000000000000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 0, 1000000000000000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x00c097ce7bc90715UL, 0xb34b9f1000000000UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 100000000000UL, 100000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 100000000000UL, 100000000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x021eUL, 0x19e0c9bab2400000UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0x00000000ffffffffUL, 0x00000000ffffffffUL );
+  j = (vui64_t) CONST_VINT64_DW ( 0x00000000ffffffffUL, 0x00000000ffffffffUL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x0UL, 0xfffffffe00000001UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0xffffffff00000000UL, 0xffffffff00000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 0xffffffff00000000UL, 0xffffffff00000000UL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0xfffffffe00000001UL, 0x0UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_muloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 0x0000000000000000UL, 0xffffffffffffffffUL );
+  j = (vui64_t) CONST_VINT64_DW ( 0x0000000000000000UL, 0xffffffffffffffffUL );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0xfffffffffffffffeUL, 0x0000000000000001UL );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW ( 2000000000000000000UL, 1000000000000000000UL );
+  j = (vui64_t) CONST_VINT64_DW ( 1UL, -1L );
+  e = (vui128_t) CONST_VINT128_DW128 ( 0x0de0b6b3a763ffffUL, -1000000000000000000L );
+  k = vec_vmuloud (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_v2int64 ("vmuloud ( ", i);
+  print_v2int64 ("         ,", j);
+  print_vint128 ("        )=", (vui128_t)k);
+#endif
+  rc += check_vuint128x ("vec_vmuloud:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+int
+test_maxud (void)
+{
+  vui64_t i1, i2, j, e;
+  int rc = 0;
+
+  printf ("\ntest_maxud Vector Maximum Unsigned Doubleword\n");
+
+  i1 = (vui64_t) { 0, 0 };
+  i2 = (vui64_t) { 0, 0 };
+  e =  (vui64_t) { 0, 0 };
+  j = vec_maxud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_maxud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { 1, 2 };
+  i2 = (vui64_t) { 0, 1 };
+  e =  (vui64_t) { 1, 2 };
+  j = vec_maxud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_maxud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { 0, 1 };
+  i2 = (vui64_t) { 1, 2 };
+  e =  (vui64_t) { 1, 2 };
+  j = vec_maxud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_maxud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { __UINT64_MAX__, __INT64_MAX__ };
+  i2 = (vui64_t) { __INT64_MAX__, __UINT64_MAX__ };
+  e =  (vui64_t) { __UINT64_MAX__, __UINT64_MAX__ };
+  j = vec_maxud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_maxud:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_maxsd (void)
+{
+  vi64_t i1, i2, j, e;
+  int rc = 0;
+
+  printf ("\ntest_maxsd Vector Maximum Unsigned Doubleword\n");
+
+  i1 = (vi64_t) { 0, 0 };
+  i2 = (vi64_t) { 0, 0 };
+  e =  (vi64_t) { 0, 0 };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 1, 2 };
+  i2 = (vi64_t) { 0, 1 };
+  e =  (vi64_t) { 1, 2 };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { -1, -2 };
+  i2 = (vi64_t) { 0, 1 };
+  e =  (vi64_t) { 0, 1 };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 0, 1 };
+  i2 = (vi64_t) { 1, 2 };
+  e =  (vi64_t) { 1, 2 };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 0, 1 };
+  i2 = (vi64_t) { -1, -2 };
+  e =  (vi64_t) { 0, 1 };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { __UINT64_MAX__, __INT64_MAX__ };
+  i2 = (vi64_t) { __INT64_MAX__, __UINT64_MAX__ };
+  e =  (vi64_t) { __INT64_MAX__, __INT64_MAX__ };
+  j = vec_maxsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vmaxsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_maxsd:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_minud (void)
+{
+  vui64_t i1, i2, j, e;
+  int rc = 0;
+
+  printf ("\ntest_minud Vector Minimum Unsigned Doubleword\n");
+
+  i1 = (vui64_t) { 0, 0 };
+  i2 = (vui64_t) { 0, 0 };
+  e =  (vui64_t) { 0, 0 };
+  j = vec_minud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_minud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { 1, 2 };
+  i2 = (vui64_t) { 0, 1 };
+  e =  (vui64_t) { 0, 1 };
+  j = vec_minud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_minud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { 0, 1 };
+  i2 = (vui64_t) { 1, 2 };
+  e =  (vui64_t) { 0, 1 };
+  j = vec_minud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_minud:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vui64_t) { __UINT64_MAX__, __INT64_MAX__ };
+  i2 = (vui64_t) { __INT64_MAX__, __UINT64_MAX__ };
+  e =  (vui64_t) { __INT64_MAX__, __INT64_MAX__ };
+  j = vec_minud (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminud( ", i1);
+  print_v2xint64 ("       ,", i2);
+  print_v2xint64 ("      )=", j);
+#endif
+  rc += check_vuint128x ("vec_minud:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_minsd (void)
+{
+  vi64_t i1, i2, j, e;
+  int rc = 0;
+
+  printf ("\ntest_minsd Vector Minimum Unsigned Doubleword\n");
+
+  i1 = (vi64_t) { 0, 0 };
+  i2 = (vi64_t) { 0, 0 };
+  e =  (vi64_t) { 0, 0 };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 1, 2 };
+  i2 = (vi64_t) { 0, 1 };
+  e =  (vi64_t) { 0, 1 };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { -1, -2 };
+  i2 = (vi64_t) { 0, 1 };
+  e =  (vi64_t) { -1, -2 };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 0, 1 };
+  i2 = (vi64_t) { 1, 2 };
+  e =  (vi64_t) { 0, 1 };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { 0, 1 };
+  i2 = (vi64_t) { -1, -2 };
+  e =  (vi64_t) { -1, -2 };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi64_t) { __UINT64_MAX__, __INT64_MAX__ };
+  i2 = (vi64_t) { __INT64_MAX__, __UINT64_MAX__ };
+  e =  (vi64_t) { __UINT64_MAX__, __UINT64_MAX__ };
+  j = vec_minsd (i1, i2);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vminsd( ", (vui64_t) i1);
+  print_v2xint64 ("       ,", (vui64_t) i2);
+  print_v2xint64 ("      )=", (vui64_t) j);
+#endif
+  rc += check_vuint128x ("vec_minsd:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
 //#define __DEBUG_PRINT__ 1
 int
 test_cmpud (void)
@@ -1102,13 +2032,13 @@ test_cmpud (void)
   vb64_t j;
   int rc = 0;
 
-  printf ("\ntest_cmpud Vector Compare Unsigned doubleword\n");
+  printf ("\ntest_cmpud Vector Compare Unsigned Doubleword\n");
 
   printf ("test_cmpequd\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1118,9 +2048,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x200000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x200000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x200000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x200000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1130,9 +2060,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 2);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 2);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1142,9 +2072,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 2);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 2);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1154,9 +2084,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x200000000);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x200000000);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1166,9 +2096,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1178,9 +2108,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1190,9 +2120,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1202,9 +2132,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1214,9 +2144,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpequd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpequd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1228,9 +2158,9 @@ test_cmpud (void)
 
   printf ("test_cmpneud\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1240,9 +2170,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x200000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x200000000);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x200000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x200000000);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1252,9 +2182,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 2);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 2);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1264,9 +2194,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 2);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 2);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1276,9 +2206,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x200000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x200000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1288,9 +2218,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1300,9 +2230,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1312,9 +2242,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1324,9 +2254,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1336,9 +2266,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpneud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpneud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1350,9 +2280,9 @@ test_cmpud (void)
 
   printf ("test_cmpgtud\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1362,9 +2292,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1374,9 +2304,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1386,9 +2316,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1398,9 +2328,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1410,9 +2340,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1422,9 +2352,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1434,9 +2364,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1446,9 +2376,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1458,9 +2388,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1470,9 +2400,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1482,9 +2412,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000001);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000001);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1496,9 +2426,9 @@ test_cmpud (void)
 
   printf ("test_cmpgeud\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1508,9 +2438,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1520,9 +2450,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1532,9 +2462,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1544,9 +2474,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1556,9 +2486,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1568,9 +2498,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1580,9 +2510,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1592,9 +2522,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1604,9 +2534,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1616,9 +2546,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1628,9 +2558,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpgeud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000001);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000001);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgeud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1642,9 +2572,9 @@ test_cmpud (void)
 
   printf ("test_cmpltud\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1654,9 +2584,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1666,9 +2596,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1678,9 +2608,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1690,9 +2620,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1702,9 +2632,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1714,9 +2644,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1726,9 +2656,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1738,9 +2668,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  e = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1750,9 +2680,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1762,9 +2692,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1774,9 +2704,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpltud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000001);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000001);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpltud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1788,9 +2718,9 @@ test_cmpud (void)
 
   printf ("test_cmpleud\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1800,9 +2730,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1812,9 +2742,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1824,9 +2754,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1836,9 +2766,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1848,9 +2778,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  i2 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  i2 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1860,9 +2790,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1872,9 +2802,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1884,9 +2814,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 2);
-  e = (vui64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 2);
+  e = (vui64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1896,9 +2826,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1908,9 +2838,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(2, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000000);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (2, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000000);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1920,9 +2850,9 @@ test_cmpud (void)
 #endif
   rc += check_v2b64c ("vec_cmpleud:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x100000000);
-  i2 = (vui64_t )CONST_VINT64_DW(0x100000000, 0x100000001);
-  e = (vui64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x100000000);
+  i2 = (vui64_t) CONST_VINT64_DW (0x100000000, 0x100000001);
+  e = (vui64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpleud(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -1945,12 +2875,12 @@ test_cmpud_all (void)
 #endif
   int rc = 0;
 
-  printf ("\ntest_cmpud_all Vector Compare Unsigned doubleword\n");
+  printf ("\ntest_cmpud_all Vector Compare Unsigned Doubleword\n");
 
   printf ("test_cmp_all_eq\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -1965,8 +2895,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -1981,8 +2911,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -1997,8 +2927,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2013,8 +2943,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2029,8 +2959,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2045,8 +2975,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2061,8 +2991,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2077,8 +3007,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2093,8 +3023,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2109,8 +3039,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2125,8 +3055,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2141,8 +3071,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_eq (i1, i2))
   {
@@ -2157,8 +3087,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2173,8 +3103,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_eq (i1, i2))
     {
@@ -2191,8 +3121,8 @@ test_cmpud_all (void)
 
   printf ("test_cmp_all_ne\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2207,8 +3137,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2223,8 +3153,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2239,8 +3169,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2255,8 +3185,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2271,8 +3201,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2287,8 +3217,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2303,8 +3233,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2319,8 +3249,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2335,8 +3265,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2351,8 +3281,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2367,8 +3297,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2383,8 +3313,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ne (i1, i2))
   {
@@ -2399,8 +3329,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2415,8 +3345,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_ne (i1, i2))
     {
@@ -2433,8 +3363,8 @@ test_cmpud_all (void)
 
   printf ("test_cmp_all_gt\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2449,8 +3379,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2465,8 +3395,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2481,8 +3411,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2497,8 +3427,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2513,8 +3443,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2529,8 +3459,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2545,8 +3475,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2561,8 +3491,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2577,8 +3507,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2593,8 +3523,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2609,8 +3539,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2625,8 +3555,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2641,8 +3571,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2657,8 +3587,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2673,8 +3603,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2689,8 +3619,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_gt (i1, i2))
     {
@@ -2705,8 +3635,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_gt (i1, i2))
   {
@@ -2723,8 +3653,8 @@ test_cmpud_all (void)
 
   printf ("test_cmp_all_ge\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2739,8 +3669,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2755,8 +3685,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2771,8 +3701,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2787,8 +3717,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2803,8 +3733,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2819,8 +3749,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2835,8 +3765,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2851,8 +3781,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2867,8 +3797,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2883,8 +3813,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2899,8 +3829,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2915,8 +3845,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -2931,8 +3861,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2947,8 +3877,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2963,8 +3893,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2979,8 +3909,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ge (i1, i2))
     {
@@ -2995,8 +3925,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_ge (i1, i2))
   {
@@ -3013,8 +3943,8 @@ test_cmpud_all (void)
 
   printf ("test_cmp_all_lt\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3029,8 +3959,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3045,8 +3975,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3061,8 +3991,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3077,8 +4007,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3093,8 +4023,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3109,8 +4039,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3125,8 +4055,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3141,8 +4071,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3157,8 +4087,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3173,8 +4103,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3189,8 +4119,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3205,8 +4135,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3221,8 +4151,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3237,8 +4167,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3253,8 +4183,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3269,8 +4199,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3285,8 +4215,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3301,8 +4231,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_lt (i1, i2))
     {
@@ -3317,8 +4247,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3333,8 +4263,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_lt (i1, i2))
   {
@@ -3351,8 +4281,8 @@ test_cmpud_all (void)
 
   printf ("test_cmp_all_le\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3367,8 +4297,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3383,8 +4313,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3399,8 +4329,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3415,8 +4345,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3431,8 +4361,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3447,8 +4377,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3463,8 +4393,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3479,8 +4409,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3495,8 +4425,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3511,8 +4441,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3527,8 +4457,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3543,8 +4473,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3559,8 +4489,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3575,8 +4505,8 @@ test_cmpud_all (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3591,8 +4521,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3607,8 +4537,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3623,8 +4553,8 @@ test_cmpud_all (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3639,8 +4569,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_all_le (i1, i2))
     {
@@ -3655,8 +4585,8 @@ test_cmpud_all (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3671,8 +4601,8 @@ test_cmpud_all (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_all_le (i1, i2))
   {
@@ -3700,12 +4630,12 @@ test_cmpud_any (void)
 #endif
   int rc = 0;
 
-  printf ("\ntest_cmpud_any Vector Compare Unsigned doubleword\n");
+  printf ("\ntest_cmpud_any Vector Compare Unsigned Doubleword\n");
 
   printf ("test_cmp_any_eq\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3720,8 +4650,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3736,8 +4666,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3752,8 +4682,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3768,8 +4698,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3784,8 +4714,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3800,8 +4730,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3816,8 +4746,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3832,8 +4762,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3848,8 +4778,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3864,8 +4794,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3880,8 +4810,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3896,8 +4826,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_eq (i1, i2))
   {
@@ -3912,8 +4842,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3928,8 +4858,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_eq (i1, i2))
     {
@@ -3946,8 +4876,8 @@ test_cmpud_any (void)
 
   printf ("test_cmp_any_ne\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -3962,8 +4892,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -3978,8 +4908,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -3994,8 +4924,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4010,8 +4940,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4026,8 +4956,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4042,8 +4972,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4058,8 +4988,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4074,8 +5004,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4090,8 +5020,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4106,8 +5036,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4122,8 +5052,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4138,8 +5068,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ne (i1, i2))
   {
@@ -4154,8 +5084,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4170,8 +5100,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_ne (i1, i2))
     {
@@ -4188,8 +5118,8 @@ test_cmpud_any (void)
 
   printf ("test_cmp_any_gt\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4204,8 +5134,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4220,8 +5150,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4236,8 +5166,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4252,8 +5182,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4268,8 +5198,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4284,8 +5214,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4300,8 +5230,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4316,8 +5246,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4332,8 +5262,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4348,8 +5278,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4364,8 +5294,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4380,8 +5310,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4396,8 +5326,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4412,8 +5342,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4428,8 +5358,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4444,8 +5374,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_gt (i1, i2))
     {
@@ -4460,8 +5390,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_gt (i1, i2))
   {
@@ -4478,8 +5408,8 @@ test_cmpud_any (void)
 
   printf ("test_cmp_any_ge\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4494,8 +5424,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4510,8 +5440,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4526,8 +5456,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4542,8 +5472,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4558,8 +5488,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4574,8 +5504,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4590,8 +5520,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4606,8 +5536,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4622,8 +5552,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4638,8 +5568,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4654,8 +5584,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4670,8 +5600,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4686,8 +5616,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4702,8 +5632,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4718,8 +5648,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4734,8 +5664,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ge (i1, i2))
     {
@@ -4750,8 +5680,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_ge (i1, i2))
   {
@@ -4768,8 +5698,8 @@ test_cmpud_any (void)
 
   printf ("test_cmp_any_lt\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4784,8 +5714,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4800,8 +5730,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4816,8 +5746,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4832,8 +5762,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4848,8 +5778,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -4864,8 +5794,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -4880,8 +5810,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -4896,8 +5826,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4912,8 +5842,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4928,8 +5858,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4944,8 +5874,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -4960,8 +5890,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -4976,8 +5906,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -4992,8 +5922,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -5008,8 +5938,8 @@ test_cmpud_any (void)
   } else {
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -5024,8 +5954,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -5040,8 +5970,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -5056,8 +5986,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_lt (i1, i2))
     {
@@ -5072,8 +6002,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -5088,8 +6018,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_lt (i1, i2))
   {
@@ -5106,8 +6036,8 @@ test_cmpud_any (void)
 
   printf ("test_cmp_any_le\n");
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5122,8 +6052,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5138,8 +6068,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5154,8 +6084,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5170,8 +6100,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5186,8 +6116,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5202,8 +6132,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5218,8 +6148,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vui64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vui64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vui64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5234,8 +6164,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5250,8 +6180,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5266,8 +6196,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5282,8 +6212,8 @@ test_cmpud_any (void)
     } else {
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5298,8 +6228,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5314,8 +6244,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5330,8 +6260,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5346,8 +6276,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5362,8 +6292,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5378,8 +6308,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5394,8 +6324,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpud_any_le (i1, i2))
     {
@@ -5410,8 +6340,8 @@ test_cmpud_any (void)
 #endif
     }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5426,8 +6356,8 @@ test_cmpud_any (void)
 #endif
   }
 
-  i1 = (vui64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vui64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vui64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vui64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpud_any_le (i1, i2))
   {
@@ -5453,13 +6383,13 @@ test_cmpsd (void)
   vb64_t j;
   int rc = 0;
 
-  printf ("\ntest_cmpsd Vector Compare Signed doubleword\n");
+  printf ("\ntest_cmpsd Vector Compare Signed Doubleword\n");
 
   printf ("test_cmpeqsd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5469,9 +6399,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5481,9 +6411,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5493,9 +6423,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5505,9 +6435,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5517,9 +6447,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5529,9 +6459,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5541,9 +6471,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5553,9 +6483,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5565,9 +6495,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5577,9 +6507,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5589,9 +6519,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5601,9 +6531,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5613,9 +6543,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpeqsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpeqsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5627,9 +6557,9 @@ test_cmpsd (void)
 
   printf ("test_cmpgtsd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5639,9 +6569,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5651,9 +6581,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5663,9 +6593,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5675,9 +6605,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5687,9 +6617,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5699,9 +6629,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5711,9 +6641,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5723,9 +6653,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5735,9 +6665,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -2);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -2);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5747,9 +6677,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-2, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-2, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5759,9 +6689,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5771,9 +6701,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5783,9 +6713,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5795,9 +6725,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5807,9 +6737,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgtsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpgtsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5821,9 +6751,9 @@ test_cmpsd (void)
 
   printf ("test_cmpgesd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5833,9 +6763,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5845,9 +6775,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5857,9 +6787,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5869,9 +6799,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5881,9 +6811,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5893,9 +6823,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5905,9 +6835,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5917,9 +6847,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5929,9 +6859,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -2);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -2);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5941,9 +6871,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-2, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-2, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5953,9 +6883,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5965,9 +6895,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5977,9 +6907,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -5989,9 +6919,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6001,9 +6931,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpgesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpgesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6015,9 +6945,9 @@ test_cmpsd (void)
 
   printf ("test_cmpltsd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6027,9 +6957,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6039,9 +6969,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6051,9 +6981,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6063,9 +6993,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6075,9 +7005,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6087,9 +7017,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6099,9 +7029,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6111,9 +7041,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6123,9 +7053,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -2);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -2);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6135,9 +7065,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-2, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-2, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6147,9 +7077,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6159,9 +7089,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6171,9 +7101,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6183,9 +7113,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6195,9 +7125,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpltsd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpltsd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6209,9 +7139,9 @@ test_cmpsd (void)
 
   printf ("test_cmplesd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6221,9 +7151,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6233,9 +7163,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6245,9 +7175,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6257,9 +7187,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6269,9 +7199,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6281,9 +7211,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6293,9 +7223,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6305,9 +7235,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6317,9 +7247,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -2);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -2);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6329,9 +7259,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-2, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-2, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6341,9 +7271,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6353,9 +7283,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6365,9 +7295,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6377,9 +7307,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6389,9 +7319,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmplesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmplesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6403,9 +7333,9 @@ test_cmpsd (void)
 
   printf ("test_cmpnesd\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6415,9 +7345,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6427,9 +7357,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6439,9 +7369,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6451,9 +7381,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6463,9 +7393,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6475,9 +7405,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1,-1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, -1);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1,-1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, -1);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6487,9 +7417,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6499,9 +7429,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  i2 = (vi64_t )CONST_VINT64_DW(-1, -1);
-  e = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  i2 = (vi64_t) CONST_VINT64_DW (-1, -1);
+  e = (vi64_t) CONST_VINT64_DW (0, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6511,9 +7441,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6523,9 +7453,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffff00000000);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff00000000, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffff00000000);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff00000000, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, 0);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6535,9 +7465,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff00000001, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff00000000);
-  e = (vi64_t )CONST_VINT64_DW(-1, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff00000001, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff00000000);
+  e = (vi64_t) CONST_VINT64_DW (-1, -1);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6547,9 +7477,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6559,9 +7489,9 @@ test_cmpsd (void)
 #endif
   rc += check_v2b64c ("vec_cmpnesd:", (vb64_t)j, (vb64_t) e);
 
-  i1 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffff7fffffff);
-  i2 = (vi64_t )CONST_VINT64_DW(0xffffffff7fffffff, 0xffffffffffffffff);
-  e = (vi64_t )CONST_VINT64_DW(0, -1);
+  i1 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffff7fffffff);
+  i2 = (vi64_t) CONST_VINT64_DW (0xffffffff7fffffff, 0xffffffffffffffff);
+  e = (vi64_t) CONST_VINT64_DW (0, -1);
   j = vec_cmpnesd(i1, i2);
 
 #ifdef __DEBUG_PRINT__
@@ -6584,12 +7514,12 @@ test_cmpsd_all (void)
 #endif
   int rc = 0;
 
-  printf ("\ntest_cmpsd_all Vector Compare Unsigned doubleword\n");
+  printf ("\ntest_cmpsd_all Vector Compare Unsigned Doubleword\n");
 
   printf ("test_cmp_all_eq\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6604,8 +7534,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6620,8 +7550,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6636,8 +7566,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6652,8 +7582,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6668,8 +7598,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6684,8 +7614,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6700,8 +7630,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6716,8 +7646,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6732,8 +7662,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6748,8 +7678,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6764,8 +7694,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6780,8 +7710,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_eq (i1, i2))
   {
@@ -6796,8 +7726,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6812,8 +7742,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_eq (i1, i2))
     {
@@ -6830,8 +7760,8 @@ test_cmpsd_all (void)
 
   printf ("test_cmp_all_ne\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6846,8 +7776,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6862,8 +7792,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6878,8 +7808,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6894,8 +7824,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -6910,8 +7840,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -6926,8 +7856,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -6942,8 +7872,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6958,8 +7888,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6974,8 +7904,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -6990,8 +7920,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -7006,8 +7936,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -7022,8 +7952,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ne (i1, i2))
   {
@@ -7038,8 +7968,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -7054,8 +7984,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_ne (i1, i2))
     {
@@ -7072,8 +8002,8 @@ test_cmpsd_all (void)
 
   printf ("test_cmp_all_gt\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7088,8 +8018,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7104,8 +8034,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7120,8 +8050,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7136,8 +8066,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7152,8 +8082,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7168,8 +8098,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7184,8 +8114,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7200,8 +8130,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7216,8 +8146,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7232,8 +8162,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7248,8 +8178,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7264,8 +8194,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7280,8 +8210,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7296,8 +8226,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7312,8 +8242,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7328,8 +8258,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_gt (i1, i2))
     {
@@ -7344,8 +8274,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_gt (i1, i2))
   {
@@ -7362,8 +8292,8 @@ test_cmpsd_all (void)
 
   printf ("test_cmp_all_ge\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7378,8 +8308,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7394,8 +8324,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7410,8 +8340,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7426,8 +8356,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7442,8 +8372,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7458,8 +8388,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7474,8 +8404,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7490,8 +8420,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7506,8 +8436,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7522,8 +8452,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7538,8 +8468,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7554,8 +8484,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7570,8 +8500,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7586,8 +8516,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7602,8 +8532,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7618,8 +8548,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ge (i1, i2))
     {
@@ -7634,8 +8564,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_ge (i1, i2))
   {
@@ -7652,8 +8582,8 @@ test_cmpsd_all (void)
 
   printf ("test_cmp_all_lt\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7668,8 +8598,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7684,8 +8614,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7700,8 +8630,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7716,8 +8646,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7732,8 +8662,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7748,8 +8678,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7764,8 +8694,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7780,8 +8710,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7796,8 +8726,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7812,8 +8742,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7828,8 +8758,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7844,8 +8774,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7860,8 +8790,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7876,8 +8806,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7892,8 +8822,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7908,8 +8838,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7924,8 +8854,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7940,8 +8870,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
     {
@@ -7956,8 +8886,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7972,8 +8902,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_lt (i1, i2))
   {
@@ -7990,8 +8920,8 @@ test_cmpsd_all (void)
 
   printf ("test_cmp_all_le\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8006,8 +8936,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8022,8 +8952,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8038,8 +8968,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8054,8 +8984,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8070,8 +9000,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8086,8 +9016,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8102,8 +9032,8 @@ test_cmpsd_all (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8118,8 +9048,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8134,8 +9064,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8150,8 +9080,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8166,8 +9096,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8182,8 +9112,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8198,8 +9128,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8214,8 +9144,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8230,8 +9160,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8246,8 +9176,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8262,8 +9192,8 @@ test_cmpsd_all (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8278,8 +9208,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_le (i1, i2))
     {
@@ -8294,8 +9224,8 @@ test_cmpsd_all (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8310,8 +9240,8 @@ test_cmpsd_all (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_all_le (i1, i2))
   {
@@ -8329,7 +9259,7 @@ test_cmpsd_all (void)
   return (rc);
 }
 
-#define __DEBUG_PRINT__ 1
+//#define __DEBUG_PRINT__ 1
 int
 test_cmpsd_any (void)
 {
@@ -8339,12 +9269,12 @@ test_cmpsd_any (void)
 #endif
   int rc = 0;
 
-  printf ("\ntest_cmpsd_any Vector Compare Unsigned doubleword\n");
+  printf ("\ntest_cmpsd_any Vector Compare Unsigned Doubleword\n");
 
   printf ("test_cmp_any_eq\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8359,8 +9289,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8375,8 +9305,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8391,8 +9321,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8407,8 +9337,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8423,8 +9353,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8439,8 +9369,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8455,8 +9385,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8471,8 +9401,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8487,8 +9417,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8503,8 +9433,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8519,8 +9449,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8535,8 +9465,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_eq (i1, i2))
   {
@@ -8551,8 +9481,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8567,8 +9497,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_eq (i1, i2))
     {
@@ -8585,8 +9515,8 @@ test_cmpsd_any (void)
 
   printf ("test_cmp_any_ne\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8601,8 +9531,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8617,8 +9547,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8633,8 +9563,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8649,8 +9579,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8665,8 +9595,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8681,8 +9611,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8697,8 +9627,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8713,8 +9643,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8729,8 +9659,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8745,8 +9675,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8761,8 +9691,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8777,8 +9707,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ne (i1, i2))
   {
@@ -8793,8 +9723,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8809,8 +9739,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_ne (i1, i2))
     {
@@ -8827,8 +9757,8 @@ test_cmpsd_any (void)
 
   printf ("test_cmp_any_gt\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8843,8 +9773,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8859,8 +9789,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8875,8 +9805,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8891,8 +9821,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -8907,8 +9837,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -8923,8 +9853,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -8939,8 +9869,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8955,8 +9885,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8971,8 +9901,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -8987,8 +9917,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -9003,8 +9933,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -9019,8 +9949,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -9035,8 +9965,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -9051,8 +9981,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -9067,8 +9997,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -9083,8 +10013,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_gt (i1, i2))
     {
@@ -9099,8 +10029,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_gt (i1, i2))
   {
@@ -9117,8 +10047,8 @@ test_cmpsd_any (void)
 
   printf ("test_cmp_any_ge\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9133,8 +10063,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9149,8 +10079,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9165,8 +10095,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9181,8 +10111,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9197,8 +10127,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9213,8 +10143,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9229,8 +10159,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9245,8 +10175,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9261,8 +10191,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9277,8 +10207,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9293,8 +10223,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9309,8 +10239,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9325,8 +10255,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9341,8 +10271,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9357,8 +10287,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9373,8 +10303,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ge (i1, i2))
     {
@@ -9389,8 +10319,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_ge (i1, i2))
   {
@@ -9407,8 +10337,8 @@ test_cmpsd_any (void)
 
   printf ("test_cmp_any_lt\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9423,8 +10353,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9439,8 +10369,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9455,8 +10385,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9471,8 +10401,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9487,8 +10417,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9503,8 +10433,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9519,8 +10449,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9535,8 +10465,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9551,8 +10481,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9567,8 +10497,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9583,8 +10513,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9599,8 +10529,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9615,8 +10545,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9631,8 +10561,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9647,8 +10577,8 @@ test_cmpsd_any (void)
   } else {
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9663,8 +10593,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9679,8 +10609,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9695,8 +10625,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
     {
@@ -9711,8 +10641,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9727,8 +10657,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_lt (i1, i2))
   {
@@ -9745,8 +10675,8 @@ test_cmpsd_any (void)
 
   printf ("test_cmp_any_le\n");
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9761,8 +10691,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9777,8 +10707,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9793,8 +10723,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9809,8 +10739,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9825,8 +10755,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9841,8 +10771,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 1);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9857,8 +10787,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(1, 1);
-  i2 = (vi64_t )CONST_VINT64_DW(1, 1);
+  i1 = (vi64_t) CONST_VINT64_DW (1, 1);
+  i2 = (vi64_t) CONST_VINT64_DW (1, 1);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9873,8 +10803,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9889,8 +10819,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9905,8 +10835,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9921,8 +10851,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -9937,8 +10867,8 @@ test_cmpsd_any (void)
     } else {
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9953,8 +10883,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9969,8 +10899,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -9985,8 +10915,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -10001,8 +10931,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -10017,8 +10947,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -10033,8 +10963,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_le (i1, i2))
     {
@@ -10049,8 +10979,8 @@ test_cmpsd_any (void)
 #endif
     }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -10065,8 +10995,8 @@ test_cmpsd_any (void)
 #endif
   }
 
-  i1 = (vi64_t )CONST_VINT64_DW(0x8000000000000001UL, 0x8000000000000001UL);
-  i2 = (vi64_t )CONST_VINT64_DW(0x8000000000000000UL, 0x8000000000000000UL);
+  i1 = (vi64_t) CONST_VINT64_DW (0x8000000000000001UL, 0x8000000000000001UL);
+  i2 = (vi64_t) CONST_VINT64_DW (0x8000000000000000UL, 0x8000000000000000UL);
 
   if (vec_cmpsd_any_le (i1, i2))
   {
@@ -10092,20 +11022,34 @@ test_vec_i64 (void)
   printf ("\n%s\n", __FUNCTION__);
 
   rc += test_permdi ();
+  rc += test_xxspltd ();
+  rc += test_mrgahld ();
+  rc += test_mrghld ();
+  rc += test_mrgeod ();
+  rc += test_splatd ();
   rc += test_revbd ();
   rc += test_clzd ();
-  rc += test_popcntd();
+  rc += test_popcntd ();
+  rc += test_vrld ();
   rc += test_vsld ();
   rc += test_vsrd ();
   rc += test_vsrad ();
   rc += test_muleud ();
   rc += test_muloud ();
+  rc += test_mulhud ();
+  rc += test_muludm ();
   rc += test_cmpud ();
   rc += test_cmpud_all ();
   rc += test_cmpud_any ();
   rc += test_cmpsd ();
   rc += test_cmpsd_all ();
   rc += test_cmpsd_any ();
+  rc += test_maxud ();
+  rc += test_maxsd ();
+  rc += test_minud ();
+  rc += test_minsd ();
+  rc += test_vmuleud ();
+  rc += test_vmuloud ();
 
   return (rc);
 }

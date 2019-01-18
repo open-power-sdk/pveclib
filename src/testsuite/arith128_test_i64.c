@@ -451,6 +451,506 @@ test_vsrad (void)
 }
 #undef __DEBUG_PRINT__
 
+//#define __DEBUG_PRINT__ 1
+int
+test_sradi (void)
+{
+  vi64_t i, e;
+  vi64_t j;
+  int rc = 0;
+
+  printf ("\ntest_sradi Vector Shift Right Arithmetic Doubleword Immediate\n");
+
+  i = (vi64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  e = (vi64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  j = vec_sradi(i, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,   0");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x00123456789abcde, 0xffedcba987654321);
+  j = vec_sradi(i, 4);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,   4");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x000123456789abcd, 0xfffedcba98765432);
+  j = vec_sradi(i, 8);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,   8");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x000002468acf1357, 0xfffffdb97530eca8);
+  j = vec_sradi(i, 15);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  15");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x00000123456789ab, 0xfffffedcba987654);
+  j = vec_sradi(i, 16);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  16");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000002468acf, 0xfffffffffdb97530);
+  j = vec_sradi(i, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  31");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000001234567, 0xfffffffffedcba98);
+  j = vec_sradi(i, 32);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  32");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000000000246, 0xfffffffffffffdb9);
+  j = vec_sradi(i, 47);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  47");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000000000123, 0xfffffffffffffedc);
+  j = vec_sradi(i, 48);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  48");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000000000000, 0xffffffffffffffff);
+  j = vec_sradi(i, 63);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  63");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vi64_t) CONST_VINT64_DW (0x0000000000000000, 0xffffffffffffffff);
+  j = vec_sradi(i, 64);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsradi (  ", (vui64_t)i);
+  printf         ("        ,  64");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sradi:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+int
+test_srdi (void)
+{
+  vui64_t i, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_srdi Vector Shift Right Doubleword Immediate\n");
+
+  i = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  e = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  j = vec_srdi(i, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,   0");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x00123456789abcde, 0x0fedcba987654321);
+  j = vec_srdi(i, 4);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,   4");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x000123456789abcd, 0x00fedcba98765432);
+  j = vec_srdi(i, 8);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,   8");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x000002468acf1357, 0x0001fdb97530eca8);
+  j = vec_srdi(i, 15);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  15");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x00000123456789ab, 0x0000fedcba987654);
+  j = vec_srdi(i, 16);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  16");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000002468acf, 0x00000001fdb97530);
+  j = vec_srdi(i, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  31");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000001234567, 0x00000000fedcba98);
+  j = vec_srdi(i, 32);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  32");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000246, 0x000000000001fdb9);
+  j = vec_srdi(i, 47);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  47");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000123, 0x000000000000fedc);
+  j = vec_srdi(i, 48);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  48");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000000, 0x0000000000000001);
+  j = vec_srdi(i, 63);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  63");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000000, 0x0000000000000000);
+  j = vec_srdi(i, 64);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsrdi (  ", (vui64_t)i);
+  printf         ("        ,  64");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_srdi:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+int
+test_sldi (void)
+{
+  vui64_t i, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_sldi Vector Shift Left Doubleword Immediate\n");
+
+  i = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  e = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  j = vec_sldi(i, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,   0");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x123456789abcdef0, 0xedcba98765432100);
+  j = vec_sldi(i, 4);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,   4");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x23456789abcdef00, 0xdcba987654321000);
+  j = vec_sldi(i, 8);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,   8");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xa2b3c4d5e6f78000, 0x5d4c3b2a19080000);
+  j = vec_sldi(i, 15);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  15");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x456789abcdef0000, 0xba98765432100000);
+  j = vec_sldi(i, 16);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  16");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xc4d5e6f780000000, 0x3b2a190800000000);
+  j = vec_sldi(i, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  31");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x89abcdef00000000, 0x7654321000000000);
+  j = vec_sldi(i, 32);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  32");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xe6f7800000000000, 0x1908000000000000);
+  j = vec_sldi(i, 47);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  47");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xcdef000000000000, 0x3210000000000000);
+  j = vec_sldi(i, 48);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  48");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x8000000000000000, 0x0000000000000000);
+  j = vec_sldi(i, 63);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  63");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0000000000000000, 0x0000000000000000);
+  j = vec_sldi(i, 64);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vsldi (  ", (vui64_t)i);
+  printf         ("        ,  64");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_sldi:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+int
+test_rldi (void)
+{
+  vui64_t i, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_rldi Vector Rotate Left Doubleword Immediate\n");
+
+  i = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  e = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  j = vec_rldi(i, 0);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,   0");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x123456789abcdef0, 0xedcba9876543210f);
+  j = vec_rldi(i, 4);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,   4");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x23456789abcdef01, 0xdcba9876543210fe);
+  j = vec_rldi(i, 8);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,   8");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xa2b3c4d5e6f78091, 0x5d4c3b2a19087f6e);
+  j = vec_rldi(i, 15);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  15");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x456789abcdef0123, 0xba9876543210fedc);
+  j = vec_rldi(i, 16);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  16");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xc4d5e6f78091a2b3, 0x3b2a19087f6e5d4c);
+  j = vec_rldi(i, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  31");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x89abcdef01234567, 0x76543210fedcba98);
+  j = vec_rldi(i, 32);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  32");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xe6f78091a2b3c4d5, 0x19087f6e5d4c3b2a);
+  j = vec_rldi(i, 47);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  47");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0xcdef0123456789ab, 0x3210fedcba987654);
+  j = vec_rldi(i, 48);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  48");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x8091a2b3c4d5e6f7, 0x7f6e5d4c3b2a1908);
+  j = vec_rldi(i, 63);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  63");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  e = (vui64_t) CONST_VINT64_DW (0x0123456789abcdef, 0xfedcba9876543210);
+  j = vec_rldi(i, 64);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vrldi (  ", (vui64_t)i);
+  printf         ("        ,  64");
+  print_v2xint64 ("       )=", (vui64_t)j);
+#endif
+  rc += check_vuint128x ("vec_rldi:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
 int
 test_mrghld (void)
 {
@@ -11050,6 +11550,10 @@ test_vec_i64 (void)
   rc += test_minsd ();
   rc += test_vmuleud ();
   rc += test_vmuloud ();
+  rc += test_sradi ();
+  rc += test_srdi ();
+  rc += test_sldi ();
+  rc += test_rldi ();
 
   return (rc);
 }

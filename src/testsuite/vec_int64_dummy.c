@@ -113,6 +113,18 @@ test_srdi_16 (vui64_t a)
 }
 
 vui64_t
+test_srdi_31 (vui64_t a)
+{
+  return vec_srdi (a, 31);
+}
+
+vui64_t
+test_srdi_32 (vui64_t a)
+{
+  return vec_srdi (a, 32);
+}
+
+vui64_t
 test_srdi_63 (vui64_t a)
 {
   return vec_srdi (a, 63);

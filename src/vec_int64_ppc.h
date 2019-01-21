@@ -2886,7 +2886,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
   vui64_t lshift;
   vui64_t result;
 
-  if (shb < 32)
+  if (shb < 64)
     {
       /* Load the shift const in a vector.  The element shifts require
          a shift amount for each element. For the immediate form the

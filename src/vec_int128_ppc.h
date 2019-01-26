@@ -32,6 +32,18 @@
  * \brief Header package containing a collection of 128-bit computation
  * functions implemented with PowerISA VMX and VSX instructions.
  *
+ * Some of these operations are implemented in a single instruction
+ * on newer (POWER8/POWER9) processors.
+ * This header serves to fill in functional gaps for older
+ * (POWER7, POWER8) processors and provides a in-line assembler
+ * implementation for older compilers that do not
+ * provide the build-ins.
+ * Other operations do not exist as instructions on any current
+ * processor but are useful and should be provided.
+ * This header serves to provide these operations as
+ * inline functions using existing vector built-ins or other
+ * pveclib operations.
+ *
  * The original VMX (AKA Altivec) only defined a few instructions that
  * operated on the 128-bit vector as a whole.
  * This included the vector shift left/right (bit), vector shift
@@ -45,6 +57,10 @@
  * - the shift amount is a constant and needs to be generated/loaded
  * before use.
  *
+ * These instructions can used in combination to provide generalized
+ * vector __int128 shift/rotate operations.
+ * Pveclib uses these operations to provide vector __int128 shift /
+ * rotate left, shift right and shift algebraic right operations.
  * These operations require pre-conditions to avoid multiple
  * instructions or require a combination of (bit and octet shift)
  * instructions to get the quadword result.  The compiler <altivec.h>
@@ -52,7 +68,7 @@
  * operations quickly inspires a need for a header (like this) to
  * contain implementations of the common operations.
  *
- * The VSX facility (introduced with POWER7)  did not add any integer
+ * The VSX facility (introduced with POWER7) did not add any integer
  * doubleword (64-bit) or quadword (128-bit) operations.  However
  * it did add a useful doubleword permute immediate and word wise;
  * merge, shift, and splat immediate operations.
@@ -72,8 +88,9 @@
  * it did not provide quadword Signed/Unsigned integer compare
  * operations. It is possible to implement quadword compare operations
  * using existing word / doubleword compares and the the new quadword
- * subtract, but this requires some study. Pveclib provides easy to
- * use quadword compare operations.
+ * subtract write-carry operation. The trick it so convert the carry
+ * into a vector bool __int128 via the vec_setb_ncq () operation.
+ * This header provides easy to use quadword compare operations.
  *
  * POWER9 (PowerISA 3.0B) adds the <B>Vector Multiply-Sum unsigned
  * Doubleword Modulo</B> instruction. Aspects of this instruction mean
@@ -142,12 +159,431 @@
  * See \ref mainpage_sub_1_3 for more background on extended quadword
  * computation.
  *
+ * \section i128_endian_issues_0_0 Endian problems with quadword implementations
+ *
+ * Technically operations on quadword elements should not require any
+ * endian specific transformation. There is only one element so there
+ * can be no confusion about element numbering or order.
+ * However some of the more complex quadword elements constructed from
+ * operations on smaller elements. And those operations as provided by
+ * <altivec.h> are required by the OpenPOWER ABI to endian sensitive.
+ * See \ref i64_endian_issues_0_0 for a more detailed discussion.
+ *
+ * In any case the arithmetic (high to low) order of bits in a quadword
+ * are defined in the PowerISA (See vec_adduqm () and vec_subuqm () ).
+ * So pevelib implementations will need to either nullify endian
+ * transforms for some operations. For example the <altivec.h> built-ins
+ * vec_muleuw, vec_mulouw, vec_mergel, and vec_mergeh.
+ * Or use pvelib operations that are specifically defined to be stable
+ * across BE/LE implementations. For example vec_vmuleud (),
+ * vec_vmuloud (), and vec_permdi () and related operations.
+ *
+ * \section int128_examples_0_1 Vector Quadword Examples
+ *
+ * The PowerISA Vector facilities provide logical and integer
+ * arithmetic quadword (128-bit) operations.  Some operations as
+ * direct PowerISA instructions and other operations composed of
+ * short instruction sequences. The Power Vector Library provides
+ * a higher level and comprehensive API of quadword integer integer
+ * arithmetic and support for extended arithmetic to multiple
+ * quadwords.
+ *
+ * \subsection int128_examples_0_1_1 Printing Vector __int128 values
+ *
+ * The GCC compiler supports the (vector) __int128 type but the
+ * runtime does not support <B>printf()</B> formating for __int128
+ * types.  However if we can use divide/modulo operations to split
+ * vector __int128 values into modulo 10^16 long int (doubleword)
+ * chunks, we can use printf() to convert and concatenate the decimal
+ * values into a complete number.
+ *
+ * For example, from the __int128 value (39 decimal digits):
+ * - Detected the sign and set a char to "+' or '-'
+ * - Then from the absolute value, divide/modulo by 10000000000000000. Producing:
+ *   - The highest 7 digits (t_high)
+ *   - The middle 16 digits (t_mid)
+ *   - The lowest 16 digits (t_low)
+ *
+ * We can use signed compare to detect the sign and set a char value to print a ' ' or '+' prefix.
+ * If the value is negative we want the absolute value before we do the divide/modulo steps.
+ * For example:
+ * \code
+ *
+  if (vec_cmpsq_all_ge (value, zero128))
+    {
+      sign = ' ';
+      val128 = (vui128_t) value;
+    }
+  else
+    {
+      sign = '-';
+      val128 = vec_subuqm ((vui128_t) zero128, (vui128_t) value);
+    }
+ * \endcode
+ * Here we use the <B>pveclib</B> operation vec_cmpsq_all_ge() because
+ * the ABI and compilers do not define compare built-ins operations for
+ * the vector __int128 type.
+ * For the negative case we use the <B>pveclib</B> operation
+ * vec_subuqm() instead of vec_abs. Again the ABI and compilers do not
+ * define vec_abs built-ins for the vector __int128 type.
+ * Using <B>pveclib</B> operations have the additional benefit of
+ * supporting older compilers and platform specific implementations
+ * for POWER7 and POWER8.
+ *
+ * How we have the absolute value in val128 we can factor it into (3)
+ * chunks of 16 digits each.  Normally scalar codes would use
+ * integer divide/modulo by 10000000000000000.  And we are reminded
+ * that the PowerISA vector unit does support integer divide operations
+ * and definitely not for quadword integers.
+ *
+ * Instead we can use the multiplicative inverse which is a
+ * scaled fixed point fraction calculated from the original divisor.
+ * This works nicely if the fixed radix point is just before
+ * the 128-bit fraction and we have a multiply high (vec_mulhuq())
+ * operation. Multiplying a 128-bit unsigned integer by a 128-bit
+ * unsigned fraction generates a 256-bit product with 128-bits above
+ * (integer) and below (fraction) the radix point.
+ * The high 128-bits of the product is the integer quotient and we can
+ * discard the low order 128-bits.
+ *
+ * It turns out that generating the multiplicative inverse can be
+ * tricky.  To produce correct results over the full range requires,
+ * possible pre-scaling and post-shifting, and sometimes a corrective
+ * addition is necessary. Fortunately the mathematics are well
+ * understood and are commonly used in optimizing compilers.
+ * Even better, Henry Warren's book has a whole chapter on this topic.
+ * \see "Hacker's Delight, 2nd Edition,"
+ * Henry S. Warren, Jr, Addison Wesley, 2013.
+ * Chapter 10, Integer Division by Constants.
+ *
+ * In the chapter above;
+ * <BLOCKQUOTE>Figure 10-2 Computing the magic number for unsigned division.</BLOCKQUOTE>
+ * provides a sample C function for generating the magic number
+ * (actually a struct containing; the magic multiplicative inverse,
+ * "add" indicator, and the shift amount.).
+ * For quadword and the divisor 10000000000000000,this is
+ * { 76624777043294442917917351357515459181, 0 , 51 }:
+ * - the multiplier is 76624777043294442917917351357515459181.
+ * - no corrective add is required.
+ * - the final shift is 51-bits right.
+ *
+ * \code
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(
+      0UL, 10000000000000000UL);
+  // Magic numbers for multiplicative inverse to divide by 10**16
+  // are 76624777043294442917917351357515459181, no corrective add,
+  // and shift right 51 bits.
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+  ...
+
+  // first divide/modulo the 39 digits __int128 by 10**16.
+  // This separates the high/middle 23 digits (tmpq) and low 16 digits.
+  tmpq = vec_mulhuq (val128, mul_invs_ten16);
+  tmpq = vec_srqi (tmpq, shift_ten16);
+  // Compute remainder of val128 / 10**16
+  // t_low = val128 - (tmpq * 10**16)
+  // Here we know tmpq and mul_ten16 are less then 64-bits
+  // so can use vec_vmuloud instead of vec_mulluq
+  tmp = vec_vmuloud ((vui64_t) tmpq, (vui64_t) mul_ten16);
+  t_low = (vui64_t) vec_subuqm (val128, tmp);
+
+  // Next divide/modulo the high/middle digits by 10**16.
+  // This separates the high 7 and middle 16 digits.
+  val128 = tmpq;
+  tmpq = vec_mulhuq (tmpq, mul_invs_ten16);
+  t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
+  tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
+  t_mid = (vui64_t) vec_subuqm (val128, tmp);
+ * \endcode
+ * All the operations used above are defined and implemented by
+ * <B>pveclib</B>.  Most of these operations is not defined as
+ * single instructions in the PowerISA or as built-ins the ABI or
+ * require alternative implementations for older processors.
+ *
+ * Now we have three vector unsigned __int128 values (t_low, t_mid,
+ * t_high) in the range 0-9999999999999999. Fixed point values in that
+ * range fit into the low order doubleword of each quadword.
+ * We can access these doublewords with array notation ([VEC_DW_L])
+ * and the compiler will transfer them to fixed point (long int) GPRs.
+ * Then use normal char and long int printf() formating. For example:
+ * \code
+   printf ("%c%07lld%016lld%016lld", sign,
+           t_high[VEC_DW_L], t_mid[VEC_DW_L], t_low[VEC_DW_L]);
+ * \endcode
+ *
+ * Here is the complete vector __int128 printf example:
+ * \code
+ void
+example_print_vint128 (vi128_t value)
+{
+  const vi128_t max_neg = (vi128_t) CONST_VINT128_DW(
+      0x8000000000000000L, 0UL);
+  const vi128_t zero128 = (vi128_t) CONST_VINT128_DW(
+      0x0L, 0UL);
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(
+      0UL, 10000000000000000UL);
+  // Magic numbers for multiplicative inverse to divide by 10**16
+  // are 76624777043294442917917351357515459181, no corrective add,
+  // and shift right 51 bits.
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+
+  vui128_t tmpq, tmp;
+  vui64_t t_low, t_mid, t_high;
+  vui128_t val128;
+  char sign;
+
+  if (vec_cmpsq_all_ge (value, zero128))
+    {
+      sign = ' ';
+      val128 = (vui128_t) value;
+    }
+  else
+    {
+      sign = '-';
+      val128 = vec_subuqm ((vui128_t) zero128, (vui128_t) value);
+    }
+  // Convert the absolute (unsigned) value to Decimal and
+  // prefix the sign.
+
+  // first divide/modulo the 39 digits __int128 by 10**16.
+  // This separates the high/middle 23 digits (tmpq) and low 16 digits.
+  tmpq = vec_mulhuq (val128, mul_invs_ten16);
+  tmpq = vec_srqi (tmpq, shift_ten16);
+  // Compute remainder of val128 / 10**16
+  // t_low = val128 - (tmpq * 10**16)
+  // Here we know tmpq and mul_ten16 are less then 64-bits
+  // so can use vec_vmuloud instead of vec_mulluq
+  tmp = vec_vmuloud ((vui64_t) tmpq, (vui64_t) mul_ten16);
+  t_low = (vui64_t) vec_subuqm (val128, tmp);
+
+  // Next divide/modulo the high/middle digits by 10**16.
+  // This separates the high 7 and middle 16 digits.
+  val128 = tmpq;
+  tmpq = vec_mulhuq (tmpq, mul_invs_ten16);
+  t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
+  tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
+  t_mid = (vui64_t) vec_subuqm (val128, tmp);
+
+  printf ("%s%c%07lld%016lld%016lld", sign, t_high[VEC_DW_L],
+	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
+}
+ * \endcode
+ *
+ * \subsection int128_examples_0_1_2 Extending integer operations beyond Quadword
+ *
+ * Some algorithms require even high integer precision than __int128 provides.
+ * this includes:
+ * - POSIX compliant conversion between __float128 and _Decimal128 types
+ * - POSIX compliant conversion from double and __float128 to decimal for print.
+ * - Cryptographic operations for Public-key cryptography and Elliptic Curves
+ *
+ * The POWER8 provides instructions for extending add and subtract to
+ * 128-bit integer and beyond with carry/extend operations
+ * (see vec_addcuq(), vec_addecuq(), vec_addeuqm(), vec_adduqm(),
+ * (see vec_subcuq(), vec_subecuq(), vec_subeuqm(), vec_subuqm()).
+ * POWER9 adds instructions to improve decimal / binary conversion
+ * to/from 128-bit integer and beyond with carry/extend operations.
+ * And while the PowerISA does not yet provide full 128 x 128 bit
+ * integer multiply instructions. it has provided wider integer
+ * multiply instructions in POWER8
+ * (see vec_mulesw(), vec_mulosw(), vec_muleuw(), vec_mulouw())
+ * and POWER9 (see vec_msumudm()).
+ *
+ * This all allows the <B>pveclib</B> to improve (reduce the latency of)
+ * the implementation of multiply quadword operations.
+ * This includes operations that generate the full 256-bit multiply
+ * product (see vec_muludq(), vec_mulhuq(). vec_mulluq()).
+ * And this in combination with add/subtract with carry extend quadword
+ * allows the coding of even wider (multiple quadword) multiply
+ * operations.
+ *
+ * The following example performs a 256x256 bit unsigned integer
+ * multiply generating a 512-bit product:
+ * \code
+void
+test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
+	     vui128_t m2h, vui128_t m2l)
+{
+  vui128_t mc, mp, mq;
+  vui128_t mphh, mphl, mplh, mpll;
+  mpll = vec_muludq (&mplh, m1l, m2l);
+  mp = vec_muludq (&mphl, m1h, m2l);
+  mplh = vec_addcq (&mc, mplh, mp);
+  mphl = vec_addcuq (mphl, mc);
+  mp = vec_muludq (&mc, m2h, m1l);
+  mplh = vec_addcq (&mq, mplh, mp);
+  mphl = vec_addcq (&mc, mphl, mq);
+  mp = vec_muludq (&mphh, m2h, m1h);
+  mplh = vec_addcq (&mc, mplh, mp);
+  mphl = vec_addcuq (mphh, mc);
+
+  mulu[0] = mpll;
+  mulu[1] = mplh;
+  mulu[2] = mphl;
+  mulu[3] = mphh;
+}
+ * \endcode
+ * This example generates some additional questions:
+ * - Why use vec_muludq() instead of pairing vec_mulhuq() and
+ * vec_mulluq()?
+ * - Why use vec_addcq() instead of pairing vec_addcuq() and
+ * vec_adduqm()?
+ * - Why return the 512-bit product via a pointer instead of returning
+ * a struct or array of 4 x vui128_t (<I>homogeneous aggregates</I>)?
+ *
+ * The detailed rational for this is documented in section
+ * \ref mainpage_sub_1_3
+ * In this specific case (quadword integer operations that generate
+ * two vector values) <B>pveclib</B> provides both alternatives:
+ * - separate operations each returning a single vector.
+ * - combined operations providing:
+ *   - the lower order vector as the function return value.
+ *   - the high order (carry or high product) vector via a pointer reference parameter.
+ *
+ * Either method should the provide same results. For example
+ * \code
+  mplh = vec_addcq (&mc, mplh, mp);
+ * \endcode
+ * is equivalent to
+ * \code
+  mc   = vec_addcuq (mplh, mp);
+  mplh = vec_adduqm (mplh, mp);
+ * \endcode
+ * and
+ * \code
+  mpll = vec_muludq (&mplh, m1l, m2l);
+ * \endcode
+ * is equivalent to
+ * \code
+  mpll = vec_mulluq (m1l, m2l);
+  mplh = vec_mulhud (m1l, m2l);
+ * \endcode
+ * So is there any advantage to separate versus combined operations?
+ *
+ * Functionally it is useful to have separate operations for the cases
+ * where only one quadword part is needed.
+ * For example if you know that a add/subtract operation can not
+ * overflow, why generate the carry?
+ * Alternatively the quadword greater/less-than compares are based
+ * solely on the carry from the subtract quadword,
+ * why generate lowe modulo difference?
+ * For multiplication the modulo (multiply low) operation is the
+ * expected semantic or is known to be sufficient.
+ * Alternatively the multiplicative inverse only uses the high order
+ * (multiply high) quadword of the product.
+ *
+ * From the performance (instruction latency and throughput)
+ * perspective,
+ * if the algorithm requires to extended result or full product,
+ * the combined operation is usually the better choice.
+ * Otherwise use the specific single return operation needed.
+ * At best, the separate operations may generate the same instruction
+ * sequence as the combined operation, But this is depends on the target
+ * platform and specific optimizations implemented by the compiler.
+ *
+ * \note For inlined operations the pointer reference in the combined
+ * form, is usually optimized to a simple register assignment,
+ * by the compiler.
+ * \note For platform targets where the separate operations each
+ * generate a single instruction, we expect the compiler to generate
+ * the same instructions as the combined operation.
+ * But this is only likely for add/sub quadword on the POWER8
+ * and multiply by 10 quadword on POWER9.
+ *
  * \section int128_perf_0_0 Performance data.
  * High level performance estimates are provided as an aid to function
  * selection when evaluating algorithms. For background on how
  * <I>Latency</I> and <I>Throughput</I> are derived see:
  * \ref perf_data
  */
+///@cond INTERNAL
+static inline vui128_t vec_addecuq (vui128_t a, vui128_t b, vui128_t ci);
+static inline vui128_t vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci);
+static inline vb128_t vec_cmpequq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpgeuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpgtuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpleuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
+static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
+static inline vui128_t vec_maxuq (vui128_t a, vui128_t b);
+static inline vui128_t vec_minuq (vui128_t a, vui128_t b);
+static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
+static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
+static inline vb128_t vec_setb_cyq (vui128_t vcy);
+static inline vb128_t vec_setb_ncq (vui128_t vcy);
+static inline vb128_t vec_setb_sq (vi128_t vra);
+static inline vui128_t vec_sldq (vui128_t vrw, vui128_t vrx,
+				 vui128_t vrb);
+static inline vui128_t vec_sldqi (vui128_t vrw, vui128_t vrx,
+				  const unsigned int shb);
+static inline vui128_t vec_srqi (vui128_t vra, const unsigned int shb);
+static inline vui128_t vec_subcuq (vui128_t vra, vui128_t vrb);
+static inline vui128_t vec_subuqm (vui128_t vra, vui128_t vrb);
+static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
+static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
+///@endcond
+
+/** \brief Vector Absolute Difference Unsigned Quadword.
+ *
+ *  Compute the absolute difference of the quadwords.
+ *  For each unsigned quadword, subtract VRB from VRA and
+ *  return the absolute value of the difference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  14   | 1/cycle  |
+ *  |power9   |  11   | 1/cycle  |
+ *
+ *  @param vra vector of unsigned __int128
+ *  @param vrb vector of unsigned __int128
+ *  @return vector of the absolute difference.
+ */
+static inline vui128_t
+vec_absduq (vui128_t vra, vui128_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vui128_t tmp1, tmp2;
+  vb128_t cmpbool;
+  cmpbool = vec_cmpgtuq ( vra, vrb );
+  tmp1 = vec_subuqm ( vra, vrb );
+  tmp2 = vec_subuqm ( vrb, vra );
+  return (vui128_t) vec_sel ((vui32_t) tmp2, (vui32_t) tmp1, (vui32_t) cmpbool);
+#else
+  return vec_subuqm (vec_maxuq (vra, vrb), vec_minuq (vra, vrb));
+#endif
+}
+
+/** \brief Vector Average Unsigned Quadword.
+ *
+ *  Compute the average of two unsigned quadwords as
+ *  (VRA + VRB + 1) / 2.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  14   | 1/cycle  |
+ *  |power9   |  11   | 1/cycle  |
+ *
+ *  @param vra vector of 2 x unsigned doublewords
+ *  @param vrb vector of 2 x unsigned doublewords
+ *  @return vector of the absolute differences.
+ */
+static inline vui128_t
+vec_avguq (vui128_t vra, vui128_t vrb)
+{
+  vui128_t result, tmp1, tmp2;
+  const vui128_t qu1 = (vui128_t) CONST_VINT128_W(0, 0, 0, 1);
+  // Compute (vra + vrb + 1) with carry
+  tmp1 = vec_addeuqm (vra, vrb, qu1);
+  tmp2 = vec_addecuq (vra, vrb, qu1);
+  // shift sum with carry, right 1 bit
+  result = vec_sldqi (tmp2, tmp1, 127);
+
+  return result;
+}
 
 /** \brief Vector Add & write Carry Unsigned Quadword.
  *
@@ -549,23 +985,6 @@ vec_clzq (vui128_t vra)
 
   return ((vui128_t) result);
 }
-///@cond INTERNAL
-static inline vb128_t vec_cmpequq (vui128_t vra, vui128_t vrb);
-static inline vb128_t vec_cmpgeuq (vui128_t vra, vui128_t vrb);
-static inline vb128_t vec_cmpgtuq (vui128_t vra, vui128_t vrb);
-static inline vb128_t vec_cmpleuq (vui128_t vra, vui128_t vrb);
-static inline vb128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
-static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
-static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
-static inline vb128_t vec_setb_cyq (vui128_t vcy);
-static inline vb128_t vec_setb_ncq (vui128_t vcy);
-static inline vb128_t vec_setb_sq (vi128_t vra);
-static inline vui128_t vec_subcuq (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_subuqm (vui128_t vra, vui128_t vrb);
-static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
-static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
-///@endcond
 
 /** \brief Vector Compare Equal Signed Quadword.
  *
@@ -1132,9 +1551,9 @@ vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-  result = !vec_all_eq((vui64_t) vra, (vui64_t) vrb);
+  result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
-  result = !vec_all_eq((vui32_t) vra, (vui32_t) vrb);
+  result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
 #endif
   return (result);
 }
@@ -1162,9 +1581,9 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
-  result = vec_all_eq((vui64_t) vra, (vui64_t) vrb);
+  result = vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
-  result = vec_all_eq((vui32_t) vra, (vui32_t) vrb);
+  result = vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
 #endif
   return (result);
 }
@@ -1428,6 +1847,102 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
 #endif
   *cout = (vui128_t) t_carry;
   return ((vui128_t) t);
+}
+
+/** \brief Vector Maximum Signed Quadword.
+ *
+ *  Compare Quadwords vra and vrb as
+ *  signed integers and return the larger value in the result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 12-18 | 2/cycle  |
+ *  |power9   | 10-18 | 2/cycle  |
+ *
+ *  @param vra 128-bit vector __int128.
+ *  @param vrb 128-bit vector __int128.
+ *  @return vector __int128 maximum of a and b.
+ */
+static inline
+vi128_t
+vec_maxsq(vi128_t vra, vi128_t vrb)
+{
+  vb32_t maxmask;
+
+  maxmask = (vb32_t) vec_cmpgtsq ( vra, vrb );
+  return (vi128_t) vec_sel ((vui32_t) vrb, (vui32_t) vra, maxmask);
+}
+
+/** \brief Vector Maximum Unsigned Quadword.
+ *
+ *  Compare Quadwords vra and vrb as
+ *  unsigned integers and return the larger value in the result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  10   | 2/cycle  |
+ *  |power9   |   8   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector unsigned __int128.
+ *  @param vrb 128-bit vector unsigned __int128.
+ *  @return vector unsigned __int128 maximum of a and b.
+ */
+static inline
+vui128_t
+vec_maxuq(vui128_t vra, vui128_t vrb)
+{
+  vb32_t maxmask;
+
+  maxmask = (vb32_t) vec_cmpgtuq ( vra, vrb );
+  return (vui128_t) vec_sel ((vui32_t) vrb, (vui32_t) vra, maxmask);
+}
+
+/** \brief Vector Minimum Signed Quadword.
+ *
+ *  Compare Quadwords vra and vrb as
+ *  signed integers and return the smaller value in the result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 12-18 | 2/cycle  |
+ *  |power9   | 10-18 | 2/cycle  |
+ *
+ *  @param vra 128-bit vector __int128.
+ *  @param vrb 128-bit vector __int128.
+ *  @return vector __int128 minimum of a and b.
+ */
+static inline
+vi128_t
+vec_minsq(vi128_t vra, vi128_t vrb)
+{
+  vb32_t minmask;
+
+  minmask = (vb32_t) vec_cmpgtsq ( vrb, vra );
+  return (vi128_t) vec_sel ((vui32_t) vrb, (vui32_t) vra, minmask);
+}
+
+/** \brief Vector Minimum Unsigned Quadword.
+ *
+ *  Compare Quadwords vra and vrb as
+ *  unsigned integers and return the smaller value in the result.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  10   | 2/cycle  |
+ *  |power9   |   8   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector unsigned __int128 int.
+ *  @param vrb 128-bit vector unsigned __int128 int.
+ *  @return vector unsigned __int128 minimum of a and b.
+ */
+static inline
+vui128_t
+vec_minuq(vui128_t vra, vui128_t vrb)
+{
+  vb32_t minmask;
+
+  minmask = (vb32_t) vec_cmpgtuq ( vrb, vra );
+  return (vui128_t) vec_sel ((vui32_t) vrb, (vui32_t) vra, minmask);
 }
 
 /** \brief Vector Multiply by 10 & write Carry Unsigned Quadword.
@@ -1958,57 +2473,51 @@ vec_muludm (vui64_t vra, vui64_t vrb)
 #endif
 }
 
-/** \brief Vector Multiply Unsigned Double Quadword.
+/** \brief Vector Multiply High Unsigned Quadword.
  *
  *  compute the 256 bit product of two 128 bit values a, b.
- *  The low order 128 bits of the product are returned, while
- *  the high order 128-bits are "stored" via the mulu pointer.
+ *  The high order 128 bits of the product are returned.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 56-64 | 1/cycle  |
  *  |power9   | 33-39 | 1/cycle  |
  *
- *  @param *mulu pointer to upper 128-bits of the product.
  *  @param a 128-bit vector treated a __int128.
  *  @param b 128-bit vector treated a __int128.
- *  @return vector unsigned __int128 (lower 128-bits) of a * b.
+ *  @return vector unsigned __int128 (upper 128-bits) of a * b.
  */
 static inline vui128_t
-vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
+vec_mulhuq (vui128_t a, vui128_t b)
 {
   vui32_t t, tmq;
   /* compute the 256 bit product of two 128 bit values a, b.
    * The high 128 bits are accumulated in t and the low 128-bits
-   * in tmq. The high 128-bits of the product are returned to the
-   * address of the 1st parm. The low 128-bits are the return
-   * value.
+   * in tmq. The high 128-bits are the return value.
    */
 #ifdef _ARCH_PWR9
   const vui64_t zero = { 0, 0 };
-  vui64_t b_swap = vec_swapd ((vui64_t)b);
+  vui64_t b_swap = vec_swapd ((vui64_t) b);
   vui128_t tmh, tab, tba, tb0, tc1, tc2;
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  tmq = (vui32_t) vec_muleud ((vui64_t) a, (vui64_t) b);
-#else
-  tmq = (vui32_t) vec_muloud ((vui64_t) a, (vui64_t) b);
-#endif
+  tmq = (vui32_t) vec_vmuloud ((vui64_t) a, (vui64_t) b);
   /* compute the 2 middle partial projects.  Can't directly use
    * vmsumudm here because the sum of partial products can overflow.  */
-  tab = vec_muloud ((vui64_t) a, b_swap);
-  tba = vec_muleud ((vui64_t) a, b_swap);
-  t   = (vui32_t) vec_addcq (&tc1, tab, tba);
-  tmh = (vui128_t) vec_sld ((vui32_t) zero, tmq, 8);
-  t   = (vui32_t) vec_addcq (&tc2, (vui128_t) t, tmh);
+  tab = vec_vmuloud ((vui64_t) a, b_swap);
+  tba = vec_vmuleud ((vui64_t) a, b_swap);
+  t   = (vui32_t) vec_adduqm (tab, tba);
+  tc1 = vec_addcuq (tab, tba);
+  tmh = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tmq);
+  t   = (vui32_t ) vec_adduqm ((vui128_t) t, tmh);
+  tc2 = vec_addcuq ((vui128_t) t, tmh);
   tc1 = (vui128_t) vec_vadduwm ((vui32_t) tc1, (vui32_t) tc2);
   /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t) vec_mrgld ((vui64_t) t, (vui64_t) tmq);
+  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
   /* we can use multiply sum here because the high product plus the
    * high sum of middle partial products can't overflow.  */
-  t   = (vui32_t) vec_sld ((vui32_t) tc1, (vui32_t) t, 8);
-  tb0 = (vui128_t) vec_mrghd ((vui64_t) b, zero);
+  t   = (vui32_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
+  tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
   t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
 #else
@@ -2249,8 +2758,7 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
-  *mulu = (vui128_t) t;
-  return ((vui128_t) tmq);
+  return ((vui128_t) t);
 }
 
 /** \brief Vector Multiply Low Unsigned Quadword.
@@ -2278,24 +2786,17 @@ vec_mulluq (vui128_t a, vui128_t b)
    */
 #ifdef _ARCH_PWR9
   const vui64_t zero = { 0, 0 };
-  vui64_t b_swap = vec_swapd ((vui64_t)b);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  tmq = (vui32_t) vec_muleud ((vui64_t) a, (vui64_t) b);
-  t   = (vui32_t) vec_sld ((vui32_t) zero, tmq, 8);
-  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) t);
-  tmq = (vui32_t) vec_mergeh ((vui64_t)tmq, (vui64_t)t);
-#else
+  vui64_t b_swap = vec_swapd ((vui64_t) b);
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
-  tmq = (vui32_t) vec_muloud ((vui64_t) a, (vui64_t) b);
+  tmq = (vui32_t) vec_vmuloud ((vui64_t) a, (vui64_t) b);
   /* we can use multiply sum here because we only need the low 64-bits
    * and don't care if we lose the carry / overflow.  */
-  t   = (vui32_t) vec_mergeh (zero, (vui64_t) tmq);
+  t   = (vui32_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tmq);
   /* sum = (a[h] * b[l]) + (a[l] * b[h]) + (zero || tmq[h]).  */
   t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) t);
   /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t) vec_mergel ((vui64_t) t, (vui64_t) tmq);
-#endif
+  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
 #else
 #ifdef _ARCH_PWR8
   /*
@@ -2388,6 +2889,299 @@ vec_mulluq (vui128_t a, vui128_t b)
   return ((vui128_t) tmq);
 }
 
+/** \brief Vector Multiply Unsigned Double Quadword.
+ *
+ *  compute the 256 bit product of two 128 bit values a, b.
+ *  The low order 128 bits of the product are returned, while
+ *  the high order 128-bits are "stored" via the mulu pointer.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 56-64 | 1/cycle  |
+ *  |power9   | 33-39 | 1/cycle  |
+ *
+ *  @param *mulu pointer to upper 128-bits of the product.
+ *  @param a 128-bit vector treated a __int128.
+ *  @param b 128-bit vector treated a __int128.
+ *  @return vector unsigned __int128 (lower 128-bits) of a * b.
+ */
+static inline vui128_t
+vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  vui32_t t, tmq;
+  /* compute the 256 bit product of two 128 bit values a, b.
+   * The high 128 bits are accumulated in t and the low 128-bits
+   * in tmq. The high 128-bits of the product are returned to the
+   * address of the 1st parm. The low 128-bits are the return
+   * value.
+   */
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_swap = vec_swapd ((vui64_t) b);
+  vui128_t tmh, tab, tba, tb0, tc1, tc2;
+  /* multiply the low 64-bits of a and b.  For PWR9 this is just
+   * vmsumudm with conditioned inputs.  */
+  tmq = (vui32_t) vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  /* compute the 2 middle partial projects.  Can't directly use
+   * vmsumudm here because the sum of partial products can overflow.  */
+  tab = vec_vmuloud ((vui64_t) a, b_swap);
+  tba = vec_vmuleud ((vui64_t) a, b_swap);
+  t   = (vui32_t) vec_adduqm (tab, tba);
+  tc1 = vec_addcuq (tab, tba);
+  tmh = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tmq);
+  t   = (vui32_t) vec_adduqm ((vui128_t) t, tmh);
+  tc2 = vec_addcuq ((vui128_t) t, tmh);
+  tc1 = (vui128_t) vec_vadduwm ((vui32_t) tc1, (vui32_t) tc2);
+  /* result = t[l] || tmq[l].  */
+  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
+  /* we can use multiply sum here because the high product plus the
+   * high sum of middle partial products can't overflow.  */
+  t   = (vui32_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
+  tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
+#else
+#ifdef _ARCH_PWR8
+  vui32_t tsw;
+  vui32_t tc;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+  /* We use the Vector Multiple Even/Odd Unsigned word to compute
+   * the 128 x 32 partial (160-bit) product of value a with the
+   * word splat of b. These instructions (vmuleum, vmuloum)
+   * product four 64-bit 32 x 32 partial products where even
+   * results are shifted 32-bit left from odd results. After
+   * shifting the high 128 bits can be summed via Vector add
+   * unsigned quadword.
+   */
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_3);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+#else
+  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
+  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+#endif
+  /* Rotate the low 32-bits (right) into tmq. This is actually
+   * implemented as 96-bit (12-byte) shift left. */
+  tmq = vec_sld (t_odd, z, 12);
+  /* shift the low 128 bits of partial product right 32-bits */
+  t_odd = vec_sld (z, t_odd, 12);
+  /* add the high 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_2);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+#else
+  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
+  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+#endif
+  /* Sum the low 128 bits of odd previous partial products */
+  tc = (vui32_t) vec_addcuq ((vui128_t) t_odd, (vui128_t) t);
+  t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 32-bits into tmq */
+  tmq = vec_sld (t_odd, tmq, 12);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 32-bits */
+  t_odd = vec_sld (tc, t_odd, 12);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_1);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+#else
+  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
+  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+#endif
+  /* Sum the low 128 bits of odd previous partial products */
+  tc = (vui32_t) vec_addcuq ((vui128_t) t_odd, (vui128_t) t);
+  t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 32-bits into tmq */
+  tmq = vec_sld (t_odd, tmq, 12);
+  /* shift the low 129 bits (with carry) of partial product right
+   * 32-bits */
+  t_odd = vec_sld (tc, t_odd, 12);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_muleuw ((vui32_t) a, tsw);
+#else
+  t_even = (vui32_t)vec_muleuw((vui32_t)a, tsw);
+  t_odd = (vui32_t)vec_mulouw((vui32_t)a, tsw);
+#endif
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  tc = (vui32_t) vec_addcuq ((vui128_t) t_odd, (vui128_t) t);
+  t_odd = (vui32_t) vec_adduqm ((vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 32-bits into tmq */
+  tmq = vec_sld (t_odd, tmq, 12);
+  /* shift the low 129 bits (with carry) of partial product right
+   * 32-bits */
+  t_odd = vec_sld (tc, t_odd, 12);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#else // _ARCH_PWR7 or earlier and Big Endian only.  */
+  /* We use the Vector Multiple Even/Odd Unsigned haldword to compute
+   * the 128 x 16 partial (144-bit) product of value a with the
+   * halfword splat of b. These instructions (vmuleuh, vmulouh)
+   * product 8 32-bit 16 x 16 partial products where even
+   * results are shifted 16-bit left from odd results. After
+   * shifting the high 128 bits can be summed via Vector add
+   * unsigned quadword equivalent.
+   */
+  vui16_t tsw;
+  vui16_t tc;
+  vui16_t t_odd, t_even;
+  vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+  tsw = vec_splat ((vui16_t) b, 7);
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Rotate the low 16-bits (right) into tmq. This is actually
+   * implemented as 112-bit (14-byte) shift left. */
+  tmq = (vui32_t)vec_sld (t_odd, z, 14);
+  /* shift the low 128 bits of partial product right 16-bits */
+  t_odd = vec_sld (z, t_odd, 14);
+  /* add the high 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 6);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 5);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 4);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 3);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 2);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 1);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui16_t) b, 0);
+
+  t_even = (vui16_t)vec_vmuleuh((vui16_t)a, tsw);
+  t_odd = (vui16_t)vec_vmulouh((vui16_t)a, tsw);
+
+  /* Sum the low 128 bits of odd previous partial products,
+   * generate the carry.  */
+  t_odd = (vui16_t) vec_addcq ((vui128_t*) &tc, (vui128_t) t_odd, (vui128_t) t);
+
+  /* rotate right the low 16-bits into tmq */
+  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
+  /* shift the low 128 bits (with carry) of partial product right
+   * 16-bits */
+  t_odd = vec_sld (tc, t_odd, 14);
+  /* add the top 128 bits of even / odd partial products */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#endif
+#endif
+  *mulu = (vui128_t) t;
+  return ((vui128_t) tmq);
+}
+
 /** \brief Vector Population Count Quadword.
  *
  *  Count the number of '1' bits within a vector __int128 and return
@@ -2473,6 +3267,66 @@ vec_revbq (vui128_t vra)
 #endif
 
   return (result);
+}
+
+/** \brief Vector Rotate Left Quadword.
+ *
+ *  Vector Rotate Left Quadword 0-127 bits.
+ *  The shift amount is from bits 121-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1 cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vrb Shift amount in bits 121:127.
+ *  @return Left shifted vector.
+ */
+static inline vui128_t
+vec_rlq (vui128_t vra, vui128_t vrb)
+{
+  vui128_t result;
+
+  result = vec_sldq (vra, vra, vrb);
+
+  return ((vui128_t) result);
+}
+
+/** \brief Vector Rotate Left Quadword Immediate.
+ *
+ *  Vector Rotate Left Quadword 0-127 bits.
+ *  The shift amount is from bits 121-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1 cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a __int128.
+ *  @param shb Shift amount in the range 0-127.
+ *  @return Left shifted vector.
+ */
+static inline vui128_t
+vec_rlqi (vui128_t vra, const unsigned int shb)
+{
+  vui8_t result;
+
+  if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+    {
+      /* When shifting an multiple of 8 bits (octet), use Vector
+       Shift Left Double By Octet Immediate.  This eliminates
+       loading the shift const into a VR.  */
+      if (shb > 0)
+	result = vec_sld ((vui8_t) vra, (vui8_t) vra, (shb / 8));
+      else
+	result = (vui8_t) vra;
+    }
+  else
+    {
+      result = (vui8_t) vec_sldqi (vra, vra, shb);
+    }
+  return ((vui128_t) result);
 }
 
 /*! \brief Vector Set Bool from Quadword Carry.
@@ -2582,7 +3436,7 @@ vec_setb_sq (vi128_t vra)
  *
  *  Vector Shift Left double Quadword 0-127 bits.
  *  Return a vector __int128 that is the left most 128-bits after
- *  shifting left 0-127-bits of the 32-byte double vector
+ *  shifting left 0-127-bits of the 256-bit double vector
  *  (vrw||vrx).  The shift amount is from bits 121:127 of vrb.
  *
  *  |processor|Latency|Throughput|
@@ -2598,24 +3452,94 @@ vec_setb_sq (vi128_t vra)
 static inline vui128_t
 vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
 {
-  __vector unsigned char result, vt1, vt2, vt3, vbs;
-  const __vector unsigned char vzero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0 };
+  vui8_t result, vt1, vt2, vt3, vbs;
+  const vui8_t vzero = vec_splat_u8 (0);
 
-  vt1 = vec_slo ((__vector unsigned char) vrw, (__vector unsigned char) vrb);
-  /* The vsr instruction only works correctly if the bit shift value
-     is splatted to each byte of the vector.  */
-  vbs = vec_splat ((__vector unsigned char) vrb, VEC_BYTE_L);
+  vt1 = vec_slo ((vui8_t) vrw, (vui8_t) vrb);
+  /* The vsl/vsr instruction only works correctly if the bit shift
+     value is splatted to each byte of the vector.  */
+  vbs = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
   vt1 = vec_sll (vt1, vbs);
   vt3 = vec_sub (vzero, vbs);
-  vt2 = vec_sro ((__vector unsigned char) vrx, vt3);
+  vt2 = vec_sro ((vui8_t) vrx, vt3);
   vt2 = vec_srl (vt2, vt3);
   result = vec_or (vt1, vt2);
 
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift left Quadword Immediate.
+/** \brief Vector Shift Left Double Quadword Immediate.
+ *
+ *  Vector Shift Left double Quadword 0-127 bits.
+ *  Return a vector __int128 that is the left most 128-bits after
+ *  shifting left 0-127-bits of the 256-bit double vector
+ *  (vrw||vrx).  The shift amount is from bits 121:127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1 cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vrw upper 128-bits of the 256-bit double vector.
+ *  @param vrx lower 128-bits of the 256-bit double vector.
+ *  @param shb Shift amount in the range 0-127.
+ *  @return high 128-bits of left shifted double vector.
+ */
+static inline vui128_t
+vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
+{
+  vui8_t result;
+
+  if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+    {
+      /* When shifting an multiple of 8 bits (octet), use Vector
+       Shift Left Double By Octet Immediate.  This eliminates
+       loading the shift const into a VR.  */
+      if (shb > 0)
+	result = vec_sld ((vui8_t) vrw, (vui8_t) vrx, (shb / 8));
+      else
+	result = (vui8_t) vrw;
+    }
+  else
+    {
+      const vui8_t vrb = vec_splats ((unsigned char) shb);
+      result = (vui8_t) vec_sldq (vrw, vrx, (vui128_t) vrb);
+    }
+
+  return ((vui128_t) result);
+}
+
+/** \brief Vector Shift Left Quadword.
+ *
+ *  Vector Shift Left Quadword 0-127 bits.
+ *  The shift amount is from bits 121-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4     | 1/cycle  |
+ *  |power9   | 6     | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vrb Shift amount in bits 121:127.
+ *  @return Left shifted vector.
+ */
+static inline vui128_t
+vec_slq (vui128_t vra, vui128_t vrb)
+{
+  vui8_t result, vshift_splat;
+
+  /* For some reason we let the processor jockies write they
+   * hardware bug into the ISA.  The vsl instruction only works
+   * correctly if the bit shift value is splatted to each byte
+   * of the vector.  */
+  vshift_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
+  result = vec_slo ((vui8_t) vra, (vui8_t) vrb);
+  result = vec_sll (result, vshift_splat);
+
+  return ((vui128_t) result);
+}
+
+/** \brief Vector Shift Left Quadword Immediate.
  *
  *  Shift left Quadword 0-127 bits.
  *  The shift amount is a const unsigned int in the range 0-127.
@@ -2679,9 +3603,119 @@ vec_slqi (vui128_t vra, const unsigned int shb)
   return (vui128_t) result;
 }
 
-/** \brief Vector Shift Left Quadword.
+/** \brief Vector Shift Right Algebraic Quadword.
  *
- *  Vector Shift Left Quadword 0-127 bits.
+ *  Vector Shift Right Algebraic Quadword 0-127 bits.
+ *  The shift amount is from bits 121-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1 cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a signed __int128.
+ *  @param vrb Shift amount in bits 121:127.
+ *  @return Right algebraic shifted vector.
+ */
+static inline vi128_t
+vec_sraq (vi128_t vra, vui128_t vrb)
+{
+  vui8_t result, vsht;
+  vui128_t vsgn;
+
+  const vui8_t zero = vec_splat_u8 (0);
+
+  /* For some reason we let the processor jockies write they
+   * hardware bug into the ISA.  The vsr instruction only works
+   * correctly if the bit shift value is splatted to each byte
+   * of the vector.  */
+  vsgn = vec_setb_sq (vra);
+  vsht = vec_sub (zero, (vui8_t) vrb);
+  result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra, (vui128_t) vsht);
+
+  return ((vi128_t) result);
+}
+
+/** \brief Vector Shift Right Algebraic Quadword Immediate.
+ *
+ *  Vector Shift Right Algebraic Quadword 0-127 bits.
+ *  The shift amount is from bits 121-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6-15  | 1 cycle  |
+ *  |power9   | 9-18  | 1/cycle  |
+ *
+ *  \note vec_sraqi optimizes for some special cases.
+ *  For shift by octet (multiple of 8 bits) use vec_setb_sq ()
+ *  to extend sign then vector shift left double by octet immediate
+ *  by (16 - (shb / 8)) to effect the right octet shift.
+ *  For _ARCH_PWR8 and shifts less than 64 bits, use both vec_srqi ()
+ *  and vector shift right algebraic doubleword. Then use vec_pasted ()
+ *  to combine the high 64-bits from vec_sradi () and the low 64-bits
+ *  from vec_srqi ().
+ *
+ *  @param vra a 128-bit vector treated as a signed __int128.
+ *  @param shb Shift amount in the range 0-127.
+ *  @return Right algebraic shifted vector.
+ */
+static inline vi128_t
+vec_sraqi (vi128_t vra, const unsigned int shb)
+{
+  vui8_t result, lshift;
+  vui128_t vsgn;
+
+  if (shb < 127)
+    {
+      if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+	{
+	  if (shb > 0)
+	    {
+	      vsgn = vec_setb_sq (vra);
+	      result = vec_sld ((vui8_t) vsgn, (vui8_t) vra, 16 - (shb / 8));
+	    }
+	  else
+	    result = (vui8_t) vra;
+	}
+      else
+	{
+#ifdef _ARCH_PWR8
+	  if (shb < 64)
+	    {
+	      vui128_t vrshq;
+	      vi64_t vrshd;
+	      vrshq = vec_srqi ((vui128_t) vra, shb);
+	      vrshd = vec_sradi ((vi64_t) vra, shb);
+	      result = (vui8_t) vec_pasted ((vui64_t) vrshd, (vui64_t) vrshq);
+	    }
+	  else
+	    {
+#endif
+	      const unsigned int lshb = 128 - shb;
+	      if (__builtin_constant_p (shb) && (lshb < 16))
+		lshift = (vui8_t) vec_splat_s8(shb);
+	      else
+		lshift = vec_splats ((unsigned char) lshb);
+
+	      vsgn = vec_setb_sq (vra);
+	      result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra,
+					  (vui128_t) lshift);
+#ifdef _ARCH_PWR8
+	    }
+#endif
+	}
+    }
+  else
+    { /* shifts greater then 126 bits returns the sign bit.  */
+      result = (vui8_t) vec_setb_sq (vra);
+    }
+
+  return ((vi128_t) result);
+}
+
+/** \brief Vector Shift Right Quadword.
+ *
+ *  Vector Shift Right Quadword 0-127 bits.
  *  The shift amount is from bits 121-127 of vrb.
  *
  *  |processor|Latency|Throughput|
@@ -2691,25 +3725,25 @@ vec_slqi (vui128_t vra, const unsigned int shb)
  *
  *  @param vra a 128-bit vector treated as a __int128.
  *  @param vrb Shift amount in bits 121:127.
- *  @return Left shifted vector.
+ *  @return Right shifted vector.
  */
 static inline vui128_t
-vec_slq (vui128_t vra, vui128_t vrb)
+vec_srq (vui128_t vra, vui128_t vrb)
 {
-  __vector unsigned char result, vshift_splat;
+  vui8_t result, vsht_splat;
 
   /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsl instruction only works
+   * hardware bug into the ISA.  The vsr instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
-  vshift_splat = vec_splat ((__vector unsigned char) vrb, VEC_BYTE_L);
-  result = vec_slo ((__vector unsigned char) vra, (__vector unsigned char) vrb);
-  result = vec_sll (result, vshift_splat);
+  vsht_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
+  result = vec_sro ((vui8_t) vra, (vui8_t) vrb);
+  result = vec_srl (result, vsht_splat);
 
   return ((vui128_t) result);
 }
 
-/** \brief Vector Shift right Quadword Immediate.
+/** \brief Vector Shift Right Quadword Immediate.
  *
  *  Shift right Quadword 0-127 bits.
  *  The shift amount is a const unsigned int in the range 0-127.
@@ -2776,36 +3810,6 @@ vec_srqi (vui128_t vra, const unsigned int shb)
       result = vec_xor ((vui8_t) vra, (vui8_t) vra);
     }
   return (vui128_t) result;
-}
-
-/** \brief Vector Shift right Quadword.
- *
- *  Vector Shift Right Quadword 0-127 bits.
- *  The shift amount is from bits 121-127 of vrb.
- *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power8   | 4     | 1/cycle  |
- *  |power9   | 6     | 1/cycle  |
- *
- *  @param vra a 128-bit vector treated as a __int128.
- *  @param vrb Shift amount in bits 121:127.
- *  @return Right shifted vector.
- */
-static inline vui128_t
-vec_srq (vui128_t vra, vui128_t vrb)
-{
-  __vector unsigned char result, vsht_splat;
-
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsr instruction only works
-   * correctly if the bit shift value is splatted to each byte
-   * of the vector.  */
-  vsht_splat = vec_splat ((__vector unsigned char) vrb, VEC_BYTE_L);
-  result = vec_sro ((__vector unsigned char) vra, (__vector unsigned char) vrb);
-  result = vec_srl (result, vsht_splat);
-
-  return ((vui128_t) result);
 }
 
 /** \deprecated Vector Shift Left 4-bits Quadword.
@@ -2896,7 +3900,7 @@ vec_srq5 (vui128_t vra)
   return ((vui128_t) result);
 }
 
-/** \brief Vector Subtract and write Carry Unsigned Quadword.
+/** \brief Vector Subtract and Write Carry Unsigned Quadword.
  *
  *  Generate the carry-out of the sum (vra + NOT(vrb) + 1).
  *
@@ -2934,7 +3938,7 @@ vec_subcuq (vui128_t vra, vui128_t vrb)
   return ((vui128_t) t);
 }
 
-/** \brief Vector Subtract Extended and write Carry Unsigned Quadword.
+/** \brief Vector Subtract Extended and Write Carry Unsigned Quadword.
  *
  *  Generate the carry-out of the sum (vra + NOT(vrb) + vrc.bit[127]).
  *
@@ -3218,7 +4222,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
 
 /** \brief Vector Multiply Odd Unsigned Doublewords.
  *
- *  Multiple the odd 64-bit doublewords of two vector unsigned long
+ *  Multiply the odd 64-bit doublewords of two vector unsigned long
  *  values and return the unsigned __int128 product of the odd
  *  doublewords.
  *
@@ -3390,4 +4394,3 @@ vec_vmuloud (vui64_t a, vui64_t b)
   return ((vui128_t) res);
 }
 #endif /* VEC_INT128_PPC_H_ */
-

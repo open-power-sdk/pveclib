@@ -2883,7 +2883,7 @@ vec_spltd (vui64_t vra, const int ctl)
 static inline vui64_t
 vec_srdi (vui64_t vra, const unsigned int shb)
 {
-  vui64_t lshift;
+  vui64_t rshift;
   vui64_t result;
 
   if (shb < 64)
@@ -2892,14 +2892,17 @@ vec_srdi (vui64_t vra, const unsigned int shb)
          a shift amount for each element. For the immediate form the
          shift constant is splatted to all elements of the
          shift control.  */
+#if defined (__GNUC__) && (__GNUC__ < 8)
       if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui64_t) vec_splat_s32(shb);
+	rshift = (vui64_t) vec_splat_s32(shb);
       else
-	lshift = vec_splats ((unsigned long) shb);
-
+	rshift = vec_splats ((unsigned long) shb);
+#else
+      rshift = CONST_VINT128_DW (shb, shb);
+#endif
       /* Vector Shift right bytes based on the lower 6-bits of
-         corresponding element of lshift.  */
-      result = vec_vsrd (vra, lshift);
+         corresponding element of rshift.  */
+      result = vec_vsrd (vra, rshift);
     }
   else
     { /* shifts greater then 63 bits return zeros.  */
@@ -2929,7 +2932,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
 static inline vi64_t
 vec_sradi (vi64_t vra, const unsigned int shb)
 {
-  vui64_t lshift;
+  vui64_t rshift;
   vi64_t result;
 
   if (shb < 64)
@@ -2938,21 +2941,24 @@ vec_sradi (vi64_t vra, const unsigned int shb)
          a shift amount for each element. For the immediate form the
          shift constant is splatted to all elements of the
          shift control.  */
+#if defined (__GNUC__) && (__GNUC__ < 8)
       if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui64_t) vec_splat_s32(shb);
+	rshift = (vui64_t) vec_splat_s32(shb);
       else
-	lshift = vec_splats ((unsigned long) shb);
-
+	rshift = vec_splats ((unsigned long) shb);
+#else
+      rshift = CONST_VINT128_DW (shb, shb);
+#endif
       /* Vector Shift Right Algebraic Doublewords based on the lower 6-bits
-         of corresponding element of lshift.  */
-      result = vec_vsrad (vra, lshift);
+         of corresponding element of rshift.  */
+      result = vec_vsrad (vra, rshift);
     }
   else
     { /* shifts greater then 63 bits returns the sign bit propagated to
          all bits.   This is equivalent to shift Right Algebraic of
          63 bits.  */
-      lshift = (vui64_t) vec_splats(63);
-      result = vec_vsrad (vra, lshift);
+      rshift = (vui64_t) vec_splats(63);
+      result = vec_vsrad (vra, rshift);
     }
 
   return (vi64_t) result;

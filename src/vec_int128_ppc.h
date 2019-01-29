@@ -163,20 +163,23 @@
  *
  * Technically operations on quadword elements should not require any
  * endian specific transformation. There is only one element so there
- * can be no confusion about element numbering or order.
- * However some of the more complex quadword elements constructed from
+ * can be no confusion about element numbering or order. However
+ * some of the more complex quadword operations are constructed from
  * operations on smaller elements. And those operations as provided by
- * <altivec.h> are required by the OpenPOWER ABI to endian sensitive.
+ * <altivec.h> are required by the OpenPOWER ABI to be endian sensitive.
  * See \ref i64_endian_issues_0_0 for a more detailed discussion.
  *
  * In any case the arithmetic (high to low) order of bits in a quadword
- * are defined in the PowerISA (See vec_adduqm () and vec_subuqm () ).
- * So pevelib implementations will need to either nullify endian
- * transforms for some operations. For example the <altivec.h> built-ins
- * vec_muleuw, vec_mulouw, vec_mergel, and vec_mergeh.
- * Or use pvelib operations that are specifically defined to be stable
- * across BE/LE implementations. For example vec_vmuleud (),
- * vec_vmuloud (), and vec_permdi () and related operations.
+ * are defined in the PowerISA (See vec_adduqm() and vec_subuqm()).
+ * So pveclib implementations will need to either:
+ * - Nullify little endian transforms of <altivec.h> operations.
+ * The <altivec.h> built-ins vec_muleuw(), vec_mulouw(), vec_mergel(),
+ * and vec_mergeh() are endian sensitive and often require
+ * nullification that restores the original operation.
+ * - Use new operations that are specifically defined to be stable
+ * across BE/LE implementations. The pveclib operations; vec_vmuleud()
+ * vec_vmuloud(), vec_mrgahd(), vec_mrgald(). and vec_permdi() are
+ * defined to be endian stable.
  *
  * \section int128_examples_0_1 Vector Quadword Examples
  *
@@ -198,7 +201,7 @@
  * values into a complete number.
  *
  * For example, from the __int128 value (39 decimal digits):
- * - Detected the sign and set a char to "+' or '-'
+ * - Detect the sign and set a char to "+' or '-'
  * - Then from the absolute value, divide/modulo by 10000000000000000. Producing:
  *   - The highest 7 digits (t_high)
  *   - The middle 16 digits (t_mid)
@@ -230,11 +233,11 @@
  * supporting older compilers and platform specific implementations
  * for POWER7 and POWER8.
  *
- * How we have the absolute value in val128 we can factor it into (3)
+ * Now we have the absolute value in val128 we can factor it into (3)
  * chunks of 16 digits each.  Normally scalar codes would use
  * integer divide/modulo by 10000000000000000.  And we are reminded
- * that the PowerISA vector unit does support integer divide operations
- * and definitely not for quadword integers.
+ * that the PowerISA vector unit does not support integer divide
+ * operations and definitely not for quadword integers.
  *
  * Instead we can use the multiplicative inverse which is a
  * scaled fixed point fraction calculated from the original divisor.
@@ -368,7 +371,7 @@ example_print_vint128 (vi128_t value)
   tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
   t_mid = (vui64_t) vec_subuqm (val128, tmp);
 
-  printf ("%s%c%07lld%016lld%016lld", sign, t_high[VEC_DW_L],
+  printf ("%c%07lld%016lld%016lld", sign, t_high[VEC_DW_L],
 	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
 }
  * \endcode
@@ -388,10 +391,10 @@ example_print_vint128 (vi128_t value)
  * POWER9 adds instructions to improve decimal / binary conversion
  * to/from 128-bit integer and beyond with carry/extend operations.
  * And while the PowerISA does not yet provide full 128 x 128 bit
- * integer multiply instructions. it has provided wider integer
- * multiply instructions in POWER8
+ * integer multiply instructions, it has provided wider integer
+ * multiply instructions, beginning in POWER8
  * (see vec_mulesw(), vec_mulosw(), vec_muleuw(), vec_mulouw())
- * and POWER9 (see vec_msumudm()).
+ * and again in POWER9 (see vec_msumudm()).
  *
  * This all allows the <B>pveclib</B> to improve (reduce the latency of)
  * the implementation of multiply quadword operations.
@@ -435,16 +438,18 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  * - Why return the 512-bit product via a pointer instead of returning
  * a struct or array of 4 x vui128_t (<I>homogeneous aggregates</I>)?
  *
- * The detailed rational for this is documented in section
+ * The detailed rationale for this is documented in section
  * \ref mainpage_sub_1_3
  * In this specific case (quadword integer operations that generate
  * two vector values) <B>pveclib</B> provides both alternatives:
- * - separate operations each returning a single vector.
+ * - separate operations each returning a single (high or low order)
+ * vector.
  * - combined operations providing:
  *   - the lower order vector as the function return value.
- *   - the high order (carry or high product) vector via a pointer reference parameter.
+ *   - the high order (carry or high product) vector via a pointer
+ *   reference parameter.
  *
- * Either method should the provide same results. For example
+ * Either method should provide the same results. For example:
  * \code
   mplh = vec_addcq (&mc, mplh, mp);
  * \endcode
@@ -470,7 +475,7 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  * overflow, why generate the carry?
  * Alternatively the quadword greater/less-than compares are based
  * solely on the carry from the subtract quadword,
- * why generate lowe modulo difference?
+ * why generate lower 128-bit (modulo) difference?
  * For multiplication the modulo (multiply low) operation is the
  * expected semantic or is known to be sufficient.
  * Alternatively the multiplicative inverse only uses the high order
@@ -478,11 +483,11 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  *
  * From the performance (instruction latency and throughput)
  * perspective,
- * if the algorithm requires to extended result or full product,
+ * if the algorithm requires the extended result or full product,
  * the combined operation is usually the better choice.
  * Otherwise use the specific single return operation needed.
  * At best, the separate operations may generate the same instruction
- * sequence as the combined operation, But this is depends on the target
+ * sequence as the combined operation, But this depends on the target
  * platform and specific optimizations implemented by the compiler.
  *
  * \note For inlined operations the pointer reference in the combined
@@ -567,8 +572,8 @@ vec_absduq (vui128_t vra, vui128_t vrb)
  *  |power8   |  14   | 1/cycle  |
  *  |power9   |  11   | 1/cycle  |
  *
- *  @param vra vector of 2 x unsigned doublewords
- *  @param vrb vector of 2 x unsigned doublewords
+ *  @param vra vector unsigned quadwords
+ *  @param vrb vector unsigned quadwords
  *  @return vector of the absolute differences.
  */
 static inline vui128_t
@@ -1341,10 +1346,8 @@ vec_cmpnesq (vi128_t vra, vi128_t vrb)
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 7     | 2/cycle  |
  *
- *  @param vra 128-bit vector treated as 2 x 64-bit unsigned long
- *  integer (dword) elements.
- *  @param vrb 128-bit vector treated as 2 x 64-bit unsigned long
- *  integer (dword) elements.
+ *  @param vra 128-bit vector treated as an unsigned __int128.
+ *  @param vrb 128-bit vector treated as an unsigned __int128.
  *  @return 128-bit vector boolean reflecting vector unsigned __int128
  *  compare equal.
  */
@@ -1801,7 +1804,7 @@ vec_cmul10ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
  *  |power9   | 3     |1/ 2cycles|
  *
  *  @param *cout pointer to upper 128-bits of the product.
- *  @param a 128-bit vector treated as a __int128.
+ *  @param a 128-bit vector treated as a unsigned __int128.
  *  @return vector __int128 (lower 128-bits of the 256-bit product) a * 10.
  */
 static inline vui128_t
@@ -1957,7 +1960,7 @@ vec_minuq(vui128_t vra, vui128_t vrb)
  *  |power8   | 13-15 | 1/cycle  |
  *  |power9   | 3     | 1/cycle  |
  *
- *  @param a 128-bit vector treated as a __int128.
+ *  @param a 128-bit vector treated as a unsigned __int128.
  *  @return __int128 (upper 128-bits of the 256-bit product) a * 10 >> 128.
  */
 static inline vui128_t
@@ -2012,7 +2015,7 @@ vec_mul10cuq (vui128_t a)
  *  |power8   | 15-17 | 1/cycle  |
  *  |power9   | 3     | 1/cycle  |
  *
- *  @param a 128-bit vector treated as a unsigned __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
  *  @param cin values 0-9 in bits 124:127 of a vector.
  *  @return __int128 (upper 128-bits of the 256-bit product) a * 10 >> 128.
  */
@@ -2074,7 +2077,7 @@ vec_mul10ecuq (vui128_t a, vui128_t cin)
  *  |power8   | 13-15 | 1/cycle  |
  *  |power9   | 3     | 1/cycle  |
  *
- *  @param a 128-bit vector treated as a unsigned __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
  *  @param cin values 0-9 in bits 124:127 of a vector.
  *  @return __int128 (lower 128-bits) a * 10.
  */
@@ -2128,7 +2131,7 @@ vec_mul10euq (vui128_t a, vui128_t cin)
  *  |power8   | 13-15 | 1/cycle  |
  *  |power9   | 3     | 1/cycle  |
  *
- *  @param a 128-bit vector treated as a __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
  *  @return __int128 (lower 128-bits) a * 10.
  */
 static inline vui128_t
@@ -2178,7 +2181,7 @@ vec_mul10uq (vui128_t a)
  *  |power9   | 6     | 1/cycle  |
  *
  *  @param *cout pointer to upper 128-bits of the product.
- *  @param a 128-bit vector treated as a __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
  *  @return vector __int128 (lower 128-bits of the 256-bit product) a * 100.
  */
 static inline vui128_t
@@ -2242,7 +2245,7 @@ vec_cmul100cuq (vui128_t *cout, vui128_t a)
  *  |power9   | 9     | 1/cycle  |
  *
  *  @param *cout pointer to upper 128-bits of the product.
- *  @param a 128-bit vector treated as a unsigned __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
  *  @param cin values 0-99 in bits 120:127 of a vector.
  *  @return vector __int128 (lower 128-bits of the 256-bit product) a * 100.
  */
@@ -2353,8 +2356,8 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
  *
- *  @param a 128-bit vector unsigned long.
- *  @param b 128-bit vector unsigned long.
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
  *  @return vector unsigned __int128 product of the even double words
  *  of a and b.
  */
@@ -2385,10 +2388,11 @@ vec_muleud (vui64_t a, vui64_t b)
  *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
  *  Addison Wesley, 2013. Chapter 10, Integer Division by Constants.
  *
- *  @param vra 128-bit vector unsigned long.
- *  @param vrb 128-bit vector unsigned long.
- *  @return vector of the high order 64-bits of the signed product
- *  of the doubleword elements from vra and vrb.
+ *  @param vra 128-bit vector unsigned long int.
+ *  @param vrb 128-bit vector unsigned long int.
+ *  @return vector unsigned long int of the high order 64-bits of the
+ *  unsigned 128-bit product of the doubleword elements from vra
+ *  and vrb.
  */
 static inline vui64_t
 vec_mulhud (vui64_t vra, vui64_t vrb)
@@ -2411,9 +2415,9 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
  *
- *  @param a 128-bit vector unsigned long.
- *  @param b 128-bit vector unsigned long.
- *  @ return vector unsigned __int128 product of the odd double words
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
+ *  @return vector unsigned __int128 product of the odd double words
  *  of a and b.
  */
 static inline vui128_t
@@ -2440,10 +2444,12 @@ vec_muloud (vui64_t a, vui64_t b)
  *  |power8   | 19-28 | 1/cycle  |
  *  |power9   | 11-16 | 1/cycle  |
  *
- *  @param vra 128-bit vector unsigned long.
- *  @param vrb 128-bit vector unsigned long.
- *  @return vector of the low order 64-bits of the unsigned product
- *  of the doubleword elements from vra and vrb.
+ *
+ *  @param vra 128-bit vector unsigned long int.
+ *  @param vrb 128-bit vector unsigned long int.
+ *  @return vector unsigned long int of the low order 64-bits of the
+ *  unsigned 128-bit product of the doubleword elements from vra
+ *  and vrb.
  */
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb)
@@ -2483,8 +2489,8 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  *  |power8   | 56-64 | 1/cycle  |
  *  |power9   | 33-39 | 1/cycle  |
  *
- *  @param a 128-bit vector treated a __int128.
- *  @param b 128-bit vector treated a __int128.
+ *  @param a 128-bit vector treated as unsigned __int128.
+ *  @param b 128-bit vector treated as unsigned __int128.
  *  @return vector unsigned __int128 (upper 128-bits) of a * b.
  */
 static inline vui128_t
@@ -2526,13 +2532,11 @@ vec_mulhuq (vui128_t a, vui128_t b)
   vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
-  /* We use the Vector Multiply Even/Odd Unsigned Word to compute
-   * the 128 x 32 partial (160-bit) product of value a with the
-   * word splat of b. These instructions (vmuleum, vmuloum)
-   * product four 64-bit 32 x 32 partial products where even
-   * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector Add
-   * Unsigned Quadword.
+  /* We use Vector Multiply Even/Odd Unsigned Word to compute
+   * the 128 x 32 partial (160-bit) product of vector a with a
+   * word element of b. The (for each word of vector b) 4 X 160-bit
+   * partial products are  summed to produce the full 256-bit product.
+   * See the comment in vec_muludq for details.
    */
 
   tsw = vec_splat ((vui32_t) b, VEC_WE_3);
@@ -2613,14 +2617,12 @@ vec_mulhuq (vui128_t a, vui128_t b)
   /* add the top 128 bits of even / odd partial products */
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else // _ARCH_PWR7 or earlier and Big Endian only.  */
-  /* We use the Vector Multiple Even/Odd Unsigned haldword to compute
-   * the 128 x 16 partial (144-bit) product of value a with the
-   * halfword splat of b. These instructions (vmuleuh, vmulouh)
-   * product 8 32-bit 16 x 16 partial products where even
-   * results are shifted 16-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword equivalent.
-   */
+
+  /* We use Vector Multiply Even/Odd Unsigned Halfword to compute
+   * the 128 x 16 partial (144-bit) product of vector a with a
+   * halfword element of b. The (for each halfword of vector b)
+   * 8 X 144-bit partial products are  summed to produce the full
+   * 256-bit product. */
   vui16_t tsw;
   vui16_t tc;
   vui16_t t_odd, t_even;
@@ -2771,9 +2773,9 @@ vec_mulhuq (vui128_t a, vui128_t b)
  *  |power8   | 42-48 | 1/cycle  |
  *  |power9   | 16-20 | 2/cycle  |
  *
- *  @param a 128-bit vector treated a __int128.
- *  @param b 128-bit vector treated a __int128.
- *  @return __int128 (lower 128-bits) a * b.
+ *  @param a 128-bit vector treated as unsigned __int128.
+ *  @param b 128-bit vector treated as unsigned __int128.
+ *  @return vector unsigned __int128 (lower 128-bits) a * b.
  */
 static inline vui128_t
 vec_mulluq (vui128_t a, vui128_t b)
@@ -2799,15 +2801,11 @@ vec_mulluq (vui128_t a, vui128_t b)
   tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
 #else
 #ifdef _ARCH_PWR8
-  /*
-   * We use the Vector Multiple Even/Odd Unsigned word to compute
-   * the 128 x 32 partial (160-bit) product of value a with the
-   * word splat of b. These instructions (vmuleum, vmuloum)
-   * product four 64-bit 32 x 32 partial products where even
-   * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword.
-   *
+  /* We use Vector Multiply Even/Odd Unsigned Word to compute
+   * the 128 x 32 partial (160-bit) product of vector a with a
+   * word element of b. The (for each word of vector b) 4 X 160-bit
+   * partial products are  summed to produce the full 256-bit product.
+   * See the comment in vec_muludq for details.
    */
   vui32_t tsw;
   vui32_t t_odd, t_even;
@@ -2900,9 +2898,10 @@ vec_mulluq (vui128_t a, vui128_t b)
  *  |power8   | 56-64 | 1/cycle  |
  *  |power9   | 33-39 | 1/cycle  |
  *
- *  @param *mulu pointer to upper 128-bits of the product.
- *  @param a 128-bit vector treated a __int128.
- *  @param b 128-bit vector treated a __int128.
+ *  @param *mulu pointer to vector unsigned __int128 to receive the
+ *  upper 128-bits of the product.
+ *  @param a 128-bit vector treated as unsigned __int128.
+ *  @param b 128-bit vector treated as unsigned __int128.
  *  @return vector unsigned __int128 (lower 128-bits) of a * b.
  */
 static inline vui128_t
@@ -2946,15 +2945,25 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
-  /* We use the Vector Multiple Even/Odd Unsigned word to compute
+  /* We use the Vector Multiple Even/Odd Unsigned Word to compute
    * the 128 x 32 partial (160-bit) product of value a with the
-   * word splat of b. These instructions (vmuleum, vmuloum)
-   * product four 64-bit 32 x 32 partial products where even
-   * results are shifted 32-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword.
-   */
-
+   * word splat of b. This produces four 64-bit (32 x 32)
+   * partial products in two vector registers. These results
+   * are not aligned for summation as is. So the odd result is
+   * shifted right 32-bits before it is summed (via Vector Add
+   * Unsigned Quadword Modulo) with the the even result.
+   * The low order 32-bits, of the 160-bit product
+   * is shifted (right) in to a separate vector (tmq).
+   *
+   * This is repeated for each (low to high order) words of b.
+   * After the first (160-bit) partial product, the high 128-bits
+   * (t) of the previous partial product is summed with the current
+   * odd multiply result, before this sum (including any carry out)
+   * is shifted right 32-bits.  Bits shifted out of the of this sum
+   * are shifted (32-bits at a time) into the low order 128-bits
+   * of the product (tmq). The shifted odd sum is then added to the
+   * current even product, After the 4th step this sum is the
+   * final high order 128-bits of the quadword product. */
   tsw = vec_splat ((vui32_t) b, VEC_WE_3);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   t_even = (vui32_t) vec_mulouw ((vui32_t) a, tsw);
@@ -3033,14 +3042,12 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   /* add the top 128 bits of even / odd partial products */
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else // _ARCH_PWR7 or earlier and Big Endian only.  */
-  /* We use the Vector Multiple Even/Odd Unsigned haldword to compute
-   * the 128 x 16 partial (144-bit) product of value a with the
-   * halfword splat of b. These instructions (vmuleuh, vmulouh)
-   * product 8 32-bit 16 x 16 partial products where even
-   * results are shifted 16-bit left from odd results. After
-   * shifting the high 128 bits can be summed via Vector add
-   * unsigned quadword equivalent.
-   */
+
+  /* We use Vector Multiply Even/Odd Unsigned Halfword to compute
+   * the 128 x 16 partial (144-bit) product of vector a with a
+   * halfword element of b. The (for each halfword of vector b)
+   * 8 X 144-bit partial products are  summed to produce the full
+   * 256-bit product. */
   vui16_t tsw;
   vui16_t tc;
   vui16_t t_odd, t_even;
@@ -3192,7 +3199,7 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
  *  |power8   | 15    |2/2 cycles|
  *  |power9   | 16    | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the
  *  population count.
  */
@@ -3238,7 +3245,7 @@ vec_popcntq (vui128_t vra)
  *  |power8   | 2-13  | 2 cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated a __int128.
+ *  @param vra a 128-bit vector treated as unsigned  __int128.
  *  @return a 128-bit vector with the bytes in reserve order.
  */
 static inline vui128_t
@@ -3279,7 +3286,7 @@ vec_revbq (vui128_t vra)
  *  |power8   | 10    | 1 cycle  |
  *  |power9   | 14    | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Left shifted vector.
  */
@@ -3303,7 +3310,7 @@ vec_rlq (vui128_t vra, vui128_t vrb)
  *  |power8   | 10    | 1 cycle  |
  *  |power9   | 14    | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return Left shifted vector.
  */
@@ -3419,7 +3426,7 @@ vec_setb_ncq (vui128_t vcy)
  *  |power8   | 4 - 6 | 2/cycle  |
  *  |power9   | 5 - 8 | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated a signed __int128.
+ *  @param vra a 128-bit vector treated as signed __int128.
  *  @return a 128-bit vector bool of all '1's if the sign bit is '1'.
  *  Otherwise all '0's.
  */
@@ -3519,7 +3526,7 @@ vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
  *  |power8   | 4     | 1/cycle  |
  *  |power9   | 6     | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Left shifted vector.
  */
@@ -3528,8 +3535,7 @@ vec_slq (vui128_t vra, vui128_t vrb)
 {
   vui8_t result, vshift_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsl instruction only works
+  /* For some reason, the vsl instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
   vshift_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
@@ -3551,7 +3557,7 @@ vec_slq (vui128_t vra, vui128_t vrb)
  *  |power8   | 2-13  | 2 cycle  |
  *  |power9   | 3-15  | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return 128-bit vector shifted left shb bits.
  */
@@ -3613,7 +3619,7 @@ vec_slqi (vui128_t vra, const unsigned int shb)
  *  |power8   | 10    | 1 cycle  |
  *  |power9   | 14    | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a signed __int128.
+ *  @param vra a 128-bit vector treated as signed __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Right algebraic shifted vector.
  */
@@ -3625,8 +3631,7 @@ vec_sraq (vi128_t vra, vui128_t vrb)
 
   const vui8_t zero = vec_splat_u8 (0);
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsr instruction only works
+  /* For some reason the vsr instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
   vsgn = vec_setb_sq (vra);
@@ -3655,7 +3660,7 @@ vec_sraq (vi128_t vra, vui128_t vrb)
  *  to combine the high 64-bits from vec_sradi () and the low 64-bits
  *  from vec_srqi ().
  *
- *  @param vra a 128-bit vector treated as a signed __int128.
+ *  @param vra a 128-bit vector treated as signed __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return Right algebraic shifted vector.
  */
@@ -3723,7 +3728,7 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
  *  |power8   | 4     | 1/cycle  |
  *  |power9   | 6     | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Right shifted vector.
  */
@@ -3732,8 +3737,7 @@ vec_srq (vui128_t vra, vui128_t vrb)
 {
   vui8_t result, vsht_splat;
 
-  /* For some reason we let the processor jockies write they
-   * hardware bug into the ISA.  The vsr instruction only works
+  /* For some reason the vsr instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
   vsht_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
@@ -3755,7 +3759,7 @@ vec_srq (vui128_t vra, vui128_t vrb)
  *  |power8   | 2-13  | 2 cycle  |
  *  |power9   | 3-15  | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return 128-bit vector shifted right shb bits.
  */
@@ -3909,8 +3913,8 @@ vec_srq5 (vui128_t vra)
  *  |power8   | 4     |2/2 cycles|
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vra 128-bit vector treated a unsigned __int128.
- *  @param vrb 128-bit vector treated a unsigned __int128.
+ *  @param vra 128-bit vector treated as unsigned __int128.
+ *  @param vrb 128-bit vector treated as unsigned __int128.
  *  @return __int128 carry from the unsigned difference vra - vrb.
  */
 static inline vui128_t
@@ -3947,8 +3951,8 @@ vec_subcuq (vui128_t vra, vui128_t vrb)
  *  |power8   | 4     |2/2 cycles|
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vra 128-bit vector treated a unsigned __int128.
- *  @param vrb 128-bit vector treated a unsigned __int128.
+ *  @param vra 128-bit vector treated as unsigned __int128.
+ *  @param vrb 128-bit vector treated as unsigned __int128.
  *  @param vrc 128-bit vector carry-in from bit 127.
  *  @return __int128 carry from the extended __int128 difference.
  */
@@ -3986,8 +3990,8 @@ vec_subecuq (vui128_t vra, vui128_t vrb, vui128_t vrc)
  *  |power8   | 4     |2/2 cycles|
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vra 128-bit vector treated an unsigned __int128.
- *  @param vrb 128-bit vector treated an unsigned __int128.
+ *  @param vra 128-bit vector treated as unsigned __int128.
+ *  @param vrb 128-bit vector treated as unsigned __int128.
  *  @param vrc 128-bit vector carry-in from bit 127.
  *  @return __int128 unsigned difference of vra minus vrb.
  */
@@ -4025,8 +4029,8 @@ vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc)
  *  |power8   | 4     |2/2 cycles|
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vra 128-bit vector treated an unsigned __int128.
- *  @param vrb 128-bit vector treated an unsigned __int128.
+ *  @param vra 128-bit vector treated as unsigned __int128.
+ *  @param vrb 128-bit vector treated as unsigned __int128.
  *  @return __int128 unsigned difference of vra minus vrb.
  */
 static inline vui128_t
@@ -4072,8 +4076,8 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
  *
- *  @param a 128-bit vector unsigned long.
- *  @param b 128-bit vector unsigned long.
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
  *  @return vector unsigned __int128 product of the even double words of a and b.
  */
 static inline vui128_t
@@ -4237,9 +4241,9 @@ vec_vmuleud (vui64_t a, vui64_t b)
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
  *
- *  @param a 128-bit vector unsigned long.
- *  @param b 128-bit vector unsigned long.
- *  @ return vector unsigned __int128 product of the odd double words
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
+ *  @return vector unsigned __int128 product of the odd double words
  *  of a and b.
  */
 static inline vui128_t

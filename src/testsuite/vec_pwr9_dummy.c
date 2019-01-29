@@ -87,6 +87,12 @@ __test_vmuleud_PWR9 (vui64_t a, vui64_t b)
 }
 
 vui128_t
+__test_mulhuq_PWR9 (vui128_t a, vui128_t b)
+{
+  return vec_mulhuq (a, b);
+}
+
+vui128_t
 __test_mulluq_PWR9 (vui128_t a, vui128_t b)
 {
   return vec_mulluq (a, b);
@@ -99,7 +105,14 @@ __test_muludq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
 }
 
 vui128_t
-__test_mulhuq_PWR9 (vui128_t a, vui128_t b)
+__test_mulhluq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
+{
+  *mulh = vec_mulhuq (a, b);
+  return vec_mulluq (a, b);
+}
+
+vui128_t
+__test_mulhuq2_PWR9 (vui128_t a, vui128_t b)
 {
   vui128_t mq, r;
   r = vec_muludq (&mq, a, b);
@@ -848,6 +861,63 @@ __test_vec_extract_sig_f32 (vf32_t val)
   return vec_extract_sig (val);
 }
 #endif
+
+void
+example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
+{
+  /* Magic numbers for multiplicative inverse to divide by 10**32
+   are 211857340822306639531405861550393824741, corrective add,
+   and shift right 107 bits.  */
+  const vui128_t mul_invs_ten32 = (vui128_t) CONST_VINT128_DW(
+      0x9f623d5a8a732974UL, 0xcfbc31db4b0295e5UL);
+  const int shift_ten32 = 107;
+  /* Magic numbers for multiplicative inverse to divide by 10**16
+   are 76624777043294442917917351357515459181, no corrective add,
+   and shift right 51 bits.  */
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+
+  const vui128_t mul_ten32 = (vui128_t) (__int128) 100000000000000ll
+      * (__int128) 1000000000000000000ll;
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(0UL,
+							 10000000000000000UL);
+
+  vui128_t tmpq, tmpr, tmpc, tmp;
+
+  // First divide/modulo by 10**32 to separate the top 7 digits from
+  // the lower 32 digits
+  // tmpq = floor ( M * value / 2**128)
+  tmpq = vec_mulhuq (value, mul_invs_ten32);
+  // Corrective add may overflow, generate carry
+  tmpq = vec_adduqm (tmpq, value);
+  tmpc = vec_addcuq (tmpq, value);
+  // Shift right with carry bit
+  tmpq = vec_sldqi (tmpc, tmpq, (128 - shift_ten32));
+  // Compute remainder of value / 10**32
+  // tmpr = value - (tmpq * 10**32)
+  tmp = vec_mulluq (tmpq, mul_ten32);
+  tmpr = vec_subuqm (value, tmp);
+
+  // return top 16 digits
+  ten_16[0] = (vui64_t) tmpq[VEC_DW_L];
+
+  // Next divide/modulo the remaining 32 digits by 10**16.
+  // This separates the middle and low 16 digits into doublewords.
+  tmpq = vec_mulhuq (tmpr, mul_invs_ten16);
+  tmpq = vec_srqi (tmpq, shift_ten16);
+  // Compute remainder of tmpr / 10**16
+  // tmpr = tmpr - (tmpq * 10**16)
+  // Here we know tmpq and mul_ten16 are less then 64-bits
+  // so can use vec_vmuloud insted of vec_mulluq
+  tmp = vec_vmuloud ((vui64_t) tmpq, (vui64_t) mul_ten16);
+  tmpr = vec_subuqm (value, tmp);
+
+  // return middle 16 digits
+  ten_16[1] = (vui64_t) tmpq[VEC_DW_L];
+  // return low 16 digits
+  ten_16[2] = (vui64_t) tmpr[VEC_DW_L];
+}
 
 void
 test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11, vui128_t m12, vui128_t m13, vui128_t m2)

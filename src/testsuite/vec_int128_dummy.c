@@ -20,6 +20,8 @@
       Created on: May 9, 2017
  */
 
+#include <stdint.h>
+#include <stdio.h>
 #include <vec_int128_ppc.h>
 
 vui128_t
@@ -29,7 +31,7 @@ __test_msumudm (vui64_t a, vui64_t b, vui128_t c)
 }
 
 vui128_t
-test_vec_add256_1 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
+test_vec_add256_1 (vui128_t *__restrict__ out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
 {
   vui128_t s0, s1, c0, c1;
   s1 = vec_adduqm (a1, b1);
@@ -42,7 +44,7 @@ test_vec_add256_1 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_
   return (c0);
 }
 vui128_t
-test_vec_add256_2 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
+test_vec_add256_2 (vui128_t *__restrict__ out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_t b1)
 {
   vui128_t s0, s1, c0, c1;
   s1 = vec_addcq (&c1, a1, b1);
@@ -51,6 +53,56 @@ test_vec_add256_2 (vui128_t *out, vui128_t a0, vui128_t a1, vui128_t b0, vui128_
   out[1] = s1;
   out[0] = s0;
   return (c0);
+}
+
+vui128_t
+test_vec_add512_1 (vui128_t *__restrict__ out, vui128_t *__restrict__ a,
+		   vui128_t *__restrict__ b)
+{
+  vui128_t s0, s1, s2, s3, c0, c1, c2, c3;
+  s3 = vec_adduqm (a[3], b[3]);
+  c3 = vec_addcuq (a[3], b[3]);
+  s2 = vec_addeuqm (a[2], b[2], c3);
+  c2 = vec_addecuq (a[2], b[2], c3);
+  s1 = vec_addeuqm (a[1], b[1], c2);
+  c1 = vec_addecuq (a[1], b[1], c2);
+  s0 = vec_addeuqm (a[0], b[0], c1);
+  c0 = vec_addecuq (a[0], b[0], c1);
+
+  out[3] = s3;
+  out[2] = s2;
+  out[1] = s1;
+  out[0] = s0;
+  return (c0);
+}
+
+vui128_t
+test_vec_add512_2 (vui128_t *__restrict__ out, vui128_t *__restrict__ a,
+		   vui128_t *__restrict__ b)
+{
+  vui128_t s0, s1, s2, s3, c0, c1, c2, c3;
+  s3 = vec_addcq (&c3, a[3], b[3]);
+  s2 = vec_addeq (&c2, a[2], b[2], c3);
+  s1 = vec_addeq (&c1, a[1], b[1], c2);
+  s0 = vec_addeq (&c0, a[0], b[1], c1);
+
+  out[3] = s3;
+  out[2] = s2;
+  out[1] = s1;
+  out[0] = s0;
+  return (c0);
+}
+
+vui128_t
+test_vec_absduq (vui128_t vra, vui128_t vrb)
+{
+  return vec_absduq (vra, vrb);
+}
+
+vui128_t
+test_vec_avguq (vui128_t vra, vui128_t vrb)
+{
+  return vec_avguq (vra, vrb);
 }
 
 vui128_t
@@ -249,6 +301,42 @@ test_setb_sq (vi128_t vcy)
   return vec_setb_sq (vcy);
 }
 
+vi128_t
+__test_maxsq (vi128_t __VH, vi128_t __VL)
+{
+  return vec_maxsq (__VH, __VL);
+}
+
+vui128_t
+__test_maxuq (vui128_t __VH, vui128_t __VL)
+{
+  return vec_maxuq (__VH, __VL);
+}
+
+vi128_t
+__test_minsq (vi128_t __VH, vi128_t __VL)
+{
+  return vec_minsq (__VH, __VL);
+}
+
+vui128_t
+__test_minuq (vui128_t __VH, vui128_t __VL)
+{
+  return vec_minuq (__VH, __VL);
+}
+
+vi128_t
+__test_minsq3 (vi128_t vra, vi128_t vrb, vi128_t vrc)
+{
+  return vec_minsq (vec_minsq (vra, vrb), vrc);
+}
+
+vui128_t
+__test_minuq3 (vui128_t vra, vui128_t vrb, vui128_t vrc)
+{
+  return vec_minuq (vec_minuq (vra, vrb), vrc);
+}
+
 vui128_t
 test_vec_mul10uq_cuq (vui128_t *p, vui128_t a)
 {
@@ -441,6 +529,79 @@ test_vec_srqi_129 (vui128_t __A)
 }
 #endif
 
+vi128_t
+test_vec_sraqi_0 (vi128_t __A)
+{
+  return vec_sraqi (__A, 0);
+}
+
+vi128_t
+test_vec_sraqi_4 (vi128_t __A)
+{
+  return vec_sraqi (__A, 4);
+}
+
+vi128_t
+test_vec_sraqi_7 (vi128_t __A)
+{
+  return vec_sraqi (__A, 7);
+}
+
+vi128_t
+test_vec_sraqi_8 (vi128_t __A)
+{
+  return vec_sraqi (__A, 8);
+}
+
+vi128_t
+test_vec_sraqi_14 (vi128_t __A)
+{
+  return vec_sraqi (__A, 14);
+}
+
+vi128_t
+test_vec_sraqi_16 (vi128_t __A)
+{
+  return vec_sraqi (__A, 16);
+}
+#if 1
+vi128_t
+test_vec_sraqi_31 (vi128_t __A)
+{
+  return vec_sraqi (__A, 31);
+}
+
+vi128_t
+test_vec_sraqi_48 (vi128_t __A)
+{
+  return vec_sraqi (__A, 48);
+}
+
+vi128_t
+test_vec_sraqi_68 (vi128_t __A)
+{
+  return vec_sraqi (__A, 68);
+}
+
+vi128_t
+test_vec_sraqi_120 (vi128_t __A)
+{
+  return vec_sraqi (__A, 120);
+}
+
+vi128_t
+test_vec_sraqi_128 (vi128_t __A)
+{
+  return vec_sraqi (__A, 128);
+}
+
+vi128_t
+test_vec_sraqi_129 (vi128_t __A)
+{
+  return vec_sraqi (__A, 129);
+}
+#endif
+
 vui128_t
 test_vec_vsumsws (vui128_t vra)
 {
@@ -559,9 +720,45 @@ test_vec_sldq (vui128_t a, vui128_t b, vui128_t sh)
 }
 
 vui128_t
+test_vec_sldqi_0 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 0));
+}
+
+vui128_t
+test_vec_sldqi_15 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 15));
+}
+
+vui128_t
+test_vec_sldqi_48 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 48));
+}
+
+vui128_t
+test_vec_sldqi_52 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 52));
+}
+
+vui128_t
+test_vec_rlq  (vui128_t a, vui128_t sh)
+{
+  return (vec_rlq (a, sh));
+}
+
+vui128_t
 test_vec_srq  (vui128_t a, vui128_t sh)
 {
   return (vec_srq (a, sh));
+}
+
+vi128_t
+test_vec_sraq  (vi128_t a, vui128_t sh)
+{
+  return (vec_sraq (a, sh));
 }
 
 vui128_t
@@ -627,6 +824,12 @@ __test_mulluq (vui128_t a, vui128_t b)
 vui128_t
 __test_mulhuq (vui128_t a, vui128_t b)
 {
+  return vec_mulhuq (a, b);;
+}
+
+vui128_t
+__test_mulhuq2 (vui128_t a, vui128_t b)
+{
   vui128_t mq, r;
   r = vec_muludq (&mq, a, b);
   return mq;
@@ -641,7 +844,8 @@ test_vec_subq (vui128_t a, vui128_t b)
 #endif
 
 void
-test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m2h, vui128_t m2l)
+test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
+	     vui128_t m2h, vui128_t m2l)
 {
   vui128_t mc, mp, mq;
   vui128_t mphh, mphl, mplh, mpll;
@@ -660,6 +864,119 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+void
+example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
+{
+  /* Magic numbers for multiplicative inverse to divide by 10**32
+   are 211857340822306639531405861550393824741, corrective add,
+   and shift right 107 bits.  */
+  const vui128_t mul_invs_ten32 = (vui128_t) CONST_VINT128_DW(
+      0x9f623d5a8a732974UL, 0xcfbc31db4b0295e5UL);
+  const int shift_ten32 = 107;
+  /* Magic numbers for multiplicative inverse to divide by 10**16
+   are 76624777043294442917917351357515459181, no corrective add,
+   and shift right 51 bits.  */
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+
+  const vui128_t mul_ten32 = (vui128_t) (__int128) 100000000000000ll
+      * (__int128) 1000000000000000000ll;
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(0UL,
+							 10000000000000000UL);
+
+  vui128_t tmpq, tmpr, tmpc, tmp;
+
+  // First divide/modulo by 10**32 to separate the top 7 digits from
+  // the lower 32 digits
+  // tmpq = floor ( M * value / 2**128)
+  tmpq = vec_mulhuq (value, mul_invs_ten32);
+  // Corrective add may overflow, generate carry
+  tmpq = vec_adduqm (tmpq, value);
+  tmpc = vec_addcuq (tmpq, value);
+  // Shift right with carry bit
+  tmpq = vec_sldqi (tmpc, tmpq, (128 - shift_ten32));
+  // Compute remainder of value / 10**32
+  // tmpr = value - (tmpq * 10**32)
+  tmp = vec_mulluq (tmpq, mul_ten32);
+  tmpr = vec_subuqm (value, tmp);
+
+  // return top 16 digits
+  ten_16[0] = (vui64_t) tmpq[VEC_DW_L];
+
+  // Next divide/modulo the remaining 32 digits by 10**16.
+  // This separates the middle and low 16 digits into doublewords.
+  tmpq = vec_mulhuq (tmpr, mul_invs_ten16);
+  tmpq = vec_srqi (tmpq, shift_ten16);
+  // Compute remainder of tmpr / 10**16
+  // tmpr = tmpr - (tmpq * 10**16)
+  // Here we know tmpq and mul_ten16 are less then 64-bits
+  // so can use vec_vmuloud insted of vec_mulluq
+  tmp = vec_vmuloud ((vui64_t) tmpq, (vui64_t) mul_ten16);
+  tmpr = vec_subuqm (value, tmp);
+
+  // return middle 16 digits
+  ten_16[1] = (vui64_t) tmpq[VEC_DW_L];
+  // return low 16 digits
+  ten_16[2] = (vui64_t) tmpr[VEC_DW_L];
+}
+
+
+void
+example_print_vint128 (vi128_t value)
+{
+  const vi128_t zero128 = (vi128_t) CONST_VINT128_DW(
+      0x0L, 0UL);
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(
+      0UL, 10000000000000000UL);
+  // Magic numbers for multiplicative inverse to divide by 10**16
+  // are 76624777043294442917917351357515459181, no corrective add,
+  // and shift right 51 bits.
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+
+  vui128_t tmpq, tmp;
+  vui64_t t_low, t_mid, t_high;
+  vui128_t val128;
+  char sign;
+
+  if (vec_cmpsq_all_ge (value, zero128))
+    {
+      sign = ' ';
+      val128 = (vui128_t) value;
+    }
+  else
+    {
+      sign = '-';
+      val128 = vec_subuqm ((vui128_t) zero128, (vui128_t) value);
+    }
+  // Convert the absolute (unsigned) value to Decimal and
+  // prefix the sign.
+
+  // first divide/modulo the 39 digits __int128 by 10**16.
+  // This separates the high/middle 23 digits (tmpq) and low 16 digits.
+  tmpq = vec_mulhuq (val128, mul_invs_ten16);
+  tmpq = vec_srqi (tmpq, shift_ten16);
+  // Compute remainder of val128 / 10**16
+  // t_low = val128 - (tmpq * 10**16)
+  // Here we know tmpq and mul_ten16 are less then 64-bits
+  // so can use vec_vmuloud instead of vec_mulluq
+  tmp = vec_vmuloud ((vui64_t) tmpq, (vui64_t) mul_ten16);
+  t_low = (vui64_t) vec_subuqm (val128, tmp);
+
+  // Next divide/modulo the high/middle digits by 10**16.
+  // This separates the high 7 and middle 16 digits.
+  val128 = tmpq;
+  tmpq = vec_mulhuq (tmpq, mul_invs_ten16);
+  t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
+  tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
+  t_mid = (vui64_t) vec_subuqm (val128, tmp);
+
+  printf ("%c%07ld%016ld%016ld", sign, t_high[VEC_DW_L],
+	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
 }
 
 void

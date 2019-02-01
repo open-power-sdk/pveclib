@@ -39,6 +39,16 @@
  *  operations and conversions to / from BCD and DFP.
  */
 
+/*! \brief vector signed BCD integer of up to 31 decimal digits.
+ *  \note Currently the GCC implementation and the
+ *  <A HREF="https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture">
+ *  OpenPOWER ELF V2 ABI</A>
+ *  disagree on the vector type used (parameters and return values)
+ *  by the BCD built-ins. Using vBCD_t insulates <B>pveclib</B> and
+ *  applications while this is worked out.
+ */
+#define vBCD_t vui32_t
+
 /** \brief Quantize (truncate) a _Decimal128 value before convert to
  * BCD.
  *
@@ -55,15 +65,67 @@ static inline _Decimal128
 bcd_qauntize0 (_Decimal128 val)
 {
 #ifdef _ARCH_PWR7
-        _Decimal128 t;
-        __asm__(
-            "dquaiq 0,%0,%1,0b01;\n"
-            : "=d" (t)
-            : "d" (val)
-            : );
-        return (t);
+  _Decimal128 t;
+  __asm__(
+      "dquaiq 0,%0,%1,0b01;\n"
+      : "=d" (t)
+      : "d" (val)
+      : );
+  return (t);
 #else
-        return (quantized128(t, 0DL));
+  return (quantized128(t, 0DL));
+#endif
+}
+
+/** \brief Pack a FPR pair (_Decimal128) to a doubleword vector
+ *  (vector double).
+ *
+ *  @param lval FPR pair containing a _Decimal128.
+ *  @return vector double containing the doublewords of the FPR pair.
+ */
+static inline vf64_t
+vec_pack_Decimal128 (_Decimal128 lval)
+{
+#ifdef _ARCH_PWR7
+  vf64_t  t;
+  __asm__(
+      "\txxpermdi %x0,%1,%L1,0b00;\n"
+      : "=v" (t)
+      : "d" (lval)
+      : );
+  return (t);
+#else
+  //needs to work for P6 without xxpermdi
+  __VEC_U_128   t;
+  t.dpd128 = lval;
+  return (t.vf2);
+#endif
+}
+
+/** \brief Unpack a doubleword vector (vector double) into a FPR pair.
+ * (_Decimal128).
+ *
+ *  @param lval Vector of doublewords (long int).
+ *  @param lval FPR pair containing a _Decimal128.
+ *  @return FPR pair containing a _Decimal128.
+ */
+static inline _Decimal128
+vec_unpack_Decimal128 (vf64_t lval)
+{
+#ifdef _ARCH_PWR7
+  _Decimal128 t;
+  __asm__(
+      "xxpermdi %0,%x1,%x1,0b00;\n"
+      "\txxpermdi %L0,%x1,%x1,0b10;\n"
+      : "=&d" (t)
+      : "v" (lval)
+      : );
+  return (t);
+#else
+  // needs to work for P6 without xxpermdi
+  __VEC_U_128   t;
+  t.vf2 = lval;
+  return (t.dpd128);
 #endif
 }
 
@@ -77,23 +139,29 @@ bcd_qauntize0 (_Decimal128 val)
  * @return a __Decimal128 in a double float pair.
  */
 static inline _Decimal128
-vec_BCD2DFP (vui32_t val)
+vec_BCD2DFP (vBCD_t val)
 {
 #ifdef _ARCH_PWR7
-        _Decimal128 t;
-        __asm__(
-            "xxpermdi %0,%x1,%x1,0b00;\n"
-            "\txxpermdi %L0,%x1,%x1,0b10;\n"
-            "\tdenbcdq 1,%0,%0;\n"
-            : "=&d" (t)
-            : "v" (val)
-            : );
-        return (t);
+  _Decimal128 t;
+#if (__GNUC__ < 5)
+  __asm__(
+      "xxpermdi %0,%x1,%x1,0b00;\n"
+      "\txxpermdi %L0,%x1,%x1,0b10;\n"
+      "\tdenbcdq 1,%0,%0;\n"
+      : "=&d" (t)
+      : "v" (val)
+      : );
 #else
-        /* \todo needs work for P6 without xxpermdi */
-        __VEC_U_128   t, x;
-        t.vx4 = val;
-        return (t.dpd128);
+  t = vec_unpack_Decimal128 ((vf64_t) val);
+  t = __builtin_denbcdq (1, t);
+#endif
+  return (t);
+#else
+  // needs work for P6 without xxpermdi
+  __VEC_U_128 t, x;
+  x.vx4 = val;
+  t.dpd128 = __builtin_denbcdq (1, x.dpd128);
+  return (t.dpd128);
 #endif
 }
 
@@ -107,25 +175,30 @@ vec_BCD2DFP (vui32_t val)
  * @param val a __Decimal128 in a double float pair.
  * @return a 128-bit vector treated a signed BCD 31 digit value.
  */
-static inline vui32_t
+static inline vBCD_t
 vec_DFP2BCD (_Decimal128 val)
 {
 #ifdef _ARCH_PWR7
-        vui32_t  t;
-        _Decimal128 x;
-        __asm__(
-            "ddedpdq 2,%1,%2;\n"
-            "\txxpermdi %x0,%1,%L1,0b00;\n"
-            : "=v" (t),
-              "=&d" (x)
-            : "d" (val)
-            : );
-        return (t);
+  vBCD_t t;
+  _Decimal128 x;
+#if (__GNUC__ < 5)
+  __asm__(
+      "ddedpdq 2,%1,%2;\n"
+      "\txxpermdi %x0,%1,%L1,0b00;\n"
+      : "=v" (t),
+      "=&d" (x)
+      : "d" (val)
+      : );
 #else
-        /* \todo needs work for P6 without xxpermdi */
-        __VEC_U_128   t, x;
-        t.dpd128 = val;
-        return (t.vx4);
+  x = __builtin_ddedpdq (2, val);
+  t = (vBCD_t) vec_pack_Decimal128 (x);
+#endif
+  return (t);
+#else
+  // needs work for P6 without xxpermdi
+  __VEC_U_128 t, x;
+  t.dpd128 = __builtin_ddedpdq (1, val);
+  return (t.vx4);
 #endif
 }
 
@@ -144,23 +217,27 @@ vec_DFP2BCD (_Decimal128 val)
  * @param b a 128-bit vector treated a signed BCD 31 digit value.
  * @return a 128-bit vector which is the lower 31 digits of (a + b).
  */
-static inline vui32_t
-vec_bcdadd (vui32_t a, vui32_t b)
+static inline vBCD_t
+vec_bcdadd (vBCD_t a, vBCD_t b)
 {
-        vui32_t  t;
+  vBCD_t t;
 #ifdef _ARCH_PWR8
-        __asm__(
-            "bcdadd. %0,%1,%2,0;\n"
-            : "=v" (t)
-            : "v" (a),
-              "v" (b)
-            : "cr6" );
+#if (__GNUC__ < 7)
+  __asm__(
+      "bcdadd. %0,%1,%2,0;\n"
+      : "=v" (t)
+      : "v" (a),
+      "v" (b)
+      : "cr6" );
 #else
-        _Decimal128 d_t;
-        d_t = vec_BCD2DFP (a) + vec_BCD2DFP (b);
-        t = vec_DFP2BCD(d_t);
+  t = (vBCD_t) __builtin_bcdadd ((vi128_t) a, (vi128_t) b, 0);
 #endif
-        return (t);
+#else
+  _Decimal128 d_t;
+  d_t = vec_BCD2DFP (a) + vec_BCD2DFP (b);
+  t = vec_DFP2BCD(d_t);
+#endif
+  return (t);
 }
 
 /** \brief Divide a Vector Signed BCD 31 digit value by another BCD value.
@@ -172,16 +249,16 @@ vec_bcdadd (vui32_t a, vui32_t b)
  * @param b a 128-bit vector treated a signed BCD 31 digit value.
  * @return a 128-bit vector which is the lower 31 digits of (a / b).
  */
-static inline vui32_t
-vec_bcddiv (vui32_t a, vui32_t b)
+static inline vBCD_t
+vec_bcddiv (vBCD_t a, vBCD_t b)
 {
-        vui32_t  t;
-        _Decimal128 d_t, d_a, d_b;
-        d_a = vec_BCD2DFP (a);
-        d_b = vec_BCD2DFP (b);
-        d_t = bcd_qauntize0(d_a / d_b);
-        t = vec_DFP2BCD(d_t);
-        return (t);
+  vBCD_t t;
+  _Decimal128 d_t, d_a, d_b;
+  d_a = vec_BCD2DFP (a);
+  d_b = vec_BCD2DFP (b);
+  d_t = bcd_qauntize0 (d_a / d_b);
+  t = vec_DFP2BCD (d_t);
+  return (t);
 }
 
 /** \brief Multiply two Vector Signed BCD 31 digit values.
@@ -198,16 +275,16 @@ vec_bcddiv (vui32_t a, vui32_t b)
  * @param b a 128-bit vector treated a signed BCD 31 digit value.
  * @return a 128-bit vector which is the lower 31 digits of (a * b).
  */
-static inline vui32_t
-vec_bcdmul (vui32_t a, vui32_t b)
+static inline vBCD_t
+vec_bcdmul (vBCD_t a, vBCD_t b)
 {
-        vui32_t  t;
-        _Decimal128 d_t, d_a, d_b;
-        d_a = vec_BCD2DFP (a);
-        d_b = vec_BCD2DFP (b);
-        d_t = bcd_qauntize0(d_a * d_b);
-        t = vec_DFP2BCD(d_t);
-        return (t);
+  vBCD_t t;
+  _Decimal128 d_t, d_a, d_b;
+  d_a = vec_BCD2DFP (a);
+  d_b = vec_BCD2DFP (b);
+  d_t = bcd_qauntize0 (d_a * d_b);
+  t = vec_DFP2BCD (d_t);
+  return (t);
 }
 
 /** \brief Subtract two Vector Signed BCD 31 digit values.
@@ -219,75 +296,62 @@ vec_bcdmul (vui32_t a, vui32_t b)
  * @param b a 128-bit vector treated a signed BCD 31 digit value.
  * @return a 128-bit vector which is the lower 31 digits of (a - b).
  */
-static inline vui32_t
-vec_bcdsub (vui32_t a, vui32_t b)
+static inline vBCD_t
+vec_bcdsub (vBCD_t a, vBCD_t b)
 {
-        vui32_t  t;
+  vBCD_t t;
 #ifdef _ARCH_PWR8
-        __asm__(
-            "bcdsub. %0,%1,%2,0;\n"
-            : "=v" (t)
-            : "v" (a),
-              "v" (b)
-            : "cr6" );
+#if (__GNUC__ < 7)
+  __asm__(
+      "bcdsub. %0,%1,%2,0;\n"
+      : "=v" (t)
+      : "v" (a),
+      "v" (b)
+      : "cr6" );
 #else
-        _Decimal128 d_t, d_a, d_b;
-        d_a = vec_BCD2DFP (a);
-        d_b = vec_BCD2DFP (b);
-        d_t = d_a - d_b;
-        t = vec_DFP2BCD(d_t);
+  t = (vBCD_t) __builtin_bcdsub ((vi128_t) a, (vi128_t) b, 0);
 #endif
-        return (t);
+#else
+  _Decimal128 d_t, d_a, d_b;
+  d_a = vec_BCD2DFP (a);
+  d_b = vec_BCD2DFP (b);
+  d_t = d_a - d_b;
+  t = vec_DFP2BCD(d_t);
+#endif
+  return (t);
 }
 
 /** \brief Vector Decimal Convert Binary Coded Decimal (BCD) digit
- * pairs to binary integer bytes.
+ *  pairs to binary integer bytes.
  *
- *	Vector Convert 2 adjacent BCD digits, in each byte,
- *	to the corresponding binary char int value.
- *	Input values should be valid BCD nibbles in the range 0-9.
- *	The result will be binary char int values in the range 0-99.
+ *  Vector Convert 2 adjacent BCD digits, in each byte,
+ *  to the corresponding binary char int value.
+ *  Input values should be valid BCD nibbles in the range 0-9.
+ *  The result will be binary char int values in the range 0-99.
  *
- *	This can be used as the first stage operation in a wider BCD
- *	to binary conversions. Basically the result of this stage are
- *	binary coded 100s "digits".
+ *  This can be used as the first stage operation in a wider BCD
+ *  to binary conversions. Basically the result of this stage are
+ *  binary coded 100s "digits".
  *
- *	@param vra a 128-bit vector treated as a vector unsigned char
- *	of BCD pairs.
- *	@return 128-bit vector unsigned char, For each byte, BCD digit
- *	pairs converted to the equivalent binary representation
- *	in the range 0-99.
+ *  @param vra a 128-bit vector treated as a vector unsigned char
+ *  of BCD pairs.
+ *  @return 128-bit vector unsigned char, For each byte, BCD digit
+ *  pairs are converted to the equivalent binary representation
+ *  in the range 0-99.
  */
 static inline vui8_t
 vec_bcdctb100s (vui8_t vra)
 {
-  vui8_t result;
-  vui8_t high_digit;
-  vui8_t j, k, l, m;
-  const vui8_t e_perm =
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    { 0x00, 0x10, 0x02, 0x12, 0x04, 0x14, 0x06, 0x16, 0x08, 0x18, 0x0a, 0x1a,
-	0x0c, 0x1c, 0x0e, 0x1e };
-#else
-    { 0x01, 0x11, 0x03, 0x13, 0x05, 0x15, 0x07, 0x17, 0x09, 0x19, 0x0b, 0x1b,
-	0x0d, 0x1d, 0x0f, 0x1f };
-#endif
-
-  high_digit = vec_srbi (vra, 4);
-
+  vui8_t x6, c6, high_digit;
   /* Compute the high digit correction factor. For BCD to binary 100s
-   * this the isolated high digit multiplied by the radix different in
-   * binary.  For this stage we use 0x10 - 10 = 6.  */
-  k = vec_splat_u8((unsigned char )0x06);
-  l = (vui8_t) vec_mule (high_digit, k);
-  m = (vui8_t) vec_mulo (high_digit, k);
-  j = vec_perm (l, m, e_perm);
-
+   * this is the isolated high digit multiplied by the radix difference
+   * in binary.  For this stage we use 0x10 - 10 = 6.  */
+  high_digit = vec_srbi (vra, 4);
+  c6 = vec_splat_u8 ((unsigned char) 0x06);
+  x6 = vec_mulubm (high_digit, c6);
   /* Subtract the high digit correction bytes from the original
-   * BCD bytes values in binary.  */
-  result = vec_sub (vra, j);
-
-  return result;
+   * BCD bytes in binary.  This reduces byte range to 0-99. */
+  return vec_sub (vra, x6);
 }
 
 #endif /* VEC_BCD_PPC_H_ */

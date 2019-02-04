@@ -124,17 +124,14 @@ test__builtin_bcdmax (vi128_t vra, vi128_t vrb)
 
 vi128_t
 test__builtin_bcdabsd (vi128_t vra, vi128_t vrb)
-  {
-    //vi128_t vra_mb,  vrb_ma;
-    vi128_t result;
-    //vra_mb = __builtin_bcdsub (vra, vrb, 0);
-    //vrb_ma = __builtin_bcdsub (vrb, vra, 0);
-    if (__builtin_bcdsub_gt (vra, vrb, 0))
+{
+  vi128_t result;
+  if (__builtin_bcdsub_gt (vra, vrb, 0))
     result = __builtin_bcdsub (vra, vrb, 0);
-    else
+  else
     result = __builtin_bcdsub (vrb, vra, 0);
 
-    return result;
-  }
+  return result;
+}
 #endif
 #endif

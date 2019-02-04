@@ -518,6 +518,7 @@ static inline vui128_t vec_maxuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_minuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
 static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
+static inline vui128_t vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b);
 static inline vb128_t vec_setb_cyq (vui128_t vcy);
 static inline vb128_t vec_setb_ncq (vui128_t vcy);
 static inline vb128_t vec_setb_sq (vi128_t vra);

@@ -38,9 +38,7 @@
 #include <vec_common_ppc.h>
 #include <vec_bcd_ppc.h>
 
-#include "arith128.h"
 #include <testsuite/arith128_print.h>
-
 #include <testsuite/arith128_test_bcd.h>
 
 vui8_t
@@ -162,9 +160,9 @@ db_vec_BC10ts2i128 (vui64_t bc10t2)
   vui128_t l;
 //  vui64_t cvt10t = {0xFFDC790D903F0000UL, 0xFFDC790D903F0000UL};
 
-  print_v2int64 ("2xBC10ts   ", (vui64_t)bc10t2);
-  print_v2xint64("           ", (vui64_t)bc10t2);
-  print_vint128 ("           ", (vui128_t)bc10t2);
+  print_v2int64 ("2xBC10ts   ", (vui64_t) bc10t2);
+  print_v2xint64("           ", (vui64_t) bc10t2);
+  print_vint128 ("           ", (vui128_t) bc10t2);
 
 #if 0
   vui128_t v10_16 = (vui128_t)CONST_VINT128_DW (0, 10000000000000000UL);
@@ -187,18 +185,18 @@ db_vec_BC10ts2i128 (vui64_t bc10t2)
   k = (vui64_t)l;
 #endif
 #else
-  print_vint128x (" cvt*10t k ", (vui128_t)k);
+  print_vint128x (" cvt*10t k ", (vui128_t) k);
 
   l = vec_srqi ((vui128_t)bc10t2, 64);
 
   print_vint128x (" bc10t2>>64", l);
   print_vint128  ("           ", l);
-  l = vec_mulluq (l, (vui128_t)k);
+  l = vec_mulluq (l, (vui128_t) k);
 #endif
   print_vint128x (" hd*10t ev ", l);
   print_vint128  ("           ", l);
 
-  result = vec_subuqm ((vui128_t)bc10t2, l);
+  result = vec_subuqm ((vui128_t) bc10t2, l);
   print_vint128x ("BCD-hd*10x ", result);
   print_vint128  ("           ", result);
   return result;
@@ -214,14 +212,14 @@ db_vec_BC10ts2i128 (vui64_t bc10t2)
 int
 test_48 (void)
 {
-  vui8_t i, j/*, k, l, m*/;
-  vui16_t /*i, j,*/ k/*, l, m*/;
+  vui8_t i, j;
+  vui16_t k;
   vui32_t l;
   vui64_t m;
   vui128_t n;
   int rc = 0;
 
-  i = (vui8_t){0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99};
+  i = (vui8_t) {0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99};
   j = test_vec_bcdctb100s (i);
   print_vint8x ("BCD 9s     ", i);
   print_vint8d ("           ", i);
@@ -243,18 +241,21 @@ test_48 (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
 int
 test_cvtbcd2c100 (void)
 {
-  vui8_t i, j/*, k, l, m*/;
+  vui8_t i, j;
   vui8_t e;
   int rc = 0;
 
   printf ("\n%s Vector BCD convert\n", __FUNCTION__);
 
-  i = (vui8_t){0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99};
-  e = (vui8_t){99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
-  j = test_vec_bcdctb100s (i);
+  i = (vui8_t) { 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
+	         0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99 };
+  e = (vui8_t) { 99, 99, 99, 99, 99, 99, 99, 99,
+                 99, 99, 99, 99, 99, 99, 99, 99 };
+  j = test_vec_bcdctb100s(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint8x ("BCD 9s     ", i);
@@ -264,9 +265,11 @@ test_cvtbcd2c100 (void)
 #endif
   rc += check_vuint128x ("vec_bcdctb100s:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  e = (vui8_t){00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00};
-  j = test_vec_bcdctb100s (i);
+  i = (vui8_t) { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  e = (vui8_t) { 00, 00, 00, 00, 00, 00, 00, 00,
+                 00, 00, 00, 00, 00, 00, 00, 00 };
+  j = test_vec_bcdctb100s(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint8x ("BCD 0s     ", i);
@@ -276,9 +279,11 @@ test_cvtbcd2c100 (void)
 #endif
   rc += check_vuint128x ("vec_bcdctb100s:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui8_t){0x01, 0x09, 0x10, 0x19, 0x20, 0x29, 0x30, 0x39, 0x40, 0x49, 0x50, 0x59, 0x60, 0x69, 0x70, 0x79};
-  e = (vui8_t){1, 9, 10, 19, 20, 29, 30, 39, 40, 49, 50, 59, 60, 69, 70, 79};
-  j = test_vec_bcdctb100s (i);
+  i = (vui8_t) { 0x01, 0x09, 0x10, 0x19, 0x20, 0x29, 0x30, 0x39,
+                 0x40, 0x49, 0x50, 0x59, 0x60, 0x69, 0x70, 0x79 };
+  e = (vui8_t) { 1, 9, 10, 19, 20, 29, 30, 39,
+                40, 49, 50, 59, 60, 69, 70, 79 };
+  j = test_vec_bcdctb100s(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint8x ("BCD 01-79  ", i);
@@ -288,9 +293,11 @@ test_cvtbcd2c100 (void)
 #endif
   rc += check_vuint128x ("vec_bcdctb100s:", (vui128_t) j, (vui128_t) e);
 
-  i = (vui8_t){0x80, 0x81, 0x82, 0x83, 0x86, 0x87, 0x88, 0x89, 0x90, 0x91, 0x92, 0x93, 0x95, 0x96, 0x97, 0x98};
-  e = (vui8_t){80, 81, 82, 83, 86, 87, 88, 89, 90, 91, 92, 93, 95, 96, 97, 98};
-  j = test_vec_bcdctb100s (i);
+  i = (vui8_t) { 0x80, 0x81, 0x82, 0x83, 0x86, 0x87, 0x88, 0x89,
+                 0x90, 0x91, 0x92, 0x93, 0x95, 0x96, 0x97, 0x98 };
+  e = (vui8_t) { 80, 81, 82, 83, 86, 87, 88, 89,
+                 90, 91, 92, 93, 95, 96, 97, 98 };
+  j = test_vec_bcdctb100s(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint8x ("BCD 80-98  ", i);
@@ -307,41 +314,41 @@ test_cvtbcd2c100 (void)
 int
 test_bcd_addsub (void)
 {
-  vui32_t i, j, k /*, l, m*/;
-  vui32_t e, ex;
+  vBCD_t i, j, k;
+  vBCD_t e, ex;
   int rc = 0;
 
   printf ("\n%s Vector BCD +-\n", __FUNCTION__);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
   k = vec_bcdadd (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (1+1)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x2c);
+  e = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x2c);
   rc += check_vuint128x ("vec_bcdadd:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
+  i = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x9999999c);
+  j = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x0000001c);
   k = vec_bcdadd (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (9999999+1)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0x1, 0x0000000c);
+  e = (vBCD_t) CONST_VINT128_W(0, 0, 0x1, 0x0000000c);
   rc += check_vuint128x ("vec_bcdadd:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
+  i = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x0000001c);
+  j = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x0000001c);
   k = vec_bcdsub (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (1-1)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000000c);
-  ex = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000000d);
+  e =  (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000000c);
+  ex = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000000d);
   if (vec_all_eq (k, ex))
     {
       printf ("vec_bcdsub: ignore negative zero. Likely QEMU artifact\n");
@@ -349,24 +356,24 @@ test_bcd_addsub (void)
     }
   rc += check_vuint128x ("vec_bcdsub:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
   k = vec_bcdsub (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (9999999-1)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999998c);
+  e = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999998c);
   rc += check_vuint128x ("vec_bcdsub:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
   k = vec_bcdsub (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (1-9999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999998d);
+  e = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999998d);
   rc += check_vuint128x ("vec_bcdsub:", (vui128_t) k, (vui128_t) e);
 
   return rc;
@@ -376,70 +383,75 @@ test_bcd_addsub (void)
  int
  test_bcd_muldiv (void)
  {
-  vui32_t i, j, k /*, l, m*/;
-  vui32_t e;
+   vBCD_t i, j, k;
+   vBCD_t e;
   int rc = 0;
 
   printf ("\n%s Vector BCD */\n", __FUNCTION__);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x0000001c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
   k = vec_bcdmul (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (1*9999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
+  e = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
   rc += check_vuint128x ("vec_bcdmul:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x9999999c);
   k = vec_bcdmul (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (9999999*9999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0, 0, 0x9999998, 0x0000001c);
+  e = (vBCD_t) CONST_VINT128_W (0, 0, 0x9999998, 0x0000001c);
   rc += check_vuint128x ("vec_bcdmul:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0x99999999, 0x9999999c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0x99999999, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0x99999999, 0x9999999c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0x99999999, 0x9999999c);
   k = vec_bcdmul (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (999999999999999*999999999999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0x09999999, 0x99999998, 0x00000000, 0x0000001c);
+  e = (vBCD_t) CONST_VINT128_W (0x09999999, 0x99999998,
+				0x00000000, 0x0000001c);
   rc += check_vuint128x ("vec_bcdmul:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0x09999999, 0x99999998, 0x00000000, 0x0000001c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0x99999999, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0x09999999, 0x99999998,
+				0x00000000, 0x0000001c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0x99999999, 0x9999999c);
   k = vec_bcddiv (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (999999999999998000000000000001/999999999999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0x00000000, 0x00000000, 0x99999999, 0x9999999c);
+  e = (vBCD_t) CONST_VINT128_W (0x00000000, 0x00000000,
+				0x99999999, 0x9999999c);
   rc += check_vuint128x ("vec_bcddiv:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0x99999999, 0x9999999c);
-  j = (vui32_t )CONST_VINT32_W(0, 0x99999999, 0x99999999, 0x9999999c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0x99999999, 0x9999999c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0x99999999, 0x99999999, 0x9999999c);
   k = vec_bcdmul (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (999999999999999*99999999999999999999999)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0x00000000, 0x00000000, 0x00000000, 0x0000000c);
+  e = (vBCD_t) CONST_VINT128_W (0x00000000, 0x00000000,
+				0x00000000, 0x0000000c);
   rc += check_vuint128x ("vec_bcdmul:", (vui128_t) k, (vui128_t) e);
 
-  i = (vui32_t )CONST_VINT32_W(0, 0, 0x00000001, 0x0000000c);
-  j = (vui32_t )CONST_VINT32_W(0, 0, 0, 0x3c);
+  i = (vBCD_t) CONST_VINT128_W (0, 0, 0x00000001, 0x0000000c);
+  j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x3c);
   k = vec_bcddiv (i, j);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x_sum ("bcd (10000000/3)", k, i, j);
 #endif
-  e = (vui32_t )CONST_VINT32_W(0x00000000, 0x00000000, 0x00000000, 0x3333333c);
+  e = (vBCD_t) CONST_VINT128_W (0x00000000, 0x00000000,
+				0x00000000, 0x3333333c);
   rc += check_vuint128x ("vec_bcddiv:", (vui128_t) k, (vui128_t) e);
 
   return rc;

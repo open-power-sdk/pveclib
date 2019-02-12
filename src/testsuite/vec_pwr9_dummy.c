@@ -31,6 +31,7 @@
 #include <vec_int128_ppc.h>
 #include <vec_f128_ppc.h>
 #include <vec_f32_ppc.h>
+#include <vec_bcd_ppc.h>
 
 vui8_t
 __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
@@ -861,6 +862,24 @@ __test_vec_extract_sig_f32 (vf32_t val)
   return vec_extract_sig (val);
 }
 #endif
+
+vui128_t
+example_vec_bcdctuq_PWR9 (vui8_t vra)
+{
+  vui8_t d100;
+  vui16_t d10k;
+  vui32_t d100m;
+  vui64_t d10e;
+  vui128_t result;
+
+  d100 = vec_rdxct100b ((vui8_t) vra);
+  d10k = vec_rdxct10kh (d100);
+  d100m = vec_rdxct100mw (d10k);
+  d10e = vec_rdxct10E16d (d100m);
+  return vec_rdxct10e32q (d10e);
+
+  return result;
+}
 
 void
 example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)

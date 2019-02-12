@@ -47,7 +47,7 @@ test_vec_DFP2BCD (_Decimal128 val)
 vui8_t
 test_vec_bcdctb100s (vui8_t a)
 {
-  return (vec_bcdctb100s (a));
+  return (vec_rdxct100b (a));
 }
 
 vui32_t
@@ -72,6 +72,74 @@ vui32_t
 test_vec_bcddiv (vui32_t a, vui32_t b)
 {
   return vec_bcddiv (a, b);
+}
+
+vui128_t
+test_vec_bcdctuq (vBCD_t a)
+{
+  return (vec_bcdctuq (a));
+}
+
+vui64_t
+test_vec_bcdctud (vBCD_t a)
+{
+  return (vec_bcdctud (a));
+}
+
+vui32_t
+test_vec_bcdctuw (vBCD_t a)
+{
+  return (vec_bcdctuw (a));
+}
+
+vui16_t
+test_vec_bcdctuh (vBCD_t a)
+{
+  return (vec_bcdctuh (a));
+}
+
+vui8_t
+test_vec_bcdctub (vBCD_t a)
+{
+  return (vec_bcdctub (a));
+}
+
+vui128_t
+example_vec_bcdctuq (vui8_t vra)
+{
+  vui8_t d100;
+  vui16_t d10k;
+  vui32_t d100m;
+  vui64_t d10e;
+  vui128_t result;
+
+  d100 = vec_rdxct100b ((vui8_t) vra);
+  d10k = vec_rdxct10kh (d100);
+  d100m = vec_rdxct100mw (d10k);
+  d10e = vec_rdxct10E16d (d100m);
+  result = vec_rdxct10e32q (d10e);
+
+  return result;
+}
+
+void
+example_vec_bcdctuq_loop (vui128_t *out, vui8_t* in, int cnt)
+{
+  vui8_t d100;
+  vui16_t d10k;
+  vui32_t d100m;
+  vui64_t d10e;
+  vui128_t result;
+  int i;
+
+  for (i = 0; i < cnt; i++)
+    {
+      d100 = vec_rdxct100b (*in++);
+      d10k = vec_rdxct10kh (d100);
+      d100m = vec_rdxct100mw (d10k);
+      d10e = vec_rdxct10E16d (d100m);
+      *out++ = vec_rdxct10e32q (d10e);
+    }
 }
 
 #if (__GNUC__ > 4)

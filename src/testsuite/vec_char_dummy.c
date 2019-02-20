@@ -15,11 +15,17 @@
 #if __GNUC__ >= 8
 /* Generic vec_mul not supported for vector char until GCC 8.  */
 vui8_t
-__test_mulubm (vui8_t __A, vui8_t __B)
+__test_mulubm_gcc (vui8_t __A, vui8_t __B)
 {
   return vec_mul (__A, __B);
 }
 #endif
+
+vui8_t
+__test_mulubm (vui8_t __A, vui8_t __B)
+{
+  return vec_mulubm (__A, __B);
+}
 
 vui8_t
 __test_absdub (vui8_t __A, vui8_t __B)
@@ -133,4 +139,22 @@ vui8_t
 test_vec_vmrglb  (vui8_t a, vui8_t b)
 {
   return vec_vmrglb (a, b);
+}
+
+vui8_t
+test_vec_mrgalb (vui16_t vra, vui16_t vrb)
+{
+  return vec_mrgalb (vra, vrb);
+}
+
+vui8_t
+test_vec_vmrgob (vui8_t vra, vui8_t vrb)
+{
+  return vec_vmrgob (vra, vrb);
+}
+
+vui8_t
+test_vec_packub  (vui8_t a, vui8_t b)
+{
+  return vec_pack ((vui16_t) a, (vui16_t) b);
 }

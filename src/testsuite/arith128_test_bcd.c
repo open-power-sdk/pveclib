@@ -62,7 +62,7 @@ db_vec_ZN2i128 (vui8_t zone00, vui8_t zone16)
 
   print_vint8x ("32xZoned   ", zone00);
   print_vint8x ("           ", zone16);
-  print_vint8c ("32xZoned %c", zone00);
+  print_vint8c ("32xZoned  c", zone00);
   print_vint8c ("           ", zone16);
 
   znd00 = vec_and (zone00, dmask);

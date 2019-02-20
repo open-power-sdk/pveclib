@@ -39,7 +39,7 @@
  * (POWER7, POWER8) processors (using existing VMX, VSX, and DFP
  * instructions) and provides in-line assembler
  * implementations for older compilers that do not
- * provide the build-ins.
+ * provide the built-ins.
  *
  * <A HREF="https://en.wikipedia.org/wiki/Binary-coded_decimal">
  * Binary-coded decimal</A> (Also called <I>packed decimal</I>) and the
@@ -50,7 +50,7 @@
  * In both formats the sign indicator is associated (in the same
  * character or byte) with the low order digit.
  *
- * BCD and Zoned formats and operations where implemented for some of
+ * BCD and Zoned formats and operations were implemented for some of
  * the earliest computers. Then circuitry was costly and arithmetic
  * was often implemented as a digit (or bit) serial operation.
  * Modern computers have more circuitry with wider data paths and more
@@ -82,8 +82,8 @@
  * or later server level processor support.
  *
  * However the vector unit and recent BCD and Zoned extensions can
- * still be useful. Areas include large order multiple precision
- * computation and conversions between binary and Decimal radix.
+ * still be useful in areas include large order multiple precision
+ * computation and conversions between binary and decimal radix.
  * Both are required to convert large decimal numeric or floating-point
  * values with extreme exponents for input or print.
  * And conventions between _Float128 and _Decimal128 types is even
@@ -101,7 +101,7 @@
  *   - As intermediate step between external decimal/_Decimal128 and _Float128
  * - Conversions between BCD and Zoned (character)
  * - Conversions between BCD and DFP
- * - BCD add/subtract with carry/extend.
+ * - BCD add/subtract with carry/extend
  * - BCD compare equal, greater than, less than
  * - BCD copy sign and set bool from sign
  * - BCD digit shift left/right
@@ -110,7 +110,7 @@
  * The original VMX (AKA Altivec) only defined a few instructions that
  * operated on the 128-bit vector as a whole.
  * This included the vector shifts by bit and octet, and generalized
- * vector permute. General binary integer add, subtract and multiply
+ * vector permute, general binary integer add, subtract and multiply
  * for byte/halfword/word. But no BCD or decimal character operations.
  *
  * POWER6 introduced the Decimal Floating-point Facility. DFP provides
@@ -122,7 +122,7 @@
  * and unsigned (32-digit) BCD. And conversions to and from binary
  * signed long (64-bit) integer.
  * DFP operations use the existing floating-point registers (FPRs).
- * The 128-bit DPF (quadword) instructions operate on even/odd
+ * The 128-bit DFP (quadword) instructions operate on even/odd
  * 64-bit Floating-point register pairs (FPRp).
  *
  * POWER6 also implemented the Vector Facility (VMX) instructions.
@@ -155,17 +155,18 @@
  * 31-digits.
  * While the PowerISA did not provide carry/extend forms of
  * bcdadd/bcdsub, it does set a condition code with bits for
- * GT/LT/EQ/OVF. This allows for implementations of BCD compare and
+ * GT/LT/EQ/OVF. This allows for implementations of BCD compare
  * and the overflow (OVF) bit supports carry/extend operations.
  * Also the lack of BCD multiply/divide in the vector unit is not a
- * problem we can leverage DFP (see vec_bcdmul(), vec_bcddiv()).
+ * problem because we can leverage DFP
+ * (see vec_bcdmul(), vec_bcddiv()).
  *
  * POWER9 (PowerISA 3.0B) adds BCD copy sign, set sign, shift, round,
  * and truncate instructions. There are also unsigned (32-digit) forms
- * of the shift and truncate instructions. And convert instructions
+ * of the shift and truncate instructions. And instructions to convert
  * between signed BCD and quadword (__int128) and signed BCD and Zoned.
  * POWER9 also added quadword binary multiply 10 with carry extend
- * forms. Theses can also help with decimal to binary conversion.
+ * forms than can also help with decimal to binary conversion.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -183,7 +184,7 @@
  * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
  * <altivec.n> or <bcd.h> provided by available compilers in common use.
  * Examples include bcd_add, bcd_cmpg and bcd_mul.
- * - Are commonly used operations, not covered by the ABI or
+ * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.  Examples include vec_pack_Decimal128() and
  * vec_unpack_Decimal128().
@@ -193,7 +194,7 @@
  *
  * \section bcd128_endian_issues_0_0 Endian problems with quadword implementations
  *
- * Technically operations on quadword elements should not require any
+ * Technically, operations on quadword elements should not require any
  * endian specific transformation. There is only one element so there
  * can be no confusion about element numbering or order. However
  * some of the more complex quadword operations are constructed from
@@ -201,9 +202,9 @@
  * <altivec.h> are required by the OpenPOWER ABI to be endian sensitive.
  * See \ref i64_endian_issues_0_0 for a more detailed discussion.
  *
- * In any case the arithmetic (high to low) order of digit nibbles in
+ * In any case, the arithmetic (high to low) order of digit nibbles in
  * BCD or characters in Zoned are defined in the PowerISA.
- * In the vector register high order digits are on the left
+ * In the vector register, high order digits are on the left
  * while low order digits and the sign are on the right.
  * (See vec_bcdadd() and vec_bcdsub()).
  * So pveclib implementations will need to either:
@@ -237,7 +238,7 @@
 
 ///@cond INTERNAL
 static inline vf64_t vec_pack_Decimal128 (_Decimal128 lval);
-static inline _Decimal128 vec_qauntize0_Decimal128 (_Decimal128 val);
+static inline _Decimal128 vec_quantize0_Decimal128 (_Decimal128 val);
 static inline vui8_t vec_rdxcfzt100b (vui8_t zone00, vui8_t zone16);
 static inline vui8_t vec_rdxct100b (vui8_t vra);
 static inline vui16_t vec_rdxct10kh (vui8_t vra);
@@ -365,7 +366,7 @@ vec_bcdadd (vBCD_t a, vBCD_t b)
  *  equivalent unsigned char, in the range 0-99.
  *  Input values should be valid 2 x BCD nibbles in the range 0-9.
  *
- *  @param vra a 128-bit vector treated as a 16 unsigned 2-digit BCD
+ *  @param vra a 128-bit vector treated as 16 unsigned 2-digit BCD
  *  numbers.
  *  @return 128-bit vector unsigned char, For each byte in the range
  *  0-99.
@@ -383,7 +384,7 @@ vec_bcdctub (vBCD_t vra)
  *  equivalent unsigned short, in the range 0-9999.
  *  Input values should be valid 4 x BCD nibbles in the range 0-9.
  *
- *  @param vra a 128-bit vector treated as a 8 unsigned 4-digit BCD
+ *  @param vra a 128-bit vector treated as 8 unsigned 4-digit BCD
  *  numbers.
  *  @return 128-bit vector unsigned short, For each halfword in the
  *  range 0-9999.
@@ -403,7 +404,7 @@ vec_bcdctuh (vBCD_t vra)
  *  equivalent unsigned int, in the range 0-99999999.
  *  Input values should be valid 8 x BCD nibbles in the range 0-9.
  *
- *  @param vra a 128-bit vector treated as a 4 unsigned 8-digit BCD
+ *  @param vra a 128-bit vector treated as 4 unsigned 8-digit BCD
  *  numbers.
  *  @return 128-bit vector unsigned int, For each word in the
  *  range 0-99999999.
@@ -425,7 +426,7 @@ vec_bcdctuw (vBCD_t vra)
  *  equivalent unsigned long int, in the range 0-9999999999999999.
  *  Input values should be valid 16 x BCD nibbles in the range 0-9.
  *
- *  @param vra a 128-bit vector treated as a 2 unsigned 16-digit BCD
+ *  @param vra a 128-bit vector treated as 2 unsigned 16-digit BCD
  *  numbers.
  *  @return 128-bit vector unsigned long int, For each doubleword in
  *  the range 0-9999999999999999.
@@ -450,8 +451,8 @@ vec_bcdctud (vBCD_t vra)
  *  0-99999999999999999999999999999999.
  *  Input values should be valid 32 x BCD nibbles in the range 0-9.
  *
- *  @param vra a 128-bit vector treated as unsigned 32-digit BCD
- *  numbers.
+ *  @param vra a 128-bit vector treated as an unsigned 32-digit BCD
+ *  number.
  *  @return 128-bit vector unsigned __int128 in
  *  the range 0-99999999999999999999999999999999.
  */
@@ -485,7 +486,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
   _Decimal128 d_t, d_a, d_b;
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
-  d_t = vec_qauntize0_Decimal128 (d_a / d_b);
+  d_t = vec_quantize0_Decimal128 (d_a / d_b);
   t = vec_DFP2BCD (d_t);
   return (t);
 }
@@ -514,7 +515,7 @@ vec_bcdmul (vBCD_t a, vBCD_t b)
   _Decimal128 d_t, d_a, d_b;
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
-  d_t = vec_qauntize0_Decimal128 (d_a * d_b);
+  d_t = vec_quantize0_Decimal128 (d_a * d_b);
   t = vec_DFP2BCD (d_t);
   return (t);
 }
@@ -581,7 +582,7 @@ vec_pack_Decimal128 (_Decimal128 lval)
 /** \brief Quantize (truncate) a _Decimal128 value before convert to
  * BCD.
  *
- * The truncate (round toward 0) and justify right the input
+ * Truncate (round toward 0) and justify right the input
  * _Decimal128 value so that the unit digit is in the right most
  * position.  This supports BCD multiply and divide using DFP
  * instructions by truncating fractional digits before conversion
@@ -591,7 +592,7 @@ vec_pack_Decimal128 (_Decimal128 lval)
  * @return The quantized __Decimal128 value in a double float pair.
  */
 static inline _Decimal128
-vec_qauntize0_Decimal128 (_Decimal128 val)
+vec_quantize0_Decimal128 (_Decimal128 val)
 {
 #ifdef _ARCH_PWR7
   _Decimal128 t;
@@ -611,7 +612,7 @@ vec_qauntize0_Decimal128 (_Decimal128 val)
  *
  *  Convert 32 decimal digits from Zoned Format (one character
  *  per digit, in 2 vectors) to Binary coded century format.
- *  Century format is adjacent digit pairs converter to a binary
+ *  Century format is adjacent digit pairs converted to a binary
  *  integer in the range 0-99. Each century digit is stored in a byte.
  *  Input values should be valid decimal characters in the range 0-9.
  *
@@ -673,7 +674,7 @@ vec_rdxcfzt100b (vui8_t zone00, vui8_t zone16)
  *
  *  Convert 32 decimal digits from BCD Format (one 4-bit nibble
  *  per digit) to Binary coded century format.
- *  Century format is adjacent digit pairs converter to a binary
+ *  Century format is adjacent digit pairs converted to a binary
  *  integer in the range 0-99. Each century digit is stored in a byte.
  *  Input values should be valid BCD nibbles in the range 0-9.
  *
@@ -686,7 +687,7 @@ vec_rdxcfzt100b (vui8_t zone00, vui8_t zone16)
  *  This matches the digit order precedence of Decimal Add/Subtract.
  *
  *  @param vra a 128-bit vector treated as a vector unsigned char
- *  of BCD pairs.
+ *  of BCD nibble pairs.
  *  @return 128-bit vector unsigned char, For each byte, BCD digit
  *  pairs are converted to the equivalent binary representation
  *  in the range 0-99.
@@ -725,7 +726,7 @@ vec_rdxct100b (vui8_t vra)
  *  This matches the digit order precedence of Decimal Add/Subtract.
  *
  *  @param vra a 128-bit vector treated as a vector unsigned char
- *  of century digit pairs.
+ *  of radix 100 digit pairs.
  *  @return 128-bit vector unsigned short. For each halfword,
  *  adjacent pairs of century digits pairs are converted to the
  *  equivalent binary halfword representation in the range 0-9999.
@@ -768,7 +769,7 @@ vec_rdxct10kh (vui8_t vra)
  *  This matches the digit order precedence of Decimal Add/Subtract.
  *
  *  @param vra a 128-bit vector treated as a vector unsigned short
- *  of 10k digit pairs.
+ *  of radix 10k digit pairs.
  *  @return 128-bit vector unsigned int. For each halfword, adjacent
  *  10k digit pairs are converted to the equivalent binary word
  *  integer representation in the range 0-99999999.
@@ -811,7 +812,7 @@ vec_rdxct100mw (vui16_t vra)
  *  This matches the digit order precedence of Decimal Add/Subtract.
  *
  *  @param vra a 128-bit vector treated as a vector unsigned int
- *  of 100m digit pairs.
+ *  of radix 100m digit pairs.
  *  @return 128-bit vector unsigned long. For each word pair,
  *  containing 8 digit equivalent value each,
  *  adjacent 100m digits are converted to the equivalent binary
@@ -855,7 +856,7 @@ vec_rdxct10E16d (vui32_t vra)
  *  This matches the digit order precedence of Decimal Add/Subtract.
  *
  *  @param vra a 128-bit vector treated as a vector unsigned long
- *  of 10e16-1 digit pairs.
+ *  of radix 10e16 digit pairs.
  *  @return 128-bit vector unsigned __int128. The doubleword pair, of
  *  16 equivalent digits each, are converted to the equivalent binary
  *  quadword representation in the range

@@ -645,7 +645,7 @@ test_vec_cosf32_PWR9 (vf32_t value)
  * Otherwise compute and return sin(value).
  */
 __binary128
-test_sinf128 (__binary128 value)
+test_sinf128_PWR9 (__binary128 value)
   {
     __binary128 result;
 
@@ -672,7 +672,7 @@ test_sinf128 (__binary128 value)
  * Otherwise compute and return sin(value).
  */
 __binary128
-test_cosf128 (__binary128 value)
+test_cosf128_PWR9 (__binary128 value)
   {
     __binary128 result;
 
@@ -863,6 +863,124 @@ __test_vec_extract_sig_f32 (vf32_t val)
 }
 #endif
 
+vBCD_t
+test_vec_bcdmulh_PWR9 (vBCD_t a, vBCD_t b)
+{
+  return vec_bcdmulh (a, b);
+}
+
+vBCD_t
+test_vec_bcdmul_PWR9 (vBCD_t a, vBCD_t b)
+{
+  return vec_bcdmul (a, b);
+}
+
+vBCD_t
+test_vec_cbcdmul_PWR9 (vBCD_t *p, vBCD_t a, vBCD_t b)
+{
+  return vec_cbcdmul (p, a, b);
+}
+
+vi128_t
+test_vec_bcdctsq_PWR9 (vBCD_t a)
+{
+  return (vec_bcdctsq (a));
+}
+
+vBCD_t
+test_vec_bcdcpsgn_PWR9 (vBCD_t a, vBCD_t b)
+{
+  return vec_bcdcpsgn (a, b);
+}
+
+#if 1
+vBCD_t
+test_vec_bcds_PWR9 (vBCD_t vra, vi8_t vrb)
+{
+  return vec_bcds (vra, vrb);
+}
+vBCD_t
+test_vec_bcdus_PWR9 (vBCD_t vra, vi8_t vrb)
+{
+  return vec_bcdus (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdsrqi_1_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsrqi (vra, 1);
+}
+
+vBCD_t
+test_vec_bcdsrqi_31_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsrqi (vra, 31);
+}
+
+vBCD_t
+test_vec_bcdsruqi_1_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsruqi (vra, 1);
+}
+
+vBCD_t
+test_vec_bcdsruqi_31_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsruqi (vra, 31);
+}
+
+vBCD_t
+test_vec_bcdslqi_1_PWR9 (vBCD_t vra)
+{
+  return vec_bcdslqi (vra, 1);
+}
+
+vBCD_t
+test_vec_bcdslqi_31_PWR9 (vBCD_t vra)
+{
+  return vec_bcdslqi (vra, 31);
+}
+
+vBCD_t
+test_vec_bcdsluqi_1_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsluqi (vra, 1);
+}
+
+vBCD_t
+test_vec_bcdsluqi_31_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsluqi (vra, 31);
+}
+#endif
+
+
+vBCD_t
+test_vec_cbcdaddcsq_PWR9 (vBCD_t *c, vBCD_t a, vBCD_t b)
+{
+  return vec_cbcdaddcsq (c, a, b);
+}
+
+vBCD_t
+test_vec_cbcdaddcsq2_PWR9 (vBCD_t *c, vBCD_t a, vBCD_t b)
+{
+  *c = vec_bcdaddcsq (a, b);
+  return vec_bcdadd (a, b);
+}
+
+vBCD_t
+test_vec_cbcdaddecsq_PWR9 (vBCD_t *co, vBCD_t a, vBCD_t b, vBCD_t c)
+{
+  return vec_cbcdaddecsq (co, a, b, c);
+}
+
+vBCD_t
+test_vec_cbcdaddecsq2_PWR9 (vBCD_t *co, vBCD_t a, vBCD_t b, vBCD_t c)
+{
+  *co = vec_bcdaddecsq (a, b, c);
+  return vec_bcdaddesqm (a, b, c);
+}
+
 vui128_t
 example_vec_bcdctuq_PWR9 (vui8_t vra)
 {
@@ -879,6 +997,54 @@ example_vec_bcdctuq_PWR9 (vui8_t vra)
   return vec_rdxct10e32q (d10e);
 
   return result;
+}
+
+void
+example_vec_cbcdecsq_loop_PWR9 (vBCD_t *cout, vBCD_t* out, vBCD_t* a, vBCD_t* b,
+				long cnt)
+{
+  vBCD_t c, cn;
+  long i;
+
+  out[cnt - 1] = vec_cbcdaddcsq (&c, a[cnt - 1], b[cnt - 1]);
+
+  for (i = (cnt - 2); i >= 0; i--)
+    {
+      out[i] = vec_cbcdaddecsq (&cn, a[i], b[i], c);
+      c = cn;
+    }
+  *cout = cn;
+}
+
+vBCD_t
+test_vec_bcdaddcsq_PWR9 (vBCD_t a, vBCD_t b)
+{
+  return vec_bcdaddcsq (a, b);
+}
+
+vBCD_t
+test_vec_bcdaddesqm_PWR9 (vBCD_t a, vBCD_t b, vBCD_t c)
+{
+  return vec_bcdaddesqm (a, b, c);
+}
+
+vBCD_t
+test_vec_bcdaddecsq_PWR9 (vBCD_t a, vBCD_t b, vBCD_t c)
+{
+  return vec_bcdaddecsq (a, b, c);
+}
+
+vi128_t
+test__vec_bcdaddcsq_PWR9 (vi128_t a, vi128_t b)
+{
+  vi128_t t;
+  t = (vi128_t) _BCD_CONST_ZERO;
+  if (__builtin_expect (__builtin_bcdadd_ov ( a, b, 0), 0))
+    {
+      t = __builtin_bcdadd (a, b, 0);
+      t = (vi128_t) vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, (vBCD_t) t);
+    }
+  return (t);
 }
 
 void

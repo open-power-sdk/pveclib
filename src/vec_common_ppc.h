@@ -327,6 +327,8 @@ typedef union
 #define VEC_WE_3 0
 /*! \brief Element index for highest order hword.  */
 #define VEC_HW_H 7
+/*! \brief Element index for lowest order hword of the high dword.  */
+#define VEC_HW_L_DWH 4
 /*! \brief Element index for lowest order hword.  */
 #define VEC_HW_L 0
 /*! \brief Element index for lowest order byte.  */
@@ -368,6 +370,8 @@ typedef union
 #define VEC_WE_2 2
 #define VEC_WE_3 3
 #define VEC_HW_H 0
+/*! \brief Element index for lowest order hword of the high dword.  */
+#define VEC_HW_L_DWH 3
 #define VEC_HW_L 7
 #define VEC_BYTE_L 15
 /*! \brief Element index for lowest order byte of the high dword.  */

@@ -899,6 +899,43 @@ test_vec_bcds_PWR9 (vBCD_t vra, vi8_t vrb)
 {
   return vec_bcds (vra, vrb);
 }
+
+vBCD_t
+test_vec_bcdsr_PWR9 (vBCD_t vra, vi8_t vrb)
+{
+  return vec_bcdsr (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdsrrqi_PWR9 (vBCD_t vra)
+{
+  return vec_bcdsrrqi (vra, 15);
+}
+
+vBCD_t
+test_vec_bcdtrunc_PWR9 (vBCD_t vra, vui16_t vrb)
+{
+  return vec_bcdtrunc (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdtruncqi_PWR9 (vBCD_t vra)
+{
+  return vec_bcdtruncqi (vra, 15);
+}
+
+vBCD_t
+test_vec_bcdutrunc_PWR9 (vBCD_t vra, vui16_t vrb)
+{
+  return vec_bcdutrunc (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdutruncqi_PWR9 (vBCD_t vra)
+{
+  return vec_bcdutruncqi (vra, 15);
+}
+
 vBCD_t
 test_vec_bcdus_PWR9 (vBCD_t vra, vi8_t vrb)
 {
@@ -1034,8 +1071,14 @@ test_vec_bcdaddecsq_PWR9 (vBCD_t a, vBCD_t b, vBCD_t c)
   return vec_bcdaddecsq (a, b, c);
 }
 
+vBCD_t
+test__vec_bcdaddcsq_PWR9 (vBCD_t a, vBCD_t b)
+{
+  return vec_bcdaddcsq (a, b);
+}
+
 vi128_t
-test__vec_bcdaddcsq_PWR9 (vi128_t a, vi128_t b)
+test__vec_bcdaddcsq2_PWR9 (vi128_t a, vi128_t b)
 {
   vi128_t t;
   t = (vi128_t) _BCD_CONST_ZERO;

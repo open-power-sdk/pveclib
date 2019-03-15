@@ -30,7 +30,7 @@
 /*!
  * \file  vec_bcd_ppc.h
  * \brief Header package containing a collection of Binary Coded
- * Decimal (<B>BCD</B>) computation  and Zoned Character conversion
+ * Decimal (<B>BCD</B>) computation and Zoned Character conversion
  * operations on vector registers.
  *
  * Many of these operations are implemented in a single VMX or DFP
@@ -54,7 +54,7 @@
  * operations then BCD or Zoned. So DFP and the comprehensive C
  * language and runtime library support makes it a better target for
  * new business oriented applications. As the DFU supports conversions
- * between DPD and BCD, existing DFP operations can be used emulate
+ * between DPD and BCD, existing DFP operations can be used to emulate
  * BCD operations on older processors and fill in operational gaps in
  * the vector BCD instruction set.
  *
@@ -67,7 +67,7 @@
  * Both are required to convert large decimal numeric or floating-point
  * values with extreme exponents for input or print.
  *
- * So what operations are need, what does the PowerISA provide,
+ * So what operations are needed, what does the PowerISA provide,
  * and what does the ABI and/or compiler provide.
  * Some useful operations include:
  * - conversions between BCD and __int128
@@ -145,7 +145,7 @@
  * <A HREF="https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture">
  * OpenPOWER ABI</A> does have an
  * <I>Appendix B. Binary-Coded Decimal Built-In Functions</I>
- * and proposes that compiles provide a <B>bcd.h</B> header file.
+ * and proposes that compilers provide a <B>bcd.h</B> header file.
  * At this time no compiler provides this header.
  * GCC does provides compiler built-ins to generate the bcdadd/bcdsub
  * instructions and access the associated condition codes in
@@ -244,7 +244,7 @@
  * or later server level processor support.
  *
  * However the vector unit and recent BCD and Zoned extensions can
- * still be useful in areas include large order multiple precision
+ * still be useful in areas including large order multiple precision
  * computation and conversions between binary and decimal radix.
  * Both are required to convert large decimal numeric or floating-point
  * values with extreme exponents for input or print.
@@ -556,7 +556,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
   r_h = vec_bcdaddesqm (a_h, b_h, c_l)
  * \endcode
  *
- * \todo The BCD add/subtract extent/carry story is not complete.
+ * \todo The BCD add/subtract extend/carry story is not complete.
  * There are still cases where the operation will generate a borrow
  * and invert (10s complement) incorrectly.
  * The net seems to be that for BCD multiple precision difference to
@@ -565,7 +565,6 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *
  * \subsubsection bcd128_extended_0_2_1 Vector BCD Multiply Quadword example
  *
- * TBD
  * BCD multiply and divide operations are not directly supported
  * in the current PowerISA. Decimal multiply and divide are
  * supported in the Decimal Floating-point (DFP) Unit (DFU), as well
@@ -576,7 +575,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  * - DFP Extended format supports up to 34 digits precision
  * - DFP significand represent digits to the <I>left</I> of the
  * implied decimal point.
- * - DFP finite number are not normalize.
+ * - DFP finite number are not normalized.
  *
  * This allows DFP to represent decimal integer and fixed point
  * decimal values with a preferred exponent of 0.
@@ -616,15 +615,15 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *
  * One way to do this is split each 31-digit operand into two 16-digit
  * chunks (actually 15 and 16-digits). These chunks are converted to
- * DFP extended format and multiplied to product four 32-digit partial
+ * DFP extended format and multiplied to produce four 32-digit partial
  * products. These partial products can be aligned and summed to
- * produce the high  and low 31-digits of the full 62-digit product.
+ * produce the high and low 31-digits of the full 62-digit product.
  * This is the basis for vec_bcd_mul(), vec_bcdmulh(), and
  * vec_cbcdmul().
  *
  * A simple vec_and() can be used to isolate the low order 16 BCD
  * digits. It is simple at this point to detect if both operands are
- * 16-digits or less by comparing the original operand to isolate
+ * 16-digits or less by comparing the original operand to the isolate
  * value. In this case the product can not exceed 32 digits and we
  * can short circuit the product to a single multiply.
  * Here we can safely use binary compare all.
@@ -667,7 +666,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
   return t;
  * \endcode
  * From here the code diverges for multiply low and multiply high
- * (and full combined multiple). Multiply low only needs the 3 lower
+ * (and full combined multiply). Multiply low only needs the 3 lower
  * order partial products. The highest order partial product does not
  * impact the lower order 31-digits and is not needed.
  * Multiply high requires the generation and summation of all 4
@@ -719,8 +718,8 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *
  * How we can look at the BCD multiply high (generate the full 62-digit
  * product returning the high 31 digits) and point out the differences.
- * Multiply high also start by isolating the low order 16 BCD
- * digits, performing he low order multiply (low_a * low_b),
+ * Multiply high also starts by isolating the low order 16 BCD
+ * digits, performing the low order multiply (low_a * low_b),
  * and testing for the short circuit (all higher order digits are 0).
  * The first difference (from multiply low) is that in this case
  * only the high digit of the potential 32-digit product is returned.
@@ -749,7 +748,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * So the short circuit code shifts the low partial product right 31
  * digits and returns that value.
  *
- * If we can not short circuit Multiply high requires  the generation
+ * If we can not short circuit, Multiply high requires the generation
  * and summation of all four partial products.
  * Following code completes the implementation of BCD multiply high:
  * \code
@@ -783,7 +782,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *
  * The low order partial product (d_p) was generated above but we need
  * only the high order 15 digits for summation. Shift the low partial
- * produce right 16 digits then sum (d_hl + d_lh + d_ll) the low and
+ * product right 16 digits then sum (d_hl + d_lh + d_ll) the low and
  * middle order partial products. This produces the high 32 digits of
  * the lower 48 digit partial sum. Shift this right 15 digits to align
  * with the high order 31 digits for the product.
@@ -1009,9 +1008,9 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
       if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
-      t = _BCD_CONST_PLUS_ONE;
+        t = _BCD_CONST_PLUS_ONE;
       else
-      t = _BCD_CONST_MINUS_ONE;
+        t = _BCD_CONST_MINUS_ONE;
 #endif
     }
 #else
@@ -1024,7 +1023,7 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t ) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
@@ -1067,9 +1066,9 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
       if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
-      t = _BCD_CONST_PLUS_ONE;
+        t = _BCD_CONST_PLUS_ONE;
       else
-      t = _BCD_CONST_MINUS_ONE;
+        t = _BCD_CONST_MINUS_ONE;
 #endif
     }
   else // (a + b) did not overflow, what about (a + b + c)
@@ -1081,9 +1080,9 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
 	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b_c);
 #else
 	  if (__builtin_bcdadd_gt ((vi128_t) a_b, (vi128_t) c, 0))
-	  t = _BCD_CONST_PLUS_ONE;
+	    t = _BCD_CONST_PLUS_ONE;
 	  else
-	  t = _BCD_CONST_MINUS_ONE;
+	    t = _BCD_CONST_MINUS_ONE;
 #endif
 	}
       else
@@ -1107,8 +1106,8 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
-  t = _BCD_CONST_ZERO;
+  if (vec_all_eq ((vui32_t) t, mz))
+   t = _BCD_CONST_ZERO;
 #endif
   return (t);
 }
@@ -2495,9 +2494,9 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
       if (__builtin_bcdsub_gt ((vi128_t) a, (vi128_t) b, 0))
-      t = _BCD_CONST_PLUS_ONE;
+        t = _BCD_CONST_PLUS_ONE;
       else
-      t = _BCD_CONST_MINUS_ONE;
+        t = _BCD_CONST_MINUS_ONE;
 #endif
     }
 #else
@@ -2510,7 +2509,7 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD(d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
@@ -2593,8 +2592,8 @@ vec_bcdsubecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
-  t = _BCD_CONST_ZERO;
+  if (vec_all_eq ((vui32_t) t, mz))
+    t = _BCD_CONST_ZERO;
 #endif
   return (t);
 }
@@ -2628,7 +2627,7 @@ vec_bcdsubesqm (vBCD_t a, vBCD_t b, vBCD_t c)
   d_t = vec_BCD2DFP (a) - vec_BCD2DFP (b) + vec_BCD2DFP (c);
   t = vec_DFP2BCD(d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);

@@ -30,8 +30,8 @@
 /*!
  * \file  vec_bcd_ppc.h
  * \brief Header package containing a collection of Binary Coded
- * Decimal (<B>BCD</B>) and Zoned Character computation operations
- * on vector registers.
+ * Decimal (<B>BCD</B>) computation and Zoned Character conversion
+ * operations on vector registers.
  *
  * Many of these operations are implemented in a single VMX or DFP
  * instruction on newer (POWER8/POWER9) processors.
@@ -41,28 +41,8 @@
  * implementations for older compilers that do not
  * provide the built-ins.
  *
- * <A HREF="https://en.wikipedia.org/wiki/Binary-coded_decimal">
- * Binary-coded decimal</A> (Also called <I>packed decimal</I>) and the
- * related <I>Zoned Decimal</I> are common representations of signed
- * decimal radix (base 10) numbers. BCD is more compact and usually
- * faster then zoned. Zoned format is more closely aligned
- * with human readable and printable character formats.
- * In both formats the sign indicator is associated (in the same
- * character or byte) with the low order digit.
- *
- * BCD and Zoned formats and operations were implemented for some of
- * the earliest computers. Then circuitry was costly and arithmetic
- * was often implemented as a digit (or bit) serial operation.
- * Modern computers have more circuitry with wider data paths and more
- * complex arithmetic/logic units. The current trend is for each
- * processor core implementation to include multiple computational
- * units that can operate in parallel.
- *
- * For POWER server class processors separate and multiple Fixed-Point
- * Units (FXU), (binary) Floating-point Units (FPU), and Vector
- * Processing Units (VPU) are the norm.
- * POWER6 introduced a Decimal Floating-point (<I>DFP</I>) Facility
- * implementing the
+ * Starting with POWER6 introduced a Decimal Floating-point
+ * (<I>DFP</I>) Facility implementing the
  * <A HREF="https://en.wikipedia.org/wiki/IEEE_754-2008_revision">
  * IEEE 754-2008 revision</A> standard. This is implemented in hardware
  * as an independent Decimal Floating-point Unit (<I>DFU</I>). This
@@ -73,28 +53,21 @@
  * Densely packed decimal</A> (<I>DPD</I> and a more extensive set of
  * operations then BCD or Zoned. So DFP and the comprehensive C
  * language and runtime library support makes it a better target for
- * new business oriented applications.
+ * new business oriented applications. As the DFU supports conversions
+ * between DPD and BCD, existing DFP operations can be used to emulate
+ * BCD operations on older processors and fill in operational gaps in
+ * the vector BCD instruction set.
+ *
  * As DFP is supported directly in the hardware and has extensive
  * language and runtime support, there is little that PVECLIB can
  * contribute to general decimal radix computation.
- *
- * \note BCD and DFP support requires at least PowerISA 2.05 (POWER6)
- * or later server level processor support.
- *
  * However the vector unit and recent BCD and Zoned extensions can
  * still be useful in areas include large order multiple precision
  * computation and conversions between binary and decimal radix.
  * Both are required to convert large decimal numeric or floating-point
  * values with extreme exponents for input or print.
- * And conventions between _Float128 and _Decimal128 types is even
- * more challenging. Basically both POSIX and IEEE 754-2008 require
- * that it possible to convert floating-point values to an external
- * character decimal representation, with the specified rounding, and
- * back recovering the original value.
- * This always requires more precision for the conversion then is
- * available in the given format and size.
  *
- * So what are the operations we need, what does the PowerISA provide,
+ * So what operations are needed, what does the PowerISA provide,
  * and what does the ABI and/or compiler provide.
  * Some useful operations include:
  * - conversions between BCD and __int128
@@ -168,7 +141,19 @@
  * POWER9 also added quadword binary multiply 10 with carry extend
  * forms than can also help with decimal to binary conversion.
  *
- * \note The compiler disables associated <altivec.h> built-ins if the
+ * The
+ * <A HREF="https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture">
+ * OpenPOWER ABI</A> does have an
+ * <I>Appendix B. Binary-Coded Decimal Built-In Functions</I>
+ * and proposes that compilers provide a <B>bcd.h</B> header file.
+ * At this time no compiler provides this header.
+ * GCC does provides compiler built-ins to generate the bcdadd/bcdsub
+ * instructions and access the associated condition codes in
+ * <I>if</I> statements.
+ * GCC also provides built-ins to generate the DFP instruction
+ * encode/decode to and from BCD.
+ *
+ * \note The compiler disables built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
  * For example if you compile with <B>-mcpu=power7</B>,  __builtin_bcdadd and
  * __builtin_bcdsub are not supported.  But vec_bcdadd() is always defined in
@@ -216,10 +201,120 @@
  * across BE/LE implementations. The pveclib operations; vec_vmuleud()
  * and vec_mulubm() are defined to be endian stable.
  *
- * \section bcd128_extended_0_0 Extended Precision computation with BCD
+ * \section bcd128_details_0_0 Some details of BCD computation
+ *
+ * <A HREF="https://en.wikipedia.org/wiki/Binary-coded_decimal">
+ * Binary-coded decimal</A> (Also called <I>packed decimal</I>) and the
+ * related <I>Zoned Decimal</I> are common representations of signed
+ * decimal radix (base 10) numbers. BCD is more compact and usually
+ * faster then zoned. Zoned format is more closely aligned
+ * with human readable and printable character formats.
+ * In both formats the sign indicator is associated (in the same
+ * character or byte) with the low order digit.
+ *
+ * BCD and Zoned formats and operations were implemented for some of
+ * the earliest computers. Then circuitry was costly and arithmetic
+ * was often implemented as a digit (or bit) serial operation.
+ * Modern computers have more circuitry with wider data paths and more
+ * complex arithmetic/logic units. The current trend is for each
+ * processor core implementation to include multiple computational
+ * units that can operate in parallel.
+ *
+ * For POWER server class processors separate and multiple Fixed-Point
+ * Units (FXU), (binary) Floating-point Units (FPU), and Vector
+ * Processing Units (VPU) are the norm.
+ * POWER6 introduced a Decimal Floating-point (<I>DFP</I>) Facility
+ * implementing the
+ * <A HREF="https://en.wikipedia.org/wiki/IEEE_754-2008_revision">
+ * IEEE 754-2008 revision</A> standard. This is implemented in hardware
+ * as an independent Decimal Floating-point Unit (<I>DFU</I>). This
+ * is supported with ISO C/C++ language bindings and runtime libraries.
+ *
+ * The DFU supports a different data format
+ * <A HREF="https://en.wikipedia.org/wiki/Densely_packed_decimal">
+ * Densely packed decimal</A> (<I>DPD</I> and a more extensive set of
+ * operations then BCD or Zoned. So DFP and the comprehensive C
+ * language and runtime library support makes it a better target for
+ * new business oriented applications.
+ * As DFP is supported directly in the hardware and has extensive
+ * language and runtime support, there is little that PVECLIB can
+ * contribute to general decimal radix computation.
+ *
+ * \note BCD and DFP support requires at least PowerISA 2.05 (POWER6)
+ * or later server level processor support.
+ *
+ * However the vector unit and recent BCD and Zoned extensions can
+ * still be useful in areas including large order multiple precision
+ * computation and conversions between binary and decimal radix.
+ * Both are required to convert large decimal numeric or floating-point
+ * values with extreme exponents for input or print.
+ * And conventions between _Float128 and _Decimal128 types is even
+ * more challenging. Basically both POSIX and IEEE 754-2008 require
+ * that it possible to convert floating-point values to an external
+ * character decimal representation, with the specified rounding, and
+ * back recovering the original value.
+ * This always requires more precision for the conversion then is
+ * available in the given format and size.
+ *
+ * \subsection bcd128_extended_0_1 Preferred sign, zone, and zero.
+ *
+ * BCD and Zoned Decimal have a long history with multiple computer
+ * manufacturers, and this is reflected as multiple encodings of the
+ * same basic concept. This is in turn reflected in the PowerISA as
+ * Preferred Sign <B>PS</B> immediate operand on BCD instructions.
+ *
+ * This header implementation assumes that users of PVECLIB are not
+ * interested in this detail and just want access to BCD computation
+ * with consistent results. So PVECLIB does not expose preferred sign
+ * at the API and provides reasonable defaults in the implementation.
+ *
+ * PVECLIB is targeted at the Linux ecosystem with ASCII character
+ * encoding, so the implementation defaults for:
+ * - preferred zone nibble 0x3.
+ * ASCII encodes decimal characters as 0x30 - 0x39.
+ * - preferred sign code nibbles 0xC and 0xD.
+ * Historically accounting refers to <I><B>C</B>redit</I> as positive
+ * and <I><B>D</B>edit</I> for negative.
+ *
+ * The PowerISA implementation is permissive of sign encoding of input
+ * values and will accept four (0xA, 0xC, 0xE, 0xF) encodings of
+ * positive and two (0xB, 0xD) for negative. But the sign code of the
+ * result is always set to the preferred sign.
+ *
+ * The BCD encoding allows for signed zeros (-0, +0) but the PowerISA
+ * implementation prefers the positive encoding for zero results.
+ * Again the implementation is permissive of both encodings for input
+ * operands.
+ * Usually this is not an issue but can be when dealing with
+ * conversions from other formats (DFP also allows signed 0.0)
+ * and implementations of BCD operations for older (POWER7/8)
+ * processors.
+ *
+ * This is most likely to effect user code in comparisons of BCD
+ * values for 0.
+ * One might expect the following vector binary word compare all
+ * \code
+  if (vec_all_eq((vui32_t) t, (vui32_t) _BCD_CONST_ZERO))
+ * \endcode
+ * to give the same result as
+ * \code
+  if (vec_bcdcmpeq (t, _BCD_CONST_ZERO))
+ * \endcode
+ * The vector binary compare is likely to have lower latency
+ * (on POWER7/8), but will miss compare on <I>-0</I>.
+ * The BCD compare operation (i.e. vec_bcdcmpeq ()) is recommended,
+ * unless the programs knows the details for the source operands
+ * generation, and have good (performance and latency) reasons to
+ * to use the alternative compare.  Pveclib strives to provide
+ * correct preferred zeros results in its implementation of BCD
+ * operations.
+ *
+ * \subsection bcd128_extended_0_2 Extended Precision computation with BCD
  *
  * \todo Extended precision requires carry and extend forms of
  * bcdadd/sub and double quadword (62-digit) results for bcdmul.
+ *
+ * \subsubsection bcd128_extended_0_2_0 Vector Add/Subtrace with Carry/Extend example
  *
  * The PowerISA does not provide the extend and write-carry forms of
  * the bcdadd/sub instructions. But bcdadd/sub instructions do post
@@ -392,7 +487,7 @@ vec_bcdaddesqm (vBCD_t a, vBCD_t b, vBCD_t c)
  * \code
       c = _BCD_CONST_ZERO;
       sign_ab = vec_bcdcpsgn (sum_ab, a);
-      if (!vec_all_eq(sign_ab, sum_ab))
+      if (!vec_all_eq(sign_ab, t) && !vec_all_eq(_BCD_CONST_ZERO, t))
 	{
 	  // 10**31 with the original sign of the first operand
 	  vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
@@ -439,7 +534,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
     {
       c = _BCD_CONST_ZERO;
       sign_ab = vec_bcdcpsgn (sum_ab, a);
-      if (!vec_all_eq(sign_ab, sum_ab))
+      if (!vec_all_eq(sign_ab, sum_ab) && !vec_all_eq(_BCD_CONST_ZERO, t))
 	{
 	  // 10**31 with the original sign of the first operand
 	  vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
@@ -461,6 +556,243 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
   r_h = vec_bcdaddesqm (a_h, b_h, c_l)
  * \endcode
  *
+ * \todo The BCD add/subtract extend/carry story is not complete.
+ * There are still cases where the operation will generate a borrow
+ * and invert (10s complement) incorrectly.
+ * The net seems to be that for BCD multiple precision difference to
+ * work correctly, the larger magnitude must be the first
+ * operand.
+ *
+ * \subsubsection bcd128_extended_0_2_1 Vector BCD Multiply Quadword example
+ *
+ * BCD multiply and divide operations are not directly supported
+ * in the current PowerISA. Decimal multiply and divide are
+ * supported in the Decimal Floating-point (DFP) Unit (DFU), as well
+ * as conversion to and from signed (unsigned) BCD.
+ *
+ * So BCD multiply and divide operations can be routed through the
+ * DFU with a few caveats.
+ * - DFP Extended format supports up to 34 digits precision
+ * - DFP significand represent digits to the <I>left</I> of the
+ * implied decimal point.
+ * - DFP finite number are not normalized.
+ *
+ * This allows DFP to represent decimal integer and fixed point
+ * decimal values with a preferred exponent of 0.
+ * The DFU will maintain this preferred exponent for DPF arithmetic
+ * operations until:
+ * - An arithmetic operation involves a operand with a non-zero
+ * exponent.
+ * - A divide operation generates a result with fractional digits
+ * - A multiply operation generates a result that exceeds 34 digits.
+ *
+ * The implementation can insure that input operands are derived from
+ * 31-digit BCD values. The results of any divide operations can be
+ * truncated back to decimal integer with the preferred 0 exponent.
+ * This can be achieved with the DFP Quantize Immediate instruction,
+ * specifying the ideal exponent of 0 and a rounding mode of
+ * <I>round toward 0</I> (see vec_quantize0_Decimal128()).
+ * This allows the following implementation:
+ * \code
+static inline vBCD_t
+vec_bcddiv (vBCD_t a, vBCD_t b)
+{
+  vBCD_t t;
+  _Decimal128 d_t, d_a, d_b;
+  d_a = vec_BCD2DFP (a);
+  d_b = vec_BCD2DFP (b);
+  d_t = vec_quantize0_Decimal128 (d_a / d_b);
+  t = vec_DFP2BCD (d_t);
+  return (t);
+}
+ * \endcode
+ *
+ * The multiply case is bit more complicated as we need to produce up
+ * to 62 digit results without losing precision and DFP only supports
+ * 34 digits. This requires splitting the input operands into groups
+ * of digits where partial products of any combination of these groups
+ * is guaranteed not exceed 34 digits.
+ *
+ * One way to do this is split each 31-digit operand into two 16-digit
+ * chunks (actually 15 and 16-digits). These chunks are converted to
+ * DFP extended format and multiplied to produce four 32-digit partial
+ * products. These partial products can be aligned and summed to
+ * produce the high and low 31-digits of the full 62-digit product.
+ * This is the basis for vec_bcd_mul(), vec_bcdmulh(), and
+ * vec_cbcdmul().
+ *
+ * A simple vec_and() can be used to isolate the low order 16 BCD
+ * digits. It is simple at this point to detect if both operands are
+ * 16-digits or less by comparing the original operand to the isolate
+ * value. In this case the product can not exceed 32 digits and we
+ * can short circuit the product to a single multiply.
+ * Here we can safely use binary compare all.
+ *
+ * \code
+  const vBCD_t dword_mask = (vBCD_t) CONST_VINT128_DW(15, -1);
+  vBCD_t t, low_a, low_b, high_a, high_b;
+  _Decimal128 d_p, d_t, d_a, d_b;
+
+  low_a = vec_and (a, dword_mask);
+  low_b = vec_and (b, dword_mask);
+  d_a = vec_BCD2DFP (low_a);
+  d_b = vec_BCD2DFP (low_b);
+  d_p = d_a * d_b;
+  if (__builtin_expect ((vec_cmpuq_all_eq ((vui128_t) low_a, (vui128_t) a)
+      && vec_cmpuq_all_eq ((vui128_t) low_b, (vui128_t) b)), 1))
+    {
+      d_t = d_p;
+    }
+  else
+    {
+    ...
+    }
+  t = vec_DFP2BCD (d_t);
+ * \endcode
+ * This is a case where negative 0 can be generated in the DFP multiply
+ * and converted unchanged to BCD. This is handled with the following
+ * fix up code:
+ * \code
+ *
+  // Minus zero
+  const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
+  ...
+#ifdef _ARCH_PWR9
+  t = vec_bcdadd (t, _BCD_CONST_ZERO);
+#else
+  if (vec_all_eq((vui32_t) t, mz))
+    t = _BCD_CONST_ZERO;
+#endif
+  return t;
+ * \endcode
+ * From here the code diverges for multiply low and multiply high
+ * (and full combined multiply). Multiply low only needs the 3 lower
+ * order partial products. The highest order partial product does not
+ * impact the lower order 31-digits and is not needed.
+ * Multiply high requires the generation and summation of all 4
+ * partial products.
+ * Following code completes the implementation of BCD multiply low:
+ * \code
+  ...
+  else
+    {
+      _Decimal128 d_ah, d_bh, d_hl, d_lh, d_h;
+
+      high_a = vec_bcdsrqi (a, 16);
+      high_b = vec_bcdsrqi (b, 16);
+
+      d_ah = vec_BCD2DFP (high_a);
+      d_bh = vec_BCD2DFP (high_b);
+
+      d_hl = d_ah * d_b;
+      d_lh = d_a * d_bh;
+
+      d_h = d_hl + d_lh;
+      d_h = __builtin_dscliq (d_h, 17);
+      d_h = __builtin_dscriq (d_h, 1);
+
+      d_t = d_p + d_h;
+    }
+ * \endcode
+ * Here we know that there are higher order digits in one or both operands.
+ * First use vec_bcdsrqi() to isolate the high 15-digits of operands a
+ * and b. Both Vector unit and DFU have decimal shift operations,
+ * but the vector shift operation is faster.
+ *
+ * Then convert to DFP and
+ * multiply (high_a * low_b and high_b * low_a) for the two middle
+ * order partial products which are summed. This sum represents the
+ * high 32-digits (the 31-digit sum can carry) of a 48-digit product.
+ * Only the lower 16-digits of this sum is needed for the final sum and
+ * this needs to be aligned with the high 16 digits of the original
+ * lower order partial product.
+ *
+ * For this case use
+ * <B>DFP Shift Significand Left Immediate</B> and
+ * <B>DFP Shift Significand Right Immediate</B>. All the data is in
+ * the DFU and the high cost of the DFU shift is offset by avoiding
+ * extra format conversions. We use shift left 17 followed by shift
+ * right 1 to clear the highest order DFP digit and avoid any overflow.
+ * A final DFP add produces the low order 32 digits of the product
+ * which will be truncated to 31-digits in the conversion to BCD.
+ *
+ * How we can look at the BCD multiply high (generate the full 62-digit
+ * product returning the high 31 digits) and point out the differences.
+ * Multiply high also starts by isolating the low order 16 BCD
+ * digits, performing the low order multiply (low_a * low_b),
+ * and testing for the short circuit (all higher order digits are 0).
+ * The first difference (from multiply low) is that in this case
+ * only the high digit of the potential 32-digit product is returned.
+ *
+ * \code
+  const vBCD_t dword_mask = (vBCD_t) CONST_VINT128_DW(15, -1);
+  vBCD_t t, low_a, low_b, high_a, high_b;
+  _Decimal128 d_p, d_t, d_a, d_b;
+
+  low_a = vec_and (a, dword_mask);
+  low_b = vec_and (b, dword_mask);
+  d_a = vec_BCD2DFP (low_a);
+  d_b = vec_BCD2DFP (low_b);
+  d_p = d_a * d_b;
+  if (__builtin_expect ((vec_cmpuq_all_eq ((vui128_t) low_a, (vui128_t) a)
+      && vec_cmpuq_all_eq ((vui128_t) low_b, (vui128_t) b)), 1))
+    {
+      d_t = __builtin_dscriq (d_p, 31);
+    }
+  else
+    {
+    ...
+    }
+  t = vec_DFP2BCD (d_t);
+ * \endcode
+ * So the short circuit code shifts the low partial product right 31
+ * digits and returns that value.
+ *
+ * If we can not short circuit, Multiply high requires the generation
+ * and summation of all four partial products.
+ * Following code completes the implementation of BCD multiply high:
+ * \code
+  ...
+  else
+    {
+      _Decimal128 d_ah, d_bh, d_hl, d_lh, d_h, d_ll, d_m;
+
+      high_a = vec_bcdsrqi (a, 16);
+      high_b = vec_bcdsrqi (b, 16);
+      d_ah = vec_BCD2DFP (high_a);
+      d_bh = vec_BCD2DFP (high_b);
+
+      d_hl = d_ah * d_bl;
+      d_lh = d_al * d_bh;
+      d_ll = __builtin_dscriq (d_p, 16);
+
+      d_m = d_hl + d_lh + d_ll;
+      d_m = __builtin_dscriq (d_m, 15);
+
+      d_h = d_ah * d_bh;
+      d_h = __builtin_dscliq (d_h, 1);
+      d_t = d_m + d_h;
+    }
+ * \endcode
+ * Again we know that there are higher order digits in one or both
+ * operands and use vec_bcdsrqi() to isolate the high 15-digits of
+ * operands a and b. Then convert to DFP and multiply (high_a * low_b
+ * and high_b * low_a) for the two middle order partial products
+ * (d_hl and d_lh).
+ *
+ * The low order partial product (d_p) was generated above but we need
+ * only the high order 15 digits for summation. Shift the low partial
+ * product right 16 digits then sum (d_hl + d_lh + d_ll) the low and
+ * middle order partial products. This produces the high 32 digits of
+ * the lower 48 digit partial sum. Shift this right 15 digits to align
+ * with the high order 31 digits for the product.
+ *
+ * Then multiply (high_a * high_b) to generate the high order partial
+ * product. This represents the high 30 digits of a 62 digits. Shift
+ * this left 1 digit to correct the alignment. The sum of the adjusted
+ * high and middle order partials gives the high order 31 digits of the
+ * 62-digit product.
+ *
  * \section bcd128_perf_0_0 Performance data.
  * High level performance estimates are provided as an aid to function
  * selection when evaluating algorithms. For background on how
@@ -480,6 +812,8 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *  applications while this is worked out.
  */
 #define vBCD_t vui32_t
+/*! \brief vector vector bool from 128-bit signed BCD integer. */
+#define vbBCD_t vb32_t
 
 /*! \brief vector signed BCD constant +9s. */
 #define _BCD_CONST_PLUS_NINES  ((vBCD_t) CONST_VINT128_DW128(0x9999999999999999, 0x999999999999999c))
@@ -496,6 +830,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
 static inline vBCD_t vec_bcdcpsgn (vBCD_t vra, vBCD_t vrb);
 static inline vui128_t vec_bcdctuq (vBCD_t vra);
 static inline vBCD_t vec_bcdsrqi (vBCD_t vra, const unsigned int _N);
+static inline vBCD_t vec_bcdsub (vBCD_t a, vBCD_t b);
 static inline vBCD_t vec_bcdus (vBCD_t vra, vi8_t vrb);
 static inline vf64_t vec_pack_Decimal128 (_Decimal128 lval);
 static inline _Decimal128 vec_quantize0_Decimal128 (_Decimal128 val);
@@ -639,10 +974,15 @@ vec_bcdadd (vBCD_t a, vBCD_t b)
  * Two Signed 31 digit BCD values are added, and the carry-out
  * (the high order 32nd digit) of the sum is returned.
  *
+ * \note This operation will only detect overflows where the operand
+ * signs match. It will not detect a borrow if the signs differ.
+ * So this operation should only be used if matching signs are
+ * guaranteed. Otherwise vec_cbcdaddcsq() should be used.
+ *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
- * |power8   |  13   | 1/cycle  |
- * |power9   | 6-15  | 2/cycle  |
+ * |power8   | 15-21 | 1/cycle  |
+ * |power9   | 6-18  | 2/cycle  |
  *
  * @param a a 128-bit vector treated as a signed BCD 31 digit value.
  * @param b a 128-bit vector treated as a signed BCD 31 digit value.
@@ -654,12 +994,18 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
 {
   vBCD_t t;
 #if defined ( _ARCH_PWR8) && (__GNUC__ > 6)
+  vBCD_t a_b;
+#ifdef _ARCH_PWR9
+  // Generate BCD zero from (a - a), which is 3 cycles on PWR9
+  t = vec_bcdsub (a,  a);
+#else // Else load a BCD const 0.
   t = _BCD_CONST_ZERO;
+#endif
+  a_b = vec_bcdadd (a, b);
   if (__builtin_expect (__builtin_bcdadd_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
 #ifdef _ARCH_PWR9
-      t = (vBCD_t) __builtin_bcdadd ((vi128_t) a, (vi128_t) b, 0);
-      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
       if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
         t = _BCD_CONST_PLUS_ONE;
@@ -667,18 +1013,9 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
         t = _BCD_CONST_MINUS_ONE;
 #endif
     }
-  else
-    {
-#ifdef _ARCH_PWR9
-      // Generate BCD zero from (a - a), which is 3 cycles on PWR9
-      t = (vBCD_t) __builtin_bcdsub ((vi128_t) a, (vi128_t) a, 0);
-#else // Else load a BCD const 0.
-      t = _BCD_CONST_ZERO;
-#endif
-    }
 #else
   _Decimal128 d_a, d_b, d_s, d_t;
-  const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
+  const vui32_t mz = CONST_VINT128_W(0, 0, 0, 0x0000000d);
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
   d_s = d_a + d_b;
@@ -686,7 +1023,7 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
@@ -698,10 +1035,15 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
  * and the carry-out (the high order 32nd digit) of the sum is
  * returned.
  *
+ * \note This operation will only detect overflows where the operand
+ * signs match. It will not detect a borrow if the signs differ.
+ * So this operation should only be used if matching signs are
+ * guaranteed. Otherwise vec_cbcdaddecsq() should be used.
+ *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
- * |power8   |  13   | 1/cycle  |
- * |power9   | 9-18  | 2/cycle  |
+ * |power8   | 28-37 | 1/cycle  |
+ * |power9   | 9-21  | 2/cycle  |
  *
  * @param a a 128-bit vector treated as a signed BCD 31 digit value.
  * @param b a 128-bit vector treated as a signed BCD 31 digit value.
@@ -715,28 +1057,27 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
 {
   vBCD_t t;
 #ifdef _ARCH_PWR8
-  vBCD_t a_b;
-  a_b = vec_bcdadd (a, b);
+  vBCD_t a_b, a_b_c;
 
+  a_b = vec_bcdadd (a, b);
   if (__builtin_expect (__builtin_bcdadd_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
 #ifdef _ARCH_PWR9
-      t = (vBCD_t) __builtin_bcdadd ((vi128_t) a, (vi128_t) b, 0);
-      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
       if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
-	t = _BCD_CONST_PLUS_ONE;
+        t = _BCD_CONST_PLUS_ONE;
       else
-	t = _BCD_CONST_MINUS_ONE;
+        t = _BCD_CONST_MINUS_ONE;
 #endif
     }
   else // (a + b) did not overflow, what about (a + b + c)
     {
+      a_b_c = (vBCD_t) vec_bcdadd (a_b, c);
       if (__builtin_bcdadd_ov ((vi128_t) a_b, (vi128_t) c, 0))
 	{
 #ifdef _ARCH_PWR9
-	  t = (vBCD_t) __builtin_bcdadd ((vi128_t) a_b, (vi128_t) c, 0);
-	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b_c);
 #else
 	  if (__builtin_bcdadd_gt ((vi128_t) a_b, (vi128_t) c, 0))
 	    t = _BCD_CONST_PLUS_ONE;
@@ -748,8 +1089,8 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
 	{
 #ifdef _ARCH_PWR9
 	  // Generate BCD zero from (a - a), which is 3 cycles on PWR9
-	  t = (vBCD_t) __builtin_bcdsub ((vi128_t) a, (vi128_t) a, 0);
-#else // Else load a BCD const 0.
+	  t = vec_bcdsub (a, a);
+#else     // Else load a BCD const 0.
 	  t = _BCD_CONST_ZERO;
 #endif
 	}
@@ -765,8 +1106,8 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
-    t = _BCD_CONST_ZERO;
+  if (vec_all_eq ((vui32_t) t, mz))
+   t = _BCD_CONST_ZERO;
 #endif
   return (t);
 }
@@ -802,6 +1143,453 @@ vec_bcdaddesqm (vBCD_t a, vBCD_t b, vBCD_t c)
   return (t);
 }
 
+/** \brief Vector Decimal Convert From Zoned.
+ *
+ * Given a Signed 16-digit signed Zoned value vrb,
+ * return equivalent Signed BCD value.
+ * For Zoned (PS=0) the sign code is in bits 0:3 of byte 15.
+ * - Positive sign codes are: 0x0, 0x1, 0x2, 0x3, 0x8, 0x9, 0xa, 0xb.
+ * - Negative sign codes are: 0x4, 0x5, 0x6, 0x7, 0xc, 0xd, 0xe, 0xf.
+ *
+ * The resulting BCD value with up to 16 digits magnitude and
+ * set to the preferred BCD sign (0xc or 0xd).
+ *
+ * \note The POWER9 bcdcfz instruction gives
+ * undefined results if given invalid input.
+ * In this implementation for older processors there is no checking
+ * for Zone (bits 0:3) or digit (bits 4:7) range.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 14-27 | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vrb a 128-bit vector treated as a signed Zoned 16 digit value.
+ * @return a 128-bit BCD value with the magnitude and sign from the
+ * Zoned value in vrb.
+ */
+static inline vBCD_t
+vec_bcdcfz (vui8_t vrb)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdcfz. %0,%1,0;\n"
+      : "=v" (vrt)
+      : "v" (vrb)
+      : "cr6" );
+#else
+  const vui8_t dmask = vec_splat_u8(15);
+  const vui8_t dx0 = vec_splat_u8(0);
+  vui8_t znd_s;
+  vui8_t znd_d, znd_t;
+  vui8_t bcd, bcd_h, bcd_l;
+  vBCD_t bcd_s;
+  // Isolate the BCD digit from each zoned character.
+  znd_d = vec_and (vrb, dmask);
+  znd_t = (vui8_t) vec_srqi ((vui128_t) znd_d, 4);
+  // Isolate the bit (1) that matters in the Zoned sign code.
+  znd_s = vec_slbi (vrb, 1);
+  znd_s = vec_srbi (znd_s, 7);
+  // Convert to BCD preferred sign code 0xC or 0xD
+  znd_s = vec_or (znd_s, (vui8_t) _BCD_CONST_ZERO);
+  // Pack the even/odd zone digits into a single vector.
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  bcd = vec_pack ((vui16_t) znd_d, (vui16_t) znd_t);
+#else
+  bcd = vec_pack ((vui16_t) znd_t, (vui16_t) znd_d);
+#endif
+  // Swap even/odd DWs to low half and OR to get unsigned 16-digit BCD.
+  bcd_l = (vui8_t) vec_mrgald ((vui128_t) dx0, (vui128_t) bcd);
+  bcd_h = (vui8_t) vec_mrgahd ((vui128_t) dx0, (vui128_t) bcd);
+  bcd = vec_or (bcd_h, bcd_l);
+  // Shift left to make room for sign code
+  vrt = (vBCD_t) vec_slqi ((vui128_t) bcd, 4);
+  // Merge sign code from zone code.
+  vrt = vec_bcdcpsgn (vrt, (vBCD_t) znd_s);
+#endif
+  return (vrt);
+}
+
+/** \brief Vector Compare Signed BCD Quadword for equal.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare equal.
+ */
+static inline vbBCD_t
+vec_bcdcmp_eqsq (vBCD_t vra, vBCD_t vrb)
+{
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (0);
+#ifdef _ARCH_PWR8
+  if (__builtin_bcdsub_eq ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  if (d_a == d_b)
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Signed BCD Quadword for greater than or equal.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are greater than or equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare greater than or equal.
+ */
+static inline vbBCD_t
+vec_bcdcmp_gesq (vBCD_t vra, vBCD_t vrb)
+{
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (-1);
+#ifdef _ARCH_PWR8
+  if (__builtin_bcdsub_lt ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  if (d_a < d_b)
+    result = (vbBCD_t) vec_splat_s32 (0);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Signed BCD Quadword for greater than.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are greater than.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare greater than.
+ */
+static inline vbBCD_t
+vec_bcdcmp_gtsq (vBCD_t vra, vBCD_t vrb)
+{
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (0);
+#ifdef _ARCH_PWR8
+  if (__builtin_bcdsub_gt ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  if (d_a > d_b)
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Signed BCD Quadword for less than or equal.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are less than or equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare less than or equal.
+ */
+static inline vbBCD_t
+vec_bcdcmp_lesq (vBCD_t vra, vBCD_t vrb)
+{
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (-1);
+#ifdef _ARCH_PWR8
+  if (__builtin_bcdsub_gt ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  if (d_a > d_b)
+    result = (vbBCD_t) vec_splat_s32 (0);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Signed BCD Quadword for less than.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are less than.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare less than.
+ */
+static inline vbBCD_t
+vec_bcdcmp_ltsq (vBCD_t vra, vBCD_t vrb)
+{
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (0);
+#ifdef _ARCH_PWR8
+  if (__builtin_bcdsub_lt ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  if (d_a < d_b)
+    result = (vbBCD_t) vec_splat_s32 (-1);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Signed BCD Quadword for not equal.
+ *
+ *  Compare vector signed BCD values and return vector bool true if
+ *  vra and vrb are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 6-9   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return 128-bit vector boolean reflecting vector signed BCD
+ *  compare not equal.
+ */
+static inline vbBCD_t
+vec_bcdcmp_nesq (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  vbBCD_t result = (vbBCD_t) vec_splat_s32 (-1);
+  if (__builtin_bcdsub_eq ((vi128_t) vra, (vi128_t) vrb, 0))
+    result = (vbBCD_t) vec_splat_s32 (0);
+
+  return result;
+#else
+  /* vec_cmpneuq works for both signed and unsigned compares.  */
+  return (vbBCD_t) vec_cmpneuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for equal.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if equal,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmpeq (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return __builtin_bcdsub_eq ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  return (d_a == d_b);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for greater than or equal.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are greater than or equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if greater than or equal,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmpge (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return !__builtin_bcdsub_lt ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  return (d_a >= d_b);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for greater than.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are greater than.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if greater than,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmpgt (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return __builtin_bcdsub_gt ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  return (d_a > d_b);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for less than or equal.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are less than or equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if less than or equal,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmple (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return !__builtin_bcdsub_gt ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  return (d_a <= d_b);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for less than.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are less than.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if less than,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmplt (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return __builtin_bcdsub_lt ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  _Decimal128 d_a, d_b;
+  d_a = vec_BCD2DFP (vra);
+  d_b = vec_BCD2DFP (vrb);
+  return (d_a < d_b);
+#endif
+}
+
+/** \brief Vector Compare Signed BCD Quadword for not equal.
+ *
+ *  Compare vector signed BCD values and return boolean true if
+ *  vra and vrb are not equal.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   13  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @param vrb 128-bit vector treated as an vector signed
+ *  BCD (qword) element.
+ *  @return boolean int for BCD compare, true if not equal,
+ *  false otherwise.
+ */
+static inline int
+vec_bcdcmpne (vBCD_t vra, vBCD_t vrb)
+{
+#ifdef _ARCH_PWR8
+  return !__builtin_bcdsub_eq ((vi128_t) vra, (vi128_t) vrb, 0);
+#else
+  return vec_cmpuq_all_ne ((vui128_t) vra, (vui128_t) vrb);
+#endif
+}
+
 /** \brief Vector copy sign BCD.
  *
  * Given Two Signed BCD 31 digit values vra and vrb, return the
@@ -830,8 +1618,8 @@ vec_bcdcpsgn (vBCD_t vra, vBCD_t vrb)
       "v" (vrb)
       : "cr6" );
 #else
-  const vui8_t sign_mask = (vui8_t) _BCD_CONST_SIGN_MASK;
-  vrt = (vBCD_t) vec_sel ((vui8_t) vra, (vui8_t) vrb, sign_mask);
+  const vui32_t sign_mask = (vui32_t) _BCD_CONST_SIGN_MASK;
+  vrt = (vBCD_t) vec_sel ((vui32_t) vra, (vui32_t) vrb, sign_mask);
 #endif
   return (vrt);
 }
@@ -1008,6 +1796,81 @@ vec_bcdctuq (vBCD_t vra)
   d100m = vec_rdxct100mw (d10k);
   d10e = vec_rdxct10E16d (d100m);
   return vec_rdxct10e32q (d10e);
+}
+
+/** \brief Vector Decimal Convert To Zoned.
+ *
+ * Given a Signed 16-digit signed BCD value vrb,
+ * return equivalent Signed Zoned value.
+ * For Zoned (PS=0) the sign code is in bits 0:3 of byte 15.
+ * - Positive sign Zone is: 0x30.
+ * - Negative sign Zone is: 0x70.
+ *
+ * The resulting Zone value will up to 16 digits magnitude and
+ * set to the preferred Zoned sign codes (0x30 or 0x70).
+ *
+ * \note The POWER9 bcdctz instruction gives
+ * undefined results if given invalid input.
+ * In this implementation for older processors there is no checking
+ * for BCD digit (bits 4:7) range.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 14-27 | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vrb a 128-bit vector treated as a signed BCD 16 digit value.
+ * @return a 128-bit Zoned value with the magnitude (low order
+ * 16-digits) and sign from the value in vrb.
+ */
+static inline vui8_t
+vec_bcdctz (vBCD_t vrb)
+{
+  vui8_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdctz. %0,%1,0;\n"
+      : "=v" (vrt)
+      : "v" (vrb)
+      : "cr6" );
+#else
+  const vui8_t dmask = vec_splat_u8(15);
+  const vui8_t zone_minus = CONST_VINT128_B ( '0', '0', '0', '0',
+					      '0', '0', '0', '0',
+					      '0', '0', '0', '0',
+					      '0', '0', '0', 0x70 );
+//  const vui32_t minus_sign = (vui32_t) CONST_VINT128_W(0x0b, 0x0d, 0x0b, 0x0d);
+  const vui32_t plus_sign = (vui32_t) CONST_VINT128_W(0x0a, 0x0c, 0x0e, 0x0f);
+  vui32_t sign_splat;
+  const vui32_t bcd_sign_mask = vec_splat_u32(15);
+  vui8_t znd_s, znd_d, znd_t;
+  vui8_t bcd_s, bcd_u;
+  vui8_t zone_code;
+  // Isolate the BCD Sign code
+  bcd_s = vec_and ((vui8_t) vrb, (vui8_t) bcd_sign_mask);
+  // Replicate the byte containing the sign to words
+  sign_splat = vec_splat ((vui32_t) bcd_s, VEC_W_L);
+  // Isolate the low 16 digits as unsigned BCD
+  bcd_u = (vui8_t) vec_srqi ((vui128_t) vrb, 4);
+  // Isolate the even/odd nibbles and merge low bytes for zoned
+  znd_d = vec_and (bcd_u, dmask);
+  znd_t = vec_srbi (bcd_u, 4);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  znd_s = vec_mergeh (znd_d, znd_t);
+#else
+  znd_s = vec_mergel (znd_t, znd_d);
+#endif
+  // Initialize the zone_code with negative zone mask.
+  zone_code = zone_minus;
+  // SIMD compare for match to any positive sign code
+  if (vec_any_eq(sign_splat, plus_sign))
+    // Convert to positive zone mask.
+    zone_code = (vui8_t) vec_xxspltd ((vui64_t) zone_code, 0);
+
+  // Merge the zone nibbles with the digit nibble to
+  vrt = vec_or (znd_s, zone_code);
+#endif
+  return (vrt);
 }
 
 /** \brief Divide a Vector Signed BCD 31 digit value by another BCD value.
@@ -1253,6 +2116,66 @@ vec_bcds (vBCD_t vra, vi8_t vrb)
   return (vrt);
 }
 
+/** \brief Vector Set preferred BCD Sign.
+ *
+ * Given a Signed BCD 31 digit value vrb, return the
+ * magnitude from vrb (bits 0:123) and the sign (bits 124:127)
+ * set to the preferred sign (0xc or 0xd).
+ * Valid positive sign codes are; 0xA, 0xC, 0xE, or 0xF.
+ * Valid negative sign codes are; 0xB or 0xD.
+ *
+ * \note The POWER9 bcdsetsgn instruction gives
+ * undefined results if given invalid input.
+ * In this implementation for older processors only the sign code is
+ * checked. In this case, if the sign code is invalid the vrb input
+ * value is returned unchanged.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 6-26  | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vrb a 128-bit vector treated as a signed BCD 31 digit value.
+ * @return a 128-bit BCD value with the magnitude from vra and the
+ * sign copied from  vrb.
+ */
+static inline vBCD_t
+vec_bcdsetsgn (vBCD_t vrb)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdsetsgn. %0,%1,0;\n"
+      : "=v" (vrt)
+      : "v" (vrb)
+      : "cr6" );
+#else
+  const vui32_t match_mask = vec_splat_u32(15);
+  // The preferred sign is in the correct position for vec_bcdcpsgn
+  const vui32_t minus_sign = (vui32_t) CONST_VINT128_W(0x0b, 0x0d, 0x0b, 0x0d);
+  const vui32_t plus_sign = (vui32_t) CONST_VINT128_W(0x0a, 0x0f, 0x0e, 0x0c);
+  vui32_t sign_splat;
+  vui32_t sign_code;
+
+  // Replicate the byte containing the sign to words
+  sign_splat = vec_splat ((vui32_t) vrb, VEC_W_L);
+  // Apply the code match mask
+  sign_code = vec_and (sign_splat, match_mask);
+  // SIMD compare for match to any positive sign code
+  if (vec_any_eq (sign_code, plus_sign))
+    vrt = vec_bcdcpsgn (vrb, (vBCD_t) plus_sign);
+  else
+    {
+      // SIMD compare for match to any negative sign code
+      if (vec_any_eq (sign_code, minus_sign))
+	vrt = vec_bcdcpsgn (vrb, (vBCD_t) minus_sign);
+      else
+	vrt = vrb;
+    }
+#endif
+  return (vrt);
+}
+
 /** \brief Vector BCD Shift Right Signed Quadword
  *
  * Shift a vector signed BCD value right _N digits.
@@ -1307,7 +2230,80 @@ vec_bcdsluqi (vBCD_t vra, const unsigned int _N)
 #endif
 }
 
-/** \brief Vector BCD Shift Right Signed Quadword
+/** \brief Decimal Shift and Round.
+ * Shift a vector signed BCD value, left or right a variable
+ * amount of digits (nibbles). The sign nibble is preserved.
+ * If byte element 7 of the shift count is negative (right shift),
+ * and the last digit shifted out is greater then or equal to 5,
+ * then increment the shifted magnitude by 1.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 14-25 | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vra 128-bit vector treated as a signed BCD 31 digit value.
+ * @param vrb Digit shift count in vector byte 7.
+ * @return a 128-bit vector BCD value shifted right digits.
+ */
+static inline vBCD_t
+vec_bcdsr (vBCD_t vra, vi8_t vrb)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdsr. %0,%1,%2,0;\n"
+      : "=v" (vrt)
+      : "v" (vrb),
+      "v" (vra)
+      : "cr6" );
+#else
+  const vi8_t zero = vec_splat_s8(0);
+  vi8_t shd = vec_splat (vrb, VEC_BYTE_L_DWH);
+  vui128_t t;
+  vui32_t r_d;
+  // Multiply digit shift by 4 to get bit shift count
+  shd = vec_add (shd, shd);
+  shd = vec_add (shd, shd);
+  // Clear sign nibble before shift.
+  t = (vui128_t) vec_andc ((vui32_t) vra, (vui32_t) _BCD_CONST_SIGN_MASK);
+  // Compare shift positive or negative
+  if (vec_all_ge(shd, zero))
+    {
+      // Positive, shift left
+      t = vec_slq (t, (vui128_t) shd);
+      // restore original sign nibble
+      vrt = vec_bcdcpsgn ((vBCD_t) t, vra);
+    }
+  else
+    {
+      const vui32_t rnd6 = CONST_VINT128_W (0, 0, 0, (5+6));
+      vBCD_t rnd_d;
+      // Negative, shift right by absolute value
+      shd = vec_sub (zero, shd);
+      t = vec_srq (t, (vui128_t) shd);
+      // extract the last digit shifted out for rounding.
+      r_d = (vui32_t) vec_and ((vui32_t) t, (vui32_t) _BCD_CONST_SIGN_MASK);
+      // Add decimal 6's +5 to generate rounding digit
+      r_d = vec_add (r_d, rnd6);
+      // Set the sign from original value
+      rnd_d = vec_bcdcpsgn (r_d, vra);
+      // restore original sign nibble
+      vrt = vec_bcdcpsgn ((vBCD_t) t, vra);
+      // round the last digit
+      vrt = vec_bcdadd (vrt, rnd_d);
+#ifdef _ARCH_PWR7
+      // Special fixup for P7 via DFP. But in case of shift right
+      // resulting in 0, the bcdadd above will return the preferred
+      // +0, while bcdsr should not change the sign.
+      vrt = vec_bcdcpsgn (vrt, vra);
+#endif
+    }
+#endif
+  return (vrt);
+}
+
+/** \brief Vector BCD Shift Right Signed Quadword Immediate
  *
  * Shift a vector signed BCD value right _N digits.
  *
@@ -1336,7 +2332,63 @@ vec_bcdsrqi (vBCD_t vra, const unsigned int _N)
   return (vrt);
 }
 
-/** \brief Vector BCD Shift Right Unsigned Quadword
+/** \brief Vector BCD Shift Right and Round Signed Quadword Immediate
+ *
+ * Shift and round a vector signed BCD value right _N digits.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 25-34 | 2/cycle  |
+ * |power9   |  3-6  | 2/cycle  |
+ *
+ * @param vra 128-bit vector signed BCD 31 digit value.
+ * @param _N int constant for the number of digits to shift right.
+ * @return a 128-bit vector BCD value shifted right _N digits.
+ */
+static inline vBCD_t
+vec_bcdsrrqi (vBCD_t vra, const unsigned int _N)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  vi8_t shd = vec_splats ((const signed char) (-_N));
+  vrt = vec_bcdsr (vra, shd);
+#else
+  vui128_t t;
+  vui32_t r_d;
+  // Compare shift positive or negative
+  if (_N < 32)
+    {
+      const vui32_t rnd6 = CONST_VINT128_W(0, 0, 0, (5 + 6));
+      vBCD_t rnd_d;
+      // Clear sign nibble before shift.
+      t = (vui128_t) vec_andc ((vui32_t) vra, (vui32_t) _BCD_CONST_SIGN_MASK);
+      t = vec_srqi (t, (_N * 4));
+      // extract the last digit shifted out for rounding.
+      r_d = (vui32_t) vec_and ((vui32_t) t, (vui32_t) _BCD_CONST_SIGN_MASK);
+      // Add decimal 6's +5 to generate rounding digit
+      r_d = vec_add (r_d, rnd6);
+      // Set the sign from original value
+      rnd_d = vec_bcdcpsgn (r_d, vra);
+      // restore original sign nibble
+      vrt = vec_bcdcpsgn ((vBCD_t) t, vra);
+      // round the last digit
+      vrt = vec_bcdadd (vrt, rnd_d);
+#ifdef _ARCH_PWR7
+      // Special fixup for P7 via DFP. But in case of shift right
+      // resulting in 0, the bcdadd above will return the preferred
+      // +0, while bcdsr should not change the sign.
+      vrt = vec_bcdcpsgn (vrt, vra);
+#endif
+    }
+  else
+    {
+      vrt = vra;
+    }
+#endif
+  return (vrt);
+}
+
+/** \brief Vector BCD Shift Right Unsigned Quadword immediate
  *
  * Shift a vector unsigned BCD value right _N digits.
  *
@@ -1408,10 +2460,15 @@ vec_bcdsub (vBCD_t a, vBCD_t b)
  * Two Signed 31 digit BCD values are subtracted, and the carry-out
  * (the high order 32nd digit) of the difference is returned.
  *
+ * \note This operation will only detect overflows where the operand
+ * signs differ. It will not detect a borrow if the signs match.
+ * So this operation should only be used if differing signs are
+ * guaranteed.
+ *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
- * |power8   | 13-21 | 1/cycle  |
- * |power9   | 6-15  | 2/cycle  |
+ * |power8   | 15-21 | 1/cycle  |
+ * |power9   | 6-18  | 2/cycle  |
  *
  * @param a a 128-bit vector treated as a signed BCD 31 digit value.
  * @param b a 128-bit vector treated as a signed BCD 31 digit value.
@@ -1423,13 +2480,24 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
 {
   vBCD_t t;
 #if defined (_ARCH_PWR8) && (__GNUC__ > 6)
+  vBCD_t a_b;
+#ifdef _ARCH_PWR9
+  // Generate BCD zero from (a - a), which is 3 cycles on PWR9
+  t = vec_bcdsub (a,  a);
+#else // Else load a BCD const 0.
   t = _BCD_CONST_ZERO;
+#endif
+  a_b = vec_bcdsub (a, b);
   if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
+#ifdef _ARCH_PWR9
+      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
+#else
       if (__builtin_bcdsub_gt ((vi128_t) a, (vi128_t) b, 0))
-	t = _BCD_CONST_PLUS_ONE;
+        t = _BCD_CONST_PLUS_ONE;
       else
-	t = _BCD_CONST_MINUS_ONE;
+        t = _BCD_CONST_MINUS_ONE;
+#endif
     }
 #else
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
@@ -1441,7 +2509,7 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD(d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
@@ -1453,10 +2521,15 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
  * and the carry-out (the high order 32nd digit) of the sum is
  * returned.
  *
+ * \note This operation will only detect overflows where the operand
+ * signs differ. It will not detect a borrow if the signs match.
+ * So this operation should only be used if differing signs are
+ * guaranteed.
+ *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
- * |power8   |  39   | 1/cycle  |
- * |power9   | 9-18  | 2/cycle  |
+ * |power8   | 28-37 | 1/cycle  |
+ * |power9   | 9-21  | 2/cycle  |
  *
  * @param a a 128-bit vector treated as a signed BCD 31 digit value.
  * @param b a 128-bit vector treated as a signed BCD 31 digit value.
@@ -1470,30 +2543,29 @@ vec_bcdsubecsq (vBCD_t a, vBCD_t b, vBCD_t c)
 {
   vBCD_t t;
 #ifdef _ARCH_PWR8
-  vBCD_t a_b;
-  a_b = vec_bcdsub (a, b);
+  vBCD_t a_b, a_b_c;
 
+  a_b = vec_bcdsub (a, b);
   if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
 #ifdef _ARCH_PWR9
-      t = (vBCD_t) __builtin_bcdsub ((vi128_t) a, (vi128_t) b, 0);
-      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+      t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
 #else
-      if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
+      if (__builtin_bcdsub_gt ((vi128_t) a, (vi128_t) b, 0))
 	t = _BCD_CONST_PLUS_ONE;
       else
 	t = _BCD_CONST_MINUS_ONE;
 #endif
     }
-  else // (a - b) did not overflow, what about (a - b - c)
+  else // (a - b) did not overflow, what about (a - b + c)
     {
-      if (__builtin_bcdsub_ov ((vi128_t) a_b, (vi128_t) c, 0))
+      a_b_c = vec_bcdadd (a_b, c);
+      if (__builtin_bcdadd_ov ((vi128_t) a_b, (vi128_t) c, 0))
 	{
 #ifdef _ARCH_PWR9
-	  t = (vBCD_t) __builtin_bcdsub ((vi128_t) a_b, (vi128_t) c, 0);
-	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b_c);
 #else
-	  if (__builtin_bcdsub_gt ((vi128_t) a_b, (vi128_t) c, 0))
+	  if (__builtin_bcdadd_gt ((vi128_t) a_b, (vi128_t) c, 0))
 	    t = _BCD_CONST_PLUS_ONE;
 	  else
 	    t = _BCD_CONST_MINUS_ONE;
@@ -1503,8 +2575,8 @@ vec_bcdsubecsq (vBCD_t a, vBCD_t b, vBCD_t c)
 	{
 #ifdef _ARCH_PWR9
 	  // Generate BCD zero from (a - a), which is 3 cycles on PWR9
-	  t = (vBCD_t) __builtin_bcdsub ((vi128_t) a, (vi128_t) a, 0);
-#else // Else load a BCD const 0.
+	  t = vec_bcdsub (a, a);
+#else     // Else load a BCD const 0.
 	  t = _BCD_CONST_ZERO;
 #endif
 	}
@@ -1515,12 +2587,12 @@ vec_bcdsubecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
   d_c = vec_BCD2DFP (c);
-  d_s = d_a - d_b - d_c;
+  d_s = d_a - d_b + d_c;
   // Shift right 31 digits, leaving the carry.
   d_t = __builtin_dscriq (d_s, 31);
   t = vec_DFP2BCD (d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
@@ -1548,17 +2620,119 @@ vec_bcdsubesqm (vBCD_t a, vBCD_t b, vBCD_t c)
 {
   vBCD_t t;
 #ifdef _ARCH_PWR8
-  t = vec_bcdsub (vec_bcdsub (a, b), c);
+  t = vec_bcdadd (vec_bcdsub (a, b), c);
 #else
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
   _Decimal128 d_t;
-  d_t = vec_BCD2DFP (a) - vec_BCD2DFP (b) - vec_BCD2DFP (c);
+  d_t = vec_BCD2DFP (a) - vec_BCD2DFP (b) + vec_BCD2DFP (c);
   t = vec_DFP2BCD(d_t);
   // fix up spurious negative zeros
-  if (vec_all_eq((vui32_t) t, mz))
+  if (vec_all_eq ((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
   return (t);
+}
+
+/** \brief Decimal Truncate.
+ * Truncate a vector signed BCD value vra to N-digits,
+ * where N is the unsigned integer value in bits 48-63 of vrb.
+ * The first 31-N digits are set to 0 and the result returned.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 18-27 | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vra 128-bit vector treated as a signed BCD 31 digit value.
+ * @param vrb Digit truncate count in vector halfword 3 (bits 48:63).
+ * @return a 128-bit vector BCD value with the first 31-count digits
+ * set to 0.
+ */
+static inline vBCD_t
+vec_bcdtrunc (vBCD_t vra, vui16_t vrb)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdtrunc. %0,%1,%2,0;\n"
+      : "=v" (vrt)
+      : "v" (vrb),
+      "v" (vra)
+      : "cr6" );
+#else
+  const vui16_t ones = vec_splat_u16(-1);
+  const vui16_t c124 = vec_splats ((unsigned short) 124);
+  const vui16_t c4 = vec_splats ((unsigned short) 4);
+  vui16_t shd = vec_splat (vrb, VEC_HW_L_DWH);
+  vui16_t shr;
+  vui128_t t;
+  // Multiply digit shift by 4 to get bit shift count
+  shd = vec_add (shd, shd);
+  shd = vec_add (shd, shd);
+#if 0
+  shr = vec_sub (c128, shd);
+  // Compare shift < 32 (128-bits)
+  if (vec_all_le(shd, c124))
+    {
+      // Generate a mask for the digits we will keep
+      t = vec_srq ((vui128_t) ones, (vui128_t) shr);
+      // Clear the digits we are truncating
+      vrt = (vBCD_t) vec_and ((vui32_t) t, (vui32_t)vra);
+    }
+  else
+    vrt = vra;
+#else
+  vui16_t one_s;
+  // compensate for the sign nibble
+  shd = vec_add (shd, c4);
+  // generation all ones if in range, zeros if greater than
+  one_s = (vui16_t) vec_cmple (shd, c124);
+  // Generate a mask for the digits we will clear
+  t = vec_slq ((vui128_t) one_s, (vui128_t) shd);
+  // Clear the digits we are truncating
+  vrt = (vBCD_t) vec_andc ((vui32_t)vra, (vui32_t) t);
+#endif
+#endif
+  return (vrt);
+}
+
+/** \brief Decimal Truncate Quadword Immediate.
+ * Truncate a vector signed BCD value vra to N-digits,
+ * where N is a unsigned short integer constant.
+ * The first 31-N digits are set to 0 and the result returned.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 6-17  | 1/cycle  |
+ * |power9   |   6   | 2/cycle  |
+ *
+ * @param vra 128-bit vector treated as a signed BCD 31 digit value.
+ * @param _N a unsigned short integer constant truncate count.
+ * @return a 128-bit vector BCD value with the first 31-count digits
+ * set to 0.
+ */
+static inline vBCD_t
+vec_bcdtruncqi (vBCD_t vra, const unsigned short _N)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  vui16_t shd = vec_splats ((const unsigned short) (_N));
+  vrt = vec_bcdtrunc (vra, shd);
+#else
+  vui128_t t;
+  const vui16_t ones = vec_splat_u16(-1);
+  // Compare shift < 32 (128-bits)
+  if (_N < 31)
+    {
+      // Generate a mask for the digits we will keep
+      t = vec_srqi ((vui128_t) ones, ((31 -_N) * 4));
+      // Clear the digits we are truncating
+      vrt = (vBCD_t) vec_and ((vui32_t) t, (vui32_t)vra);
+    }
+  else
+    vrt = vra;
+#endif
+  return (vrt);
 }
 
 /** \brief Decimal Unsigned Shift.
@@ -1610,11 +2784,97 @@ vec_bcdus (vBCD_t vra, vi8_t vrb)
   return (vrt);
 }
 
+/** \brief Decimal Unsigned Truncate.
+ * Truncate a vector unsigned BCD value vra to N-digits,
+ * where N is the unsigned integer value in bits 48-63 of vrb.
+ * The first 32-N digits are set to 0 and the result returned.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 16-25 | 1/cycle  |
+ * |power9   |   3   | 2/cycle  |
+ *
+ * @param vra 128-bit vector treated as an unsigned BCD 32 digit value.
+ * @param vrb Digit truncate count in vector halfword 3 (bits 48:63).
+ * @return a 128-bit vector BCD value with the first 32-count digits
+ * set to 0.
+ */
+static inline vBCD_t
+vec_bcdutrunc (vBCD_t vra, vui16_t vrb)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  __asm__(
+      "bcdutrunc. %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vrb),
+      "v" (vra)
+      : "cr6" );
+#else
+  const vui16_t c128 = vec_splats ((unsigned short) 128);
+  vui16_t shd = vec_splat (vrb, VEC_HW_L_DWH);
+  vui16_t one_s;
+  vui128_t t;
+  // Multiply digit shift by 4 to get bit shift count
+  shd = vec_add (shd, shd);
+  shd = vec_add (shd, shd);
+  // generation all ones if in range, zeros if greater than
+  one_s = (vui16_t) vec_cmplt (shd, c128);
+  // Generate a mask for the digits we will clear
+  t = vec_slq ((vui128_t) one_s, (vui128_t) shd);
+  // Clear the digits we are truncating
+  vrt = (vBCD_t) vec_andc ((vui32_t)vra, (vui32_t) t);
+#endif
+  return (vrt);
+}
+
+/** \brief Decimal Unsigned Truncate Quadword Immediate.
+ * Truncate a vector unsigned BCD value vra to N-digits,
+ * where N is a unsigned short integer constant.
+ * The first 32-N digits are set to 0 and the result returned.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 6-17  | 1/cycle  |
+ * |power9   |   6   | 2/cycle  |
+ *
+ * @param vra 128-bit vector treated as a signed BCD 31 digit value.
+ * @param _N a unsigned short integer constant truncate count.
+ * @return a 128-bit vector BCD value with the first 32-count digits
+ * set to 0.
+ */
+static inline vBCD_t
+vec_bcdutruncqi (vBCD_t vra, const unsigned short _N)
+{
+  vBCD_t vrt;
+#ifdef _ARCH_PWR9
+  vui16_t shd = vec_splats ((const unsigned short) (_N));
+  vrt = vec_bcdutrunc (vra, shd);
+#else
+  vui128_t t;
+  const vui16_t ones = vec_splat_u16(-1);
+  // Compare shift < 32 (128-bits)
+  if (_N < 32)
+    {
+      // Generate a mask for the digits we will keep
+      t = vec_srqi ((vui128_t) ones, ((32 -_N) * 4));
+      // Clear the digits we are truncating
+      vrt = (vBCD_t) vec_and ((vui32_t) t, (vui32_t)vra);
+    }
+  else
+    vrt = vra;
+#endif
+  return (vrt);
+}
+
 /** \brief Combined Decimal Add & Write Carry Signed Quadword.
  *
  * Two Signed 31 digit BCD values are added, and the carry-out
  * (the high order 32nd digit) of the sum is generated.
- * Both the sum and the carry are returned.
+ * Alternatively if the intermediate sum changes sign we need to,
+ * borrow '1' from the magnitude of the higher BCD value and correct
+ * (invert by subtracting from 10**31) the intermediate sum.
+ * Both the sum and the carry/borrow are returned.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -1643,7 +2903,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
     {
       c = _BCD_CONST_ZERO;
       sign_ab = vec_bcdcpsgn (sum_ab, a);
-      if (!vec_all_eq(sign_ab, sum_ab))
+      if (!vec_all_eq(sign_ab, sum_ab) && !vec_all_eq(_BCD_CONST_ZERO, sum_ab))
 	{
 	  vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
 	  vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
@@ -1668,7 +2928,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
     c = _BCD_CONST_ZERO;
   // (a + b) did not overflow, but did it borrow?
   sign_ab = vec_bcdcpsgn (t, a);
-  if (!vec_all_eq(sign_ab, t))
+  if (!vec_all_eq(sign_ab, t) && !vec_all_eq(_BCD_CONST_ZERO, t))
     {
       vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
       vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
@@ -1684,7 +2944,11 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *
  * Two Signed 31 digit values and a signed carry-in are added together
  * and the carry-out (the high order 32nd digit) of the sum is
- * returned.
+ * generated.
+ * Alternatively if the intermediate sum changes sign we need to,
+ * borrow '1' from the magnitude of the next higher BCD value and
+ * correct (invert by subtracting from 10**31) the intermediate sum.
+ * Both the sum and the carry/borrow are returned.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -1724,7 +2988,7 @@ vec_cbcdaddecsq (vBCD_t *cout, vBCD_t a, vBCD_t b, vBCD_t cin)
 	{
 	  c = _BCD_CONST_ZERO;
 	  sign_abc = vec_bcdcpsgn (sum_abc, a);
-	  if (!vec_all_eq(sign_abc, sum_abc))
+	  if (!vec_all_eq(sign_abc, sum_abc) && !vec_all_eq(_BCD_CONST_ZERO, sum_abc))
 	    {
 	      vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
 	      vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
@@ -1751,7 +3015,7 @@ vec_cbcdaddecsq (vBCD_t *cout, vBCD_t a, vBCD_t b, vBCD_t cin)
   c = _BCD_CONST_ZERO;
   // (a + b + c) did not overflow, but did it borrow?
   sign_abc = vec_bcdcpsgn (t, a);
-  if (!vec_all_eq(sign_abc, t))
+  if (!vec_all_eq(sign_abc, t) && !vec_all_eq(_BCD_CONST_ZERO, t))
     {
       vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
       vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
@@ -1787,7 +3051,7 @@ vec_cbcdaddecsq (vBCD_t *cout, vBCD_t a, vBCD_t b, vBCD_t cin)
  * 16-digits or less. Here the product can not exceed 32-digits and
  * requires only a single DFP multiply.
  * The DFP2BCD conversion will extract the lower 31-digits.
- * Then DFP Decimal shift will isolate 32nd digit.
+ * Then DFP Decimal shift will isolate the high (32nd) digit.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -1864,6 +3128,80 @@ vec_cbcdmul (vBCD_t *p_high, vBCD_t a, vBCD_t b)
   if (vec_all_eq((vui32_t) t, mz))
     t = _BCD_CONST_ZERO;
 #endif
+  return (t);
+}
+
+/** \brief Combined Decimal Subtract & Write Carry Signed Quadword.
+ *
+ * Subtract (a -b) Signed 31 digit BCD values and detect the
+ * carry/barrow (the high order 32nd digit).
+ * If the intermediate sum changes sign we need to,
+ * borrow '1' from the magnitude of the higher BCD value and correct
+ * (invert by subtracting from 10**31) the intermediate sum.
+ * Both the sum and the carry/borrow are returned.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   | 15-24 | 1/cycle  |
+ * |power9   | 6-15  | 2/cycle  |
+ *
+ * @param cout a pointer to a 128-bit vector to recieve the BCD
+ * carry-out (alues are -1, 0, and +1).
+ * @param a a 128-bit vector treated as a signed BCD 31 digit value.
+ * @param b a 128-bit vector treated as a signed BCD 31 digit value.
+ * @return a 128-bit vector with the low order 31-digits of the
+ * difference (a+b).
+ */
+static inline vBCD_t
+vec_cbcdsubcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
+{
+  vBCD_t t, c;
+#ifdef _ARCH_PWR8
+  vBCD_t sum_ab, sign_a, sign_ab;
+
+  sum_ab = vec_bcdsub (a, b);
+  if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
+    {
+      c = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, sum_ab);
+    }
+  else // (a + b) did not overflow, but did it borrow?
+    {
+      c = _BCD_CONST_ZERO;
+      sign_ab = vec_bcdcpsgn (sum_ab, a);
+      if (!vec_all_eq(sign_ab, sum_ab) && !vec_all_eq(_BCD_CONST_ZERO, sum_ab))
+	{
+	  vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
+	  vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
+	  c = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, sum_ab);
+	  sum_ab = vec_bcdaddesqm (nines, sum_ab, tensc);
+	}
+    }
+  t = sum_ab;
+#else
+  vBCD_t sign_ab;
+  _Decimal128 d_a, d_b, d_s, d_t;
+  const vui32_t mz = CONST_VINT128_W(0, 0, 0, 0x0000000d);
+  d_a = vec_BCD2DFP (a);
+  d_b = vec_BCD2DFP (b);
+  d_s = d_a - d_b;
+  t = vec_DFP2BCD (d_s);
+  // Shift right 31 digits, leaving the carry.
+  d_t = __builtin_dscriq (d_s, 31);
+  c = vec_DFP2BCD (d_t);
+  // fix up spurious negative zeros
+  if (vec_all_eq((vui32_t ) c, mz))
+    c = _BCD_CONST_ZERO;
+  // (a + b) did not overflow, but did it borrow?
+  sign_ab = vec_bcdcpsgn (t, a);
+  if (!vec_all_eq(sign_ab, t) && !vec_all_eq(_BCD_CONST_ZERO, t))
+    {
+      vBCD_t nines = vec_bcdcpsgn (_BCD_CONST_PLUS_NINES, a);
+      vBCD_t tensc = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
+      c = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, t);
+      t = vec_bcdaddesqm (nines, t, tensc);
+    }
+#endif
+  *cout = c;
   return (t);
 }
 
@@ -2456,4 +3794,3 @@ vec_zndctuq (vui8_t zone00, vui8_t zone16)
 }
 
 #endif /* VEC_BCD_PPC_H_ */
-

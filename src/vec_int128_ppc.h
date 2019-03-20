@@ -376,7 +376,115 @@ example_print_vint128 (vi128_t value)
 }
  * \endcode
  *
- * \subsection int128_examples_0_1_2 Extending integer operations beyond Quadword
+ * \subsection int128_examples_0_1_2 Converting Vector __int128 values to BCD
+ *
+ * POWER8 an POWER9 added a number of Binary Code Decimal (BCD)
+ * and Zoned Decimal operations that should be helpful for radix
+ * conversion and even faster large integer formating for print.
+ * \sa vec_bcd_ppc.h
+ *
+ * The issue remains that the __int128 binaries can represent up to 39
+ * digits while Signed BCD supports only 31 digits. POWER9 provides a
+ * <B>Decimal Convert From Signed Quadword</B> instruction with the
+ * following restriction:
+ *
+ * \note If the signed value of vrb is less then -(10**31-1)
+ * or greater than 10**31-1 the result is too large for the BCD format
+ * and the result is undefined.
+ *
+ * It would be useful to check for this and if required factor the
+ * __int128 value into to the high order 8 digits and the low order 31
+ * digits. This allows for the safe and correct use of the
+ * vec_bcdcfsq() and with some decimal shifts/truncates vec_bcdctz().
+ * This also enables conversion to multiple precision Vector BCD to
+ * represent 39 digits and more for radix conversions.
+ *
+ * This for example we first address the factoring by providing
+ * <B>Vector Divide by const 10e31 Unsigned Quadword</B> and
+ * <B>Vector Modulo by const 10e31 Unsigned Quadword</B> operation.
+ * This again requires the multiplicative inverse using the
+ * vec_mulhuq() operation.
+ *
+ * \code
+static inline vui128_t
+vec_divuq_10e31 (vui128_t vra)
+  // ten32  = +100000000000000000000000000000000UQ
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  // Magic numbers for multiplicative inverse to divide by 10**31
+  // are 4804950418589725908363185682083061167, Corrective add,
+  // and shift right 107 bits.
+  const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
+      0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
+  const int shift_ten31 = 103;
+  vui128_t result, t, q;
+
+  if (vec_cmpuq_all_ge (vra, ten31))
+    {
+      q = vec_mulhuq (vra, mul_invs_ten31);
+      // Need corrective add but don't want to deal with the carry.
+      t = vec_subuqm (vra, q);
+      t = vec_srqi (t, 1);
+      t = vec_adduqm (t, q);
+      result = vec_srqi (t, (shift_ten31 - 1));
+    }
+  else
+    result = (vui128_t) vec_splat_u32(0);
+
+  return result;
+}
+ * \endcode
+ * As the vec_mulhuq() operation is relatively expensive and we expect
+ * most __int128 values to 31-digits or less, using a compare to bypass
+ * the multiplication and return the 0 quotient, seems a prudent
+ * optimization.
+ *
+ * So far we only have the quotient (the high order 8 digits) and still
+ * need to extract the remainder (the low order 31 digits). This is
+ * simply the quotient from above multiplied by 10e31 and subtracted
+ * from the original input. For avoid the multiple return value issue
+ * we define a modulo operation to take the orginal value and the
+ * quotient from vec_divuq_10e31().
+ *
+ * \code
+static inline vui128_t
+vec_moduq_10e31 (vui128_t vra, vui128_t q)
+{
+  // ten32  = +100000000000000000000000000000000UQ
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  vui128_t result, t;
+
+  if (vec_cmpuq_all_ge (vra, ten31))
+    {
+      t = vec_mulluq (q, ten31);
+      result = vec_subuqm (vra, t);
+    }
+  else
+    result = vra;
+
+  return result;
+}
+ * \endcode
+ * Again as the vec_mulluq() operation is relatively expensive and we expect
+ * most __int128 values to 31-digits or less, using a compare to bypass
+ * the multiplication and return the input value as the remainder,
+ * seems a prudent optimization.
+ *
+ * We expect these operations to be used together as in this example.
+ * \code
+  q = vec_divuq_10e31 (a);
+  r = vec_moduq_10e31 (a, q);
+ * \endcode
+ * We also expect the compiler to common the various constant loads across
+ * the two operations as the code is in-lined.
+ * This header also provides a variants for factoring by 10e32
+ * (to use with the Zone conversion) and
+ * signed variants of the 10e31 operation for direct conversion to
+ * extend precision signed BCD.
+ * \sa vec_divuq_10e32(), vec_moduq_10e32(), vec_divsq_10e31, vec_modsq_10e31.
+ *
+ * \subsection int128_examples_0_1_3 Extending integer operations beyond Quadword
  *
  * Some algorithms require even high integer precision than __int128 provides.
  * this includes:
@@ -517,6 +625,8 @@ static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_maxuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_minuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
+static inline vui128_t vec_mulhuq (vui128_t a, vui128_t b);
+static inline vui128_t vec_mulluq (vui128_t a, vui128_t b);
 static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
 static inline vui128_t vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b);
 static inline vb128_t vec_setb_cyq (vui128_t vcy);
@@ -1853,6 +1963,157 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
   return ((vui128_t) t);
 }
 
+/** \brief Vector Divide by const 10e31 Signed Quadword.
+ *
+ *  Compute the quotient of a 128 bit values vra / 10e31.
+ *
+ *  \note vec_divsq_10e31() and vec_modsq_10e31() can be used to
+ *  prepare for <B>Decimal Convert From Signed Quadword</B>
+ *  (See vec_bcdcfsq()), This guarantees that the conversion to
+ *  Vector BCD does not overflow and the 39-digit extended result is
+ *  obtained.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 18-60 | 1/cycle  |
+ *  |power9   | 20-45 | 1/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a unsigned __int128.
+ *  @return the quotient as vector unsigned __int128.
+ */
+static inline vi128_t
+vec_divsq_10e31 (vi128_t vra)
+{
+  const vui128_t zero = (vui128_t) vec_splats ((int) 0);
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  /* Magic numbers for multiplicative inverse to divide by 10**31
+   are 4804950418589725908363185682083061167, Corrective add,
+   and shift right 107 bits.  */
+  const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
+      0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
+  const int shift_ten31 = 103;
+  vui128_t result, t, q, uvra;
+  vb128_t negbool;
+
+  negbool = vec_setb_sq (vra);
+  uvra = (vui128_t) vec_sel ((vui32_t) vra,
+  			    (vui32_t) vec_subuqm (zero, (vui128_t) vra),
+  			    (vb32_t) negbool);
+
+  if (vec_cmpuq_all_ge (uvra, ten31))
+    {
+      q = vec_mulhuq (uvra, mul_invs_ten31);
+      // Need corrective add but don't want to deal with the carry.
+      t = vec_subuqm (uvra, q);
+      t = vec_srqi (t, 1);
+      t = vec_adduqm (t, q);
+      result = vec_srqi (t, (shift_ten31 - 1));
+      result = (vui128_t) vec_sel ((vui32_t) result,
+      			    (vui32_t) vec_subuqm (zero, (vui128_t) result),
+      			    (vb32_t) negbool);
+    }
+  else
+    result = (vui128_t) vec_splat_u32(0);
+
+  return (vi128_t) result;
+}
+
+/** \brief Vector Divide by const 10e31 Unsigned Quadword.
+ *
+ *  Compute the quotient of a 128 bit values vra / 10e31.
+ *
+ *  \note vec_divuq_10e31() and vec_moduq_10e31() can be used to
+ *  prepare for <B>Decimal Convert From Signed Quadword</B>
+ *  (See vec_bcdcfsq()), This guarantees that the conversion to
+ *  Vector BCD does not overflow and the 39-digit extended result is
+ *  obtained.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-48 | 1/cycle  |
+ *  |power9   |  9-31 | 1/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a unsigned __int128.
+ *  @return the quotient as vector unsigned __int128.
+ */
+static inline vui128_t
+vec_divuq_10e31 (vui128_t vra)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  /* Magic numbers for multiplicative inverse to divide by 10**31
+   are 4804950418589725908363185682083061167, Corrective add,
+   and shift right 107 bits.  */
+  const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
+      0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
+  const int shift_ten31 = 103;
+  vui128_t result, t, q;
+
+  if (vec_cmpuq_all_ge (vra, ten31))
+    {
+      q = vec_mulhuq (vra, mul_invs_ten31);
+      // Need corrective add but don't want to deal with the carry.
+      t = vec_subuqm (vra, q);
+      t = vec_srqi (t, 1);
+      t = vec_adduqm (t, q);
+      result = vec_srqi (t, (shift_ten31 - 1));
+    }
+  else
+    result = (vui128_t) vec_splat_u32(0);
+
+  return result;
+}
+
+/** \brief Vector Divide by const 10e32 Unsigned Quadword.
+ *
+ *  Compute the quotient of a 128 bit values vra / 10e32.
+ *
+ *  \note vec_divuq_10e32() and vec_moduq_10e32() can be used to
+ *  prepare for <B>Decimal Convert From Unsigned Quadword</B>
+ *  (See vec_bcdcfuq()), This guarantees that the conversion to
+ *  Vector BCD does not overflow and the 39-digit extended result is
+ *  obtained.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-48 | 1/cycle  |
+ *  |power9   |  9-31 | 1/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a unsigned __int128.
+ *  @return the quotient as vector unsigned __int128.
+ */
+static inline vui128_t
+vec_divuq_10e32 (vui128_t vra)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+  /* Magic numbers for multiplicative inverse to divide by 10**32
+   are 211857340822306639531405861550393824741, Corrective add,
+   and shift right 107 bits.  */
+  const vui128_t mul_invs_ten32 = (vui128_t) CONST_VINT128_DW(
+      0x9f623d5a8a732974UL, 0xcfbc31db4b0295e5UL);
+  const int shift_ten32 = 107;
+  vui128_t result, t, q;
+
+  if (vec_cmpuq_all_ge (vra, ten32))
+    {
+      q = vec_mulhuq (vra, mul_invs_ten32);
+      // Need corrective add but don't want to deal with the carry.
+      t = vec_subuqm (vra, q);
+      t = vec_srqi (t, 1);
+      t = vec_adduqm (t, q);
+      result = vec_srqi (t, (shift_ten32 - 1));
+    }
+  else
+    result = (vui128_t) vec_splat_u32(0);
+
+  return result;
+}
+
 /** \brief Vector Maximum Signed Quadword.
  *
  *  Compare Quadwords vra and vrb as
@@ -1947,6 +2208,105 @@ vec_minuq(vui128_t vra, vui128_t vrb)
 
   minmask = (vb32_t) vec_cmpgtuq ( vrb, vra );
   return (vui128_t) vec_sel ((vui32_t) vrb, (vui32_t) vra, minmask);
+}
+
+/** \brief Vector Modulo by const 10e31 Signed Quadword.
+ *
+ *  Compute the remainder of a 128 bit values vra % 10e31.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-52 | 1/cycle  |
+ *  |power9   |  9-23 | 2/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a signed __int128.
+ *  @param q 128-bit signed __int128 containing the quotient from vec_divuq_10e31().
+ *  @return the remainder as vector signed __int128.
+ */
+static inline vi128_t
+vec_modsq_10e31 (vi128_t vra, vi128_t q)
+{
+  const vui128_t zero = (vui128_t) vec_splats ((int) 0);
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  vui128_t result, t;
+
+  // multiply low and subtract modulo are the same for signed/unsigned
+  // But now easier to compare q for zero
+  if (vec_cmpuq_all_ne ((vui128_t) vra, zero))
+    {
+      t = vec_mulluq ((vui128_t) q, ten31);
+      result = vec_subuqm ((vui128_t) vra, (vui128_t) t);
+    }
+  else
+    result = (vui128_t) vra;
+
+  return (vi128_t) result;
+}
+
+/** \brief Vector Modulo by const 10e31 Unsigned Quadword.
+ *
+ *  Compute the remainder of a 128 bit values vra % 10e31.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-52 | 1/cycle  |
+ *  |power9   |  9-23 | 2/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a unsigned __int128.
+ *  @param q 128-bit unsigned __int128 containing the quotient from vec_divuq_10e31().
+ *  @return the remainder as vector unsigned __int128.
+ */
+static inline vui128_t
+vec_moduq_10e31 (vui128_t vra, vui128_t q)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  vui128_t result, t;
+
+  if (vec_cmpuq_all_ge (vra, ten31))
+    {
+      t = vec_mulluq (q, ten31);
+      result = vec_subuqm (vra, t);
+    }
+  else
+    result = vra;
+
+  return result;
+}
+
+/** \brief Vector Modulo by const 10e32 Unsigned Quadword.
+ *
+ *  Compute the remainder of a 128 bit values vra % 10e32.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-52 | 1/cycle  |
+ *  |power9   |  9-23 | 2/cycle  |
+ *
+ *  @param vra the dividend as a vector treated as a unsigned __int128.
+ *  @param q 128-bit unsigned __int128 containing the quotient from vec_divuq_10e32().
+ *  @return the remainder as vector unsigned __int128.
+ */
+static inline vui128_t
+vec_moduq_10e32 (vui128_t vra, vui128_t q)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+  vui128_t result, t;
+
+  if (vec_cmpuq_all_ge (vra, ten32))
+    {
+      t = vec_mulluq (q, ten32);
+      result = vec_subuqm (vra, t);
+    }
+  else
+    result = vra;
+
+  return result;
 }
 
 /** \brief Vector Multiply by 10 & write Carry Unsigned Quadword.

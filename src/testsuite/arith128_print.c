@@ -642,6 +642,16 @@ print_vint128 (char *prefix, vui128_t val128)
 }
 
 void
+print_vint128s (char *prefix, vi128_t val128)
+{
+  __VEC_U_128 val;
+  signed __int128 val_x;
+  val.vx1 = (vui128_t) val128;
+  val_x = (signed __int128)val.i128;
+  print_int128 (prefix, val_x);
+}
+
+void
 print_vint128x (char *prefix, vui128_t val128)
 {
   vui32_t val = (vui32_t) val128;

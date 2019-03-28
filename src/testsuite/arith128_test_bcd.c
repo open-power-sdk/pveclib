@@ -510,7 +510,7 @@ db_vec_cbcdaddcsq (vBCD_t *c, vBCD_t a, vBCD_t b)
 	  vBCD_t c10s = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a);
 	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, sum_ab);
 	  sum_ab = vec_bcdaddesqm (nines, sum_ab, c10s);
-	  print_vint128x (" barrow   c  ) =", (vui128_t) t);
+	  print_vint128x (" borrow   c  ) =", (vui128_t) t);
 	  print_vint128x (" invert sum  ) =", (vui128_t) sum_ab);
 	}
     }

@@ -3850,7 +3850,9 @@ test_bcd_cadde256 (void)
   rc += check_vint256 ("vec_bcdadde256:", (vui128_t) kh, (vui128_t) kl,
 		       (vui128_t) eh, (vui128_t) el);
 #if 0
-  // This case does not work with the general code
+  // This case does not work with the general code.
+  // Difference where the left operand has a smaller magnitude.
+  // Will renable this when I figure out borrows completely.
   ih = _BCD_CONST_PLUS_ONE;
   il = (vBCD_t) CONST_VINT128_W (0x10000000, 0x00000000, 0x00000000, 0x0000008c);
   jh = _BCD_CONST_MINUS_ONE;
@@ -6395,7 +6397,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);
@@ -6409,7 +6411,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);
@@ -6421,7 +6423,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);
@@ -6433,7 +6435,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);
@@ -6445,7 +6447,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);
@@ -6457,7 +6459,7 @@ test_bcdutrunc (void)
 
 #ifdef __DEBUG_PRINT__
   print_vint128x ("BCD qword ", i);
-  print_vint128x ("BCD trunc ", (vui128_t) s);
+  print_vint128x ("BCDutrunc ", (vui128_t) s);
   print_vint128x ("truncated ", j);
 #endif
   rc += check_vuint128x ("vec_bcdutrunc:", (vui128_t) j, (vui128_t) e);

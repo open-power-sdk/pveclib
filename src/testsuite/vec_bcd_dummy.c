@@ -150,6 +150,13 @@ test_vec_cbcdmul (vBCD_t *p, vBCD_t a, vBCD_t b)
 }
 
 vBCD_t
+test_vec_cbcdmul_2 (vBCD_t *p, vBCD_t a, vBCD_t b)
+{
+  *p = vec_bcdmulh (a, b);
+  return vec_bcdmul (a, b);
+}
+
+vBCD_t
 test_vec_bcddiv (vBCD_t a, vBCD_t b)
 {
   return vec_bcddiv (a, b);
@@ -198,9 +205,63 @@ test_vec_bcdcpsgn (vBCD_t a, vBCD_t b)
 }
 
 vBCD_t
+test_vec_bcdsetsgn (vBCD_t a)
+{
+  return vec_bcdsetsgn (a);
+}
+
+vBCD_t
+test_vec_bcdcfz (vui8_t vrb)
+{
+  return vec_bcdcfz (vrb);
+}
+
+vui8_t
+test_vec_bcdctz (vBCD_t vrb)
+{
+  return vec_bcdctz (vrb);
+}
+
+vBCD_t
 test_vec_bcds (vBCD_t vra, vi8_t vrb)
 {
   return vec_bcds (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdsr (vBCD_t vra, vi8_t vrb)
+{
+  return vec_bcdsr (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdsrrqi (vBCD_t vra)
+{
+  return vec_bcdsrrqi (vra, 15);
+}
+
+vBCD_t
+test_vec_bcdtrunc (vBCD_t vra, vui16_t vrb)
+{
+  return vec_bcdtrunc (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdtruncqi (vBCD_t vra)
+{
+  return vec_bcdtruncqi (vra, 15);
+}
+
+vBCD_t
+test_vec_bcdutrunc (vBCD_t vra, vui16_t vrb)
+{
+  return vec_bcdutrunc (vra, vrb);
+}
+
+vBCD_t
+test_vec_bcdutruncqi (vBCD_t vra)
+{
+  return vec_bcdutruncqi (vra, 15);
 }
 
 vBCD_t
@@ -299,6 +360,78 @@ test_vec_setbool_bcdinv (vBCD_t a)
   return vec_setbool_bcdinv (a);
 }
 
+vbBCD_t
+test_vec_bcdcmp_eqsq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_eqsq (vra, vrb);
+}
+
+vbBCD_t
+test_vec_bcdcmp_nesq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_nesq (vra, vrb);
+}
+
+vbBCD_t
+test_vec_bcdcmp_gtsq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_gtsq (vra, vrb);
+}
+
+vbBCD_t
+test_vec_bcdcmp_gesq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_gesq (vra, vrb);
+}
+
+vbBCD_t
+test_vec_bcdcmp_ltsq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_ltsq (vra, vrb);
+}
+
+vbBCD_t
+test_vec_bcdcmp_lesq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmp_lesq (vra, vrb);
+}
+
+int
+test_vec_bcdcmpeq (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmpeq (vra, vrb);
+}
+
+int
+test_vec_bcdcmpne (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmpne (vra, vrb);
+}
+
+int
+test_vec_bcdcmpgt (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmpgt (vra, vrb);
+}
+
+int
+test_vec_bcdcmpge (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmpge (vra, vrb);
+}
+
+int
+test_vec_bcdcmplt (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmplt (vra, vrb);
+}
+
+int
+test_vec_bcdcmple (vBCD_t vra, vBCD_t vrb)
+{
+  return vec_bcdcmple (vra, vrb);
+}
+
 vui128_t
 example_vec_bcdctuq (vui8_t vra)
 {
@@ -353,6 +486,35 @@ example_vec_cbcdecsq_loop (vBCD_t *cout, vBCD_t* out, vBCD_t* a, vBCD_t* b, long
   *cout = cn;
 }
 
+
+void
+example_bcdmul_2x2 (vBCD_t *__restrict__ mulu, vBCD_t m1h, vBCD_t m1l,
+		    vBCD_t m2h, vBCD_t m2l)
+{
+  vBCD_t mc, mp, mq;
+  vBCD_t mphh, mphl, mplh, mpll;
+  mpll = vec_cbcdmul (&mplh, m1l, m2l);
+  mp = vec_cbcdmul (&mphl, m1h, m2l);
+  mplh = vec_bcdadd (mplh, mp);
+  mc   = vec_bcdaddcsq (mplh, mp);
+  mphl   = vec_bcdadd (mphl, mp);
+  mp = vec_cbcdmul (&mc, m2h, m1l);
+  mplh = vec_bcdadd (mplh, mp);
+  mq   = vec_bcdaddcsq (mplh, mp);
+  mphl = vec_bcdadd (mphl, mq);
+  mc   = vec_bcdaddcsq (mplh, mq);
+  mp = vec_cbcdmul (&mphh, m2h, m1h);
+  mphl = vec_bcdadd (mphl, mp);
+  mp   = vec_bcdaddcsq (mplh, mp);
+  mphh = vec_bcdadd (mphh, mp);
+  mphh = vec_bcdadd (mphh, mc);
+
+  mulu[0] = mpll;
+  mulu[1] = mplh;
+  mulu[2] = mphl;
+  mulu[3] = mphh;
+}
+
 #if (__GNUC__ > 4)
 _Decimal128
 test__builtin_ddedpdq ( _Decimal128 value)
@@ -389,6 +551,12 @@ int
 test__builtin_bcdsub_eq (vi128_t vra, vi128_t vrb)
 {
   return __builtin_bcdsub_eq (vra, vrb, 0);
+}
+
+int
+test__builtin_bcdsub_lt (vi128_t vra, vi128_t vrb)
+{
+  return __builtin_bcdsub_lt (vra, vrb, 0);
 }
 
 vi128_t

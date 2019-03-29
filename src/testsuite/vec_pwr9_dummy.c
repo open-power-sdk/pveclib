@@ -1090,6 +1090,30 @@ test__vec_bcdaddcsq2_PWR9 (vi128_t a, vi128_t b)
   return (t);
 }
 
+vi128_t
+__test_remsq_10e31_PWR9  (vi128_t a, vi128_t b)
+{
+  vi128_t q;
+  q = vec_divsq_10e31 (a);
+  return vec_modsq_10e31 (a, q);
+}
+
+vui128_t
+__test_remuq_10e31_PWR9  (vui128_t a, vui128_t b)
+{
+  vui128_t q;
+  q = vec_divuq_10e31 (a);
+  return vec_moduq_10e31 (a, q);
+}
+
+vui128_t
+__test_remuq_10e32_PWR9  (vui128_t a, vui128_t b)
+{
+  vui128_t q;
+  q = vec_divuq_10e32 (a);
+  return vec_moduq_10e32 (a, q);
+}
+
 void
 example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
 {

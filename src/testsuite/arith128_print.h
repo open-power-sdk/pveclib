@@ -149,6 +149,9 @@ extern void
 print_vint128 (char *prefix, vui128_t val);
 
 extern void
+print_vint128s (char *prefix, vi128_t val128);
+
+extern void
 print_vint128x (char *prefix, vui128_t val);
 
 extern void

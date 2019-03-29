@@ -649,7 +649,7 @@ test_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
 vui128_t
 test_vec_mul10uq_c (vui128_t *p, vui128_t a)
 {
-  *p = vec_mul10uq (a);
+  *p = vec_mul10cuq (a);
   return vec_mul10uq (a);
 }
 
@@ -833,6 +833,36 @@ __test_mulhuq2 (vui128_t a, vui128_t b)
   vui128_t mq, r;
   r = vec_muludq (&mq, a, b);
   return mq;
+}
+
+vi128_t
+__test_modsq_10e31  (vi128_t a, vi128_t b)
+{
+  return vec_modsq_10e31 (a, b);
+}
+
+vi128_t
+__test_remsq_10e31  (vi128_t a, vi128_t b)
+{
+  vi128_t q;
+  q = vec_divsq_10e31 (a);
+  return vec_modsq_10e31 (a, q);
+}
+
+vui128_t
+__test_remuq_10e31  (vui128_t a, vui128_t b)
+{
+  vui128_t q;
+  q = vec_divuq_10e31 (a);
+  return vec_moduq_10e31 (a, q);
+}
+
+vui128_t
+__test_remuq_10e32  (vui128_t a, vui128_t b)
+{
+  vui128_t q;
+  q = vec_divuq_10e32 (a);
+  return vec_moduq_10e32 (a, q);
 }
 
 #ifdef _ARCH_PWR8

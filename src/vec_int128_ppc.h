@@ -378,31 +378,31 @@ example_print_vint128 (vi128_t value)
  *
  * \subsection int128_examples_0_1_2 Converting Vector __int128 values to BCD
  *
- * POWER8 an POWER9 added a number of Binary Code Decimal (BCD)
+ * POWER8 and POWER9 added a number of Binary Code Decimal (BCD)
  * and Zoned Decimal operations that should be helpful for radix
- * conversion and even faster large integer formating for print.
+ * conversion and even faster large integer formatting for print.
  * \sa vec_bcd_ppc.h
  *
- * The issue remains that the __int128 binaries can represent up to 39
- * digits while Signed BCD supports only 31 digits. POWER9 provides a
- * <B>Decimal Convert From Signed Quadword</B> instruction with the
- * following restriction:
+ * The issue remains that __int128 values can represent up to 39
+ * decimal digits while Signed BCD supports only 31 digits. POWER9
+ * provides a <B>Decimal Convert From Signed Quadword</B> instruction
+ * with the following restriction:
  *
  * \note If the signed value of vrb is less then -(10**31-1)
  * or greater than 10**31-1 the result is too large for the BCD format
  * and the result is undefined.
  *
- * It would be useful to check for this and if required factor the
+ * It would be useful to check for this and if required, factor the
  * __int128 value into to the high order 8 digits and the low order 31
  * digits. This allows for the safe and correct use of the
  * vec_bcdcfsq() and with some decimal shifts/truncates vec_bcdctz().
  * This also enables conversion to multiple precision Vector BCD to
  * represent 39 digits and more for radix conversions.
  *
- * This for example we first address the factoring by providing
+ * We first address the factoring by providing
  * <B>Vector Divide by const 10e31 Unsigned Quadword</B> and
  * <B>Vector Modulo by const 10e31 Unsigned Quadword</B> operation.
- * This again requires the multiplicative inverse using the
+ * This requires the multiplicative inverse using the
  * vec_mulhuq() operation.
  *
  * \code
@@ -412,7 +412,7 @@ vec_divuq_10e31 (vui128_t vra)
   const vui128_t ten31 = (vui128_t)
 	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
   // Magic numbers for multiplicative inverse to divide by 10**31
-  // are 4804950418589725908363185682083061167, Corrective add,
+  // are 4804950418589725908363185682083061167, corrective add,
   // and shift right 107 bits.
   const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
       0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
@@ -422,14 +422,15 @@ vec_divuq_10e31 (vui128_t vra)
   if (vec_cmpuq_all_ge (vra, ten31))
     {
       q = vec_mulhuq (vra, mul_invs_ten31);
-      // Need corrective add but don't want to deal with the carry.
+      // Need corrective add but want to avoid carry & double quad shift
+      // The following avoids the carry and less instructions
       t = vec_subuqm (vra, q);
       t = vec_srqi (t, 1);
       t = vec_adduqm (t, q);
       result = vec_srqi (t, (shift_ten31 - 1));
     }
   else
-    result = (vui128_t) vec_splat_u32(0);
+    result = (vui128_t) { (__int128) 0 };
 
   return result;
 }
@@ -442,8 +443,8 @@ vec_divuq_10e31 (vui128_t vra)
  * So far we only have the quotient (the high order 8 digits) and still
  * need to extract the remainder (the low order 31 digits). This is
  * simply the quotient from above multiplied by 10e31 and subtracted
- * from the original input. For avoid the multiple return value issue
- * we define a modulo operation to take the orginal value and the
+ * from the original input. To avoid the multiple return value issue
+ * we define a modulo operation to take the original value and the
  * quotient from vec_divuq_10e31().
  *
  * \code
@@ -478,7 +479,7 @@ vec_moduq_10e31 (vui128_t vra, vui128_t q)
  * \endcode
  * We also expect the compiler to common the various constant loads across
  * the two operations as the code is in-lined.
- * This header also provides a variants for factoring by 10e32
+ * This header also provides variants for factoring by 10e32
  * (to use with the Zone conversion) and
  * signed variants of the 10e31 operation for direct conversion to
  * extend precision signed BCD.
@@ -1984,12 +1985,12 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
 static inline vi128_t
 vec_divsq_10e31 (vi128_t vra)
 {
-  const vui128_t zero = (vui128_t) vec_splats ((int) 0);
+  const vui128_t zero = (vui128_t) { (__int128) 0 };
   /* ten32  = +100000000000000000000000000000000UQ  */
   const vui128_t ten31 = (vui128_t)
 	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
   /* Magic numbers for multiplicative inverse to divide by 10**31
-   are 4804950418589725908363185682083061167, Corrective add,
+   are 4804950418589725908363185682083061167, corrective add,
    and shift right 107 bits.  */
   const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
       0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
@@ -2005,17 +2006,18 @@ vec_divsq_10e31 (vi128_t vra)
   if (vec_cmpuq_all_ge (uvra, ten31))
     {
       q = vec_mulhuq (uvra, mul_invs_ten31);
-      // Need corrective add but don't want to deal with the carry.
+      // Need corrective add but want to avoid carry & double quad shift
+      // The following avoids the carry and less instructions
       t = vec_subuqm (uvra, q);
       t = vec_srqi (t, 1);
       t = vec_adduqm (t, q);
-      result = vec_srqi (t, (shift_ten31 - 1));
+      result = vec_srqi (t, shift_ten31-1);
       result = (vui128_t) vec_sel ((vui32_t) result,
       			    (vui32_t) vec_subuqm (zero, (vui128_t) result),
       			    (vb32_t) negbool);
     }
   else
-    result = (vui128_t) vec_splat_u32(0);
+    result = zero;
 
   return (vi128_t) result;
 }
@@ -2045,7 +2047,7 @@ vec_divuq_10e31 (vui128_t vra)
   const vui128_t ten31 = (vui128_t)
 	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
   /* Magic numbers for multiplicative inverse to divide by 10**31
-   are 4804950418589725908363185682083061167, Corrective add,
+   are 4804950418589725908363185682083061167, corrective add,
    and shift right 107 bits.  */
   const vui128_t mul_invs_ten31 = (vui128_t) CONST_VINT128_DW(
       0x039d66589687f9e9UL, 0x01d59f290ee19dafUL);
@@ -2055,14 +2057,15 @@ vec_divuq_10e31 (vui128_t vra)
   if (vec_cmpuq_all_ge (vra, ten31))
     {
       q = vec_mulhuq (vra, mul_invs_ten31);
-      // Need corrective add but don't want to deal with the carry.
+      // Need corrective add but want to avoid carry & double quad shift
+      // The following avoids the carry and less instructions
       t = vec_subuqm (vra, q);
       t = vec_srqi (t, 1);
       t = vec_adduqm (t, q);
-      result = vec_srqi (t, (shift_ten31 - 1));
+      result = vec_srqi (t, shift_ten31-1);
     }
   else
-    result = (vui128_t) vec_splat_u32(0);
+    result = (vui128_t) { (__int128) 0 };
 
   return result;
 }
@@ -2092,7 +2095,7 @@ vec_divuq_10e32 (vui128_t vra)
   const vui128_t ten32 = (vui128_t)
 	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
   /* Magic numbers for multiplicative inverse to divide by 10**32
-   are 211857340822306639531405861550393824741, Corrective add,
+   are 211857340822306639531405861550393824741, corrective add,
    and shift right 107 bits.  */
   const vui128_t mul_invs_ten32 = (vui128_t) CONST_VINT128_DW(
       0x9f623d5a8a732974UL, 0xcfbc31db4b0295e5UL);
@@ -2102,14 +2105,15 @@ vec_divuq_10e32 (vui128_t vra)
   if (vec_cmpuq_all_ge (vra, ten32))
     {
       q = vec_mulhuq (vra, mul_invs_ten32);
-      // Need corrective add but don't want to deal with the carry.
+      // Need corrective add but want to avoid carry & double quad shift
+      // The following avoids the carry and less instructions
       t = vec_subuqm (vra, q);
       t = vec_srqi (t, 1);
       t = vec_adduqm (t, q);
-      result = vec_srqi (t, (shift_ten32 - 1));
+      result = vec_srqi (t, shift_ten32-1);
     }
   else
-    result = (vui128_t) vec_splat_u32(0);
+    result = (vui128_t) { (__int128) 0 };
 
   return result;
 }
@@ -2226,14 +2230,14 @@ vec_minuq(vui128_t vra, vui128_t vrb)
 static inline vi128_t
 vec_modsq_10e31 (vi128_t vra, vi128_t q)
 {
-  const vui128_t zero = (vui128_t) vec_splats ((int) 0);
+  const vui128_t zero = (vui128_t) { (__int128) 0 };
   /* ten32  = +100000000000000000000000000000000UQ  */
   const vui128_t ten31 = (vui128_t)
 	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
   vui128_t result, t;
 
   // multiply low and subtract modulo are the same for signed/unsigned
-  // But now easier to compare q for zero
+  // But now easier to compare q for zero than signed compare to vra
   if (vec_cmpuq_all_ne ((vui128_t) vra, zero))
     {
       t = vec_mulluq ((vui128_t) q, ten31);

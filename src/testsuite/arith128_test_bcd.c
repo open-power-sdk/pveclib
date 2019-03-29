@@ -722,6 +722,175 @@ db_vec_cbcdsubcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
   return (t);
 }
 
+/* Convert radix 100 binary bytes to radix 10 BCD Nibbles */
+vui8_t
+db_vec_rdxcf100b (vui8_t vra)
+{
+  vui8_t result;
+  vui8_t x6, c6, high_digit;
+  /* Compute the high digit correction factor. For binary 100s to BCD
+   * this is the radix 100 value divided by 10 time by the radix
+   * difference in binary.  For this stage we use 0x10 - 10 = 6.  */
+  print_vint8d ("16xrdx100  ", vra);
+  print_vint8x ("           ", vra);
+  high_digit = vra / 10;
+  print_vint8d (" high digit", high_digit);
+  c6 = vec_splat_u8 ((unsigned char) 0x06);
+  x6 = vec_mulubm (high_digit, c6);
+  print_vint8d (" correction", x6);
+  /* Add the high digit correction bytes to the original
+   * radix 100 bytes in binary. */
+  result = vec_add (vra, x6);
+  return result;
+}
+
+/* Convert radix 10**4 binary hwords to radix 100 bytes */
+vui8_t
+db_vec_rdxcf10kh (vui16_t vra)
+{
+  vui8_t result;
+  vui16_t x156, c156, high_digit;
+  /* Compute the high digit correction factor. For binary 10**4 to 100s
+   * this is the radix 10000 value divided by 100 times by the radix
+   * difference in binary.  For this stage we use 0x100 - 100 = 156.  */
+  print_vint16d ("8xrdx10k   ", vra);
+  print_vint16x ("           ", vra);
+  high_digit = vra / 100;
+  print_vint16d (" high digit", high_digit);
+  c156 = vec_splats ((unsigned short) 156);
+#if 0
+  x156 = vec_muluhm (high_digit, c156);
+#else
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  x156 = vec_vmuleub ((vui8_t) high_digit, (vui8_t) c156);
+#else
+  x156 = vec_vmuloub ((vui8_t) high_digit, (vui8_t) c156);
+#endif
+#endif
+  print_vint16d (" correction", x156);
+  /* Add the high digit correction hword to the original
+   * radix 10000 hword in binary. */
+  result = (vui8_t) vec_add (vra, x156);
+  return result;
+}
+
+/* Convert radix 10**8 binary words to radix 10**4 hwords */
+vui16_t
+db_vec_rdxcf100mw (vui32_t vra)
+{
+  vui16_t result;
+  vui32_t x, c, high_digit;
+  /* Compute the high digit correction factor. For binary 10**8 to 10**4
+   * this is the radix 100000000 value divided by 10000 times by the radix
+   * difference in binary.  For this stage we use 0x10000 - 10000 = 55536.  */
+  print_vint32d ("4xrdx100m  ", vra);
+  print_vint32x ("           ", vra);
+  high_digit = vra / 10000;
+  print_vint32d (" high digit", high_digit);
+  c = vec_splats ((unsigned int) 55536);
+#if 0
+  x = vec_muluwm (high_digit, c);
+#else
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  x = vec_vmuleuh ((vui16_t) high_digit, (vui16_t) c);
+#else
+  x = vec_vmulouh ((vui16_t) high_digit, (vui16_t) c);
+#endif
+#endif
+  print_vint32d (" correction", x);
+  /* Add the high digit correction word to the original
+   * radix 10**8 word in binary. */
+  result = (vui16_t) vec_add (vra, x);
+  return result;
+}
+
+/* Convert radix 10**16 binary dwords to radix 10**8 words */
+vui32_t
+db_vec_rdxcf10E16d (vui64_t vra)
+{
+  /* Magic numbers for multiplicative inverse to divide by 10**8
+   are 12379400392853802749, no corrective add,
+   and shift right 26 bits.  */
+  const vui64_t mul_invs_ten8 = CONST_VINT128_DW(
+      12379400392853802749UL, 12379400392853802749UL);
+  const int shift_ten8 = 26;
+  vui32_t result;
+  vui64_t x, c, high_digit;
+  /* Compute the high digit correction factor. For binary 10**16 to 10**8
+   * this is the radix 10000000000000000 value divided by 100000000 times by the radix
+   * difference in binary.  For this stage we use 0x100000000 - 100000000 = 4194967296.  */
+  print_v2int64  ("2xrdx10**16", vra);
+  print_v2xint64 ("           ", vra);
+#if 0
+  high_digit = vra / 100000000;
+#else
+  // high_digit = vra / 100000000;
+  // Next divide the 16 digits by 10**8.
+  // This separates the high 8 digits into words.
+  high_digit = vec_mulhud (vra, mul_invs_ten8);
+  high_digit = vec_srdi (high_digit, shift_ten8);
+#endif
+  print_v2int64  (" high digit", high_digit);
+  c = vec_splats ((unsigned long)4194967296);
+#if 0
+  x = vec_muludm (high_digit, c);
+#else
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  x = vec_muleuw ((vui32_t) high_digit, (vui32_t) c);
+#else
+  x = vec_mulouw ((vui32_t) high_digit, (vui32_t) c);
+#endif
+#endif
+  print_v2int64  (" correction", x);
+  /* Add the high digit correction dword to the original
+   * radix 10**16 dword in binary. */
+  result = (vui32_t) vec_addudm (vra, x);
+  return result;
+}
+
+/* Convert radix 10**16 binary dwords to radix 10**8 words */
+vui64_t
+db_vec_rdxcf10e32q (vui128_t vra)
+{
+  /* Magic numbers for multiplicative inverse to divide by 10**16
+   are 76624777043294442917917351357515459181, no corrective add,
+   and shift right 51 bits.  */
+  const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+  const int shift_ten16 = 51;
+  vui64_t result, c;
+  vui128_t x, high_digit;
+  /* Compute the high digit correction factor. For binary 10**32 to
+   * 10**16, this is the radix 100000000000000000000000000000000 value
+   * divided by 10000000000000000 times by the radix difference in
+   * binary.  For this stage we use 0x10000000000000000
+   * - 10000000000000000 = 18436744073709551616.  */
+  print_vint128  ("2xrdx10**16", vra);
+  print_vint128x ("           ", vra);
+  // high_digit = vra / 10000000000000000;
+  // Next divide the 32 digits by 10**16.
+  // This separates the high 16 digits into doublewords.
+  high_digit = vec_mulhuq (vra, mul_invs_ten16);
+  high_digit = vec_srqi (high_digit, shift_ten16);
+  print_vint128  (" high digit", high_digit);
+  /* c = 18436744073709551616UL */
+  c = vec_splats ((unsigned long)0xFFDC790D903F0000UL);
+#if 0
+  x = vec_muluqm (high_digit, c);
+#else
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  x = vec_muleud ((vui64_t) high_digit, (vui64_t) c);
+#else
+  x = vec_muloud ((vui64_t) high_digit, (vui64_t) c);
+#endif
+#endif
+  print_vint128  (" correction", x);
+  /* Add the high digit correction qword to the original
+   * radix 10**32 qword in binary. */
+  result = (vui64_t) vec_adduqm (vra, x);
+  return result;
+}
+
 //#define __DEBUG_PRINT__ 1
 #ifdef __DEBUG_PRINT__
 #define test_vec_bcdctb100s(_l)	db_vec_BCD2i128(_l)
@@ -6930,6 +7099,482 @@ test_bcd_csube256 (void)
   return rc;
 }
 
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_vec_rdxcf100b(_l)	db_vec_rdxcf100b(_l)
+#else
+#define test_vec_rdxcf100b(_l)	vec_rdxcf100b(_l)
+#endif
+
+//#define __DEBUG_PRINT__ 1
+int
+test_rdxcf100b (void)
+{
+  vui8_t i, j;
+  vui8_t e;
+  int rc = 0;
+
+  printf ("\n%s Vector convert to BCD\n", __FUNCTION__);
+
+  i = (vui8_t) { 99, 99, 99, 99, 99, 99, 99, 99,
+                 99, 99, 99, 99, 99, 99, 99, 99 };
+  e = (vui8_t) { 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
+	         0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99 };
+  j = test_vec_rdxcf100b(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8x ("BC100s     ", i);
+  print_vint8d ("           ", i);
+  print_vint8x ("BCD        ", j);
+  print_vint8d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100b:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui8_t) { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  e = (vui8_t) { 00, 00, 00, 00, 00, 00, 00, 00,
+                 00, 00, 00, 00, 00, 00, 00, 00 };
+  j = test_vec_rdxcf100b(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8x ("BC100s     ", i);
+  print_vint8d ("           ", i);
+  print_vint8x ("BCD        ", j);
+  print_vint8d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100b:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui8_t) { 1, 9, 10, 19, 20, 29, 30, 39,
+                40, 49, 50, 59, 60, 69, 70, 79 };
+  e = (vui8_t) { 0x01, 0x09, 0x10, 0x19, 0x20, 0x29, 0x30, 0x39,
+                 0x40, 0x49, 0x50, 0x59, 0x60, 0x69, 0x70, 0x79 };
+  j = test_vec_rdxcf100b(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8x ("BC100s     ", i);
+  print_vint8d ("           ", i);
+  print_vint8x ("BCD        ", j);
+  print_vint8d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100b:", (vui128_t) j, (vui128_t) e);
+
+#if 1
+  i = (vui8_t) { 80, 81, 82, 83, 86, 87, 88, 89,
+                 90, 91, 92, 93, 95, 96, 97, 98 };
+  e = (vui8_t) { 0x80, 0x81, 0x82, 0x83, 0x86, 0x87, 0x88, 0x89,
+                 0x90, 0x91, 0x92, 0x93, 0x95, 0x96, 0x97, 0x98 };
+  j = test_vec_rdxcf100b(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8x ("BC100s     ", i);
+  print_vint8d ("           ", i);
+  print_vint8x ("BCD        ", j);
+  print_vint8d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100b:", (vui128_t) j, (vui128_t) e);
+#endif
+  return (rc);
+}
+//#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_vec_rdxcf10kh(_l)	db_vec_rdxcf10kh(_l)
+#else
+#define test_vec_rdxcf10kh(_l)	vec_rdxcf10kh(_l)
+#endif
+int
+test_rdxcf10kh (void)
+{
+  vui16_t i;
+  vui8_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert to 100s\n", __FUNCTION__);
+
+  i = (vui16_t) { 9999, 9999, 9999, 9999,
+                 9999, 9999, 9999, 9999 };
+  e = (vui8_t) { 99, 99, 99, 99, 99, 99, 99, 99,
+	          99, 99, 99, 99, 99, 99, 99, 99 };
+  j = test_vec_rdxcf10kh (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x ("BC10ks     ", i);
+  print_vint16d ("           ", i);
+  print_vint8x  ("BCD 9s     ", j);
+  print_vint8d  ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10kh:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_vec_rdxcf100mw(_l)	db_vec_rdxcf100mw(_l)
+#else
+#define test_vec_rdxcf100mw(_l)	vec_rdxcf100mw(_l)
+#endif
+int
+test_rdxcf100mw (void)
+{
+  vui32_t i;
+  vui16_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert to 10Ks\n", __FUNCTION__);
+
+  i = (vui32_t) { 99999999, 99999999,
+                 99999999, 99999999 };
+  e = (vui16_t) { 9999, 9999, 9999, 9999,
+	          9999, 9999, 9999, 9999 };
+  j = test_vec_rdxcf100mw (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("BC100ms    ", i);
+  print_vint32d ("           ", i);
+  print_vint16x ("BC10ks     ", j);
+  print_vint16d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100mw:", (vui128_t) j, (vui128_t) e);
+
+  i = CONST_VINT128_W ( 98765432, 10987654,
+			32109876, 54321098 );
+  e = CONST_VINT128_H ( 9876, 5432, 1098, 7654,
+			3210, 9876, 5432, 1098 );
+  j = test_vec_rdxcf100mw (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("BC100ms    ", i);
+  print_vint32d ("           ", i);
+  print_vint16x ("BC10ks     ", j);
+  print_vint16d ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf100mw:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_vec_rdxcf10E16d(_l)	db_vec_rdxcf10E16d(_l)
+#else
+#define test_vec_rdxcf10E16d(_l)	vec_rdxcf10E16d(_l)
+#endif
+int
+test_rdxcf10E16d (void)
+{
+  vui64_t i;
+  vui32_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert to 100Ms\n", __FUNCTION__);
+
+  i = (vui64_t) { 9999999999999999UL,
+                  9999999999999999UL };
+  e = (vui32_t) { 99999999, 99999999,
+	           99999999, 99999999 };
+  j = test_vec_rdxcf10E16d (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("BC10es     ", i);
+  print_v2int64  ("           ", i);
+  print_vint32x  ("BC100ms    ", j);
+  print_vint32d  ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10E16d:", (vui128_t) j, (vui128_t) e);
+
+  i = CONST_VINT128_DW (9876543210987654UL,
+			9876543210987654UL);
+  e = CONST_VINT128_W ( 98765432, 10987654,
+			98765432, 10987654 );
+  j = test_vec_rdxcf10E16d (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("BC10es     ", i);
+  print_v2int64  ("           ", i);
+  print_vint32x  ("BC100ms    ", j);
+  print_vint32d  ("           ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10E16d:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_vec_rdxcf10e32q(_l)	db_vec_rdxcf10e32q(_l)
+#else
+#define test_vec_rdxcf10e32q(_l)	vec_rdxcf10e32q(_l)
+#endif
+int
+test_rdxcf10e32q (void)
+{
+  vui128_t i;
+  vui64_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert to 10E16\n", __FUNCTION__);
+
+  /* i = 999999999999999999999999999999UQ  */
+  i = (vui128_t) { (__int128 ) 9999999999999999ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 ) 9999999999999999ll };
+  e = (vui64_t) { 9999999999999999UL,
+	           9999999999999999UL };
+  j = test_vec_rdxcf10e32q (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("BC10e32   ", i);
+  print_vint128  ("          ", i);
+  print_v2xint64 ("BC10es    ", j);
+  print_v2int64  ("          ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10e32q:", (vui128_t) j, (vui128_t) e);
+
+  /* i = 98765432109876549876543210987654UQ  */
+  i = (vui128_t) { (__int128 ) 9876543210987654ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 ) 9876543210987654ll };
+  e = (vui64_t) { 9876543210987654UL,
+                  9876543210987654UL };
+  j = test_vec_rdxcf10e32q (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("BC10e32   ", i);
+  print_vint128  ("          ", i);
+  print_v2xint64 ("BC10es    ", j);
+  print_v2int64  ("          ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10e32q:", (vui128_t) j, (vui128_t) e);
+
+  /* i = 184467440737095516169876543210987654UQ  */
+  i = (vui128_t) { (__int128 ) __UINT64_MAX__
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 ) 9876543210987654ll };
+  e = CONST_VINT128_DW ( __UINT64_MAX__,
+                         9876543210987654UL );
+  j = test_vec_rdxcf10e32q (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("BC10e32   ", i);
+  print_vint128  ("          ", i);
+  print_v2xint64 ("BC10es    ", j);
+  print_v2int64  ("          ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10e32q:", (vui128_t) j, (vui128_t) e);
+
+  /* i = 1844674407370955161609876543210987654UQ  */
+  i = (vui128_t) { (__int128 ) __UINT64_MAX__
+                 * (__int128 ) 100000000000000000ll
+                 + (__int128 ) 9876543210987654ll };
+  e = CONST_VINT128_DW ( 0x013fbe85edc8fff6UL,
+                         9876543210987654UL );
+  j = test_vec_rdxcf10e32q (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("BC10e32   ", i);
+  print_vint128  ("          ", i);
+  print_v2xint64 ("BC10es    ", j);
+  print_v2int64  ("          ", j);
+#endif
+  rc += check_vuint128x ("vec_rdxcf10e32q:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_vec_bcdcfuq (void)
+{
+  vui128_t i;
+  vBCD_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert from unsigned __int128\n", __FUNCTION__);
+
+  /* i = 999999999999999999999999999999UQ  */
+  i = (vui128_t) { (__int128 ) 9999999999999999ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 ) 9999999999999999ll };
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9999999999999999UL,
+	                             0x9999999999999999UL );
+  j = vec_bcdcfuq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", i);
+  print_vint128  ("          ", i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfuq:", (vui128_t) j, (vui128_t) e);
+
+  /* i = 98765432109876549876543210987654UQ  */
+  i = (vui128_t) { (__int128 ) 9876543210987654ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 ) 9876543210987654ll };
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9876543210987654UL,
+                                     0x9876543210987654UL );
+  j = vec_bcdcfuq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", i);
+  print_vint128  ("          ", i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfuq:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_vec_bcdcfud (void)
+{
+  vui64_t i;
+  vBCD_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert from unsigned long\n", __FUNCTION__);
+
+  i = CONST_VINT128_DW ( 9999999999999999UL,
+	                 9999999999999999UL );
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9999999999999999UL,
+	                             0x9999999999999999UL );
+  j = vec_bcdcfud (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("UINT64    ", i);
+  print_v2int64  ("          ", i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfud:", (vui128_t) j, (vui128_t) e);
+
+  i =  CONST_VINT128_DW ( 9876543210987654UL,
+                          9876543210987654UL );
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9876543210987654UL,
+                                     0x9876543210987654UL );
+  j = vec_bcdcfud (i);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("UINT64    ", i);
+  print_v2int64  ("          ", i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfud:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_vec_bcdcfsq (void)
+{
+  vi128_t i;
+  vBCD_t j, e;
+  int rc = 0;
+
+  printf ("\n%s Vector BCD convert from signed __int128\n", __FUNCTION__);
+
+  /* i = 999999999999999999999999999999UQ  */
+  i = (vi128_t) { (__int128 )    999999999999999ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 )  9999999999999999ll };
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9999999999999999UL,
+	                             0x999999999999999cUL );
+  j = vec_bcdcfsq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", (vui128_t) i);
+  print_vint128  ("          ", (vui128_t) i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfsq:", (vui128_t) j, (vui128_t) e);
+
+  /* i = -999999999999999999999999999999UQ  */
+  i = -((vi128_t) { (__int128 )   999999999999999ll
+                  * (__int128 ) 10000000000000000ll
+                  + (__int128 )  9999999999999999ll });
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9999999999999999UL,
+	                             0x999999999999999dUL );
+  j = vec_bcdcfsq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", (vui128_t) i);
+  print_vint128  ("          ", (vui128_t) i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfsq:", (vui128_t) j, (vui128_t) e);
+
+  /* i = +9876543210987654987654321098765UQ  */
+  i = (vi128_t) { (__int128 )    987654321098765ll
+                 * (__int128 ) 10000000000000000ll
+                 + (__int128 )  4987654321098765ll };
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9876543210987654UL,
+                                     0x987654321098765cUL );
+  j = vec_bcdcfsq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", (vui128_t) i);
+  print_vint128  ("          ", (vui128_t) i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfsq:", (vui128_t) j, (vui128_t) e);
+
+  /* i = -9876543210987654987654321098765UQ  */
+  i = -((vi128_t) { (__int128 )   987654321098765ll
+                  * (__int128 ) 10000000000000000ll
+                  + (__int128 )  4987654321098765ll });
+  e = (vBCD_t) CONST_VINT128_DW128 ( 0x9876543210987654UL,
+                                     0x987654321098765dUL );
+  j = vec_bcdcfsq (i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("UINT128   ", (vui128_t) i);
+  print_vint128  ("          ", (vui128_t) i);
+  print_vint128x ("uBCD32    ", (vui128_t)j);
+#endif
+  rc += check_vuint128x ("vec_bcdcfsq:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_bcddive (void)
+{
+  vBCD_t i, j, k;
+  vBCD_t e;
+ int rc = 0;
+
+ printf ("\n%s Vector BCD Divide Extended\n", __FUNCTION__);
+
+ i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000001c);
+ j = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x3c);
+ k = vec_bcddive (i, j);
+
+#ifdef __DEBUG_PRINT__
+ print_vint128x (" Dividend ", (vui128_t)i);
+ print_vint128x (" Divisor  ", (vui128_t)j);
+ print_vint128x (" Quotient ", (vui128_t)k);
+#endif
+ e = (vBCD_t) CONST_VINT128_W (0x33333333, 0x33333333, 0x33333333, 0x3333333c);
+ rc += check_vuint128x ("vec_bcddive:", (vui128_t) k, (vui128_t) e);
+
+ // Almost PI
+ i = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x628321c);
+ j = (vBCD_t) CONST_VINT128_W (0, 0, 0x2, 0x0000079c);
+ k = vec_bcddive (i, j);
+
+#ifdef __DEBUG_PRINT__
+ print_vint128x (" Dividend ", (vui128_t)i);
+ print_vint128x (" Divisor  ", (vui128_t)j);
+ print_vint128x (" Quotient ", (vui128_t)k);
+#endif
+ e = (vBCD_t) CONST_VINT128_W (0x31415925, 0x90709266, 0x69839654, 0x1333661c);
+ rc += check_vuint128x ("vec_bcddive:", (vui128_t) k, (vui128_t) e);
+
+ return (rc);
+}
+
 int
 test_vec_bcd (void)
 {
@@ -6999,6 +7644,16 @@ test_vec_bcd (void)
 
   rc += test_bcd_csube256 ();
 
+  rc += test_rdxcf100b ();
+  rc += test_rdxcf10kh ();
+  rc += test_rdxcf100mw ();
+  rc += test_rdxcf10E16d ();
+  rc += test_rdxcf10e32q ();
+  rc += test_vec_bcdcfuq ();
+  rc += test_vec_bcdcfud ();
+  rc += test_vec_bcdcfsq ();
+
+  rc += test_bcddive ();
+
   return (rc);
 }
-

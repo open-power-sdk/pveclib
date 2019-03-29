@@ -12,8 +12,8 @@
 
 #include "vec_char_ppc.h"
 
-#if __GNUC__ >= 8
-/* Generic vec_mul not supported for vector char until GCC 8.  */
+#if __GNUC__ >= 7
+/* Generic vec_mul not supported for vector char until GCC 7.  */
 vui8_t
 __test_mulubm_gcc (vui8_t __A, vui8_t __B)
 {

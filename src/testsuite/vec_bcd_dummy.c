@@ -32,6 +32,12 @@ test_unpack_Decimal128_cast (vBCD_t lval)
   return vec_unpack_Decimal128 ((vf64_t) lval);
 }
 
+vui64_t
+test_vec_BCD2BIN (vBCD_t val)
+{
+  return vec_BCD2BIN (val);
+}
+
 _Decimal128
 test_vec_BCD2DFP (vBCD_t val)
 {
@@ -513,6 +519,117 @@ example_bcdmul_2x2 (vBCD_t *__restrict__ mulu, vBCD_t m1h, vBCD_t m1l,
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+vui8_t
+test_vec_rdxcf100b (vui8_t vra)
+{
+  return vec_rdxcf100b (vra);
+}
+
+vui8_t
+test_vec_rdxcf10kh (vui16_t vra)
+{
+  return vec_rdxcf10kh (vra);
+}
+
+vui16_t
+test_vec_rdxcf100mw (vui32_t vra)
+{
+  return vec_rdxcf100mw (vra);
+}
+
+vui32_t
+test_vec_rdxcf10E16d (vui64_t vra)
+{
+  return vec_rdxcf10E16d (vra);
+}
+
+vui64_t
+test_vec_rdxcf10e32q (vui128_t vra)
+{
+  return vec_rdxcf10e32q (vra);
+}
+
+vui8_t
+test_vec_rdxct100b_0 (vui8_t vra)
+{
+  vui8_t x10, c10, high_digit, low_digit;
+  // Isolated the low_digt
+  low_digit = vec_slbi (vra, 4);
+  low_digit = vec_srbi (low_digit, 4);
+  // Shift the high digit into the units position
+  high_digit = vec_srbi (vra, 4);
+  // multiply the high digit by 10
+  c10 = vec_splat_u8 ((unsigned char) 10);
+#if (__GNUC__ > 7)
+  x10 = vec_mul (high_digit, c10);
+#else
+  x10 = vec_mulubm (high_digit, c10);
+#endif
+  // add the low_digit to high_digit * 10.
+  return vec_add (x10, low_digit);
+}
+
+vui8_t
+test_vec_rdxct100b_1 (vui8_t vra)
+{
+  vui8_t x6, c6, high_digit;
+  /* Compute the high digit correction factor. For BCD to binary 100s
+   * this is the isolated high digit multiplied by the radix difference
+   * in binary.  For this stage we use 0x10 - 10 = 6.  */
+  high_digit = vec_srbi (vra, 4);
+  c6 = vec_splat_u8 ((unsigned char) 0x06);
+#if (__GNUC__ > 7)
+  x6 = vec_mul (high_digit, c6);
+#else
+  x6 = vec_mulubm (high_digit, c6);
+#endif
+  /* Subtract the high digit correction bytes from the original
+   * BCD bytes in binary.  This reduces byte range to 0-99. */
+  return vec_sub (vra, x6);
+}
+
+vui8_t
+test_vec_rdxct100b (vui8_t vra)
+{
+  return vec_rdxct100b (vra);
+}
+
+vui16_t
+test_vec_rdxct10kh (vui8_t vra)
+{
+  return vec_rdxct10kh (vra);
+}
+
+vui64_t
+test_vec_rdxct10E16d (vui32_t vra)
+{
+  return vec_rdxct10E16d (vra);
+}
+
+vui128_t
+test_vec_rdxct10e32q (vui64_t vra)
+{
+  return vec_rdxct10e32q (vra);
+}
+
+vBCD_t
+test_vec_bcdcfsq (vi128_t vra)
+{
+  return vec_bcdcfsq (vra);
+}
+
+vBCD_t
+test_vec_bcdcfud (vui64_t vra)
+{
+  return vec_bcdcfud (vra);
+}
+
+vBCD_t
+test_vec_bcdcfuq (vui128_t vra)
+{
+  return vec_bcdcfuq (vra);
 }
 
 #if (__GNUC__ > 4)

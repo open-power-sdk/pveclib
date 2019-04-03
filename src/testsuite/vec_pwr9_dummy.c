@@ -1045,6 +1045,7 @@ example_vec_cbcdecsq_loop_PWR9 (vBCD_t *cout, vBCD_t* out, vBCD_t* a, vBCD_t* b,
 
   out[cnt - 1] = vec_cbcdaddcsq (&c, a[cnt - 1], b[cnt - 1]);
 
+  cn = _BCD_CONST_ZERO;
   for (i = (cnt - 2); i >= 0; i--)
     {
       out[i] = vec_cbcdaddecsq (&cn, a[i], b[i], c);
@@ -1088,6 +1089,42 @@ test__vec_bcdaddcsq2_PWR9 (vi128_t a, vi128_t b)
       t = (vi128_t) vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, (vBCD_t) t);
     }
   return (t);
+}
+
+vui64_t
+test_vec_rdxct10E16d_PWR9 (vui32_t vra)
+{
+  return vec_rdxct10E16d (vra);
+}
+
+vui128_t
+test_vec_rdxct10e32q_PWR9 (vui64_t vra)
+{
+  return vec_rdxct10e32q (vra);
+}
+
+vui32_t
+test_vec_rdxcf10E16d_PWR9 (vui64_t vra)
+{
+  return vec_rdxcf10E16d (vra);
+}
+
+vui64_t
+test_vec_rdxcf10e32q_PWR9 (vui128_t vra)
+{
+  return vec_rdxcf10e32q (vra);
+}
+
+vBCD_t
+test_vec_bcdcfsq_PWR9 (vi128_t vra)
+{
+  return vec_bcdcfsq (vra);
+}
+
+vBCD_t
+test_vec_bcdcfuq_PWR9 (vui128_t vra)
+{
+  return vec_bcdcfuq (vra);
 }
 
 vi128_t

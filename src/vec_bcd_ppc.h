@@ -48,12 +48,12 @@
  * as an independent Decimal Floating-point Unit (<I>DFU</I>). This
  * is supported with ISO C/C++ language bindings and runtime libraries.
  *
- * The DFU supports a different data format
+ * The DFP Facility supports a different data format
  * <A HREF="https://en.wikipedia.org/wiki/Densely_packed_decimal">
  * Densely packed decimal</A> (<I>DPD</I> and a more extensive set of
  * operations then BCD or Zoned. So DFP and the comprehensive C
  * language and runtime library support makes it a better target for
- * new business oriented applications. As the DFU supports conversions
+ * new business oriented applications. As the DFP Facility supports conversions
  * between DPD and BCD, existing DFP operations can be used to emulate
  * BCD operations on older processors and fill in operational gaps in
  * the vector BCD instruction set.
@@ -102,7 +102,7 @@
  * No additional vectors operations where added and the Vector
  * Registers (VRs) where separate from the GRPs and FPRs. The only
  * transfer data path between register sets is via storage.
- * So while the DFU could be used for BCD operations and conversions,
+ * So while the DFP Facility could be used for BCD operations and conversions,
  * there was little synergy with the vector unit, in POWER6.
  *
  * POWER7 introduced the VSX facility providing 64x128-bit Vector
@@ -111,8 +111,8 @@
  * (xxpermdi) and logical/select operations with access to all 64 VSRs.
  * This greatly simplifies data transfers between VRs and FPRs (FPRps)
  * (see vec_pack_Decimal128(), vec_unpack_Decimal128()).
- * This makes it more practical to transfer vector contents to the DPU
- * for processing (see vec_BCD2DFP() and vec_DFP2BCD().
+ * This makes it more practical to transfer vector contents to the DFP
+ * Facility for processing (see vec_BCD2DFP() and vec_DFP2BCD().
  *
  * \note All the BCD instructions and the quadword binary add/subtract
  * are defined as vector class and can only access vector registers
@@ -233,8 +233,8 @@
  * The DFU supports a different data format
  * <A HREF="https://en.wikipedia.org/wiki/Densely_packed_decimal">
  * Densely packed decimal</A> (<I>DPD</I> and a more extensive set of
- * operations then BCD or Zoned. So DFP and the comprehensive C
- * language and runtime library support makes it a better target for
+ * operations then BCD or Zoned. So hardware DFP and the comprehensive
+ * C language and runtime library support makes it a better target for
  * new business oriented applications.
  * As DFP is supported directly in the hardware and has extensive
  * language and runtime support, there is little that PVECLIB can
@@ -314,7 +314,7 @@
  * Extended precision requires carry and extend forms of bcdadd/sub.
  * Also BCD multiply with multiply high and and double quadword
  * (62-digit) forms. The vector unit does not support BCD multiply
- * so pveclib leverages the DFU to implement these operations.
+ * so pveclib leverages the DFP Facility to implement these operations.
  * Finally algorithms and extended precision conversions require
  * BCD divide and divide extended. Again leveraging the DPU to
  * implement these operations.
@@ -563,10 +563,12 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *
  * \todo The BCD add/subtract extend/carry story is not complete.
  * The carry extend operations based only on the <B>OV</B> condition
- * codes only works as expected if the BCD operands have the same
- * sign. See vec_bcdaddcsq() and vec_bcdaddecsq().
- * Extended BCD subtract (or add with different signs) is
- * more complicated. See vec_bcdsubcsq() and vec_bcdsubecsq().
+ * codes only works as expected for bcdadd operands with the same sign
+ * and bcdsub with different signs.
+ * See vec_bcdaddcsq() and vec_bcdaddecsq().
+ * Extended BCD difference (or subtract the same sign or add with
+ * different signs) is more complicated.
+ * See vec_bcdsubcsq() and vec_bcdsubecsq().
  * Generating a true borrow seems to require
  * looking one (31-digit) column ahead or behind.
  * The first attempt at generating correct borrowing is implemented
@@ -581,11 +583,11 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *
  * BCD multiply and divide operations are not directly supported
  * in the current PowerISA. Decimal multiply and divide are
- * supported in the Decimal Floating-point (DFP) Unit (DFU), as well
+ * supported in the Decimal Floating-point (DFP) Facility, as well
  * as conversion to and from signed (unsigned) BCD.
  *
  * So BCD multiply and divide operations can be routed through the
- * DFU with a few caveats.
+ * DFP Facility with a few caveats.
  * - DFP Extended format supports up to 34 digits precision
  * - DFP significand represent digits to the <I>left</I> of the
  * implied decimal point.
@@ -593,7 +595,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
  *
  * This allows DFP to represent decimal integer and fixed point
  * decimal values with a preferred exponent of 0.
- * The DFU will maintain this preferred exponent for DPF arithmetic
+ * The DFP Facility will maintain this preferred exponent for DPF arithmetic
  * operations until:
  * - An arithmetic operation involves a operand with a non-zero
  * exponent.
@@ -710,7 +712,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * \endcode
  * Here we know that there are higher order digits in one or both operands.
  * First use vec_bcdsrqi() to isolate the high 15-digits of operands a
- * and b. Both Vector unit and DFU have decimal shift operations,
+ * and b. Both Vector unit and DFP Facility have decimal shift operations,
  * but the vector shift operation is faster.
  *
  * Then convert to DFP and
@@ -724,7 +726,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * For this case use
  * <B>DFP Shift Significand Left Immediate</B> and
  * <B>DFP Shift Significand Right Immediate</B>. All the data is in
- * the DFU and the high cost of the DFU shift is offset by avoiding
+ * the DFP Facility and the high cost of the DFP Facility shift is offset by avoiding
  * extra format conversions. We use shift left 17 followed by shift
  * right 1 to clear the highest order DFP digit and avoid any overflow.
  * A final DFP add produces the low order 32 digits of the product
@@ -811,11 +813,11 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *
  * Conversions between Decimal (BCD, Zoned, or string) and binary is
  * another topic which is more complicated that it first appears.
- * Everyone takes computer science should have learns <I>atoi</I> and
- * <I>itoa</I> for conversions between strings of decimal character
- * and binary integers.
+ * Everyone that takes computer science should have learned about
+ * <I>atoi</I> and <I>itoa</I> for conversions between strings of
+ * decimal character and binary integers.
  *
- * Ascii to integer is basically;
+ * ASCII to integer is basically;
  * - initialize a integer accumulator to 0
  * - loop
  *   - multiply the accumulator by 10
@@ -823,13 +825,13 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *   - Add this digit to the accumulator
  * - repeat until end of string.
  *
- * Integer to Ascii is basically;
+ * Integer to ASCII is basically;
  * - initialize a temp variable with the integer number
  * - loop
  *   - compute the remainder/modulo of temp by 10
  *   - convert this binary digit to a character and store as the next
  *     char
- *   - divide temp by time and use that for the next iteration
+ *   - divide temp by 10 and use that for the next iteration
  * - repeat until temp is zero.
  *
  * You may have noticed that the algorithms above are not exactly
@@ -839,7 +841,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * binary and 31-digit BCD.
  *
  * For the vector BCD equivalent of <B><I>atoi</I></B> we
- * could use the POWER8 implementation of
+ * could use the PVECLIB implementation of
  * <B>Vector Multiply by 10 Extended Unsigned Quadword</B>. For POWER8,
  * vec_mul10euq() uses; multiple even/odd, a couple of shift left octet
  * immediates, and add quadword. This sequence runs 5-7 instructions
@@ -856,7 +858,8 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * Use vec_bcdadd() to multiply by 2 then shift / issolate a bit from
  * the binary value, format / convert that bit to BCD 0/1. and
  * vec_bcdadd() again.
- * So a quick for this conversion is 13 * 2 * 128 = 3328 cycles.
+ * So a quick estimate for this conversion is 13 * 2 * 128 = 3328
+ * cycles.
  *
  * \paragraph bcd128_convert_0_2_2_1 Vector Parallel conversion
  *
@@ -892,12 +895,12 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * Now we should looking into better algorithms for implementing
  * these operations on POWER7/8.
  *
- * The Vector unit can multiply, add, or subtract integer element in parallel.
- * The conversion process is basically multiply and add/sub as we can
- * replace divide operations with the multiplicative inverse.
- * So if we are looking for a way to break the conversion down into steps,
- * than can be performed in parallel on elements of the larger value,
- * and require fewer steps.
+ * The Vector unit can multiply, add, or subtract integer elements in
+ * parallel. The conversion process is basically multiply and add/sub
+ * as we can replace divide operations with the multiplicative inverse.
+ * So if we are looking for a way to break the conversion down into
+ * steps that can be performed in parallel on elements of the larger
+ * value and require fewer steps.
  *
  * For now we can simplify the problem to unsigned radix conversion
  * and deal with signed conversion as a later cleanup step
@@ -905,22 +908,22 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  *
  * \paragraph bcd128_convert_0_2_2_2 Vector Parallel BCD to quadword conversion
  *
- * Starting with BCD (Radix 10) to Binary (Radix 2) conversion.
- * The data is presents as 32 BCD digits encoded as 4-bit <I>nibbles</I>
+ * Starting with BCD (Radix 10) to Binary (Radix 2) conversion. The
+ * data is represented as 32 BCD digits encoded as 4-bit <I>nibbles</I>
  * starting with high orders digits on the left,
  * to low order digits on the right.
  *
- * Said differently unsigned BCD vectors are represented as 16-bytes
+ * Said differently, unsigned BCD vectors are represented as 16-bytes
  * each containing a pair of BCD digits, each in the range 00-99.
- * This is helpful because the PowerISA has instruction that multiply
+ * This is helpful because the PowerISA has instructions that multiply
  * and add integer bytes, in parallel.
  * So it seems possible to convert bytes containing even/odd pairs of
- * BCD digits to integer bytes, each in the range 0-99.
- * Simply multiply the even digit by 10 and add the odd digit.
+ * BCD digits to integer bytes, each in the range 0-99:
+ * simply multiply the even digit by 10 and add the odd digit.
  *
- * The result is vector of 16 x radix-100 bytes (binary integers in the
- * range 0-99). Said differently a radix 100 vector represented as 8
- * halfwords each containing a pair of radix 100 digits, each in the
+ * The result is a vector of 16 x radix-100 bytes (binary integers in
+ * the range 0-99). Said differently a radix 100 vector represented as
+ * 8 halfwords each containing a pair of radix 100 digits, each in the
  * range 0-99. Again these pairs of digits (bytes) can be converted by
  * multiply and add to radix 10,000 halfwords.
  *
@@ -940,7 +943,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * \note Actually 10**32 can be represented in 107 bits, but who is
  * counting.
  *
- * Actually it is a little more complicated then multiply and add.
+ * Actually, it is a little more complicated than multiply and add.
  * The digits of the digit pair must be isolated and shifted into
  * alignment before the multiply and add.
  * Looking something like this:
@@ -950,13 +953,13 @@ vui8_t
 test_vec_rdxct100b_0 (vui8_t vra)
 {
   vui8_t x10, c10, high_digit, low_digit;
-  // Isolated the low_digt
+  // Isolate the low_digit
   low_digit = vec_slbi (vra, 4);
   low_digit = vec_srbi (low_digit, 4);
   // Shift the high digit into the units position
   high_digit = vec_srbi (vra, 4);
   // multiply the high digit by 10
-  c10 = vec_splat_u8 ((unsigned char) 10);
+  c10 = vec_splats ((unsigned char) 10);
   x10 = vec_mulubm (high_digit, c10);
   // add the low_digit to high_digit * 10.
   return vec_add (x10, low_digit);
@@ -965,12 +968,12 @@ test_vec_rdxct100b_0 (vui8_t vra)
  * The PowerISA does not provide general <I>nibble</I> arithmetic,
  * only byte. So the first operations involve isolating each nibble
  * into separate (high_digit and low_digit) bytes. The high_digit
- * shift also aligns the binary for the multiple and add.
+ * shift also aligns the binary for the multiply and add.
  *
  * The Multiply Unsigned Byte Modulo (vec_mulubm()) generates
  * vmuleub/vmuloub then loads a permute control vector and permutes
  * the low order bytes of the halfword (even/odd) products into a
- * single vector. Finally add the x10 product and low_digit to get
+ * single vector. Finally, add the x10 product and low_digit to get
  * the binary value in the range 0-99.
  *
  * This sequence runs 6-10 instructions and 13-22 cycles latency. The
@@ -980,11 +983,11 @@ test_vec_rdxct100b_0 (vui8_t vra)
  * This is a case where the process on paper is much simpler than the
  * reality of programming computers. The operation is actually
  * (bcd_byte / 16 * 10) + (bcd_byte * 16 / 16) where 16 is the
- * <I>alignment</I> radix and 10 is the decimal radix at this step.
+ * <I>alignment</I> radix and 10 is the <I>decimal</I> radix at this step.
  * The alignment radix operations are (fortunately) strength reduced
  * to vector byte shift left/right.
  *
- * Let's use a little algebra to eliminated some of these steps. One
+ * Let's use a little algebra to eliminate some of these steps. One
  * approach is to generate a correction factor from the high_digit and
  * the difference between the <I>alignment</I>  and decimal radix. This
  * correction factor is subtracted directly from the original BCD byte
@@ -1000,7 +1003,7 @@ test_vec_rdxct100b_1 (vui8_t vra)
   // this is the isolated high digit multiplied by the radix difference
   // in binary.  For this stage we use 0x10 - 10 = 6.
   high_digit = vec_srbi (vra, 4);
-  c6 = vec_splat_u8 ((unsigned char) (16-10));
+  c6 = vec_splats ((unsigned char) (16-10));
   x6 = vec_mulubm (high_digit, c6);
   // Subtract the high digit correction bytes from the original
   // BCD bytes in binary.  This reduces byte range to 0-99.
@@ -1008,7 +1011,7 @@ test_vec_rdxct100b_1 (vui8_t vra)
 }
  * \endcode
  * Another opportunity is to let the compiler strength reduce the
- * multiply to shift and add. Newer versions of GCC will perform the
+ * multiply to shift and add. Newer versions of GCC will perform
  * this optimization when using the generic vec_mul built-in for vector
  * integer elements.
  * \note Previous to GCC 8, vec_mul() was only supported for vector
@@ -1036,8 +1039,8 @@ test_vec_rdxct100b_1 (vui8_t vra)
  * The next step converts adjacent byte pairs to halfwords. We use
  * the same basic formula but adjust the radix constants to;
  * (rdx_hword - ((rdx_hword / 256) x (256 - 100)).
- * Here we heed a byte multiply producing a halfword correction factor.
- * No shifts are need as the vmuleub multiply will access the
+ * Here we need a byte multiply producing a halfword correction factor.
+ * No shifts are needed as the vmuleub multiply will access the
  * high byte of each halfword directly.
  *
  * \code
@@ -1060,7 +1063,7 @@ vec_rdxct10kh (vui8_t vra)
   return vec_sub ((vui16_t) vra, x156);
 }
  * \endcode
- * This requires; a constant load, a multiply even byte and subtract
+ * This requires: a constant load, a multiply even byte and subtract
  * halfword. The final sequence runs 2-5 instructions and 9-18 cycles
  * latency and looks something like this:
  * \code
@@ -1119,20 +1122,20 @@ example_vec_bcdctuq (vui8_t vra)
  * \paragraph bcd128_convert_0_2_2_3 Vector Parallel quadword to BCD conversion
  *
  * \note Binary to BCD conversions are challenging a in a number of
- * ways. First any conversion requires division by none powers of 2.
- * Second for the same element size binary representation holds more
+ * ways. First any conversion requires division by non powers of 2.
+ * Second, for the same element size binary representation holds more
  * equivalent decimal digits then BCD. If the binary value is too large
  * for the BCD target's element size, the results are often undefined.
  * For example vec_bcdcfsq(). So it is important to constrain
  * the magnitude of the binary to fit the BCD target before conversion.
  * See \ref int128_examples_0_1_2 for details.
  *
- * In most senses binary to BCD is the reverse of BCD to binary.
+ * In most senses, binary to BCD is the reverse of BCD to binary.
  * The radix number in the conversion formula exchange places and the
- * conversion start with the largest element size (quadword) and works
+ * conversion starts with the largest element size (quadword) and works
  * it's way down to the smallest (4-bit nibble).
  *
- * Let's take at the conversion formula. For BCD to Binary we used:
+ * Let's take a look at the conversion formula. For BCD to Binary we used:
  * - bin_byte <- (bcd_byte - ((bcd_byte / 16) x (16 - 10))
  * - bin_byte <- (bcd_byte - ((bcd_byte >> 4) x 6)
  *
@@ -1147,9 +1150,9 @@ example_vec_bcdctuq (vui8_t vra)
  * (in 4*N bits), Where N is a power of 2<SUP>n</SUP> and <I>n</I>
  * ranges from 0 to 4 (5 steps again).
  *
- * \note So why does not PVECLIB provide these steps as operations that
- * (for example) divides a vector unsigned __int128 by 10<SUP>16</SUP>
- * and returns the quotient in the high doubleword  and the remainder
+ * \note So why doesn't PVECLIB provide these steps as operations.
+ * For example: divide a vector unsigned __int128 by 10<SUP>16</SUP>
+ * and return the quotient in the high doubleword and the remainder
  * in the low doubleword of a vector unsigned long?
  * Because if the input quadword is not less than 10<SUP>32</SUP>
  * the result is undefined (the quotient will overflow).
@@ -1213,7 +1216,7 @@ vec_rdxcf10e32q (vui128_t vra)
  *
  * The conversion steps continue with doubleword to word,
  * word to halfword, halfword to byte, byte to BCD (nibbles).
- * The final step is simple by comparison to the first.
+ * The final step is simple by comparison to the first step.
  * \code
 static inline vui8_t
 vec_rdxcf100b (vui8_t vra)
@@ -1237,7 +1240,7 @@ vec_rdxcf100b (vui8_t vra)
  *
  * Using GCC vector extensions for the following multiply and add
  * works well in this case as it allows the compiler to perform
- * strength reduction. It is not as usefull in the other steps as
+ * strength reduction. It is not as useful in the other steps as
  * the programmer knows more about the value ranges then the compiler
  * can or should assume. We know the the quotient and corrective
  * constant always fit into the lower half of the element.
@@ -1250,33 +1253,31 @@ vec_rdxcf100b (vui8_t vra)
  * This is similar to the multiply sum usage in the first step and it
  * is a case not recognized by the compiler.
  *
- *
  * The full binary to BCD conversion requires all 5 steps to complete
  * the operations and this adds up to 200+ cycles.
  * So this is worth another look.
  *
- * Initially using the DFU for this binary to BCD conversion was
+ * Initially using the DFP Facility for this binary to BCD conversion was
  * rejected because:
- * - DFP only supports signed fixed doubleword conversions
+ * - The DFP Facility only supports signed fixed doubleword conversions
  * (no fixed quadword conversion)
  * - Fixed binary to DFP conversions are expensive operations
- *   - 32 cycles latency
- *   - 1 per 19 cycles throughput
- * - DFP does support DFP to BCD conversions for double and quadword
- *   - at a slightly less expensive 13 cycle latency
- *   - 1 per cycle throughput
+ *   - For POWER8, 32 cycles latency and 1 per 19 cycles throughput
+ * - The DFP Facility does support DFP to BCD conversions for double
+ * and quadword
+ *   - For POWER8, 13 cycle latency and 1 per cycle throughput
  *
- * Perhaps use the vec_rdxcf10e32q() operation we defined above as the
- * first step (factoring quadwords into the 16 digit doublewords).
- * Then use the DFU to convert binary doublewords to BCD.
+ * Perhaps we can use the vec_rdxcf10e32q() operation we defined above
+ * as the first step (factoring quadwords into the 16 digit doublewords).
+ * Then use the DFP Facility to convert binary doublewords to BCD.
  * In this case we are not concerned with signed conversion as 10**16
  * fits in 54-bits binary and guarantees positive binary values.
- * We still have to deal the VR to/from FPR transfers but
+ * We still have to deal with the VR to/from FPR transfers but
  * that mechanism is already defined and at a reasonable cost
  * (2-4 cycles each way).
  *
  * \code
- static inline vBCD_t
+static inline vBCD_t
 vec_BIN2BCD (vui64_t val)
 {
 #ifdef _ARCH_PWR6
@@ -1393,12 +1394,10 @@ static inline _Decimal128 vec_unpack_Decimal128 (vf64_t lval);
 /** \brief Convert vector of 2 x unsigned 16-digit BCD values
  * to vector 2 x doubleword binary values.
  *
- *
  * Convert a vector of 16-digit unsigned BCD doublewords to a
  * vector of unsigned long int doublewords.
  * The vector unsigned long int doublewords are in the range
  * 0-9999999999999999.
- *
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -1479,11 +1478,10 @@ vec_BCD2DFP (vBCD_t val)
 /** \brief Convert vector unsigned doubleword binary values to
  * Vector unsigned 16-digit BCD values
  *
- * Convert a vector of 2 unsigned long int doubleword  to 2 16-digit
+ * Convert a vector of 2 unsigned long int doubleword to 2 16-digit
  * unsigned BCD doublewords.
  * Input doublewords should each be in the range
  * 0-9999999999999999.
- *
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -1696,28 +1694,14 @@ vec_bcdaddecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   a_b = vec_bcdadd (a, b);
   if (__builtin_expect (__builtin_bcdadd_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
-#ifdef _ARCH_PWR9
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
-#else
-      if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
-        t = _BCD_CONST_PLUS_ONE;
-      else
-        t = _BCD_CONST_MINUS_ONE;
-#endif
     }
   else // (a + b) did not overflow, what about (a + b + c)
     {
       a_b_c = (vBCD_t) vec_bcdadd (a_b, c);
       if (__builtin_bcdadd_ov ((vi128_t) a_b, (vi128_t) c, 0))
 	{
-#ifdef _ARCH_PWR9
 	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b_c);
-#else
-	  if (__builtin_bcdadd_gt ((vi128_t) a_b, (vi128_t) c, 0))
-	    t = _BCD_CONST_PLUS_ONE;
-	  else
-	    t = _BCD_CONST_MINUS_ONE;
-#endif
 	}
       else
 	{
@@ -1952,7 +1936,6 @@ vec_bcdcfz (vui8_t vrb)
   vui8_t znd_s;
   vui8_t znd_d, znd_t;
   vui8_t bcd, bcd_h, bcd_l;
-  vBCD_t bcd_s;
   // Isolate the BCD digit from each zoned character.
   znd_d = vec_and (vrb, dmask);
   znd_t = (vui8_t) vec_srqi ((vui128_t) znd_d, 4);
@@ -2677,11 +2660,11 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
 
 /** \brief Decimal Divide Extended.
  *
- * The dividend <I>a</I> is a Signed BCD 31 digit value extend to
+ * The dividend <I>a</I> is a Signed BCD 31 digit value extended to
  * right internally with 31 decimal 0s.
  * The divisor <I>b</I> is Signed BCD 31 digit value.
  * The quotient of <I>a || 0<SUP>31</SUP></I> / <I>b</I> is truncated
- * to a Decimal integer and return in Signed BCD format.
+ * to a Decimal integer and returned in Signed BCD format.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -2717,12 +2700,12 @@ vec_bcddive (vBCD_t a, vBCD_t b)
  * This gets tricky as the product can be up to 62 digits, and
  * _Decimal128 format can only hold 34 digits.
  *
- * To avoid overflow in the DFU, we split each BCD operand into 15
- * upper and 16 lower digit halves. This requires up to four decimal
- * multiplies and produces up to four 30-32 digit partial products.
- * These are aligned appropriately (via DFP decimal shift) and summed
- * (via DFP Decimal add) to generate the high and low (31-digit)
- * parts of the 62 digit product.
+ * To avoid overflow in the DFP Facility, we split each BCD operand
+ * into 15 upper and 16 lower digit halves. This requires up to four
+ * decimal multiplies and produces up to four 30-32 digit partial
+ * products. These are aligned appropriately (via DFP decimal shift)
+ * and summed (via DFP Decimal add) to generate the high and low
+ * (31-digit) parts of the 62 digit product.
  *
  * In this case we only need the lower 31-digits of the product.
  * So only 3 (not 4) DFP multiplies are required. Also we can
@@ -2745,7 +2728,9 @@ vec_bcddive (vBCD_t a, vBCD_t b)
 static inline vBCD_t
 vec_bcdmul (vBCD_t a, vBCD_t b)
 {
+#ifndef _ARCH_PWR9
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
+#endif
   const vBCD_t dword_mask = (vBCD_t) CONST_VINT128_DW(15, -1);
   vBCD_t t, low_a, low_b, high_a, high_b;
   _Decimal128 d_p, d_t, d_a, d_b;
@@ -2800,9 +2785,9 @@ vec_bcdmul (vBCD_t a, vBCD_t b)
  * This gets tricky as the product can be up to 62 digits, and
  * _Decimal128 format can only hold 34 digits.
  *
- * To avoid overflow in the DFU, we split each BCD operand into 15
- * upper and 16 lower digit halves. This requires up four decimal
- * multiplies and produces four 30-32 digit partial products.
+ * To avoid overflow in the DFP Facility, we split each BCD operand
+ * into 15 upper and 16 lower digit halves. This requires up four
+ * decimal multiplies and produces four 30-32 digit partial products.
  * These are aligned appropriately (via DFP decimal shift) and summed
  * (via DFP Decimal add) to generate the high and low (31-digit)
  * parts of the 62 digit product.
@@ -2828,7 +2813,9 @@ static inline vBCD_t
 vec_bcdmulh (vBCD_t a, vBCD_t b)
 {
   const vBCD_t dword_mask = (vBCD_t) CONST_VINT128_DW(15, -1);
+#ifndef _ARCH_PWR9
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
+#endif
   vBCD_t t, low_a, low_b, high_a, high_b;
   _Decimal128 d_p, d_t, d_al, d_bl;
 
@@ -3356,28 +3343,14 @@ vec_bcdsubecsq (vBCD_t a, vBCD_t b, vBCD_t c)
   a_b = vec_bcdsub (a, b);
   if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
-#ifdef _ARCH_PWR9
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
-#else
-      if (__builtin_bcdsub_gt ((vi128_t) a, (vi128_t) b, 0))
-	t = _BCD_CONST_PLUS_ONE;
-      else
-	t = _BCD_CONST_MINUS_ONE;
-#endif
     }
   else // (a - b) did not overflow, what about (a - b + c)
     {
       a_b_c = vec_bcdadd (a_b, c);
       if (__builtin_bcdadd_ov ((vi128_t) a_b, (vi128_t) c, 0))
 	{
-#ifdef _ARCH_PWR9
 	  t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b_c);
-#else
-	  if (__builtin_bcdadd_gt ((vi128_t) a_b, (vi128_t) c, 0))
-	    t = _BCD_CONST_PLUS_ONE;
-	  else
-	    t = _BCD_CONST_MINUS_ONE;
-#endif
 	}
       else
 	{
@@ -3468,28 +3441,13 @@ vec_bcdtrunc (vBCD_t vra, vui16_t vrb)
       "v" (vra)
       : "cr6" );
 #else
-  const vui16_t ones = vec_splat_u16(-1);
   const vui16_t c124 = vec_splats ((unsigned short) 124);
   const vui16_t c4 = vec_splats ((unsigned short) 4);
   vui16_t shd = vec_splat (vrb, VEC_HW_L_DWH);
-  vui16_t shr;
   vui128_t t;
   // Multiply digit shift by 4 to get bit shift count
   shd = vec_add (shd, shd);
   shd = vec_add (shd, shd);
-#if 0
-  shr = vec_sub (c128, shd);
-  // Compare shift < 32 (128-bits)
-  if (vec_all_le(shd, c124))
-    {
-      // Generate a mask for the digits we will keep
-      t = vec_srq ((vui128_t) ones, (vui128_t) shr);
-      // Clear the digits we are truncating
-      vrt = (vBCD_t) vec_and ((vui32_t) t, (vui32_t)vra);
-    }
-  else
-    vrt = vra;
-#else
   vui16_t one_s;
   // compensate for the sign nibble
   shd = vec_add (shd, c4);
@@ -3499,7 +3457,6 @@ vec_bcdtrunc (vBCD_t vra, vui16_t vrb)
   t = vec_slq ((vui128_t) one_s, (vui128_t) shd);
   // Clear the digits we are truncating
   vrt = (vBCD_t) vec_andc ((vui32_t)vra, (vui32_t) t);
-#endif
 #endif
   return (vrt);
 }
@@ -3700,7 +3657,7 @@ vec_cbcdaddcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
 {
   vBCD_t t, c;
 #ifdef _ARCH_PWR8
-  vBCD_t sum_ab, sign_a, sign_ab;
+  vBCD_t sum_ab, sign_ab;
 
   sum_ab = vec_bcdadd (a, b);
   if (__builtin_expect (__builtin_bcdadd_ov ((vi128_t) a, (vi128_t) b, 0), 0))
@@ -3775,7 +3732,6 @@ vec_cbcdaddecsq (vBCD_t *cout, vBCD_t a, vBCD_t b, vBCD_t cin)
 {
   vBCD_t t, c;
 #ifdef _ARCH_PWR8
-  vBCD_t a_b;
   vBCD_t sum_ab, sum_abc, sign_abc;
 
   sum_ab = vec_bcdadd (a, b);
@@ -3845,9 +3801,9 @@ vec_cbcdaddecsq (vBCD_t *cout, vBCD_t a, vBCD_t b, vBCD_t cin)
  * This gets tricky as the product can be up to 62 digits, and
  * _Decimal128 format can only hold 34 digits.
  *
- * To avoid overflow in the DFU, we split each BCD operand into 15
- * upper and 16 lower digit halves. This requires up four decimal
- * multiplies and produces four 30-32 digit partial products.
+ * To avoid overflow in the DFP Facility, we split each BCD operand
+ * into 15 upper and 16 lower digit halves. This requires up four
+ * decimal multiplies and produces four 30-32 digit partial products.
  * These are aligned appropriately (via DFP decimal shift) and summed
  * (via DFP Decimal add) to generate the high and low (31-digit)
  * parts of the 62 digit product.
@@ -3876,7 +3832,9 @@ static inline vBCD_t
 vec_cbcdmul (vBCD_t *p_high, vBCD_t a, vBCD_t b)
 {
   const vBCD_t dword_mask = (vBCD_t) CONST_VINT128_DW(15, -1);
+#ifndef _ARCH_PWR9
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);
+#endif
   vBCD_t t, ph, low_a, low_b, high_a, high_b;
   _Decimal128 d_p, d_t, d_al, d_bl;
 
@@ -3965,7 +3923,7 @@ vec_cbcdsubcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
 {
   vBCD_t t, c;
 #ifdef _ARCH_PWR8
-  vBCD_t sum_ab, sign_a, sign_ab;
+  vBCD_t sum_ab, sign_ab;
 
   sum_ab = vec_bcdsub (a, b);
   if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
@@ -4104,20 +4062,24 @@ static inline vui8_t
 vec_rdxcf100b (vui8_t vra)
 {
   vui8_t result;
-  vui8_t x6, c6, high_digit;
+  vui8_t x6, high_digit;
   /* Compute the high digit correction factor. For binary 100s to BCD
    * this is the radix 100 value divided by 10 times by the radix
    * difference in binary.  For this stage we use 0x10 - 10 = 6.  */
   high_digit = vra / 10;
-#if 0
-  c6 = vec_splat_u8 ((unsigned char) 0x06);
-  x6 = vec_mulubm (high_digit, c6);
-  /* Add the high digit correction bytes to the original
-   * radix 100 bytes in binary. */
-  result = vec_add (vra, x6);
-#else
+#if (__GNUC__ > 6)
+  // Allow the compiler to do strength reduction for const 6 multiplier
   x6 = high_digit * 6;
   result = vra + x6;
+#else
+    {
+      vui8_t c6;
+      c6 = vec_splats ((unsigned char) 0x06);
+      x6 = vec_mulubm (high_digit, c6);
+      /* Add the high digit correction bytes to the original
+       * radix 100 bytes in binary. */
+      result = vec_add (vra, x6);
+    }
 #endif
   return result;
 }
@@ -4197,7 +4159,7 @@ static inline vui16_t
 vec_rdxcf100mw (vui32_t vra)
 {
   vui16_t result;
-  vui32_t x, high_digit;
+  vui32_t high_digit;
   /* Compute the high digit correction factor. For binary 10**8 to 10**4
    * this is the radix 100000000 value divided by 10000 times by the radix
    * difference in binary.  For this stage we use 0x10000 - 10000 = 55536.  */
@@ -4208,14 +4170,17 @@ vec_rdxcf100mw (vui32_t vra)
   // 0 in the even hword of const c reduces vmsumuhm to vmulouh
   result = (vui16_t) vec_msum ((vui16_t) high_digit, (vui16_t) c, vra);
 #else
+    {
+      vui32_t x;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  x = vec_vmuleuh ((vui16_t) high_digit, (vui16_t) c);
+      x = vec_vmuleuh ((vui16_t) high_digit, (vui16_t) c);
 #else
-  x = vec_vmulouh ((vui16_t) high_digit, (vui16_t) c);
+      x = vec_vmulouh ((vui16_t) high_digit, (vui16_t) c);
 #endif
-  /* Add the high digit correction word to the original
-   * radix 10**8 word in binary. */
-  result = (vui16_t) vec_add (vra, x);
+      /* Add the high digit correction word to the original
+       * radix 10**8 word in binary. */
+      result = (vui16_t) vec_add (vra, x);
+    }
 #endif
   return result;
 }
@@ -4322,7 +4287,7 @@ vec_rdxcf10e32q (vui128_t vra)
   const int shift_ten16 = 51;
 
   vui64_t result;
-  vui128_t x, high_digit;
+  vui128_t high_digit;
 
   // high_digit = vra / 10000000000000000;
   // Next divide the 32 digits by 10**16.
@@ -4335,10 +4300,13 @@ vec_rdxcf10e32q (vui128_t vra)
   // 0 in the high dword of const c reduces vmsumudm to vmuloud
   result = (vui64_t) vec_msumudm ((vui64_t) high_digit, c, vra);
 #else
-  x = vec_vmuloud ((vui64_t) high_digit, c);
-  /* Add the high digit correction qword to the original
-   * radix 10**32 qword in binary. */
-  result = (vui64_t) vec_adduqm (vra, x);
+    {
+      vui128_t x;
+      x = vec_vmuloud ((vui64_t) high_digit, c);
+      /* Add the high digit correction qword to the original
+       * radix 10**32 qword in binary. */
+      result = (vui64_t) vec_adduqm (vra, x);
+    }
 #endif
   return result;
 }
@@ -4446,7 +4414,7 @@ vec_rdxct100b (vui8_t vra)
    * this is the isolated high digit multiplied by the radix difference
    * in binary.  For this stage we use 0x10 - 10 = 6.  */
   high_digit = vec_srbi (vra, 4);
-  c6 = vec_splat_u8 ((unsigned char) 0x06);
+  c6 = vec_splats ((unsigned char) 0x06);
 #if (__GNUC__ > 7)
   // Allow the compiler to do strength reduction for const 6 multiplier
   x6 = vec_mul (high_digit, c6);

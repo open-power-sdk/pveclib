@@ -488,8 +488,7 @@ db_vec_cbcdaddcsq (vBCD_t *c, vBCD_t a, vBCD_t b)
   print_vint128x ("             + ,", (vui128_t) b);
 #ifdef _ARCH_PWR8
 
-  vBCD_t sign_a, sign_ab;
-  vBCD_t ex = (vBCD_t) CONST_VINT128_W(0, 0, 0, 0x0000000d);
+  vBCD_t sign_ab;
 
   sum_ab = (vBCD_t) __builtin_bcdadd ((vi128_t) a, (vi128_t) b, 0);
   print_vint128x ("             ) =", (vui128_t) sum_ab);
@@ -668,7 +667,7 @@ db_vec_cbcdsubcsq (vBCD_t *cout, vBCD_t a, vBCD_t b)
 {
   vBCD_t t, c;
 #ifdef _ARCH_PWR8
-  vBCD_t sum_ab, sign_a, sign_ab;
+  vBCD_t sum_ab, sign_ab;
   print_vint128x ("vec_cbcdsubcsq (", (vui128_t) a);
   print_vint128x ("             - ,", (vui128_t) b);
 
@@ -758,14 +757,10 @@ db_vec_rdxcf10kh (vui16_t vra)
   high_digit = vra / 100;
   print_vint16d (" high digit", high_digit);
   c156 = vec_splats ((unsigned short) 156);
-#if 0
-  x156 = vec_muluhm (high_digit, c156);
-#else
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   x156 = vec_vmuleub ((vui8_t) high_digit, (vui8_t) c156);
 #else
   x156 = vec_vmuloub ((vui8_t) high_digit, (vui8_t) c156);
-#endif
 #endif
   print_vint16d (" correction", x156);
   /* Add the high digit correction hword to the original
@@ -788,14 +783,10 @@ db_vec_rdxcf100mw (vui32_t vra)
   high_digit = vra / 10000;
   print_vint32d (" high digit", high_digit);
   c = vec_splats ((unsigned int) 55536);
-#if 0
-  x = vec_muluwm (high_digit, c);
-#else
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   x = vec_vmuleuh ((vui16_t) high_digit, (vui16_t) c);
 #else
   x = vec_vmulouh ((vui16_t) high_digit, (vui16_t) c);
-#endif
 #endif
   print_vint32d (" correction", x);
   /* Add the high digit correction word to the original
@@ -3717,7 +3708,7 @@ int
 test_bcd_adde256 (void)
 {
   vBCD_t ih, il, jh, jl, kh, kl;
-  vBCD_t eh, el, ex, c;
+  vBCD_t eh, el, c;
   int rc = 0;
 
   printf ("\n%s Vector BCD Add Extended & Carry\n", __FUNCTION__);
@@ -3846,7 +3837,6 @@ test_bcd_adde256 (void)
   eh = (vBCD_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x0000001c);;
   el = (vBCD_t) CONST_VINT128_W (0x80000000, 0x00000000, 0x00000000, 0x0000000d);
 
-  ex = (vBCD_t) CONST_VINT128_W (0, 0, 0, 0x0000000d);
   rc += check_vint256 ("vec_bcdadde256:", (vui128_t) kh, (vui128_t) kl,
 		       (vui128_t) eh, (vui128_t) el);
 

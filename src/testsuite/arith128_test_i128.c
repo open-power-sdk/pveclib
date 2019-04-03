@@ -8840,7 +8840,7 @@ test_div_moduq_e31 (void)
   return (rc);
 }
 
-#define __DEBUG_PRINT__ 1
+//#define __DEBUG_PRINT__ 1
 int
 test_div_modsq_e31 (void)
 {

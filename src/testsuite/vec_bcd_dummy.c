@@ -484,6 +484,7 @@ example_vec_cbcdecsq_loop (vBCD_t *cout, vBCD_t* out, vBCD_t* a, vBCD_t* b, long
 
   out[cnt-1] = vec_cbcdaddcsq (&c, a[cnt-1], b[cnt-1]);
 
+  cn = _BCD_CONST_ZERO;
   for (i = (cnt-2); i >= 0; i--)
     {
       out[i] = vec_cbcdaddecsq (&cn, a[i], b[i], c);
@@ -555,13 +556,13 @@ vui8_t
 test_vec_rdxct100b_0 (vui8_t vra)
 {
   vui8_t x10, c10, high_digit, low_digit;
-  // Isolated the low_digt
+  // Isolate the low_digit
   low_digit = vec_slbi (vra, 4);
   low_digit = vec_srbi (low_digit, 4);
   // Shift the high digit into the units position
   high_digit = vec_srbi (vra, 4);
   // multiply the high digit by 10
-  c10 = vec_splat_u8 ((unsigned char) 10);
+  c10 = vec_splats ((unsigned char) 10);
 #if (__GNUC__ > 7)
   x10 = vec_mul (high_digit, c10);
 #else
@@ -579,7 +580,7 @@ test_vec_rdxct100b_1 (vui8_t vra)
    * this is the isolated high digit multiplied by the radix difference
    * in binary.  For this stage we use 0x10 - 10 = 6.  */
   high_digit = vec_srbi (vra, 4);
-  c6 = vec_splat_u8 ((unsigned char) 0x06);
+  c6 = vec_splats ((unsigned char) (16-10));
 #if (__GNUC__ > 7)
   x6 = vec_mul (high_digit, c6);
 #else
@@ -615,19 +616,19 @@ test_vec_rdxct10e32q (vui64_t vra)
 }
 
 vBCD_t
-test_vec_bcdcfsq (vi128_t vra)
+__test_vec_bcdcfsq (vi128_t vra)
 {
   return vec_bcdcfsq (vra);
 }
 
 vBCD_t
-test_vec_bcdcfud (vui64_t vra)
+__test_vec_bcdcfud (vui64_t vra)
 {
   return vec_bcdcfud (vra);
 }
 
 vBCD_t
-test_vec_bcdcfuq (vui128_t vra)
+__test_vec_bcdcfuq (vui128_t vra)
 {
   return vec_bcdcfuq (vra);
 }

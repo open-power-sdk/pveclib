@@ -1045,6 +1045,7 @@ example_vec_cbcdecsq_loop_PWR9 (vBCD_t *cout, vBCD_t* out, vBCD_t* a, vBCD_t* b,
 
   out[cnt - 1] = vec_cbcdaddcsq (&c, a[cnt - 1], b[cnt - 1]);
 
+  cn = _BCD_CONST_ZERO;
   for (i = (cnt - 2); i >= 0; i--)
     {
       out[i] = vec_cbcdaddecsq (&cn, a[i], b[i], c);

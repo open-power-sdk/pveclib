@@ -589,10 +589,15 @@ vec_mulhub (vui8_t vra, vui8_t vrb)
 static inline vui8_t
 vec_mulubm (vui8_t vra, vui8_t vrb)
 {
+#if __GNUC__ >= 7
+/* Generic vec_mul not supported for vector char until GCC 7.  */
+  return vec_mul (vra, vrb);
+#else
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   return vec_mrgalb (vec_mulo (vra, vrb), vec_mule (vra, vrb));
 #else
   return vec_mrgalb (vec_mule (vra, vrb), vec_mulo (vra, vrb));
+#endif
 #endif
 }
 

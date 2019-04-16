@@ -865,6 +865,34 @@ __test_remuq_10e32  (vui128_t a, vui128_t b)
   return vec_moduq_10e32 (a, q);
 }
 
+vui128_t
+__test_divudq_10e31  (vui128_t *qh, vui128_t a, vui128_t b)
+{
+  return vec_divudq_10e31 (qh, a, b);
+}
+
+vui128_t
+__test_divudq_10e32  (vui128_t *qh, vui128_t a, vui128_t b)
+{
+  return vec_divudq_10e32 (qh, a, b);
+}
+
+vui128_t
+__test_remudq_10e31  (vui128_t a, vui128_t b)
+{
+  vui128_t q, qh;
+  q = vec_divudq_10e31 (&qh, a, b);
+  return vec_modudq_10e31 (a, b, &q);
+}
+
+vui128_t
+__test_remudq_10e32  (vui128_t a, vui128_t b)
+{
+  vui128_t q, qh;
+  q = vec_divudq_10e32 (&qh, a, b);
+  return vec_modudq_10e32 (a, b, &q);
+}
+
 #ifdef _ARCH_PWR8
 vui128_t
 test_vec_subq (vui128_t a, vui128_t b)
@@ -1049,6 +1077,54 @@ example_dw_convert_timebase (vui64_t *tb, vui32_t *timespec, int n)
        * So pack results and store the timespec.  */
       *timespec++ = vec_vpkudum (timespec1, timespec2);
     }
+}
+
+vui128_t
+example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
+{
+  vui128_t dn, qh, ql, rh;
+  long int i;
+
+  // init step for the top digits
+  dn = d[0];
+  qh = vec_divuq_10e31 (dn);
+  rh = vec_moduq_10e31 (dn, qh);
+  q[0] = qh;
+
+  // now we know the remainder is less than the divisor.
+  for (i=1; i<_N; i++)
+    {
+      dn = d[i];
+      ql = vec_divudq_10e31 (&qh, rh, dn);
+      rh = vec_modudq_10e31 (rh, dn, &ql);
+      q[i] = ql;
+    }
+  // return the final remainder
+  return rh;
+}
+
+vui128_t
+example_longdiv_10e32 (vui128_t *q, vui128_t *d, long int _N)
+{
+  vui128_t dn, qh, ql, rh;
+  long int i;
+
+  // init step for the top digits
+  dn = d[0];
+  qh = vec_divuq_10e32 (dn);
+  rh = vec_moduq_10e32 (dn, qh);
+  q[0] = qh;
+
+  // now we know the remainder is less than the divisor.
+  for (i=1; i<_N; i++)
+    {
+      dn = d[i];
+      ql = vec_divudq_10e32 (&qh, rh, dn);
+      rh = vec_modudq_10e32 (rh, dn, &ql);
+      q[i] = ql;
+    }
+  // return the final remainder
+  return rh;
 }
 
 /* alternative algorithms tested and not selected due to code size

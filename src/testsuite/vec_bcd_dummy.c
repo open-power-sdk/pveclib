@@ -522,6 +522,31 @@ example_bcdmul_2x2 (vBCD_t *__restrict__ mulu, vBCD_t m1h, vBCD_t m1l,
   mulu[3] = mphh;
 }
 
+// Convert extended quadword binary to BCD 32-digits at a time.
+vBCD_t
+example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N)
+{
+  vui128_t dn, qh, ql, rh;
+  long int i;
+
+  // init step for the top digits
+  dn = d[0];
+  qh = vec_divuq_10e32 (dn);
+  rh = vec_moduq_10e32 (dn, qh);
+  q[0] = qh;
+
+  // now we know the remainder is less than the divisor.
+  for (i=1; i<_N; i++)
+    {
+      dn = d[i];
+      ql = vec_divudq_10e32 (&qh, rh, dn);
+      rh = vec_modudq_10e32 (rh, dn, &ql);
+      q[i] = ql;
+    }
+  // convert to BCD and return the remainder for this step
+  return vec_bcdcfuq (rh);
+}
+
 vui8_t
 test_vec_rdxcf100b (vui8_t vra)
 {

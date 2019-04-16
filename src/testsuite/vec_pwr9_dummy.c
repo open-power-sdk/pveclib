@@ -1151,6 +1151,34 @@ __test_remuq_10e32_PWR9  (vui128_t a, vui128_t b)
   return vec_moduq_10e32 (a, q);
 }
 
+vui128_t
+__test_divudq_10e31_PWR9  (vui128_t *qh, vui128_t a, vui128_t b)
+{
+  return vec_divudq_10e31 (qh, a, b);
+}
+
+vui128_t
+__test_divudq_10e32_PWR9  (vui128_t *qh, vui128_t a, vui128_t b)
+{
+  return vec_divudq_10e32 (qh, a, b);
+}
+
+vui128_t
+__test_remudq_10e31_PWR9  (vui128_t a, vui128_t b)
+{
+  vui128_t q, qh;
+  q = vec_divudq_10e31 (&qh, a, b);
+  return vec_modudq_10e31 (a, b, &q);
+}
+
+vui128_t
+__test_remudq_10e32_PWR9  (vui128_t a, vui128_t b)
+{
+  vui128_t q, qh;
+  q = vec_divudq_10e32 (&qh, a, b);
+  return vec_modudq_10e32 (a, b, &q);
+}
+
 void
 example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
 {
@@ -1206,6 +1234,30 @@ example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
   ten_16[1] = (vui64_t) tmpq[VEC_DW_L];
   // return low 16 digits
   ten_16[2] = (vui64_t) tmpr[VEC_DW_L];
+}
+
+vui128_t
+example_longdiv_10e31_PWR9 (vui128_t *q, vui128_t *d, long int _N)
+{
+  vui128_t dn, qh, ql, rh;
+  long int i;
+
+  // init step for the top digits
+  dn = d[0];
+  qh = vec_divuq_10e31 (dn);
+  rh = vec_moduq_10e31 (dn, qh);
+  q[0] = qh;
+
+  // now we know the remainder is less than the divisor.
+  for (i=1; i<_N; i++)
+    {
+      dn = d[i];
+      ql = vec_divudq_10e31 (&qh, rh, dn);
+      rh = vec_modudq_10e31 (rh, dn, &ql);
+      q[i] = ql;
+    }
+
+  return rh;
 }
 
 void

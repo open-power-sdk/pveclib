@@ -881,18 +881,18 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * (of course they are different).
  *
  * But the BCD convert from/to Signed Quadword operations are a bit
- * heavier, running 37 and 23 cycles latency. These instructions
- * execute in the DFU and so are single issue. They also keep the DFU
- * pipeline busy (for 25 and 11 cycles) and block execution of the
- * next DFU operation for a while.  Still this is better than the
- * serial conversion examples described above.
+ * heavier, running 37 and 23 cycles latency on POWER9. These
+ * instructions execute in the DFU and so are single issue. They also
+ * keeps the DFU pipeline busy (for 25 and 11 cycles) and block
+ * execution of the next DFU operation for a while.  Still this is
+ * better than the serial conversion examples described above.
  *
  * But part of the value of PVECLIB is to provide support across
  * POWER7/8/9 and across compiler versions.
  * The convert instructions above are not supported in current
- * compilers with built-ins so PVECLIB should provide in-line
+ * compilers with built-ins so PVECLIB provides in-line
  * assembler implementations for these operations.
- * Now we should looking into better algorithms for implementing
+ * Now we need look into better algorithms to implementing
  * these operations on POWER7/8.
  *
  * The Vector unit can multiply, add, or subtract integer elements in
@@ -1016,6 +1016,7 @@ test_vec_rdxct100b_1 (vui8_t vra)
  * integer elements.
  * \note Previous to GCC 8, vec_mul() was only supported for vector
  * float and double.
+ *
  * \code
 #if (__GNUC__ > 7)
   x6 = vec_mul (high_digit, c6);
@@ -1088,7 +1089,7 @@ vec_rdxct10kh (vui8_t vra)
  * __int128 binary looks like this:
  * \code
 vui128_t
-example_vec_bcdctuq (vui8_t vra)
+example_vec_bcdctuq (vBCD_t vra)
 {
   vui8_t d100;
   vui16_t d10k;
@@ -1109,15 +1110,54 @@ example_vec_bcdctuq (vui8_t vra)
  * cycles latency. For POWER9 the whole sequence runs 17-26
  * instructions and 52-65 cycles latency.
  *
- * \note POWER has a Decimal Convert to Signed Quadword instruction,
- * but no unsigned convert. So this sequence is still required for
- * POWER9. Also 52 cycles latency compares favorably to the
- * alternatives and is less than 3 x the hardware implementation for
- * vec_bcdctsq().
+ * \note POWER9 has a Decimal Convert to Signed Quadword instruction,
+ * but no unsigned (32-digit) convert.
+ *
+ * However we can leverage the POWER9
+ * <B>Vector Multiply by 10 Extended Unsigned Quadword</B> instruction
+ * to extend the 31-digit convert to a full 32-digits.
+ * Basically use the <B>bcdctsq</B> to convert the high 31-digits and
+ * then multiply by 10 and add the last digit.
+ * See example below:
+ *
+ * \code
+vui128_t
+example_vec_bcdctuq_2 (vBCD_t vra)
+{
+  vui128_t vrt;
+#ifdef  _ARCH_PWR9
+  const vui32_t bcd_one = (vui32_t) _BCD_CONST_PLUS_ONE;
+  const vui32_t sign_mask = (vui32_t) _BCD_CONST_SIGN_MASK;
+  vui128_t vrd;
+  vBCD_t sbcd;
+  // Need to convert BCD unsigned to signed for bcdctsq
+  // But can't use bcdcpsgn as the unit digit is not a sign code
+  // So use vec_and/sel to extract unit digit and insert sign
+  vrd = (vui128_t) vec_and ((vui32_t) vra, sign_mask);
+  sbcd = (vBCD_t) vec_sel ((vui32_t) vra, bcd_one, sign_mask);
+  // Convert top 31 digits to binary
+  vrt = (vui128_t) vec_bcdctsq (sbcd);
+  // Then X 10 plus the unit digit to complete 32-digit convert
+  vrt = vec_mul10euq (vrt, vrd);
+#else
+  // P7/P8 implementation as above
+#endif
+  return vrt;
+}
+ * \endcode
+ * This add a few more cycles to split the high digits from the low
+ * digit and insert a positive sign code. This requires loading some
+ * vector constants which may be commoned with loads from other
+ * operations. This adds 2-11 cycles. The <B>mul10euq</B> only adds 3
+ * cycles latency to complete the BCD to Binary conversion.
+ * This is adds only a 21% to 60% latency over the base
+ * <B>bcdctsq</B> instruction.
  *
  * \note This process can be extended to 256, 512, 1024-bits, etc by
- * widening the first 5 steps appropriately and adding steps using
- * extended quadword multiply and add operations from vec_int128_ppc.h.
+ * widening the BCD to binary conversion appropriately to blocks of
+ * 31 or 32 digits. Then use the basic <I>atoi</I> algorithm using
+ * extended quadword multiply / add operations from vec_int128_ppc.h
+ * (\ref bcd128_convert_0_2_3).
  *
  * \paragraph bcd128_convert_0_2_2_3 Vector Parallel quadword to BCD conversion
  *
@@ -1332,6 +1372,170 @@ vec_bcdcfuq (vui128_t vra)
 #endif
 }
  * \endcode
+ * \note This process can be extended to 256, 512, 1024-bits, etc by
+ * widening the first 5 steps appropriately and adding steps using
+ * extended quadword multiply and add operations from vec_int128_ppc.h
+ * (\ref int128_examples_0_1_3_1).
+ *
+ * \subsubsection bcd128_convert_0_2_3 Multiple precision BCD to/from Binary conversion
+ *
+ * The simplest case is converting a vector unsigned __int128 to BCD.
+ * his requires up to 39 digits across two vectors. This can either
+ * split into 8 and 31 digits for signed conversion or 7 and 32 for
+ * unsigned. Signed conversion is preferred where extended BCD result
+ * will be input to additional BCD arithmetic. Unsigned is preferred
+ * for conversion to Zoned characters for decimal display.
+ *
+ * From \ref int128_examples_0_1_2 we see the divide / modulo quadword
+ * by constant operations which can used to factor binary quadwords
+ * into high and low digit groups for conversion. For example:
+ * \code
+  q = vec_divuq_10e32 (a);
+  r = vec_moduq_10e32 (a, q);
+  // high 7 digits
+  dh = vec_bcdcfuq (q);
+  // lower 32 digits
+  dl = vec_bcdcfuq (r);
+
+  printf ("%07lld%016lld%016lld", (vui64_t) dh[VEC_DW_L],
+          (vui64_t) dl[VEC_DW_H], (vui64_t) dl[VEC_DW_L]);
+ * \endcode
+ *
+ * \paragraph bcd128_convert_0_2_3_0 Multiple precision BCD from Binary conversion
+ *
+ * The general multiple precision binary to BCD conversion requires
+ * quadword long division as described in \ref int128_examples_0_1_3_1.
+ * After each long division the remainder is in a range for conversion
+ * to BCD. In the example below the remainder is converted to 32 digit
+ * BCD as the last step.
+ *
+ * \code
+// Convert extended quadword binary to BCD 32-digits at a time.
+vBCD_t
+example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N)
+{
+  vui128_t dn, qh, ql, rh;
+  long int i;
+
+  // init step for the top digits
+  dn = d[0];
+  qh = vec_divuq_10e32 (dn);
+  rh = vec_moduq_10e32 (dn, qh);
+  q[0] = qh;
+
+  // now we know the remainder is less than the divisor.
+  for (i=1; i<_N; i++)
+    {
+      dn = d[i];
+      ql = vec_divudq_10e32 (&qh, rh, dn);
+      rh = vec_modudq_10e32 (rh, dn, &ql);
+      q[i] = ql;
+    }
+  // convert to BCD and return the remainder for this step
+  return vec_bcdcfuq (rh);
+}
+ * \endcode
+ * Each call to example_longbcdcf_10e32 () produces the next 32-digit
+ * group. Repeated calls where the previous iterations quotient is
+ * passed as the dividend to the next step, produce additional 32-digit
+ * groups. This continues until the quotient is less then the divisor
+ * (in this case 10<SUP>32</SUP>). This final quadword quotient
+ * provides the highest order 32-digit group for the conversion.
+ * The digit groups are produced in order from lowest to highest
+ * significance.
+ *
+ * As the conversion process continues the number of quadwords in the
+ * extended dividend/quotient shrinks. The divide / modulo quadword
+ * by constant operations, test for leading zeros and skip over them.
+ *
+ * \paragraph bcd128_convert_0_2_3_1 Multiple precision BCD to Binary conversion
+ *
+ * The general multiple precision binary from BCD conversion only
+ * requires extended quadword multiply as described in
+ * \ref int128_examples_0_1_3_0.
+ * Starting with the high order BCD (32 or 31) digit group, multiply by
+ * 10<SUP>32</SUP> (or 10<SUP>31</SUP>) then add the next digit group
+ * to the extended product. Continue until the low order digit group is
+ * added. For example:
+ *
+ * \code
+// Convert extended quadword BCD to binary 32-digits at a time.
+long int
+example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
+			  long int _C , long int _N)
+{
+  // ten32  = +100000000000000000000000000000000UQ
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+  const vui128_t zero = (vui128_t) { (__int128) 0UL };
+  vui128_t dn, ph, pl, cn, c;
+  long int i, cnt;
+
+  cnt = _C;
+
+  dn = zero;
+  cn  = zero;
+  // case _C == 0 is the initialization step and no multiply required
+  if ( cnt == 0 )
+    {
+      // if the decimal is 0, no conversion is required
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  cnt++;
+	  dn = vec_bcdctuq (decimal);
+	}
+      // But it is a good time to initialize d[]
+      for ( i = 0; i < (_N - 1); i++ )
+	{
+	  d[i] = zero;
+	}
+      d[_N - cnt] = dn;
+    }
+  else // case _C > 0
+    {
+      // convert decimal group to binary.
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  dn = vec_bcdctuq (decimal);
+	}
+      // Compute extended product, plus the decimal group
+      for ( i = (_N - 1); i >= (_N - cnt); i--)
+	{
+	  pl = vec_muludq (&ph, d[i], ten32);
+
+	  c = vec_addecuq (pl, dn, cn);
+	  d[i] = vec_addeuqm (pl, dn, cn);
+	  cn = c;
+	  dn = ph;
+	}
+      // If the product exceeds the current quadword count, extend
+      if (vec_cmpuq_all_ne (dn, zero) || vec_cmpuq_all_ne (cn, zero))
+	{
+	  cnt++;
+	  dn = vec_adduqm (dn, cn);
+	  d[_N - cnt] = dn;
+	}
+    }
+
+  return cnt;
+}
+ * \endcode
+ * This process starts with a single quadword (the converted high order
+ * digit group). As additional digit groups are converted, the extended
+ * binary value is multiplied by 10<SUP>32</SUP> before adding the
+ * converted digit group.  The number of quadwords in the array
+ * <I>d[]</I> expand as need to hold the binary value.
+ *
+ * The interface includes:
+ * - A pointer to an array of quadwords which accumulates the
+ * converted binary value.
+ * - A BCD decimal value to be converted and added to the accumulated
+ * binary.
+ * - A current quadword count. The number of nonzero quadwords
+ * accumulated so far. Should be 0 on the initial call.
+ * - A maximum quadword count.
+ * - Return the updated quadword count. Passed back as current
+ * quadword count on the next iteration.
  *
  * \section bcd128_perf_0_0 Performance data.
  * High level performance estimates are provided as an aid to function
@@ -2524,7 +2728,7 @@ vec_bcdctud (vBCD_t vra)
 /** \brief Vector Decimal Convert groups of 32 BCD digits
  *  to binary unsigned quadword.
  *
- *  Vector convert quadwords each containing 32 BCD digits to the
+ *  Vector convert a quadword containing 32 BCD digits to the
  *  equivalent unsigned __int128, in the range
  *  0-99999999999999999999999999999999.
  *  Input values should be valid 32 x BCD nibbles in the range 0-9.
@@ -2532,7 +2736,7 @@ vec_bcdctud (vBCD_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 65-78 | 1/cycle  |
- *  |power9   | 52-65 | 1/cycle  |
+ *  |power9   | 28-37 |1/12 cycle|
  *
  *  @param vra a 128-bit vector treated as an unsigned 32-digit BCD
  *  number.
@@ -2542,6 +2746,22 @@ vec_bcdctud (vBCD_t vra)
 static inline vui128_t
 vec_bcdctuq (vBCD_t vra)
 {
+  vui128_t vrt;
+#ifdef  _ARCH_PWR9
+  const vui32_t bcd_one = (vui32_t) _BCD_CONST_PLUS_ONE;
+  const vui32_t sign_mask = (vui32_t) _BCD_CONST_SIGN_MASK;
+  vui128_t vrd;
+  vBCD_t sbcd;
+  // Need to convert BCD unsigned to signed for bcdctsq
+  // But can't use bcdcpsgn as the unit digit is not a sign code
+  // So use vec_and/sel to extract unit digit and insert sign
+  vrd = (vui128_t) vec_and ((vui32_t) vra, sign_mask);
+  sbcd = (vBCD_t) vec_sel ((vui32_t) vra, bcd_one, sign_mask);
+  // Convert top 31 digits to binary
+  vrt = (vui128_t) vec_bcdctsq (sbcd);
+  // Then X 10 plus the unit digit to complete 32-digit convert
+  vrt = vec_mul10euq (vrt, vrd);
+#else
   vui64_t d10e;
 #ifdef _ARCH_PWR7
   d10e = vec_BCD2BIN (vra);
@@ -2554,7 +2774,9 @@ vec_bcdctuq (vBCD_t vra)
   d100m = vec_rdxct100mw (d10k);
   d10e = vec_rdxct10E16d (d100m);
 #endif
-  return vec_rdxct10e32q (d10e);
+  vrt = vec_rdxct10e32q (d10e);
+#endif
+  return vrt;
 }
 
 /** \brief Vector Decimal Convert To Zoned.

@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <fenv.h>
 #include <float.h>
 #include <math.h>
@@ -239,87 +240,27 @@ timed_muludqx (void)
 //#define __DEBUG_PRINT__ 1
 extern vui128_t
 example_longdiv_10e32 (vui128_t *q, vui128_t *d, long int _N);
-#ifdef __DEBUG_PRINT__
 #define test_example_longdiv_10e32(_i, _j, _k)	example_longdiv_10e32(_i, _j, _k)
-#else
-#define test_example_longdiv_10e32(_i, _j, _k)	example_longdiv_10e32(_i, _j, _k)
-#endif
 
 int
 timed_longdiv_e32 (void)
 {
-#ifdef __DEBUG_PRINT__
-  /* ten32  = +100000000000000000000000000000000UQ  */
-  const vui128_t ten32 = (vui128_t)
-	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
-#endif
   vui128_t ix[4], qx[4], qy[4], qz[4], qw[4];
   vui128_t r[5];
   vui128_t el, er;
-  vui128_t rm;
   int rc = 0;
-
-#ifdef __DEBUG_PRINT__
-  printf ("\ntimed Vector long divide Unsigned Quadword\n");
-  print_vint128x (" 10**32 ", ten32);
-  printf ("\ntest Vector long divide Unsigned Quadword x 4\n");
-#endif
-
 
   ix[0] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
   ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
   ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
   ix[3] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
 
-  rm = test_example_longdiv_10e32 (qx, ix, 4UL);
-  r[4] = rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) qx[0]);
-  print_vint128x ("           ", (vui128_t) qx[1]);
-  print_vint128x ("           ", (vui128_t) qx[2]);
-  print_vint128x ("           ", (vui128_t) qx[3]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-  print_vint128  ("       rm=", (vui128_t) rm);
-#endif
-
-
-  rm = test_example_longdiv_10e32 (qy, qx, 4UL);
-  r[3] = rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) qy[0]);
-  print_vint128x ("           ", (vui128_t) qy[1]);
-  print_vint128x ("           ", (vui128_t) qy[2]);
-  print_vint128x ("           ", (vui128_t) qy[3]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-  print_vint128  ("       rm=", (vui128_t) rm);
-#endif
-
-  rm = test_example_longdiv_10e32 (qz, qy, 4UL);
-  r[2] = rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) qz[0]);
-  print_vint128x ("           ", (vui128_t) qz[1]);
-  print_vint128x ("           ", (vui128_t) qz[2]);
-  print_vint128x ("           ", (vui128_t) qz[3]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-  print_vint128  ("       rm=", (vui128_t) rm);
-#endif
-
-  rm = test_example_longdiv_10e32 (qw, qz, 4UL);
-  r[1] = rm;
+  r[4] = test_example_longdiv_10e32 (qx, ix, 4UL);
+  r[3] = test_example_longdiv_10e32 (qy, qx, 4UL);
+  r[2] = test_example_longdiv_10e32 (qz, qy, 4UL);
+  r[1] = test_example_longdiv_10e32 (qw, qz, 4UL);
   r[0] = qw[3];
 
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) qw[0]);
-  print_vint128x ("           ", (vui128_t) qw[1]);
-  print_vint128x ("           ", (vui128_t) qw[2]);
-  print_vint128x ("           ", (vui128_t) qw[3]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-  print_vint128  ("       rm=", (vui128_t) rm);
-#endif
   er = (vui128_t)CONST_VINT128_DW128(0x000002A818C1645CUL,
 				     0xF38EEB06FFFFFFFFUL);
   rc += check_vuint128x ("modq_2e512r:", (vui128_t)r[4], (vui128_t) er);
@@ -345,32 +286,19 @@ timed_longdiv_e32 (void)
 //#define __DEBUG_PRINT__ 1
 extern vBCD_t
 example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
-#ifdef __DEBUG_PRINT__
 #define test_example_longbcdcf_10e32(_i, _j, _k)	example_longbcdcf_10e32(_i, _j, _k)
-#else
-#define test_example_longbcdcf_10e32(_i, _j, _k)	example_longbcdcf_10e32(_i, _j, _k)
-#endif
+
 int
 timed_longbcdcf_10e32 (void)
 {
-#ifdef __DEBUG_PRINT__
-  /* ten32  = +100000000000000000000000000000000UQ  */
-  const vui128_t ten32 = (vui128_t)
-	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
-#endif
   vui128_t ix[8], q1[8], q2[8], q3[8], q4[8], q5[8], q6[8], q7[8], q8[8], q9[8];
-  vBCD_t el, er;
-  vBCD_t rm, bcd[10];
+  vBCD_t bcd[10], chk[10];
   int rc = 0;
 
-#ifdef __DEBUG_PRINT__
-  printf ("\ntest Vector long divide bcdcf Quadword x 8\n");
-  print_vint128x (" 10**32 ", ten32);
-#endif
   // Fixed-point equivalent of __DBL_MAX__
   // 1.797693134862315e+308Le+308L
-  ix[0] = (vui128_t)CONST_VINT128_DW128(0xFFFFFFFFFFFFFFFFUL,
-					0xFFFFFFFFFFFFF800UL);
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0xFFFFFFFFFFFFF800UL,
+					0x0000000000000000UL);
   ix[1] = (vui128_t) { (__int128) 0UL };
   ix[2] = (vui128_t) { (__int128) 0UL };
   ix[3] = (vui128_t) { (__int128) 0UL };
@@ -379,143 +307,57 @@ timed_longbcdcf_10e32 (void)
   ix[6] = (vui128_t) { (__int128) 0UL };
   ix[7] = (vui128_t) { (__int128) 0UL };
 
-  rm = test_example_longbcdcf_10e32 (q1, ix, 8UL);
-  bcd[9]= rm;
+  chk[0] = (vBCD_t)CONST_VINT128_DW128(0x0000000000017976UL,
+				       0x9313486231570814UL);
+  chk[1] = (vBCD_t)CONST_VINT128_DW128(0x5274237317043567UL,
+				       0x9807056752584499UL);
+  chk[2] = (vBCD_t)CONST_VINT128_DW128(0x6598917476803157UL,
+				       0x2607800285387605UL);
+  chk[3] = (vBCD_t)CONST_VINT128_DW128(0x8955863276687817UL,
+				       0x1540458953514382UL);
+  chk[4] = (vBCD_t)CONST_VINT128_DW128(0x4642343213268894UL,
+				       0x6418276846754670UL);
+  chk[5] = (vBCD_t)CONST_VINT128_DW128(0x3537516986049910UL,
+				       0x5765512820762454UL);
+  chk[6] = (vBCD_t)CONST_VINT128_DW128(0x9009038932894407UL,
+				       0x5868508455133942UL);
+  chk[7] = (vBCD_t)CONST_VINT128_DW128(0x3045832369032229UL,
+				       0x4816580855933212UL);
+  chk[8] = (vBCD_t)CONST_VINT128_DW128(0x3348274797826204UL,
+				       0x1447231687381771UL);
+  chk[9] = (vBCD_t)CONST_VINT128_DW128(0x8091929988125040UL,
+				       0x4026184124858368UL);
 
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q1[0]);
-  print_vint128x ("           ", (vui128_t) q1[1]);
-  print_vint128x ("           ", (vui128_t) q1[2]);
-  print_vint128x ("           ", (vui128_t) q1[3]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x6358901245426034UL,
-				     0x2651056803545088UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[9], (vui128_t) er);
+  bcd[9] = test_example_longbcdcf_10e32 (q1, ix, 8UL);
+  rc += check_vuint128x ("modq_2e1024r9:", (vui128_t)bcd[9], (vui128_t) chk[9]);
 
-  er = (vBCD_t)CONST_VINT128_DW128(0x3385468188567129UL,
-				   0x3878570989103972UL);
+  bcd[8] = test_example_longbcdcf_10e32 (q2, q1, 8UL);
+  rc += check_vuint128x ("modq_2e1024r8:", (vui128_t)bcd[8], (vui128_t) chk[8]);
 
-  rm = test_example_longbcdcf_10e32 (q2, q1, 8UL);
-  bcd[8]= rm;
+  bcd[7] = test_example_longbcdcf_10e32 (q3, q2, 8UL);
+  rc += check_vuint128x ("modq_2e1024r7:", (vui128_t)bcd[7], (vui128_t) chk[7]);
 
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q2[1]);
-  print_vint128x ("           ", (vui128_t) q2[2]);
-  print_vint128x ("           ", (vui128_t) q2[3]);
-  print_vint128x ("           ", (vui128_t) q2[4]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
+  bcd[6] = test_example_longbcdcf_10e32 (q4, q3, 8UL);
+  rc += check_vuint128x ("modq_2e1024r6:", (vui128_t)bcd[6], (vui128_t) chk[6]);
 
-  er = (vBCD_t)CONST_VINT128_DW128(0x3385468188567129UL,
-				   0x3878570989103972UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[8], (vui128_t) er);
+  bcd[5] = test_example_longbcdcf_10e32 (q5, q4, 8UL);
+  rc += check_vuint128x ("modq_2e1024r5:", (vui128_t)bcd[5], (vui128_t) chk[5]);
 
-  rm = test_example_longbcdcf_10e32 (q3, q2, 8UL);
-  bcd[7]= rm;
+  bcd[4] = test_example_longbcdcf_10e32 (q6, q5, 8UL);
+  rc += check_vuint128x ("modq_2e1024r4:", (vui128_t)bcd[4], (vui128_t) chk[4]);
 
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q3[2]);
-  print_vint128x ("           ", (vui128_t) q3[3]);
-  print_vint128x ("           ", (vui128_t) q3[4]);
-  print_vint128x ("           ", (vui128_t) q3[5]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
+  bcd[3] = test_example_longbcdcf_10e32 (q7, q6, 8UL);
+  rc += check_vuint128x ("modq_2e1024r3:", (vui128_t)bcd[3], (vui128_t) chk[3]);
 
-  er = (vBCD_t)CONST_VINT128_DW128(0x2760024810211116UL,
-				     0x0488028411452431UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[7], (vui128_t) er);
+  bcd[2] = test_example_longbcdcf_10e32 (q8, q7, 8UL);
+  rc += check_vuint128x ("modq_2e1024r2:", (vui128_t)bcd[2], (vui128_t) chk[2]);
 
-  rm = test_example_longbcdcf_10e32 (q4, q3, 8UL);
-  bcd[6]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q4[3]);
-  print_vint128x ("           ", (vui128_t) q4[4]);
-  print_vint128x ("           ", (vui128_t) q4[5]);
-  print_vint128x ("           ", (vui128_t) q4[6]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x9170914584061107UL,
-				   0x7154122122593391UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[6], (vui128_t) er);
-
-  rm = test_example_longbcdcf_10e32 (q5, q4, 8UL);
-  bcd[5]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q5[4]);
-  print_vint128x ("           ", (vui128_t) q5[5]);
-  print_vint128x ("           ", (vui128_t) q5[6]);
-  print_vint128x ("           ", (vui128_t) q5[7]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x8874590026720091UL,
-				   0x5633655049871983UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[5], (vui128_t) er);
-
-  rm = test_example_longbcdcf_10e32 (q6, q5, 8UL);
-  bcd[4]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q6[4]);
-  print_vint128x ("           ", (vui128_t) q6[5]);
-  print_vint128x ("           ", (vui128_t) q6[6]);
-  print_vint128x ("           ", (vui128_t) q6[7]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x1540522497108924UL,
-				   0x9581419968648444UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[4], (vui128_t) er);
-
-  rm = test_example_longbcdcf_10e32 (q7, q6, 8UL);
-  bcd[3]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q7[4]);
-  print_vint128x ("           ", (vui128_t) q7[5]);
-  print_vint128x ("           ", (vui128_t) q7[6]);
-  print_vint128x ("           ", (vui128_t) q7[7]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x3160000434400393UL,
-				   0x4491961443698881UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[3], (vui128_t) er);
-
-
-  rm = test_example_longbcdcf_10e32 (q8, q7, 8UL);
-  bcd[2]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q8[4]);
-  print_vint128x ("           ", (vui128_t) q8[5]);
-  print_vint128x ("           ", (vui128_t) q8[6]);
-  print_vint128x ("           ", (vui128_t) q8[7]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
-  er = (vBCD_t)CONST_VINT128_DW128(0x2743838201648706UL,
-				   0x6656549016394107UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[2], (vui128_t) er);
-
-  rm = test_example_longbcdcf_10e32 (q9, q8, 8UL);
-  bcd[1]= rm;
-
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" longdiv32 ", (vui128_t) q9[4]);
-  print_vint128x ("           ", (vui128_t) q9[5]);
-  print_vint128x ("           ", (vui128_t) q9[6]);
-  print_vint128x ("           ", (vui128_t) q9[7]);
-  print_vint128x ("       rm= ", (vui128_t) rm);
-#endif
+  bcd[1] = test_example_longbcdcf_10e32 (q9, q8, 8UL);
   bcd[0] = vec_bcdcfuq (q9[7]);
 
-  er = (vBCD_t)CONST_VINT128_DW128(0x9305190789024722UL,
-				   0x7985049812838823UL);
-  rc += check_vuint128x ("modq_2e1024r:", (vui128_t)bcd[1], (vui128_t) er);
+  rc += check_vuint128x ("modq_2e1024r1:", (vui128_t)bcd[1], (vui128_t) chk[1]);
 
-  el = (vBCD_t)CONST_VINT128_DW128(0x0000000000017976UL,
-				   0x9313486231590772UL);
-  rc += check_vuint128x ("   q_2e1024r:", (vui128_t)bcd[0], (vui128_t) el);
+  rc += check_vuint128x ("   q_2e1024r0:", (vui128_t)bcd[0], (vui128_t) chk[0]);
 
 #ifdef __DEBUG_PRINT__
   print_vint128x (" bcdcfuqX= ", (vui128_t) bcd[0]);
@@ -533,8 +375,103 @@ timed_longbcdcf_10e32 (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#define test_example_longbcdct_10e32(_i, _j, _k, _l)	example_longbcdct_10e32(_i, _j, _k, _l)
+extern long int
+example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
+			 long int _C , long int _N);
+
 int
-timed_maxdouble_10e32 (void)
+timed_longbcdct_10e32 (void)
+{
+#ifdef __DEBUG_PRINT__
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+#endif
+  vui128_t ix[8], jx[8];
+  vBCD_t bcd[10];
+  long int cnt;
+  int rc = 0;
+
+  // Reverse conversion from test_longbcdcf_10e32
+  // Feed BCD from high to low order.
+#ifdef __DEBUG_PRINT__
+  printf ("\ntimed Vector long multiply bcdct Quadword x 8\n");
+  print_vint128x (" 10**32 ", ten32);
+#endif
+  // Fixed-point equivalent of __DBL_MAX__
+  // 1.797693134862315e+308Le+308L
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0xFFFFFFFFFFFFF800UL,
+					0x0000000000000000UL);
+  ix[1] = (vui128_t) { (__int128) 0UL };
+  ix[2] = (vui128_t) { (__int128) 0UL };
+  ix[3] = (vui128_t) { (__int128) 0UL };
+  ix[4] = (vui128_t) { (__int128) 0UL };
+  ix[5] = (vui128_t) { (__int128) 0UL };
+  ix[6] = (vui128_t) { (__int128) 0UL };
+  ix[7] = (vui128_t) { (__int128) 0UL };
+
+  // BCD equivalent of Fixed-point __DBL_MAX__ in 309 digits
+  bcd[0] = (vBCD_t)CONST_VINT128_DW128(0x0000000000017976UL,
+				       0x9313486231570814UL);
+  bcd[1] = (vBCD_t)CONST_VINT128_DW128(0x5274237317043567UL,
+				       0x9807056752584499UL);
+  bcd[2] = (vBCD_t)CONST_VINT128_DW128(0x6598917476803157UL,
+				       0x2607800285387605UL);
+  bcd[3] = (vBCD_t)CONST_VINT128_DW128(0x8955863276687817UL,
+				       0x1540458953514382UL);
+  bcd[4] = (vBCD_t)CONST_VINT128_DW128(0x4642343213268894UL,
+				       0x6418276846754670UL);
+  bcd[5] = (vBCD_t)CONST_VINT128_DW128(0x3537516986049910UL,
+				       0x5765512820762454UL);
+  bcd[6] = (vBCD_t)CONST_VINT128_DW128(0x9009038932894407UL,
+				       0x5868508455133942UL);
+  bcd[7] = (vBCD_t)CONST_VINT128_DW128(0x3045832369032229UL,
+				       0x4816580855933212UL);
+  bcd[8] = (vBCD_t)CONST_VINT128_DW128(0x3348274797826204UL,
+				       0x1447231687381771UL);
+  bcd[9] = (vBCD_t)CONST_VINT128_DW128(0x8091929988125040UL,
+				       0x4026184124858368UL);
+
+  cnt = 0;
+  cnt = test_example_longbcdct_10e32 (jx, bcd[0], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[1], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[2], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[3], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[4], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[5], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[6], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[7], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[8], cnt, 8UL);
+  cnt = test_example_longbcdct_10e32 (jx, bcd[9], cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[0]);
+  print_vint128x ("           ", (vui128_t) jx[1]);
+  print_vint128x ("           ", (vui128_t) jx[2]);
+  print_vint128x ("           ", (vui128_t) jx[3]);
+  print_vint128x ("           ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+#endif
+
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[0], (vui128_t) ix[0]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[1], (vui128_t) ix[1]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[2], (vui128_t) ix[2]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[3], (vui128_t) ix[3]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[4], (vui128_t) ix[4]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[5], (vui128_t) ix[5]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[6], (vui128_t) ix[6]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[7], (vui128_t) ix[7]);
+
+  return (rc);
+}
+
+// Time spriontf for comparison to timed_longbcdcf_10e32
+int
+timed_cfmaxdouble_10e32 (void)
 {
   char buf[64];
   char cmp[64] = "1.79769313486231570814527423731704e+308\n";
@@ -546,6 +483,28 @@ timed_maxdouble_10e32 (void)
   if (strcmp (cmp, buf))
     {
       printf ("sprintf fail=%s\n", buf);
+      rc++;
+    }
+
+  return rc;
+}
+
+// Time strtod for comparison to timed_longbcdct_10e32
+int
+timed_ctmaxdouble_10e32 (void)
+{
+  // Compiler __DBL_MAX__ "1.79769313486231570814527423731704e+308"
+  // 53 digit precision equivalent of __DBL_MAX__
+  char buf[64] = "1.7976931348623157081452742373170435679807056752584499e+308";
+  char *res;
+  double d = 0;
+  int rc = 0;
+
+  d = strtod (buf, &res);
+
+  if (d != __DBL_MAX__)
+    {
+      printf ("strtod fail is % .13a should be % .13a\n", d, __DBL_MAX__);
       rc++;
     }
 

@@ -6041,18 +6041,46 @@ test_time_i128 (void)
   printf ("\n%s longbcdcf_10e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
 	  delta_sec);
 
-  printf ("\n%s maxdouble_10e32 start, ...\n", __FUNCTION__);
+  printf ("\n%s longbcdct_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIME_10_ITERATION; i++)
     {
-      rc += timed_maxdouble_10e32 ();
+      rc += timed_longbcdct_10e32 ();
     }
   t_end = __builtin_ppc_get_timebase ();
   t_delta = t_end - t_start;
   delta_sec = TimeDeltaSec (t_delta);
 
-  printf ("\n%s maxdouble_10e32 end", __FUNCTION__);
-  printf ("\n%s maxdouble_10e32 delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+  printf ("\n%s longbcdct_10e32 end", __FUNCTION__);
+  printf ("\n%s longbcdct_10e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s cfmaxdouble_10e32 start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIME_10_ITERATION; i++)
+    {
+      rc += timed_cfmaxdouble_10e32 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s cfmaxdouble_10e32 end", __FUNCTION__);
+  printf ("\n%s cfmaxdouble_10e32 delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s ctmaxdouble_10e32 start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIME_10_ITERATION; i++)
+    {
+      rc += timed_ctmaxdouble_10e32 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s ctmaxdouble_10e32 end", __FUNCTION__);
+  printf ("\n%s ctmaxdouble_10e32 delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
 	  delta_sec);
 
   return (rc);

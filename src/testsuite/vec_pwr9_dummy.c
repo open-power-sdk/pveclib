@@ -1019,6 +1019,12 @@ test_vec_cbcdaddecsq2_PWR9 (vBCD_t *co, vBCD_t a, vBCD_t b, vBCD_t c)
 }
 
 vui128_t
+test_vec_bcdctuq_PWR9 (vBCD_t vra)
+{
+  return vec_bcdctuq (vra);
+}
+
+vui128_t
 example_vec_bcdctuq_PWR9 (vui8_t vra)
 {
   vui8_t d100;
@@ -1258,6 +1264,114 @@ example_longdiv_10e31_PWR9 (vui128_t *q, vui128_t *d, long int _N)
     }
 
   return rh;
+}
+
+long int
+example_longbcdct_10e32_PWR9 (vui128_t *d, vBCD_t decimal, long int _C , long int _N)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+  const vui128_t zero = (vui128_t) { (__int128) 0UL };
+  vui128_t dn, ph, pl, cn, c;
+  long int i, cnt;
+
+  cnt = _C;
+
+  dn = zero;
+  cn  = zero;
+  if ( cnt == 0 )
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  cnt++;
+	  dn = vec_bcdctuq (decimal);
+	}
+
+      for ( i = 0; i < (_N - 1); i++ )
+	{
+	  d[i] = zero;
+	}
+      d[_N - cnt] = dn;
+    }
+  else
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  dn = vec_bcdctuq (decimal);
+	}
+      for ( i = (_N - 1); i >= (_N - cnt); i--)
+	{
+	  pl = vec_muludq (&ph, d[i], ten32);
+
+	  c = vec_addecuq (pl, dn, cn);
+	  d[i] = vec_addeuqm (pl, dn, cn);
+	  cn = c;
+	  dn = ph;
+	}
+      if (vec_cmpuq_all_ne (dn, zero) || vec_cmpuq_all_ne (cn, zero))
+	{
+	  cnt++;
+	  dn = vec_adduqm (dn, cn);
+	  d[_N - cnt] = dn;
+	}
+    }
+
+  return cnt;
+}
+
+long int
+example_longbcdct_10e31_PWR9 (vui128_t *d, vBCD_t decimal, long int _C,
+			      long int _N)
+{
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  const vui128_t zero = (vui128_t) { (__int128) 0UL };
+  vui128_t dn, ph, pl, cn, c;
+  long int i, cnt;
+
+  cnt = _C;
+
+  dn = zero;
+  cn = zero;
+  if (cnt == 0)
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  cnt++;
+	  dn = (vui128_t) vec_bcdctsq (decimal);
+	}
+
+      for (i = 0; i < (_N - 1); i++)
+	{
+	  d[i] = zero;
+	}
+      d[_N - cnt] = dn;
+    }
+  else
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  dn = (vui128_t) vec_bcdctsq (decimal);
+	}
+      for ( i = (_N - 1); i >= (_N - cnt); i--)
+	{
+	  pl = vec_muludq (&ph, d[i], ten31);
+
+	  c = vec_addecuq (pl, dn, cn);
+	  d[i] = vec_addeuqm (pl, dn, cn);
+	  cn = c;
+	  dn = ph;
+	}
+      if (vec_cmpuq_all_ne (dn, zero) || vec_cmpuq_all_ne (cn, zero))
+	{
+	  cnt++;
+	  dn = vec_adduqm (dn, cn);
+	  d[_N - cnt] = dn;
+	}
+    }
+
+  return cnt;
 }
 
 void

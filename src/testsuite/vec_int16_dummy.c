@@ -123,7 +123,7 @@ __test_mod10 (vui16_t n)
   vui16_t magic = vec_splats ((unsigned short) 52429);
   vui16_t c_10 = vec_splats ((unsigned short) 10);
   const int s = 3;
-  vui16_t tmp, rem, q_10;
+  vui16_t tmp, q_10;
 
   q = vec_mulhuh (magic, n);
   q_10 = vec_srhi (q, s);
@@ -139,7 +139,6 @@ __test_div10000 (vui16_t n)
   /* M= 41839, a=1, s=14 */
   vui16_t magic = vec_splats ((unsigned short) 41839);
   const int s = 14;
-  vui16_t tmp, rem;
 
   q = vec_mulhuh (magic, n);
     {

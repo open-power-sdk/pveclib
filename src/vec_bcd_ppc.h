@@ -892,7 +892,7 @@ vec_bcddiv (vBCD_t a, vBCD_t b)
  * The convert instructions above are not supported in current
  * compilers with built-ins so PVECLIB provides in-line
  * assembler implementations for these operations.
- * Now we need look into better algorithms to implementing
+ * Now we need look into better algorithms for implementing
  * these operations on POWER7/8.
  *
  * The Vector unit can multiply, add, or subtract integer elements in
@@ -1145,7 +1145,7 @@ example_vec_bcdctuq_2 (vBCD_t vra)
   return vrt;
 }
  * \endcode
- * This add a few more cycles to split the high digits from the low
+ * This adds a few more cycles to split the high digits from the low
  * digit and insert a positive sign code. This requires loading some
  * vector constants which may be commoned with loads from other
  * operations. This adds 2-11 cycles. The <B>mul10euq</B> only adds 3
@@ -1380,7 +1380,7 @@ vec_bcdcfuq (vui128_t vra)
  * \subsubsection bcd128_convert_0_2_3 Multiple precision BCD to/from Binary conversion
  *
  * The simplest case is converting a vector unsigned __int128 to BCD.
- * his requires up to 39 digits across two vectors. This can either
+ * This requires up to 39 digits across two vectors. This can either be
  * split into 8 and 31 digits for signed conversion or 7 and 32 for
  * unsigned. Signed conversion is preferred where extended BCD result
  * will be input to additional BCD arithmetic. Unsigned is preferred
@@ -1446,7 +1446,7 @@ example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N)
  *
  * As the conversion process continues the number of quadwords in the
  * extended dividend/quotient shrinks. The divide / modulo quadword
- * by constant operations, test for leading zeros and skip over them.
+ * by constant operations test for leading zeros and skip over them.
  *
  * \paragraph bcd128_convert_0_2_3_1 Multiple precision BCD to Binary conversion
  *
@@ -1524,7 +1524,7 @@ example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
  * digit group). As additional digit groups are converted, the extended
  * binary value is multiplied by 10<SUP>32</SUP> before adding the
  * converted digit group.  The number of quadwords in the array
- * <I>d[]</I> expand as need to hold the binary value.
+ * <I>d[]</I> expand as needed to hold the binary value.
  *
  * The interface includes:
  * - A pointer to an array of quadwords which accumulates the

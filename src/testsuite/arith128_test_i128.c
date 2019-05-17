@@ -783,7 +783,6 @@ db_vec_divudq_10e31 (vui128_t *qh, vui128_t vra, vui128_t vrb)
 #endif
       c = vec_addcuq (q1, q);
       q = vec_adduqm (q1, q);
-//  c2 = vec_addcuq (q2, c);
       q1 = vec_adduqm (t, c);
 #ifdef __DEBUG_PRINT__
       print_vint128x (" q         ", (vui128_t) q1);

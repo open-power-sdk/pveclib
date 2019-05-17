@@ -614,7 +614,7 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  *
  * In the section \ref int128_examples_0_1_2 above we used
  * multiplicative inverse to factor a binary quadword value in two
- * (high quotient and low remainder) parts. As we divided by a large
+ * (high quotient and low remainder) parts. Here we divide by a large
  * power of 10 (10<SUP>31</SUP> or 10<SUP>32</SUP>) of a size where
  * the quotient and remainder allow direct conversion to BCD
  * (see vec_bcdcfsq(), vec_bcdcfuq()). After conversion, the BCD parts
@@ -627,10 +627,9 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  * is divided in stages by a single digit. But the digits we are using
  * are really big (10<SUP>31</SUP>-1 or 10<SUP>32</SUP>-1).
  *
- * The first step is relatively easy.
- * Start by dividing the left-most <I>digit</I> of the dividend by the divisor,
- * generating the integer quotient and remainder.
- * We already had operations to implement that.
+ * The first step is relatively easy. Start by dividing the left-most
+ * <I>digit</I> of the dividend by the divisor, generating the integer
+ * quotient and remainder. We already have operations to implement that.
  * \code
   // initial step for the top digits
   dn = d[0];
@@ -638,22 +637,26 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
   rh = vec_moduq_10e31 (dn, qh);
   q[0] = qh;
  * \endcode
- * The array <I>d</I> contains the quadwords of the extended precision integer dividend.
- * The array <I>q</I> will contain the quadwords of the extended precision integer quotient.
- * Here we have generated the first <I>quadword q[0]</I> digit of the quotient.
- * The remainder <I>rh</I> will be using in the next step of the long division.
+ * The array <I>d</I> contains the quadwords of the extended precision
+ * integer dividend. The array <I>q</I> will contain the quadwords of
+ * the extended precision integer quotient. Here we have generated the
+ * first <I>quadword q[0]</I> digit of the quotient. The remainder
+ * <I>rh</I> will be used in the next step of the long division.
  *
- * The process repeats except after the first step we have an intermediate dividend formed from:
- * - the remainder from the previous step
- * - Concatenated with the next <I>digit</I> of the extended precision quadword dividend.
+ * The process repeats except after the first step we have an
+ * intermediate dividend formed from:
+ * - The remainder from the previous step
+ * - Concatenated with the next <I>digit</I> of the extended precision
+ * quadword dividend.
  *
- * So for each additional step we need to divide two quadwords (256-bits) by the quadword divisor.
- * Actually this dividend should be less than a full 256-bits because
- * we know the remainder is less than the divisor.
- * So the intermediate dividend is less than ((divisor - 1) * 2<SUP>128</SUP>).
- * So we can assume the quotient can not exceed (2<SUP>128</SUP>-1) or one quadword.
+ * So for each additional step we need to divide two quadwords
+ * (256-bits) by the quadword divisor. Actually this dividend should
+ * be less than a full 256-bits because we know the remainder is less
+ * than the divisor. So the intermediate dividend is less than
+ * ((divisor - 1) * 2<SUP>128</SUP>). So we know the quotient can not
+ * exceed (2<SUP>128</SUP>-1) or one quadword.
  *
- * Now we need an operations that will divide this double quadword
+ * Now we need an operation that will divide this double quadword
  * value and provide quotient and remainder that are correct
  * (or close enough).
  * Remember your grade school long division where you would:
@@ -669,7 +672,7 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
  * As long as we can detect any problems and (if needed) correct the
  * results, we can implement long division to any size.
  *
- * We already have an operations for dividing a quadword by 10<SUP>31</SUP>
+ * We already have an operation for dividing a quadword by 10<SUP>31</SUP>
  * using the magic numbers for multiplicative inverse.
  * This can easily be extended to multiply double quadword high.
  * For example:
@@ -770,11 +773,13 @@ vec_divudq_10e31 (vui128_t *qh, vui128_t vra, vui128_t vrb)
 }
  * \endcode
  *
- * To complete the long division operation we need to double quadword modulo operations.
+ * To complete the long division operation we need to perform double
+ * quadword modulo operations.
  * Here the dividend is two quadwords and the low quadword
  * of the quotient from the divide double quadword operation above.
- * We use multiply double quadword to compute the remainder ([vra||vrb] - (q * 10<SUP>31</SUP>).
- * Generating the 256-bit product and difference insure we can detect
+ * We use multiply double quadword to compute the remainder
+ * ([vra||vrb] - (q * 10<SUP>31</SUP>).
+ * Generating the 256-bit product and difference ensure we can detect
  * the case where the quotient is off-by-1 on the high side.
  *
  * \code
@@ -873,15 +878,16 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  * The remainder is in the range 0-9999999999999999999999999999999
  * and is suitable for conversion to BCD or decimal characters.
  * (see vec_bcdcfsq()).
- * Repeated calls passing the quotient from the previous call as the dividend,
- * reduces the quotient by 31 digits returns another 31 digits in the remainder for conversion.
+ * Repeated calls passing the quotient from the previous call as the
+ * dividend, reduces the quotient by 31 digits and returns another 31
+ * digits in the remainder for conversion.
  * This continues until the quotient is less than 10<SUP>31</SUP>
- * and the provides the high order 31-digits of the decimal result.
+ * which provides the highest order digits of the decimal result.
  *
  * \note Similarly for long division in support of unsigned 32-digit
  * BCD conversion using operations; vec_divuq_10e32(),
  * vec_moduq_10e32(), vec_divudq_10e32(), and vec_modudq_10e32().
- * Long division for others constant divisors or multiple quadword
+ * Long division for other constant divisors or multiple quadword
  * divisors is an exercise for the student.
  *
  * \todo
@@ -2318,9 +2324,9 @@ vec_divsq_10e31 (vi128_t vra)
  *  to perform long division of a multi-quaqword binary value by
  *  the constant 10e31. The final remainder can be passed to
  *  <B>Decimal Convert From Signed Quadword</B> (See vec_bcdcfsq()).
- *  Long division it repeated on the resulting multi-quadword quotient
- *  to extract 31-digits for each step. This is repeated until the
- *  multi-quadword quotient to result to less than 10e31 which
+ *  Long division is repeated on the resulting multi-quadword quotient
+ *  to extract 31-digits for each step. This continues until the
+ *  multi-quadword quotient is less than 10e31 which
  *  provides the highest order 31-digits of the of the multiple
  *  precision binary to BCD conversion.
  *
@@ -2389,8 +2395,8 @@ vec_divudq_10e31 (vui128_t *qh, vui128_t vra, vui128_t vrb)
  *  the constant 10e32. The final remainder can be passed to
  *  <B>Decimal Convert From Unsigned Quadword</B> (See vec_bcdcfuq()).
  *  Long division it repeated on the resulting multi-quadword quotient
- *  to extract 32-digits for each step. This is repeated until the
- *  multi-quadword quotient to result to less than 10e32 which
+ *  to extract 32-digits for each step. This continues until the
+ *  multi-quadword quotient result is less than 10e32 which
  *  provides the highest order 32-digits of the of the multiple
  *  precision binary to BCD conversion.
  *

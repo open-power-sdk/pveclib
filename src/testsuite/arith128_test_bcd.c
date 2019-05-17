@@ -883,6 +883,86 @@ db_vec_rdxcf10e32q (vui128_t vra)
 }
 
 //#define __DEBUG_PRINT__ 1
+long int
+db_example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
+			    long int _C , long int _N)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+  const vui128_t zero = (vui128_t) { (__int128) 0UL };
+  vui128_t dn, ph, pl, cn, c;
+  long int i, cnt;
+
+  cnt = _C;
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("    lbcdct ", (vui128_t) decimal);
+  printf         ("  elements %ld\n", _N);
+  printf         ("    so far %ld\n", _C);
+#endif
+
+  dn = zero;
+  cn  = zero;
+  if ( cnt == 0 )
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  cnt++;
+	  dn = vec_bcdctuq (decimal);
+	}
+
+      for ( i = 0; i < (_N - 1); i++ )
+	{
+	  d[i] = zero;
+	}
+      d[_N - cnt] = dn;
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("   bcdctuq=", (vui128_t) dn);
+      printf         ("    so far %ld\n", cnt);
+#endif
+    }
+  else
+    {
+      if (vec_cmpuq_all_ne ((vui128_t) decimal, zero))
+	{
+	  dn = vec_bcdctuq (decimal);
+	}
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("   bcdctuq=", (vui128_t) dn);
+      printf         ("    so far %ld\n", cnt);
+#endif
+      for ( i = (_N - 1); i >= (_N - cnt); i--)
+	{
+	  pl = vec_muludq (&ph, d[i], ten32);
+
+	  c = vec_addecuq (pl, dn, cn);
+	  d[i] = vec_addeuqm (pl, dn, cn);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("  dn+pl+cn=", (vui128_t) d[i]);
+	  print_vint128x ("        ph=", (vui128_t) ph);
+	  print_vint128x ("      cn+1=", (vui128_t) c);
+	  printf         ("         i=%ld\n", i);
+#endif
+	  cn = c;
+	  dn = ph;
+	}
+      if (vec_cmpuq_all_ne (dn, zero) || vec_cmpuq_all_ne (cn, zero))
+	{
+	  cnt++;
+	  dn = vec_adduqm (dn, cn);
+	  d[_N - cnt] = dn;
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("     ph+cn=", (vui128_t) dn);
+	  printf         ("       cnt=%ld\n", cnt);
+#endif
+	}
+    }
+
+  return cnt;
+}
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
 #ifdef __DEBUG_PRINT__
 #define test_vec_bcdctb100s(_l)	db_vec_BCD2i128(_l)
 #else
@@ -7565,6 +7645,929 @@ test_bcddive (void)
  return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_bcd_p2 (void)
+{
+  vBCD_t i, j, k, c, c2;
+  vBCD_t ei, ej, ek;
+  int ii;
+  int rc = 0;
+
+  i = _BCD_CONST_PLUS_ONE;
+  for (ii = 0; ii < 102; ii++)
+    {
+      i = vec_bcdadd (i, i);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 102 ", (vui128_t) i);
+#endif
+  ei = ( vBCD_t) CONST_VINT128_DW (0x5070602400912917UL,
+			           0x605986812821504cUL);
+  rc += check_vuint128x ("BCD add 2**105:", (vui128_t) i, (vui128_t) ei);
+
+  j = _BCD_CONST_ZERO;
+  for (ii = 102; ii < 128; ii++)
+    {
+      c = vec_bcdaddcsq (i, i);
+      i = vec_bcdadd (i, i);
+      j = vec_bcdaddesqm (j, j, c);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 128 ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ej = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			           0x000000034028236cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x6920938463463374UL,
+			           0x607431768211456cUL);
+  rc += check_vint256 ("BCD add 2**128:", (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  for (ii = 128; ii < 205; ii++)
+    {
+      c = vec_bcdaddcsq (i, i);
+      i = vec_bcdadd (i, i);
+      j = vec_bcdaddesqm (j, j, c);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 205 ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ej = ( vBCD_t) CONST_VINT128_DW (0x5142201741628768UL,
+			           0x881734278695491cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x7203280710495801UL,
+			           0x049370729644032cUL);
+  rc += check_vint256 ("BCD add 2**205:", (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  k = _BCD_CONST_ZERO;
+  for (ii = 205; ii < 222; ii++)
+    {
+      c = vec_bcdaddcsq (i, i);
+      i = vec_bcdadd (i, i);
+      c2 = vec_bcdaddecsq (j, j, c);
+      j = vec_bcdaddesqm (j, j, c);
+      k = vec_bcdaddesqm (k, k, c2);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 222 ", (vui128_t) k);
+  print_vint128x ("         ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ek = ( vBCD_t) CONST_VINT128_DW (000000000000000000UL,
+			           0x0000000067399cUL);
+  ej = ( vBCD_t) CONST_VINT128_DW (0x8666678765994866UL,
+			           0x675377175490766cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x8409286105635143UL,
+			           0x120275902562304cUL);
+  rc += check_vint384 ("BCD add 2**222:", (vui128_t) k,  (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+  for (ii = 222; ii < 256; ii++)
+    {
+      c = vec_bcdaddcsq (i, i);
+      i = vec_bcdadd (i, i);
+      c2 = vec_bcdaddecsq (j, j, c);
+      j = vec_bcdaddesqm (j, j, c);
+      k = vec_bcdaddesqm (k, k, c2);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 256 ", (vui128_t) k);
+  print_vint128x ("         ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ek = ( vBCD_t) CONST_VINT128_DW (0x0000000000000001UL,
+			           0x157920892373161cUL);
+  ej = ( vBCD_t) CONST_VINT128_DW (0x9542357098500868UL,
+			           0x790785326998466cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x5640564039457584UL,
+			           0x007913129639936cUL);
+  rc += check_vint384 ("BCD add 2**256:", (vui128_t) k,  (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+ return (rc);
+}
+
+int
+test_bcd_p2B (void)
+{
+  vBCD_t i, j, k, c, c2;
+  vBCD_t ei, ej, ek;
+  int ii;
+  int rc = 0;
+
+  i = _BCD_CONST_PLUS_ONE;
+  for (ii = 0; ii < 102; ii++)
+    {
+      i = vec_bcdadd (i, i);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 102 ", (vui128_t) i);
+#endif
+  ei = ( vBCD_t) CONST_VINT128_DW (0x5070602400912917UL,
+			           0x605986812821504cUL);
+  rc += check_vuint128x ("BCD add 2**105:", (vui128_t) i, (vui128_t) ei);
+
+  j = _BCD_CONST_ZERO;
+  for (ii = 102; ii < 128; ii++)
+    {
+      i = vec_cbcdaddcsq (&c, i, i);
+      j = vec_bcdaddesqm (j, j, c);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 128 ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ej = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			           0x000000034028236cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x6920938463463374UL,
+			           0x607431768211456cUL);
+  rc += check_vint256 ("BCD add 2**128:", (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  for (ii = 128; ii < 205; ii++)
+    {
+      i = vec_cbcdaddcsq (&c, i, i);
+      j = vec_bcdaddesqm (j, j, c);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 205 ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ej = ( vBCD_t) CONST_VINT128_DW (0x5142201741628768UL,
+			           0x881734278695491cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x7203280710495801UL,
+			           0x049370729644032cUL);
+  rc += check_vint256 ("BCD add 2**205:", (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  k = _BCD_CONST_ZERO;
+  for (ii = 205; ii < 222; ii++)
+    {
+      i = vec_cbcdaddcsq (&c, i, i);
+      j = vec_cbcdaddecsq (&c2, j, j, c);
+      k = vec_bcdaddesqm (k, k, c2);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 222 ", (vui128_t) k);
+  print_vint128x ("         ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ek = ( vBCD_t) CONST_VINT128_DW (000000000000000000UL,
+			           0x0000000067399cUL);
+  ej = ( vBCD_t) CONST_VINT128_DW (0x8666678765994866UL,
+			           0x675377175490766cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x8409286105635143UL,
+			           0x120275902562304cUL);
+  rc += check_vint384 ("BCD add 2**222:", (vui128_t) k,  (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+  for (ii = 222; ii < 256; ii++)
+    {
+      i = vec_cbcdaddcsq (&c, i, i);
+      j = vec_cbcdaddecsq (&c2, j, j, c);
+      k = vec_bcdaddesqm (k, k, c2);
+    }
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCD 256 ", (vui128_t) k);
+  print_vint128x ("         ", (vui128_t) j);
+  print_vint128x ("         ", (vui128_t) i);
+#endif
+  ek = ( vBCD_t) CONST_VINT128_DW (0x0000000000000001UL,
+			           0x157920892373161cUL);
+  ej = ( vBCD_t) CONST_VINT128_DW (0x9542357098500868UL,
+			           0x790785326998466cUL);
+  ei = ( vBCD_t) CONST_VINT128_DW (0x5640564039457584UL,
+			           0x007913129639936cUL);
+  rc += check_vint384 ("BCD add 2**256:", (vui128_t) k,  (vui128_t) j, (vui128_t) i,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+ return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_bcdct_p2 (void)
+{
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  vBCD_t i, j;
+  vi128_t bi, bj;
+  vui128_t ki, kj, c;
+  vi128_t ei, ej;
+  int rc = 0;
+
+  // 2**128 = 340282366920938463463374607431768211456
+  j = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			           0x000000034028236cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x6920938463463374UL,
+			           0x607431768211456cUL);
+
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+
+  ki = vec_muludq (&kj, (vui128_t) bj, ten31);
+  c = vec_addcuq (ki, (vui128_t) bi);
+  ki = vec_adduqm (ki, (vui128_t) bi);
+  kj = vec_adduqm (kj, c);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 128 ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+  print_vint128x ("         = ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**128 == 1 << 128 == (1 << (128-128)) << 128
+  ej =(vi128_t) { (__int128 ) 1ll};
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint256 ("BCDct 2**128:", (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  // 2**136 = 87112285931760246646623899502532662132736
+  j = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			          0x000008711228593cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x1760246646623899UL,
+				  0x502532662132736cUL);
+
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+
+  ki = vec_muludq (&kj, (vui128_t) bj, ten31);
+  c = vec_addcuq (ki, (vui128_t) bi);
+  ki = vec_adduqm (ki, (vui128_t) bi);
+  kj = vec_adduqm (kj, c);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 136 ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+  print_vint128x ("         = ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**136 == 1 << 136 == (1 << (136-128)) << 128
+  ej =(vi128_t) { ((__int128 ) 1ll) << 8 };
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint256 ("BCDct 2**136:", (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  // 2**144 = 22300745198530623141535718272648361505980416
+  j = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			          0x002230074519853cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x0623141535718272UL,
+				  0x648361505980416cUL);
+
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+
+  ki = vec_muludq (&kj, (vui128_t) bj, ten31);
+  c = vec_addcuq (ki, (vui128_t) bi);
+  ki = vec_adduqm (ki, (vui128_t) bi);
+  kj = vec_adduqm (kj, c);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 144 ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+  print_vint128x ("         = ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**144 == 1 << 144 == (1 << (144-128)) << 128
+  ej =(vi128_t) { ((__int128 ) 1ll) << 16 };
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint256 ("BCDct 2**144:", (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  // 2**152 = 570899077082383 9524233143877797 980545530986496
+  j = ( vBCD_t) CONST_VINT128_DW (0x0000000000000000UL,
+			          0x570899077082383cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x9524233143877797UL,
+				  0x980545530986496cUL);
+
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+
+  ki = vec_muludq (&kj, (vui128_t) bj, ten31);
+  c = vec_addcuq (ki, (vui128_t) bi);
+  ki = vec_adduqm (ki, (vui128_t) bi);
+  kj = vec_adduqm (kj, c);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 152 ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+  print_vint128x ("         = ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**152 == 1 << 152 == (1 << (152-128)) << 128
+  ej =(vi128_t) { ((__int128 ) 1ll) << 24 };
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint256 ("BCDct 2**152:", (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  // 2**205 = 51422017416287688817342786954917203280710495801049370729644032
+  j = ( vBCD_t) CONST_VINT128_DW (0x5142201741628768UL,
+			           0x881734278695491cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x7203280710495801UL,
+			           0x049370729644032cUL);
+
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+
+  ki = vec_muludq (&kj, (vui128_t) bj, ten31);
+  c = vec_addcuq (ki, (vui128_t) bi);
+  ki = vec_adduqm (ki, (vui128_t) bi);
+  kj = vec_adduqm (kj, c);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 205 ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+  print_vint128x ("         = ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**205 == 1 << 205 == (1 << (205-128)) << 128
+  ej =(vi128_t) { ((__int128 ) 1ll) << 77 };
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint256 ("BCDct 2**205:", (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ej, (vui128_t) ei);
+
+  return (rc);
+ }
+
+//#define __DEBUG_PRINT__ 1
+int
+test_bcdct_p3 (void)
+{
+  /* ten31  = +10000000000000000000000000000000UQ  */
+  const vui128_t ten31 = (vui128_t)
+	  { (__int128) 1000000000000000UL * (__int128) 10000000000000000UL };
+  vBCD_t i, j, k;
+  vi128_t bi, bj, bk;
+  vui128_t ki, kj, kk;
+  vui128_t lj, lk, c, c2;
+  vui128_t l3, l2a, l2b, l1;
+  vi128_t ei, ej, ek;
+  int rc = 0;
+
+  // 2**222 = 6739986666787659948666753771754907668409286105635143120275902562304
+  k = ( vBCD_t) CONST_VINT128_DW (000000000000000000UL,
+			          0x0000000067399cUL);
+  j = ( vBCD_t) CONST_VINT128_DW (0x8666678765994866UL,
+			          0x675377175490766cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x8409286105635143UL,
+			          0x120275902562304cUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 222 ", (vui128_t) k);
+  print_vint128x ("           ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+#endif
+
+  bk = vec_bcdctsq (k);
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x ("      bk = ", (vui128_t) bk);
+  print_vint128x ("      bj   ", (vui128_t) bj);
+  print_vint128x ("      bi   ", (vui128_t) bi);
+#endif
+
+  lj = vec_muludq (&lk, (vui128_t) bk, ten31);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" mulq bk = ", (vui128_t) lk);
+  print_vint128x ("           ", (vui128_t) lj);
+#endif
+  c = vec_addcuq (lj, (vui128_t) bj);
+  lj = vec_adduqm (lj, (vui128_t) bj);
+  lk = vec_adduqm (lk, c);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" bk*x31+bj=", (vui128_t) lk);
+  print_vint128x ("           ", (vui128_t) lj);
+#endif
+
+  l1 = vec_muludq (&l2a, (vui128_t) lj, ten31);
+  l2b = vec_muludq (&l3, (vui128_t) lk, ten31);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" mulq l3 = ", (vui128_t) l3);
+  print_vint128x ("      l2b  ", (vui128_t) l2b);
+  print_vint128x ("      l2a  ", (vui128_t) l2a);
+  print_vint128x ("      l1   ", (vui128_t) l1);
+#endif
+  c = vec_addcuq (l1, (vui128_t) bi);
+  ki = vec_adduqm (l1, (vui128_t) bi);
+  c2 = vec_addecuq (l2a, l2b, c);
+  kj = vec_addeuqm (l2a, l2b, c);
+  kk = vec_adduqm (l3, c2);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("         = ", (vui128_t) kk);
+  print_vint128x ("           ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**222 == 1 << 222 == (1 << (222-128)) << 128 == (1 << 94) << 128
+  ek =(vi128_t) { (__int128 ) 0ll};
+  ej =(vi128_t) { ((__int128 ) 1ll) << 94 };
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint384 ("BCDct 2**222:", (vui128_t) kk,  (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+  // 2**256 = 115792089237316195423570985008687907853269984665640564039457584007913129639936
+  k = ( vBCD_t) CONST_VINT128_DW (0x0000000000000001UL,
+			           0x157920892373161cUL);
+  j = ( vBCD_t) CONST_VINT128_DW (0x9542357098500868UL,
+			           0x790785326998466cUL);
+  i = ( vBCD_t) CONST_VINT128_DW (0x5640564039457584UL,
+			           0x007913129639936cUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" BCDct 256 ", (vui128_t) k);
+  print_vint128x ("           ", (vui128_t) j);
+  print_vint128x ("           ", (vui128_t) i);
+#endif
+
+  bk = vec_bcdctsq (k);
+  bj = vec_bcdctsq (j);
+  bi = vec_bcdctsq (i);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x ("      bk = ", (vui128_t) bk);
+  print_vint128x ("      bj   ", (vui128_t) bj);
+  print_vint128x ("      bi   ", (vui128_t) bi);
+#endif
+
+  lj = vec_muludq (&lk, (vui128_t) bk, ten31);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" mulq bk = ", (vui128_t) lk);
+  print_vint128x ("           ", (vui128_t) lj);
+#endif
+  c = vec_addcuq (lj, (vui128_t) bj);
+  lj = vec_adduqm (lj, (vui128_t) bj);
+  lk = vec_adduqm (lk, c);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" bk*x31+bj=", (vui128_t) lk);
+  print_vint128x ("           ", (vui128_t) lj);
+#endif
+
+  l1 = vec_muludq (&l2a, (vui128_t) lj, ten31);
+  l2b = vec_muludq (&l3, (vui128_t) lk, ten31);
+#if (__DEBUG_PRINT__ == 2)
+  print_vint128x (" mulq l3 = ", (vui128_t) l3);
+  print_vint128x ("      l2b  ", (vui128_t) l2b);
+  print_vint128x ("      l2a  ", (vui128_t) l2a);
+  print_vint128x ("      l1   ", (vui128_t) l1);
+#endif
+  c = vec_addcuq (l1, (vui128_t) bi);
+  ki = vec_adduqm (l1, (vui128_t) bi);
+  c2 = vec_addecuq (l2a, l2b, c);
+  kj = vec_addeuqm (l2a, l2b, c);
+  kk = vec_adduqm (l3, c2);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("         = ", (vui128_t) kk);
+  print_vint128x ("           ", (vui128_t) kj);
+  print_vint128x ("           ", (vui128_t) ki);
+#endif
+  // 2**256 == 1 << 256 == (1 << (256-128)) << 128
+  ek =(vi128_t) { ((__int128 ) 1ll) };
+  ej =(vi128_t) { (__int128 ) 0ll};
+  ei =(vi128_t) { (__int128 ) 0ll};
+  rc += check_vint384 ("BCDct 2**256:", (vui128_t) kk,  (vui128_t) kj, (vui128_t) ki,
+		       (vui128_t) ek, (vui128_t) ej, (vui128_t) ei);
+
+  return (rc);
+ }
+
+//#define __DEBUG_PRINT__ 1
+extern vBCD_t
+example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
+#ifdef __DEBUG_PRINT__
+#define test_example_longbcdcf_10e32(_i, _j, _k)	example_longbcdcf_10e32(_i, _j, _k)
+#else
+#define test_example_longbcdcf_10e32(_i, _j, _k)	example_longbcdcf_10e32(_i, _j, _k)
+#endif
+int
+test_longbcdcf_10e32 (void)
+{
+#ifdef __DEBUG_PRINT__
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+#endif
+  vui128_t ix[8], q1[8], q2[8], q3[8], q4[8], q5[8], q6[8], q7[8], q8[8], q9[8];
+  vBCD_t el, er;
+  vBCD_t rm, bcd[10];
+  int rc = 0;
+
+  printf ("\ntest Vector long divide bcdcf Quadword x 8\n");
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" 10**32 ", ten32);
+#endif
+  // Fixed-point equivalent of __DBL_MAX__
+  // 1.797693134862315e+308Le+308L
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0xFFFFFFFFFFFFF800UL,
+					0x0000000000000000UL);
+  ix[1] = (vui128_t) { (__int128) 0UL };
+  ix[2] = (vui128_t) { (__int128) 0UL };
+  ix[3] = (vui128_t) { (__int128) 0UL };
+  ix[4] = (vui128_t) { (__int128) 0UL };
+  ix[5] = (vui128_t) { (__int128) 0UL };
+  ix[6] = (vui128_t) { (__int128) 0UL };
+  ix[7] = (vui128_t) { (__int128) 0UL };
+  er = (vBCD_t)CONST_VINT128_DW128(0x8091929988125040UL,
+				   0x4026184124858368UL);
+
+  rm = test_example_longbcdcf_10e32 (q1, ix, 8UL);
+  bcd[9]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q1[0]);
+  print_vint128x ("           ", (vui128_t) q1[1]);
+  print_vint128x ("           ", (vui128_t) q1[2]);
+  print_vint128x ("           ", (vui128_t) q1[3]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r9:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x3348274797826204UL,
+				   0x1447231687381771UL);
+
+  rm = test_example_longbcdcf_10e32 (q2, q1, 8UL);
+  bcd[8]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q2[1]);
+  print_vint128x ("           ", (vui128_t) q2[2]);
+  print_vint128x ("           ", (vui128_t) q2[3]);
+  print_vint128x ("           ", (vui128_t) q2[4]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r8:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x3045832369032229UL,
+				   0x4816580855933212UL);
+
+  rm = test_example_longbcdcf_10e32 (q3, q2, 8UL);
+  bcd[7]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q3[2]);
+  print_vint128x ("           ", (vui128_t) q3[3]);
+  print_vint128x ("           ", (vui128_t) q3[4]);
+  print_vint128x ("           ", (vui128_t) q3[5]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r7:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x9009038932894407UL,
+				   0x5868508455133942UL);
+
+  rm = test_example_longbcdcf_10e32 (q4, q3, 8UL);
+  bcd[6]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q4[3]);
+  print_vint128x ("           ", (vui128_t) q4[4]);
+  print_vint128x ("           ", (vui128_t) q4[5]);
+  print_vint128x ("           ", (vui128_t) q4[6]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r6:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x3537516986049910UL,
+				   0x5765512820762454UL);
+
+  rm = test_example_longbcdcf_10e32 (q5, q4, 8UL);
+  bcd[5]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q5[4]);
+  print_vint128x ("           ", (vui128_t) q5[5]);
+  print_vint128x ("           ", (vui128_t) q5[6]);
+  print_vint128x ("           ", (vui128_t) q5[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r5:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x4642343213268894UL,
+				   0x6418276846754670UL);
+
+  rm = test_example_longbcdcf_10e32 (q6, q5, 8UL);
+  bcd[4]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q6[4]);
+  print_vint128x ("           ", (vui128_t) q6[5]);
+  print_vint128x ("           ", (vui128_t) q6[6]);
+  print_vint128x ("           ", (vui128_t) q6[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r4:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x8955863276687817UL,
+				   0x1540458953514382UL);
+
+  rm = test_example_longbcdcf_10e32 (q7, q6, 8UL);
+  bcd[3]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q7[4]);
+  print_vint128x ("           ", (vui128_t) q7[5]);
+  print_vint128x ("           ", (vui128_t) q7[6]);
+  print_vint128x ("           ", (vui128_t) q7[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r3:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x6598917476803157UL,
+				   0x2607800285387605UL);
+
+  rm = test_example_longbcdcf_10e32 (q8, q7, 8UL);
+  bcd[2]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q8[4]);
+  print_vint128x ("           ", (vui128_t) q8[5]);
+  print_vint128x ("           ", (vui128_t) q8[6]);
+  print_vint128x ("           ", (vui128_t) q8[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r2:", (vui128_t)rm, (vui128_t) er);
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x5274237317043567UL,
+				   0x9807056752584499UL);
+
+  rm = test_example_longbcdcf_10e32 (q9, q8, 8UL);
+  bcd[1]= rm;
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longdiv32 ", (vui128_t) q9[4]);
+  print_vint128x ("           ", (vui128_t) q9[5]);
+  print_vint128x ("           ", (vui128_t) q9[6]);
+  print_vint128x ("           ", (vui128_t) q9[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("modq_2e1024r1:", (vui128_t)rm, (vui128_t) er);
+
+  el = (vBCD_t)CONST_VINT128_DW128(0x0000000000017976UL,
+				   0x9313486231570814UL);
+  bcd[0] = vec_bcdcfuq (q9[7]);
+  rc += check_vuint128x ("   q_2e1024r:", (vui128_t)bcd[0], (vui128_t) el);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" bcdcfuqX= ", (vui128_t) bcd[0]);
+  print_vint128x ("           ", (vui128_t) bcd[1]);
+  print_vint128x ("           ", (vui128_t) bcd[2]);
+  print_vint128x ("           ", (vui128_t) bcd[3]);
+  print_vint128x ("           ", (vui128_t) bcd[4]);
+  print_vint128x ("           ", (vui128_t) bcd[5]);
+  print_vint128x ("           ", (vui128_t) bcd[6]);
+  print_vint128x ("           ", (vui128_t) bcd[7]);
+  print_vint128x ("           ", (vui128_t) bcd[8]);
+  print_vint128x ("           ", (vui128_t) bcd[9]);
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_example_longbcdct_10e32(_i, _j, _k, _l)	db_example_longbcdct_10e32(_i, _j, _k, _l)
+#else
+extern long int
+example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
+			 long int _C , long int _N);
+#define test_example_longbcdct_10e32(_i, _j, _k, _l)	example_longbcdct_10e32(_i, _j, _k, _l)
+#endif
+int
+test_longbcdct_10e32 (void)
+{
+#ifdef __DEBUG_PRINT__
+  /* ten32  = +100000000000000000000000000000000UQ  */
+  const vui128_t ten32 = (vui128_t)
+	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
+#endif
+  vui128_t ix[8], jx[8];
+  vBCD_t el, er;
+  vBCD_t rm, bcd[10];
+  long int cnt;
+  int rc = 0;
+
+  // Reverse conversion from test_longbcdcf_10e32
+  // Feed BCD from high to low order.
+  printf ("\ntest Vector long multiply bcdct Quadword x 8\n");
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" 10**32 ", ten32);
+#endif
+  // Fixed-point equivalent of __DBL_MAX__
+  // 1.797693134862315e+308Le+308L
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0xFFFFFFFFFFFFF800UL,
+					0x0000000000000000UL);
+  ix[1] = (vui128_t) { (__int128) 0UL };
+  ix[2] = (vui128_t) { (__int128) 0UL };
+  ix[3] = (vui128_t) { (__int128) 0UL };
+  ix[4] = (vui128_t) { (__int128) 0UL };
+  ix[5] = (vui128_t) { (__int128) 0UL };
+  ix[6] = (vui128_t) { (__int128) 0UL };
+  ix[7] = (vui128_t) { (__int128) 0UL };
+
+  // BCD equivalent of Fixed-point __DBL_MAX__ in 309 digits
+  bcd[0] = (vBCD_t)CONST_VINT128_DW128(0x0000000000017976UL,
+				       0x9313486231570814UL);
+  bcd[1] = (vBCD_t)CONST_VINT128_DW128(0x5274237317043567UL,
+				       0x9807056752584499UL);
+  bcd[2] = (vBCD_t)CONST_VINT128_DW128(0x6598917476803157UL,
+				       0x2607800285387605UL);
+  bcd[3] = (vBCD_t)CONST_VINT128_DW128(0x8955863276687817UL,
+				       0x1540458953514382UL);
+  bcd[4] = (vBCD_t)CONST_VINT128_DW128(0x4642343213268894UL,
+				       0x6418276846754670UL);
+  bcd[5] = (vBCD_t)CONST_VINT128_DW128(0x3537516986049910UL,
+				       0x5765512820762454UL);
+  bcd[6] = (vBCD_t)CONST_VINT128_DW128(0x9009038932894407UL,
+				       0x5868508455133942UL);
+  bcd[7] = (vBCD_t)CONST_VINT128_DW128(0x3045832369032229UL,
+				       0x4816580855933212UL);
+  bcd[8] = (vBCD_t)CONST_VINT128_DW128(0x3348274797826204UL,
+				       0x1447231687381771UL);
+  bcd[9] = (vBCD_t)CONST_VINT128_DW128(0x8091929988125040UL,
+				       0x4026184124858368UL);
+
+  rm = bcd[0];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000009UL,
+				   0xbecce62836ac097eUL);
+  cnt = 0;
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p0:", (vui128_t)jx[7], (vui128_t) er);
+
+  rm = bcd[1];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000000UL,
+				   0x0000300c50c958deUL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p1:", (vui128_t)jx[6], (vui128_t) er);
+
+  rm = bcd[2];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000000UL,
+				   0x0000000000ece53cUL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p2:", (vui128_t)jx[5], (vui128_t) er);
+
+  rm = bcd[3];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000000UL,
+				   0x0000000000000004UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p3:", (vui128_t)jx[4], (vui128_t) er);
+
+  rm = bcd[4];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000167e9c127b6eUL,
+				   0x735e765d1051790cUL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024:p4", (vui128_t)jx[4], (vui128_t) er);
+
+  rm = bcd[5];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x00000000006ee823UL,
+				   0x3e325e6ed9152468UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[3]);
+  print_vint128x ("           ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p5:", (vui128_t)jx[3], (vui128_t) er);
+
+  rm = bcd[6];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000002UL,
+				   0x22d00bdff5d53d55UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[2]);
+  print_vint128x ("           ", (vui128_t) jx[3]);
+  print_vint128x ("           ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p6:", (vui128_t)jx[2], (vui128_t) er);
+
+  rm = bcd[7];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000000UL,
+				   0x00000a87fea27a53UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[1]);
+  print_vint128x ("           ", (vui128_t) jx[2]);
+  print_vint128x ("           ", (vui128_t) jx[3]);
+  print_vint128x ("           ", (vui128_t) jx[4]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p7:", (vui128_t)jx[1], (vui128_t) er);
+
+  rm = bcd[8];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0x0000000000000000UL,
+				   0x000000000033ec47UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[0]);
+  print_vint128x ("           ", (vui128_t) jx[1]);
+  print_vint128x ("           ", (vui128_t) jx[2]);
+  print_vint128x ("           ", (vui128_t) jx[3]);
+  print_vint128x ("       rm= ", (vui128_t) rm);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p8:", (vui128_t)jx[0], (vui128_t) er);
+
+  rm = bcd[9];
+
+  er = (vBCD_t)CONST_VINT128_DW128(0xfffffffffffff800UL,
+			           0x0000000000000000UL);
+
+  cnt = test_example_longbcdct_10e32 (jx, rm, cnt, 8UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" longbcdct ", (vui128_t) jx[0]);
+  print_vint128x ("           ", (vui128_t) jx[1]);
+  print_vint128x ("           ", (vui128_t) jx[2]);
+  print_vint128x ("           ", (vui128_t) jx[3]);
+  print_vint128x ("           ", (vui128_t) jx[4]);
+  print_vint128x ("           ", (vui128_t) jx[5]);
+  print_vint128x ("           ", (vui128_t) jx[6]);
+  print_vint128x ("           ", (vui128_t) jx[7]);
+#endif
+  rc += check_vuint128x ("bcdct_2e1024p9:", (vui128_t)jx[0], (vui128_t) er);
+
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[1], (vui128_t) ix[1]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[2], (vui128_t) ix[2]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[3], (vui128_t) ix[3]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[4], (vui128_t) ix[4]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[5], (vui128_t) ix[5]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[6], (vui128_t) ix[6]);
+  rc += check_vuint128x ("bcdct_2e1024:", (vui128_t)jx[7], (vui128_t) ix[7]);
+
+
+  return (rc);
+}
+
 int
 test_vec_bcd (void)
 {
@@ -7645,5 +8648,14 @@ test_vec_bcd (void)
 
   rc += test_bcddive ();
 
+  rc += test_bcd_p2 ();
+  rc += test_bcd_p2B ();
+  rc += test_bcdct_p2 ();
+  rc += test_bcdct_p3 ();
+
+  rc += test_longbcdcf_10e32 ();
+  rc += test_longbcdct_10e32 ();
+
   return (rc);
 }
+

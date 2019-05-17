@@ -69,7 +69,9 @@ main (void)
 #if 1
   rc += test_vec_f64 ();
 #endif
+#if 1
   rc += test_vec_f128 ();
+#endif
 
   if (rc > 0)
     printf ("%d failures reported\n", rc);

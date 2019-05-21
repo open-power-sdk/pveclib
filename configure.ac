@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.63)
-AC_INIT([pveclib], [1.0.0], munroesj@us.ibm.com raji@linux.vnet.ibm.com tulioqm@br.ibm.com)
+AC_INIT([pveclib], [1.0.0], munroesj52@gmail.com pc@us.ibm.com, , https://github.com/open-power-sdk/pveclib)
 
 AC_CANONICAL_SYSTEM
 AC_CONFIG_MACRO_DIR([m4])

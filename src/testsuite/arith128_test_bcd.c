@@ -35,8 +35,8 @@
 #include <math.h>
 
 //#define __DEBUG_PRINT__
-#include <vec_common_ppc.h>
-#include <vec_bcd_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_bcd_ppc.h>
 
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_bcd.h>

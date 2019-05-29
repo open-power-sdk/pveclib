@@ -596,7 +596,7 @@ PACKAGE_STRING='pveclib 1.0.0'
 PACKAGE_BUGREPORT='munroesj@us.ibm.com raji@linux.vnet.ibm.com tulioqm@br.ibm.com'
 PACKAGE_URL=''
 
-ac_unique_file="src/vec_common_ppc.h"
+ac_unique_file="src/pveclib/vec_common_ppc.h"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

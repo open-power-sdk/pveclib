@@ -34,7 +34,7 @@
 #include <math.h>
 
 //#define __DEBUG_PRINT__
-#include <vec_f32_ppc.h>
+#include <pveclib/vec_f32_ppc.h>
 
 //#include "arith128.h"
 #include <testsuite/arith128_print.h>

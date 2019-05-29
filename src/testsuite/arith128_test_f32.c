@@ -26,8 +26,8 @@
 
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
-#include "vec_int32_ppc.h"
-#include "vec_f32_ppc.h"
+#include <pveclib/vec_int32_ppc.h>
+#include <pveclib/vec_f32_ppc.h>
 #include <testsuite/arith128_test_f32.h>
 #include <testsuite/vec_perf_f32.h>
 

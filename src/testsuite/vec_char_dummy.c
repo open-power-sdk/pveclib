@@ -10,7 +10,7 @@
 
 //#define __DEBUG_PRINT__
 
-#include "vec_char_ppc.h"
+#include <pveclib/vec_char_ppc.h>
 
 #if __GNUC__ >= 7
 /* Generic vec_mul not supported for vector char until GCC 7.  */

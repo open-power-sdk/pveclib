@@ -26,8 +26,8 @@
 
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
-#include "vec_int64_ppc.h"
-#include "vec_f64_ppc.h"
+#include <pveclib/vec_int64_ppc.h>
+#include <pveclib/vec_f64_ppc.h>
 #include <testsuite/arith128_test_f64.h>
 #include <testsuite/vec_perf_f64.h>
 

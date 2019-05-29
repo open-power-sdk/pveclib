@@ -5,8 +5,8 @@
  *      Author: sjmunroe
  */
 
-#include <vec_common_ppc.h>
-#include <vec_bcd_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_bcd_ppc.h>
 
 vf64_t
 test_pack_Decimal128 (_Decimal128 lval)

@@ -23,9 +23,9 @@
 #ifndef VEC_BCD_PPC_H_
 #define VEC_BCD_PPC_H_
 
-#include <vec_common_ppc.h>
-#include <vec_char_ppc.h>
-#include <vec_int128_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_char_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 /*!
  * \file  vec_bcd_ppc.h

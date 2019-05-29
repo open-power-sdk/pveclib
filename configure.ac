@@ -5,7 +5,7 @@ AC_INIT([pveclib], [1.0.0], munroesj52@gmail.com pc@us.ibm.com, , https://github
 
 AC_CANONICAL_SYSTEM
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/vec_common_ppc.h])
+AC_CONFIG_SRCDIR([src/pveclib/vec_common_ppc.h])
 AM_INIT_AUTOMAKE(subdir-objects)
 AM_MAINTAINER_MODE([disable])
 AX_AM_MACROS

@@ -28,8 +28,8 @@
 
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
-#include "vec_int128_ppc.h"
-#include "vec_f128_ppc.h"
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_f128_ppc.h>
 #include <testsuite/arith128_test_f128.h>
 
 #undef __DEBUG_PRINT__

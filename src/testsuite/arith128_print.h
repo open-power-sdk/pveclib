@@ -24,7 +24,7 @@
 #define TESTSUITE_ARITH128_PRINT_H_
 
 #include "arith128.h"
-#include "vec_f128_ppc.h"
+#include <pveclib/vec_f128_ppc.h>
 
 static inline
 double

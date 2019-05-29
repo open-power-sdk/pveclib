@@ -32,7 +32,7 @@
 #include <math.h>
 
 //#define __DEBUG_PRINT__
-#include "vec_f128_ppc.h"
+#include <pveclib/vec_f128_ppc.h>
 
 __binary128
 test_vec_absf128 (__binary128 f128)

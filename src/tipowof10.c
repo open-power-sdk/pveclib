@@ -20,7 +20,7 @@
       Created on: Jan 19, 2016
  */
 
-#include "vec_int128_ppc.h"
+#include <pveclib/vec_int128_ppc.h>
 
 const __int128 tipowof10[] = { 1ll, /* 10**0 */
   10ll, /* 10**1 */

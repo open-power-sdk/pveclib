@@ -28,10 +28,10 @@
 #include <float.h>
 #include <math.h>
 
-#include <vec_int128_ppc.h>
-#include <vec_f128_ppc.h>
-#include <vec_f32_ppc.h>
-#include <vec_bcd_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_f128_ppc.h>
+#include <pveclib/vec_f32_ppc.h>
+#include <pveclib/vec_bcd_ppc.h>
 
 vui8_t
 __test_absdub_PWR9 (vui8_t __A, vui8_t __B)

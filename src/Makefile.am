@@ -1,5 +1,9 @@
 # bin_PROGRAMS=pveclib_test
 
+# This is needed because the '#include' directives in the test suite do
+# not explicitly mention pveclib.
+AM_CFLAGS = -I$(top_srcdir)/src/pveclib/
+
 #Test only codes mostly for eyeballing the generated code
 noinst_LTLIBRARIES = libvecdummy.la
 #Any runtime and const tables needed by pveclib functions 
@@ -34,16 +38,16 @@ pveclib_testincludedir = $(includedir)/testsuite
 # The headers in 'plibvec_HEADERS' are meant to be the ones installed
 # on 'make install'
 pveclibinclude_HEADERS = \
-	vec_common_ppc.h \
-	vec_f128_ppc.h \
-	vec_f64_ppc.h \
-	vec_f32_ppc.h \
-	vec_int128_ppc.h \
-	vec_int64_ppc.h \
-	vec_int32_ppc.h \
-	vec_int16_ppc.h \
-	vec_char_ppc.h \
-	vec_bcd_ppc.h
+	pveclib/vec_common_ppc.h \
+	pveclib/vec_f128_ppc.h \
+	pveclib/vec_f64_ppc.h \
+	pveclib/vec_f32_ppc.h \
+	pveclib/vec_int128_ppc.h \
+	pveclib/vec_int64_ppc.h \
+	pveclib/vec_int32_ppc.h \
+	pveclib/vec_int16_ppc.h \
+	pveclib/vec_char_ppc.h \
+	pveclib/vec_bcd_ppc.h
 
 pveclib_la_INCLUDES = \
 	$(pveclibinclude_HEADERS)

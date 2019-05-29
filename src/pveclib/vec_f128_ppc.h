@@ -181,9 +181,9 @@ test_cosf128 (__binary128 value)
 #ifndef VEC_F128_PPC_H_
 #define VEC_F128_PPC_H_
 
-#include <vec_common_ppc.h>
-#include <vec_int128_ppc.h>
-#include <vec_f64_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_f64_ppc.h>
 
 /* __float128 was added in GCC 6.0.  But only with -mfloat128.
    Later compilers define __float128 to __ieee128.  */

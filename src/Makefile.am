@@ -5,7 +5,7 @@ noinst_LTLIBRARIES = libvecdummy.la
 #Any runtime and const tables needed by pveclib functions 
 lib_LTLIBRARIES = libpvec.la
 
-libpvec_la_SOURCES = tipowof10.c decpowof2.c
+libpvec_la_SOURCES = tipowof10.c decpowof2.c arith128.h
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
@@ -71,7 +71,20 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_i32.c \
 	testsuite/arith128_test_i16.c \
 	testsuite/arith128_test_char.c \
-	testsuite/arith128_test_bcd.c
+	testsuite/arith128_test_bcd.c \
+	testsuite/arith128_print.h \
+	testsuite/arith128_test_bcd.h \
+	testsuite/arith128_test_char.h \
+	testsuite/arith128_test_f128.h \
+	testsuite/arith128_test_f32.h \
+	testsuite/arith128_test_f64.h \
+	testsuite/arith128_test_i128.h \
+	testsuite/arith128_test_i16.h \
+	testsuite/arith128_test_i32.h \
+	testsuite/arith128_test_i64.h \
+	testsuite/vec_perf_f32.h \
+	testsuite/vec_perf_f64.h \
+	testsuite/vec_perf_i128.h
 	
 pveclib_test_LDADD = .libs/libpvec.a .libs/libvecdummy.a
 	

@@ -20,7 +20,6 @@
       Created on: Jan 19, 2016
  */
 
-#include "arith128.h"
 #include "vec_int128_ppc.h"
 
 const __int128 tipowof10[] = { 1ll, /* 10**0 */

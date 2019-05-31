@@ -621,7 +621,21 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_i32.c \
 	testsuite/arith128_test_i16.c \
 	testsuite/arith128_test_char.c \
-	testsuite/arith128_test_bcd.c
+	testsuite/arith128_test_bcd.c \
+	testsuite/arith128.h \
+	testsuite/arith128_print.h \
+	testsuite/arith128_test_bcd.h \
+	testsuite/arith128_test_char.h \
+	testsuite/arith128_test_f128.h \
+	testsuite/arith128_test_f32.h \
+	testsuite/arith128_test_f64.h \
+	testsuite/arith128_test_i128.h \
+	testsuite/arith128_test_i16.h \
+	testsuite/arith128_test_i32.h \
+	testsuite/arith128_test_i64.h \
+	testsuite/vec_perf_f32.h \
+	testsuite/vec_perf_f64.h \
+	testsuite/vec_perf_i128.h
 
 pveclib_test_LDADD = .libs/libpvec.a .libs/libvecdummy.a
 

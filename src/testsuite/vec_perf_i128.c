@@ -30,7 +30,7 @@
 #include <math.h>
 
 //#define __DEBUG_PRINT__
-#include <vec_int128_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 //#include "arith128.h"
 #include <testsuite/arith128_print.h>

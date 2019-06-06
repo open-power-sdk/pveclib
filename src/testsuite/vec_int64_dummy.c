@@ -20,7 +20,7 @@
       Created on: Mar 29, 2018
  */
 
-#include <vec_int64_ppc.h>
+#include <pveclib/vec_int64_ppc.h>
 
 vui64_t
 __test_vrld (vui64_t a, vui64_t b)

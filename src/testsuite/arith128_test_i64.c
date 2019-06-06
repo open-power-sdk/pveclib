@@ -28,9 +28,9 @@
 
 //#define __DEBUG_PRINT__
 #include <testsuite/arith128_print.h>
-#include <vec_common_ppc.h>
-#include <vec_int32_ppc.h>
-#include <vec_int64_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_int32_ppc.h>
+#include <pveclib/vec_int64_ppc.h>
 
 #include <testsuite/arith128_test_i64.h>
 

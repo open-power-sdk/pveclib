@@ -23,7 +23,7 @@
 #ifndef VEC_INT32_PPC_H_
 #define VEC_INT32_PPC_H_
 
-#include <vec_int16_ppc.h>
+#include <pveclib/vec_int16_ppc.h>
 
 /*!
  * \file  vec_int32_ppc.h

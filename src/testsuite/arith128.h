@@ -32,9 +32,9 @@
 #include <stddef.h>
 #include <float.h>
 
-#include "vec_int128_ppc.h"
-#include "vec_char_ppc.h"
-#include "vec_bcd_ppc.h"
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_char_ppc.h>
+#include <pveclib/vec_bcd_ppc.h>
 
 static inline void
 GROUP_ENDING_NOP (void)

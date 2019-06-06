@@ -20,7 +20,7 @@
       Created on: Mar 29, 2018
  */
 
-#include <vec_int32_ppc.h>
+#include <pveclib/vec_int32_ppc.h>
 
 #ifdef _ARCH_PWR8
 vui32_t

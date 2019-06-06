@@ -28,7 +28,7 @@
 
 //#define __DEBUG_PRINT__
 
-#include "vec_f64_ppc.h"
+#include <pveclib/vec_f64_ppc.h>
 
 int
 test512_all_f64_nan (vf64_t val0, vf64_t val1, vf64_t val2, vf64_t val3)

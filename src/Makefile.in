@@ -590,16 +590,16 @@ pveclib_testincludedir = $(includedir)/testsuite
 # The headers in 'plibvec_HEADERS' are meant to be the ones installed
 # on 'make install'
 pveclibinclude_HEADERS = \
-	vec_common_ppc.h \
-	vec_f128_ppc.h \
-	vec_f64_ppc.h \
-	vec_f32_ppc.h \
-	vec_int128_ppc.h \
-	vec_int64_ppc.h \
-	vec_int32_ppc.h \
-	vec_int16_ppc.h \
-	vec_char_ppc.h \
-	vec_bcd_ppc.h
+	pveclib/vec_common_ppc.h \
+	pveclib/vec_f128_ppc.h \
+	pveclib/vec_f64_ppc.h \
+	pveclib/vec_f32_ppc.h \
+	pveclib/vec_int128_ppc.h \
+	pveclib/vec_int64_ppc.h \
+	pveclib/vec_int32_ppc.h \
+	pveclib/vec_int16_ppc.h \
+	pveclib/vec_char_ppc.h \
+	pveclib/vec_bcd_ppc.h
 
 pveclib_la_INCLUDES = \
 	$(pveclibinclude_HEADERS)
@@ -621,7 +621,21 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_i32.c \
 	testsuite/arith128_test_i16.c \
 	testsuite/arith128_test_char.c \
-	testsuite/arith128_test_bcd.c
+	testsuite/arith128_test_bcd.c \
+	testsuite/arith128.h \
+	testsuite/arith128_print.h \
+	testsuite/arith128_test_bcd.h \
+	testsuite/arith128_test_char.h \
+	testsuite/arith128_test_f128.h \
+	testsuite/arith128_test_f32.h \
+	testsuite/arith128_test_f64.h \
+	testsuite/arith128_test_i128.h \
+	testsuite/arith128_test_i16.h \
+	testsuite/arith128_test_i32.h \
+	testsuite/arith128_test_i64.h \
+	testsuite/vec_perf_f32.h \
+	testsuite/vec_perf_f64.h \
+	testsuite/vec_perf_i128.h
 
 pveclib_test_LDADD = .libs/libpvec.a .libs/libvecdummy.a
 

@@ -20,7 +20,7 @@
       Created on: Nov 7, 2018
  */
 
-#include <vec_int16_ppc.h>
+#include <pveclib/vec_int16_ppc.h>
 
 vui16_t
 __test_absduh (vui16_t a, vui16_t b)

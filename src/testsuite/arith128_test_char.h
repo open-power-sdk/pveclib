@@ -8,7 +8,7 @@
 #ifndef TESTSUITE_ARITH128_TEST_CHAR_H_
 #define TESTSUITE_ARITH128_TEST_CHAR_H_
 
-#include "vec_char_ppc.h"
+#include <pveclib/vec_char_ppc.h>
 
 #ifdef __DEBUG_PRINT__
 extern vui8_t

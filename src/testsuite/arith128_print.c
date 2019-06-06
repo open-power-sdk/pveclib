@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <float.h>
 #define __DEBUG_PRINT__
-#include "vec_f128_ppc.h"
+#include <pveclib/vec_f128_ppc.h>
 #include <testsuite/arith128_print.h>
 //#include "math_private.h"
 #include "ieee754.h"

@@ -24,7 +24,7 @@
 #ifndef VEC_CHAR_PPC_H_
 #define VEC_CHAR_PPC_H_
 
-#include <vec_common_ppc.h>
+#include <pveclib/vec_common_ppc.h>
 
 /*!
  * \file  vec_char_ppc.h

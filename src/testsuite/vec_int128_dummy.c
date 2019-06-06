@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <vec_int128_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 vui128_t
 __test_msumudm (vui64_t a, vui64_t b, vui128_t c)

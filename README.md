@@ -41,8 +41,7 @@ perform this step first:
 ## Usage
 
 Once pveclib is installed on the POWER or OpenPOWER system
-simply add `-I/<path>/pveclib` to the compile command line. Then
-include the appropriate header. For example:
+simply include the appropriate header. For example:
 
-    #include <vec_int128_ppc.h>
+    #include <pveclib/vec_int128_ppc.h>
 

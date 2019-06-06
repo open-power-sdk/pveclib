@@ -199,7 +199,7 @@ test_vec_cosf32 (vf32_t value)
  * \ref perf_data
  */
 
-#include <vec_common_ppc.h>
+#include <pveclib/vec_common_ppc.h>
 
 /*! \brief typedef __vbinary32 to vector of 4 xfloat elements. */
 typedef vf32_t __vbinary32;

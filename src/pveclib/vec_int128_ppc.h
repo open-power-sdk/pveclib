@@ -24,8 +24,8 @@
 #ifndef VEC_INT128_PPC_H_
 #define VEC_INT128_PPC_H_
 
-#include <vec_common_ppc.h>
-#include <vec_int64_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_int64_ppc.h>
 
 /*!
  * \file  vec_int128_ppc.h

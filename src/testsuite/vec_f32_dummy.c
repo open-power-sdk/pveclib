@@ -27,7 +27,7 @@
 #include <math.h>
 
 //#define __DEBUG_PRINT__
-#include "vec_f32_ppc.h"
+#include <pveclib/vec_f32_ppc.h>
 
 vf32_t
 test_vec_f32_abs (vf32_t value)

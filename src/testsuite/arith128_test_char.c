@@ -18,7 +18,7 @@
 
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
-#include <vec_char_ppc.h>
+#include <pveclib/vec_char_ppc.h>
 
 #include <testsuite/arith128_test_char.h>
 

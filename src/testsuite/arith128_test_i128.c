@@ -35,10 +35,10 @@
 #endif
 
 //#define __DEBUG_PRINT__
-#include <vec_common_ppc.h>
-#include <vec_int32_ppc.h>
-#include <vec_int64_ppc.h>
-#include <vec_int128_ppc.h>
+#include <pveclib/vec_common_ppc.h>
+#include <pveclib/vec_int32_ppc.h>
+#include <pveclib/vec_int64_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 #include "arith128.h"
 #include <testsuite/arith128_print.h>

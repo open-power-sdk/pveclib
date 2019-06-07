@@ -517,7 +517,7 @@ vec_absf128 (__binary128 f128)
 static inline int
 vec_all_isfinitef128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return !scalar_test_data_class (f128, 0x70);
 #else
   vui32_t tmp, t128;
@@ -550,7 +550,7 @@ vec_all_isfinitef128 (__binary128 f128)
 static inline int
 vec_all_isinff128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x30);
 #else
   vui32_t tmp;
@@ -585,7 +585,7 @@ vec_all_isinff128 (__binary128 f128)
 static inline int
 vec_all_isnanf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x40);
 #else
   vui32_t tmp, tmp2, t128;
@@ -623,7 +623,7 @@ vec_all_isnanf128 (__binary128 f128)
 static inline int
 vec_all_isnormalf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return !scalar_test_data_class (f128, 0x7f);
 #else
   vui32_t tmp, t128;
@@ -659,7 +659,7 @@ vec_all_isnormalf128 (__binary128 f128)
 static inline int
 vec_all_issubnormalf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x03);
 #else
   const vui64_t minnorm = CONST_VINT128_DW(0x0001000000000000UL, 0UL);
@@ -694,7 +694,7 @@ vec_all_issubnormalf128 (__binary128 f128)
 static inline int
 vec_all_iszerof128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x0c);
 #else
   vui64_t tmp2;
@@ -816,7 +816,7 @@ vec_const_nansf128 ()
 static inline vb128_t
 vec_isfinitef128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(-1, -1, -1, -1);
 
   if (scalar_test_data_class (f128, 0x70))
@@ -863,7 +863,7 @@ static inline int
 vec_isinf_signf128 (__binary128 f128)
 {
   int result;
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   if (scalar_test_data_class (f128, 0x20))
     result = 1;
   else if (scalar_test_data_class (f128, 0x10))
@@ -912,7 +912,7 @@ vec_isinf_signf128 (__binary128 f128)
 static inline vb128_t
 vec_isinff128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x30))
@@ -955,7 +955,7 @@ vec_isinff128 (__binary128 f128)
 static inline vb128_t
 vec_isnanf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x40))
@@ -995,7 +995,7 @@ vec_isnanf128 (__binary128 f128)
 static inline vb128_t
 vec_isnormalf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(-1, -1, -1, -1);
 
   if (scalar_test_data_class (f128, 0x7f))
@@ -1040,7 +1040,7 @@ vec_isnormalf128 (__binary128 f128)
 static inline vb128_t
 vec_issubnormalf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x03))
@@ -1083,7 +1083,7 @@ vec_issubnormalf128 (__binary128 f128)
 static inline vb128_t
 vec_iszerof128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_data_class)
+#if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x0c))

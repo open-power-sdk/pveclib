@@ -648,11 +648,17 @@ __binary128
 test_sinf128_PWR9 (__binary128 value)
   {
     __binary128 result;
+#ifdef __FLOAT128__
+    // requires -mfloat128 to use Q const
+    const __binary128 zeroF128 = 0.0Q;
+#else
+    const __binary128 zeroF128 = (__binary128)CONST_VINT128_W(0, 0, 0, 0);
+#endif
 
     if (vec_all_isnormalf128 (value))
       {
 	/* body of vec_sin() computation elided for this example.  */
-	result = 0.0q;
+	result = zeroF128;
       }
     else
       {
@@ -675,15 +681,23 @@ __binary128
 test_cosf128_PWR9 (__binary128 value)
   {
     __binary128 result;
+#ifdef __FLOAT128__
+    // requires -mfloat128 to use Q const
+    const __binary128 zeroF128 = 0.0Q;
+    const __binary128 oneF128 = 1.0Q;
+#else
+    const __binary128 zeroF128 = (__binary128)CONST_VINT128_W(0, 0, 0, 0);
+    const __binary128 oneF128 = (__binary128)CONST_VINT128_W(0x3fff0000, 0, 0, 0);
+#endif
 
     if (vec_all_isfinitef128 (value))
       {
 	if (vec_all_iszerof128 (value))
-	  result = 1.0q;
+	  result = oneF128;
 	else
 	  {
 	    /* body of vec_cos() computation elided for this example.  */
-	    result = 0.0q;
+            result = zeroF128;
 	  }
       }
     else
@@ -713,12 +727,13 @@ __test_cmpneud_PWR9 (vui64_t a, vui64_t b)
 #endif
 
 #ifdef scalar_test_data_class
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 int
 __test_scalar_test_data_class_f128 (__binary128 val)
 {
   return scalar_test_data_class (val, 0x7f);
 }
-
+#endif
 int
 __test_scalar_test_data_class_f64 (double val)
 {
@@ -733,20 +748,23 @@ __test_scalar_test_data_class_f32 (float val)
 #endif
 
 #ifdef scalar_test_neg
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 int
 __test_scalar_test_neg (__ieee128 val)
 {
   return scalar_test_neg (val);
 }
 #endif
+#endif
 
 #ifdef scalar_extract_exp
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 long long int
 __test_scalar_extract_exp_f128 (__ieee128 val)
 {
   return scalar_extract_exp (val);
 }
-
+#endif
 int
 __test_scalar_extract_exp_f64 (double val)
 {
@@ -755,12 +773,13 @@ __test_scalar_extract_exp_f64 (double val)
 #endif
 
 #ifdef scalar_extract_sig
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 __int128
 __test_scalar_extract_sig_f128 (__ieee128 val)
 {
   return scalar_extract_sig (val);
 }
-
+#endif
 long long int
 __test_scalar_extract_sig_f64 (double val)
 {
@@ -769,12 +788,13 @@ __test_scalar_extract_sig_f64 (double val)
 #endif
 
 #ifdef scalar_insert_exp
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 __ieee128
 __test_scalar_insert_exp_f128 (__ieee128 sig, unsigned long long int exp)
 {
   return scalar_insert_exp (sig, exp);
 }
-
+#endif
 double
 __test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
 {

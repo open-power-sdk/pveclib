@@ -153,11 +153,17 @@ __binary128
 test_sinf128 (__binary128 value)
   {
     __binary128 result;
+#ifdef __FLOAT128__
+    // requires -mfloat128 to use Q const
+    const __binary128 zeroF128 = 0.0Q;
+#else
+    const __binary128 zeroF128 = (__binary128)CONST_VINT128_W(0, 0, 0, 0);
+#endif
 
     if (vec_all_isnormalf128 (value))
       {
 	/* body of vec_sin() computation elided for this example.  */
-	result = 0.0q;
+	result = zeroF128;
       }
     else
       {
@@ -180,15 +186,23 @@ __binary128
 test_cosf128 (__binary128 value)
   {
     __binary128 result;
+#ifdef __FLOAT128__
+    // requires -mfloat128 to use Q const
+    const __binary128 zeroF128 = 0.0Q;
+    const __binary128 oneF128 = 1.0Q;
+#else
+    const __binary128 zeroF128 = (__binary128)CONST_VINT128_W(0, 0, 0, 0);
+    const __binary128 oneF128 = (__binary128)CONST_VINT128_W(0x3fff0000, 0, 0, 0);
+#endif
 
     if (vec_all_isfinitef128 (value))
       {
 	if (vec_all_iszerof128 (value))
-	  result = 1.0Q;
+	  result = oneF128;
 	else
 	  {
 	    /* body of vec_cos() computation elided for this example.  */
-	    result = 0.0q;
+            result = zeroF128;
 	  }
       }
     else
@@ -245,7 +259,7 @@ _test_xfer_bin128_2_vui16t (__binary128 f128)
   return vec_xfer_bin128_2_vui16t (f128);
 }
 
-#ifdef __FLOAT128_TYPE__
+#ifdef __FLOAT128__
 /* Mostly compiler and library tests follow to see what the various
  * compilers will do.  */
 

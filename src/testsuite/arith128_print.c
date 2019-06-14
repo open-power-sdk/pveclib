@@ -707,9 +707,17 @@ print_vint384 (char *prefix, vui128_t val0_128, vui128_t val1_128,
   vui32_t val0 = (vui32_t) val0_128;
   vui32_t val1 = (vui32_t) val1_128;
   vui32_t val2 = (vui32_t) val2_128;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
-          val0[0], val0[1], val0[2], val0[3], val1[0], val1[1], val1[2],
-          val1[3], val2[0], val2[1], val2[2], val2[3]);
+	  val0[3], val0[2], val0[1], val0[0],
+	  val1[3], val1[2], val1[1], val1[0],
+	  val2[3], val2[2], val2[1], val2[0]);
+#else
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[0], val0[1], val0[2], val0[3],
+	  val1[0], val1[1], val1[2], val1[3],
+	  val2[0], val2[1], val2[2], val2[3]);
+#endif
 }
 
 void

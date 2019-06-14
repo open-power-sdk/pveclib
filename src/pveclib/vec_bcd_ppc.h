@@ -1830,24 +1830,17 @@ vec_bcdaddcsq (vBCD_t a, vBCD_t b)
 {
   vBCD_t t;
 #if defined ( _ARCH_PWR8) && (__GNUC__ > 6)
-  vBCD_t a_b;
 #ifdef _ARCH_PWR9
   // Generate BCD zero from (a - a), which is 3 cycles on PWR9
   t = vec_bcdsub (a,  a);
 #else // Else load a BCD const 0.
   t = _BCD_CONST_ZERO;
 #endif
-  a_b = vec_bcdadd (a, b);
   if (__builtin_expect (__builtin_bcdadd_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
-#ifdef _ARCH_PWR9
+      vBCD_t a_b;
+      a_b = vec_bcdadd (a, b);
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
-#else
-      if (__builtin_bcdadd_gt ((vi128_t) a, (vi128_t) b, 0))
-        t = _BCD_CONST_PLUS_ONE;
-      else
-        t = _BCD_CONST_MINUS_ONE;
-#endif
     }
 #else
   _Decimal128 d_a, d_b, d_s, d_t;
@@ -3504,17 +3497,10 @@ vec_bcdsubcsq (vBCD_t a, vBCD_t b)
 #else // Else load a BCD const 0.
   t = _BCD_CONST_ZERO;
 #endif
-  a_b = vec_bcdsub (a, b);
   if (__builtin_expect (__builtin_bcdsub_ov ((vi128_t) a, (vi128_t) b, 0), 0))
     {
-#ifdef _ARCH_PWR9
+      a_b = vec_bcdsub (a, b);
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, a_b);
-#else
-      if (__builtin_bcdsub_gt ((vi128_t) a, (vi128_t) b, 0))
-        t = _BCD_CONST_PLUS_ONE;
-      else
-        t = _BCD_CONST_MINUS_ONE;
-#endif
     }
 #else
   const vui32_t mz = CONST_VINT128_W (0, 0, 0, 0x0000000d);

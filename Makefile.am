@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-#This is recommented, but does not work correcly.
+#@INC_AMINCLUDE@ is recommented for automake but does not work correcly.
 #So comment it out for now.
 #@INC_AMINCLUDE@
 

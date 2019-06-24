@@ -20,6 +20,110 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
 
+# ===========================================================================
+#       http://www.gnu.org/software/autoconf-archive/ax_am_macros.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_AM_MACROS
+#
+# DESCRIPTION
+#
+#   Adds support for macros that create Make rules. You must manually add
+#   the following line
+#
+#     @INC_AMINCLUDE@
+#
+#   to your Makefile.in (or Makefile.am if you use Automake) files.
+#
+# LICENSE
+#
+#   Copyright (c) 2009 Tom Howard <tomhoward@users.sf.net>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 9
+
+AC_DEFUN([AX_AM_MACROS],
+[
+AC_MSG_NOTICE([adding automake macro support])
+AMINCLUDE="aminclude.am"
+AC_SUBST(AMINCLUDE)
+AC_MSG_NOTICE([creating $AMINCLUDE])
+AMINCLUDE_TIME=`date`
+AX_PRINT_TO_FILE([$AMINCLUDE],[[
+# generated automatically by configure from AX_AUTOMAKE_MACROS
+# on $AMINCLUDE_TIME
+
+]])
+
+INC_AMINCLUDE="include \$(top_builddir)/$AMINCLUDE"
+AC_SUBST(INC_AMINCLUDE)
+])
+
+# ===========================================================================
+#      http://www.gnu.org/software/autoconf-archive/ax_file_escapes.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_FILE_ESCAPES
+#
+# DESCRIPTION
+#
+#   Writes the specified data to the specified file.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Tom Howard <tomhoward@users.sf.net>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 7
+
+AC_DEFUN([AX_FILE_ESCAPES],[
+AX_DOLLAR="\$"
+AX_SRB="\\135"
+AX_SLB="\\133"
+AX_BS="\\\\"
+AX_DQ="\""
+])
+
+# ===========================================================================
+#     http://www.gnu.org/software/autoconf-archive/ax_print_to_file.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_PRINT_TO_FILE([FILE],[DATA])
+#
+# DESCRIPTION
+#
+#   Writes the specified data to the specified file.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Tom Howard <tomhoward@users.sf.net>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 7
+
+AC_DEFUN([AX_PRINT_TO_FILE],[
+AC_REQUIRE([AX_FILE_ESCAPES])
+printf "$2" > "$1"
+])
+
 # Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation

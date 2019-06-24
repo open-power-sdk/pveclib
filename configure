@@ -723,6 +723,8 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+INC_AMINCLUDE
+AMINCLUDE
 MAINT
 MAINTAINER_MODE_FALSE
 MAINTAINER_MODE_TRUE
@@ -3051,7 +3053,33 @@ fi
   MAINT=$MAINTAINER_MODE_TRUE
 
 
-AX_AM_MACROS
+
+AX_DOLLAR="\$"
+AX_SRB="\\135"
+AX_SLB="\\133"
+AX_BS="\\\\"
+AX_DQ="\""
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: adding automake macro support" >&5
+$as_echo "$as_me: adding automake macro support" >&6;}
+AMINCLUDE="aminclude.am"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating $AMINCLUDE" >&5
+$as_echo "$as_me: creating $AMINCLUDE" >&6;}
+AMINCLUDE_TIME=`date`
+
+
+printf "
+# generated automatically by configure from AX_AUTOMAKE_MACROS
+# on $AMINCLUDE_TIME
+
+" > "$AMINCLUDE"
+
+
+INC_AMINCLUDE="include \$(top_builddir)/$AMINCLUDE"
+
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'

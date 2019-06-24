@@ -219,7 +219,7 @@ ETAGS = etags
 CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/aminclude.am \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/doxygen.am \
 	AUTHORS COPYING ChangeLog INSTALL NEWS README compile \
 	config.guess config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -435,14 +435,7 @@ ACLOCAL_AMFLAGS = -I m4
 @DX_COND_doc_TRUE@    $(DX_CLEAN_PDF) \
 @DX_COND_doc_TRUE@    $(DX_CLEAN_LATEX)
 
-
-#@INC_AMINCLUDE@ is recommented for automake but does not work correcly.
-#So comment it out for now.
-#@INC_AMINCLUDE@
-
-#Until we figure out why @INC_AMINCLUDE@ substitution is not working,
-#Commit aminclude.am and include it directly from there.
-dist_doc_DATA = COPYING CONTRIBUTING.md README.md
+dist_doc_DATA = COPYING CONTRIBUTING.md README.md ChangeLog.md
 SUBDIRS = src
 EXTRA_DIST = $(DX_CONFIG) doc/pveclibmaindox.h
 all: all-recursive
@@ -450,7 +443,7 @@ all: all-recursive
 .SUFFIXES:
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/aminclude.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/doxygen.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -472,7 +465,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/aminclude.am $(am__empty):
+$(top_srcdir)/doxygen.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -937,6 +930,12 @@ uninstall-am: uninstall-dist_docDATA
 .PRECIOUS: Makefile
 
 
+#@INC_AMINCLUDE@ is recommented for automake and doxygen
+#but there is an naming comflict. So we rename aminclude.am to
+#doxygen.am from srcdir with allows INC_AMINCLUDE to generate 
+#aminclude.am to blddir.
+@INC_AMINCLUDE@
+
 @DX_COND_doc_TRUE@@DX_COND_ps_TRUE@doxygen-ps: @DX_DOCDIR@/@PACKAGE@.ps
 
 @DX_COND_doc_TRUE@@DX_COND_ps_TRUE@@DX_DOCDIR@/@PACKAGE@.ps: @DX_DOCDIR@/@PACKAGE@.tag
@@ -982,6 +981,10 @@ uninstall-am: uninstall-dist_docDATA
 @DX_COND_doc_TRUE@@DX_DOCDIR@/@PACKAGE@.tag: $(DX_CONFIG) $(pkginclude_HEADERS)
 @DX_COND_doc_TRUE@	rm -rf @DX_DOCDIR@
 @DX_COND_doc_TRUE@	$(DX_ENV) $(DX_DOXYGEN) $(srcdir)/$(DX_CONFIG)
+
+ChangeLog.md:
+	$(am__cd) $(top_srcdir) && ./generate-changelog.sh \
+> $(abs_top_builddir)/$@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

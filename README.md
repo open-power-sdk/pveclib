@@ -45,3 +45,21 @@ simply include the appropriate header. For example:
 
     #include <pveclib/vec_int128_ppc.h>
 
+The headers are organized by element type:
+
+    vec_common_ppc.h; Typedefs and helper macros
+    vec_f128_ppc.h; Operations on vector _Float128 values
+    vec_f64_ppc.h; Operations on vector double values
+    vec_f32_ppc.h; Operations on vector float values
+    vec_int128_ppc.h; Operations on vector __int128 values
+    vec_int64_ppc.h; Operations on vector long int (64-bit) values
+    vec_int32_ppc.h; Operations on vector int (32-bit) values
+    vec_int16_ppc.h; Operations on vector short int (16-bit) values
+    vec_char_ppc.h; Operations on vector char (8-bit) values
+    vec_bcd_ppc.h; Operations on vectors of Binary Code Decimal and Zoned Decimal values
+
+
+Full documentation is linked off of:
+
+    https://github.com/open-power-sdk/pveclib/wiki
+

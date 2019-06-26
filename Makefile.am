@@ -8,11 +8,17 @@ ACLOCAL_AMFLAGS = -I m4
 @INC_AMINCLUDE@
 include $(top_srcdir)/doxygen.am
 
-dist_doc_DATA = COPYING CONTRIBUTING.md README.md ChangeLog.md
+licensedir = $(datadir)/licenses/$(PACKAGE_NAME)
+dist_license_DATA = COPYING
+
+dist_doc_DATA = CONTRIBUTING.md README.md ChangeLog.md
 
 SUBDIRS= src
 
 EXTRA_DIST = $(DX_CONFIG) doc/pveclibmaindox.h
+
+distclean-local:
+	rm $(top_builddir)/aminclude.am
 
 ChangeLog.md:
 	$(am__cd) $(top_srcdir) && ./generate-changelog.sh \

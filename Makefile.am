@@ -9,9 +9,9 @@ ACLOCAL_AMFLAGS = -I m4
 include $(top_srcdir)/doxygen.am
 
 licensedir = $(datadir)/licenses/$(PACKAGE_NAME)
-dist_license_DATA = COPYING
+dist_license_DATA = LICENSE
 
-dist_doc_DATA = CONTRIBUTING.md README.md ChangeLog.md
+dist_doc_DATA = COPYING CONTRIBUTING.md README.md ChangeLog.md
 
 SUBDIRS= src
 

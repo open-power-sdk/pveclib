@@ -17,6 +17,8 @@ libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_bcd_dummy.c \
 	testsuite/vec_char_dummy.c
 
+libpvec_la_LIBADD = -lc
+
 EXTRA_DIST =
 
 # This rule is necessary because pvec_test needs to statically link

@@ -18,7 +18,7 @@ instructions.
 
 %description
 A library of useful vector operations for PowerISA 2.06 or later. Pveclib
-builds on the PPC vector intrinsic provided by <altivec.h> to provide higher
+builds on the PPC vector built-ins provided by <altivec.h> to provide higher
 level operations. These operations also bridge gaps in compiler builtin
 support for the latest PowerISA and functional differences between versions
 of the PowerISA. The intent is to improve the productivity of application

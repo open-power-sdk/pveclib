@@ -9,6 +9,15 @@ Source0: https://github.com/open-power-sdk/pveclib/archive/v%{version}.tar.gz
 ExclusiveArch: ppc %{power64}
 BuildRequires: libtool autoconf-archive
 
+%description
+A library of useful vector operations for PowerISA 2.06 or later. Pveclib
+builds on the PPC vector built-ins provided by <altivec.h> to provide higher
+level operations. These operations also bridge gaps in compiler builtin
+support for the latest PowerISA and functional differences between versions
+of the PowerISA. The intent is to improve the productivity of application
+developers who need to optimize their applications or dependent libraries for
+POWER.
+
 %package devel
 Summary: Header files for pveclib
 Requires: %{name}%{?_isa} = %{version}-%{release}
@@ -16,14 +25,12 @@ Requires: %{name}%{?_isa} = %{version}-%{release}
 Contains header files for using pveclib operations as inline vector
 instructions.
 
-%description
-A library of useful vector operations for PowerISA 2.06 or later. Pveclib
-builds on the PPC vector intrinsic provided by <altivec.h> to provide higher
-level operations. These operations also bridge gaps in compiler builtin
-support for the latest PowerISA and functional differences between versions
-of the PowerISA. The intent is to improve the productivity of application
-developers who need to optimize their applications or dependent libraries for
-POWER.
+%package static
+Summary:  This package contains static libraries for %{name}
+Requires: %{name}%{?_isa} = %{version}-%{release}
+%description static
+This package contains static libraries for pveclib.
+So far only constant vectors used in conversions.
 
 %prep
 %autosetup
@@ -54,9 +61,13 @@ find %{buildroot} -type f -name "*.la" -delete
 %{_libdir}/libpvec.so.*
 
 %files devel
+%doc README.md
 %{_libdir}/libpvec.so
-%{_libdir}/libpvec.a
 %{_includedir}/pveclib
+
+%files static
+%doc README.md
+%{_libdir}/libpvec.a
 
 %changelog
 * Fri May 31 2019 Munroe S <munroesj52@gmail.com> 1.0.2-1

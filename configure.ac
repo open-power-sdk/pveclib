@@ -1,9 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.63)
-AC_INIT([pveclib], [1.0.2], munroesj52@gmail.com pc@us.ibm.com, , https://github.com/open-power-sdk/pveclib)
+AC_INIT([pveclib], [1.0.3], munroesj52@gmail.com pc@us.ibm.com, , https://github.com/open-power-sdk/pveclib)
 
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/pveclib/vec_common_ppc.h])
 AM_INIT_AUTOMAKE(subdir-objects)
@@ -11,7 +11,6 @@ AM_MAINTAINER_MODE([disable])
 AX_AM_MACROS
 
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # Checks for header files.

@@ -172,6 +172,7 @@
 *  The POWER Vector Library will be primarily delivered as C language
 *  inline functions in headers files.
 *  - vec_common_ppc.h Typedefs and helper macros
+*  - vec_int512_ppc.h Operations on multiple precision integer values
 *  - vec_int128_ppc.h Operations on vector __int128 values
 *  - vec_int64_ppc.h Operations on vector long int (64-bit) values
 *  - vec_int32_ppc.h Operations on vector int (32-bit) values

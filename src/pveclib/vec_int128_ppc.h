@@ -1072,21 +1072,22 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  *  The effect is to compute an unsigned __int128 constant from 4 x
  *  32-bit unsigned int constants.
  * \code
- * int128 = (((((__q0 << 32) + __q1) << 32) + __q2) << 32) + q3
+ * int128 = (__q0 << 96) + (__q1 << 64) + (__q2 << 32) + q3
  * \endcode
  *
  *  For example
  * \code
  // const for 100000000000000000000000000000000 (AKA 10**32)
- vui128_t ten32 = CONST_VUINT128_QxW (0x000004ee, 0x2d6d415b, 0x85acef81, 0x00000000);
+ vui128_t ten32 = CONST_VUINT128_QxW (0x000004ee, 0x2d6d415b,
+                                      0x85acef81, 0x00000000);
  * \endcode
  *
  */
 #define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
-    (( (( (((unsigned __int128) __q0) << 32) \
-    +      ((unsigned __int128) __q1) ) << 32) \
-    +      ((unsigned __int128) __q2) ) << 32) \
-    +      ((unsigned __int128) __q3))
+      (((unsigned __int128) __q0) << 96) \
+    + (((unsigned __int128) __q1) << 64) \
+    + (((unsigned __int128) __q2) << 32) \
+    +  ((unsigned __int128) __q3) )
 
 /** \brief Generate a vector unsigned __int128 constant from doublewords.
  *

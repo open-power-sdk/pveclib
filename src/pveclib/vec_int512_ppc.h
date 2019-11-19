@@ -111,7 +111,7 @@
  *  - So the calling function must hold any local vector variables in
  *  memory or non-volatile registers if the live range extends across
  *  the function call.
- *  - In-lining the called function allows the compiler to managed
+ *  - In-lining the called function allows the compiler to manage
  *  register allocation across the  whole sequence. This can reduce
  *  register pressure when the called function does not actually
  *  use/modify all the volatile registers.
@@ -130,7 +130,7 @@
  * 1152-bit return value requires 9 vector registers, which will be
  * returned in memory.
  *
- * Also if any of these sub-functions is used without in-lining, the
+ * Also if any of these sub-functions are used without in-lining, the
  * generated code must be inspected to insure it is not spilling any
  * local variables. In my experiments with GCC 8.1 the 128x128,
  * 256x256, and 512x128 multiplies all avoid spilling. However the
@@ -177,7 +177,7 @@
  *
  * For operations defined in PVECLIB, most operations are defined in
  * terms of AltiVec/VSX Built-in Functions.
- * So the compile does not get much choice for instruction selection.
+ * So the compiler does not get much choice for instruction selection.
  * The PVECLIB coding style does leverage C language vector extensions
  * to load constants and manage temporary variables.
  * Using compiler Altivec/VSX built-ins and vector extensions allows
@@ -230,7 +230,7 @@
  * This also tends to increase the number of concurrently active
  * and overlapping live ranges.
  *
- * For this specific (multiple precision integer multiply) example,
+ * For this specific (multi-precision integer multiply) example,
  * integer multiple and add/carry/extend instructions predominate.
  * For POWER9 vector integer multiply instructions run 7 cycles,
  * while integer add/carry/extend quadword instruction run 3 cycles.
@@ -324,7 +324,7 @@
  * We need a mechanism to limit (set boundaries) on code motion
  * while preserving optimization over smaller blocks of code.
  * This normally called <I>compiler fence</I> but there multiple
- * definitions do we need to be careful what we use.
+ * definitions so we need to be careful what we use.
  *
  * We want something that will prevent the compiler from moving
  * instructions (in either direction) across specified
@@ -363,7 +363,7 @@
  * the point where all 64 VSRs are in use, but no spilling to stack
  * memory is required.
  *
- * \note The above above is true for vec_mul2048x2048_PWR9
+ * \todo The above above is true for vec_mul2048x2048_PWR9
  * but vec_mul2048x2048_PWR8 does kick out a few vector spills.
  * Need to look into this and resolve.
  *
@@ -408,7 +408,7 @@
  * \note Security aware implementations could use masking
  * countermeasures associated with these load/store operations.
  * The base PVECLIB implementation does not do this.
- * The source is available in ./src/vec_int512_runtume.c.
+ * The source is available in ./src/vec_int512_runtime.c.
  *
  * It is best if the
  * sub-functions code can be fully in-lined into the 2048x2048-bit
@@ -457,7 +457,7 @@
  * Multithreading (SMT) modes (controlled by the virtual machine and
  * kernel). The SMT mode (1,2,4,8) controls each hardware threads
  * priority to issue instructions to the core and if the instruction
- * stream is dual or single issue (from that threads perspective).
+ * stream is dual or single issue (from that thread's perspective).
  *
  * But the better news is that with some extra function attributes
  * (always_inline and flatten) the entire 2048x2048 multiply function
@@ -635,9 +635,8 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  * However this could cause maintenance problems where changes to a
  * operation must be coordinated across multiple source files.
  * This is also inconsistent with the current PVECLIB coding style
- * where all where an operations complete implementation, including
- * documentation and platform implementation variants, is contained
- * within a single source file.
+ * where a file contains an operations complete implementation,
+ * including documentation and platform implementation variants.
  *
  * The current PVECLIB implementation makes extensive use of CPP
  * conditions. These include testing for compiler version,
@@ -938,8 +937,8 @@ CFLAGS-vec_runtime_PWR9.c += -mcpu=power9
  * these functions via static or dynamic linkage.
  * For static linkage the application needs to reference a specific
  * platform variant of the functions name.
- * For dynamic linkage we will us <B>STT_GNU_IFUNC</B> symbol resolution
- * (an symbol type extension to the ELF standard).
+ * For dynamic linkage we will use <B>STT_GNU_IFUNC</B> symbol resolution
+ * (a symbol type extension to the ELF standard).
  *
  * \subsubsection i512_libary_issues_0_0_1_1 Static linkage to platform specific functions
  * For static linkage the application is compiled for a specific
@@ -1018,7 +1017,7 @@ vec_mul128x128 (vui128_t, vui128_t)
 __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  * \endcode
  *
- * On the programs first call to a <I>IFUNC</I> symbol, the dynamic
+ * On the program's first call to a <I>IFUNC</I> symbol, the dynamic
  * linker calls the resolver function associated with that symbol.
  * The resolver function performs a runtime check to determine the platform,
  * selects the (closest) matching platform specific function,
@@ -1613,24 +1612,25 @@ typedef union
   ///@endcond
 } __VEC_U_4096x512;
 
+/*! \brief A compiler fence to prevent excessive code motion.
+ *
+ *  We use the COMPILER_FENCE to limit instruction scheduling
+ *  and code motion to smaller code blocks. This in turn reduces
+ *  register pressure and avoids generating spill code.
+ */
 #if 0
-/*! \brief A compiler fence to prevent excessive code motion. */
 #define COMPILE_FENCE __asm (";":::)
 #else
-/*! \brief A compiler fence to prevent excessive code motion. */
 #define COMPILE_FENCE __asm ("nop":::)
 #endif
 
-/*! \brief Macro to add platform suffix for static calls.. */
+/*! \brief Macro to add platform suffix for static calls. */
 #ifdef _ARCH_PWR9
-/*! \brief Macro to add platform suffix for static calls.. */
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
 #else
 #ifdef _ARCH_PWR8
-/*! \brief Macro to add platform suffix for static calls.. */
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
 #else
-/*! \brief Macro to add platform suffix for static calls.. */
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
 #endif
 #endif
@@ -1638,7 +1638,7 @@ typedef union
 /** \brief Vector Add 512-bit Unsigned Integer & write Carry.
  *
  *  Compute the 512 bit sum of two 512 bit values a, b and
- *  product the carry.
+ *  produce the carry.
  *  The sum (with-carry) is returned as single 640-bit integer in a
  *  homogeneous aggregate structure.
  *
@@ -1669,7 +1669,7 @@ vec_add512cu (__VEC_U_512 a, __VEC_U_512 b)
  *
  *  Compute the 512 bit sum of two 512 bit values a, b and
  *  1 bit value carry-in value c.
- *  Product the carry out of the high order bit of the sum.
+ *  Produce the carry out of the high order bit of the sum.
  *  The sum (with-carry) is returned as single 640-bit integer in a
  *  homogeneous aggregate structure.
  *
@@ -1762,8 +1762,8 @@ vec_add512um (__VEC_U_512 a, __VEC_U_512 b)
 /** \brief Vector Add 512-bit to Zero Extended Unsigned
  *  Integer Modulo.
  *
- *  The carry-in is zero extended to left before Compute the 512 bit
- *  sum a + c.
+ *  The carry-in is zero extended to the left before computing the
+ *  512-bit sum a + c.
  *  The sum is returned as single 512-bit integer in a
  *  homogeneous aggregate structure.
  *  Any carry-out of the high order bit of the sum is lost.
@@ -1797,7 +1797,7 @@ static inline vec_add512ze (__VEC_U_512 a, vui128_t c)
 /** \brief Vector Add 512-bit to Zero Extended2 Unsigned
  *  Integer Modulo.
  *
- *  The two carry-ins is zero extended to left before Compute the
+ *  The two carry-ins are zero extended to the left before Computing the
  *  512 bit sum a + c1 + c2.
  *  The sum is returned as single 512-bit integer in a
  *  homogeneous aggregate structure.
@@ -1860,6 +1860,10 @@ vec_mul128x128_inline (vui128_t a, vui128_t b)
  *  The product is returned as single 512-bit integer in a
  *  homogeneous aggregate structure.
  *
+ *  \note We use the COMPILER_FENCE to limit instruction scheduling
+ *  and code motion to smaller code blocks. This in turn reduces
+ *  register pressure and avoids generating spill code.
+ *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   |224-232| 1/cycle  |
@@ -1904,6 +1908,10 @@ vec_mul256x256_inline (__VEC_U_256 m1, __VEC_U_256 m2)
  *  The product is returned as single 640-bit integer in a
  *  homogeneous aggregate structure.
  *
+ *  \note We use the COMPILER_FENCE to limit instruction scheduling
+ *  and code motion to smaller code blocks. This in turn reduces
+ *  register pressure and avoids generating spill code.
+ *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   |224-232| 1/cycle  |
@@ -1946,6 +1954,10 @@ vec_mul512x128_inline (__VEC_U_512 m1, vui128_t m2)
  *  Compute the 640 bit product of 512 bit values m1 and m2.
  *  The product is returned as single 1024-bit integer in a
  *  homogeneous aggregate structure.
+ *
+ *  \note We use the COMPILER_FENCE to limit instruction scheduling
+ *  and code motion to smaller code blocks. This in turn reduces
+ *  register pressure and avoids generating spill code.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -1998,7 +2010,6 @@ vec_mul512x512_inline (__VEC_U_512 m1, __VEC_U_512 m2)
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul128x128_PWR8 and
  *  vec_mul128x128_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.
@@ -2023,7 +2034,6 @@ vec_mul128x128 (vui128_t m1, vui128_t m2);
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul256x256_PWR8 and
  *  vec_mul256x256_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.
@@ -2049,7 +2059,6 @@ vec_mul256x256 (__VEC_U_256 m1, __VEC_U_256 m2);
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul256x256_PWR8 and
  *  vec_mul256x256_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.
@@ -2074,7 +2083,6 @@ vec_mul512x128 (__VEC_U_512 m1, vui128_t m2);
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul512x512_PWR8 and
  *  vec_mul512x512_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.
@@ -2095,11 +2103,10 @@ vec_mul512x512 (__VEC_U_512 m1, __VEC_U_512 m2);
 /** \brief Vector 1024x1024-bit Unsigned Integer Multiply.
  *
  *  Compute the 2048 bit product of 1024 bit values m1 and m2.
- *  The product is returned as single 4096-bit integer in a
+ *  The product is returned as single 2048-bit integer in a
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul1024x1024_PWR8 and
  *  vec_mul1024x1024_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.
@@ -2123,7 +2130,6 @@ vec_mul1024x1024 (__VEC_U_2048 *p2048, __VEC_U_1024 *m1, __VEC_U_1024 *m2);
  *  homogeneous aggregate structure.
  *
  *  \note This is the dynamic call ABI for IFUNC selection.
- *  (Not yet available)
  *  The static implementations are vec_mul2048x2048_PWR8 and
  *  vec_mul2048x2048_PWR9. For static calls the __VEC_PWR_IMP() macro
  *  will add appropriate suffix based on the compile -mcpu= option.

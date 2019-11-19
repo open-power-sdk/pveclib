@@ -194,20 +194,20 @@
  * formating for integers larger then long long. The following
  * section provides examples and work around's for these restrictions.
  *
- * The GCC compiler so allows integer constants to be assigned/cast
+ * The GCC compiler allows integer constants to be assigned/cast
  * to __int128 types. The support also allows __int128 constants to be
  * assigned/cast to vector __inter128 types. So the following are allowed:
  * \code
- const vui128_t vec128_zeros = {(vui128_t) ((unsigned __int128) 0);
- const vui128_t vec128_10 = {(vui128_t) ((unsigned __int128) 10);
+ const vui128_t vec128_zeros = {(vui128_t) ((unsigned __int128) 0)};
+ const vui128_t vec128_10 = {(vui128_t) ((unsigned __int128) 10)};
  const vui128_t vec128_10to16 = {(vui128_t) ((unsigned __int128)
-				 10000000000000000UL);
+				 10000000000000000UL)};
  const vui128_t vec128_maxLong = {(vui128_t) ((unsigned __int128)
-				 __INT64_MAX__);
+				 __INT64_MAX__)};
  const vui128_t vec128_max_Long = {(vui128_t) ((unsigned __int128)
-				 0x7fffffffffffffffL);
+				 0x7fffffffffffffffL)};
  // -1 signed extended to __int128 is 0xFFFF...FFFF
- const vui128_t vec128_foxes = {(vui128_t) ((__int128) -1L);
+ const vui128_t vec128_foxes = {(vui128_t) ((__int128) -1L)};
  * \endcode
  *
  * It gets more complicated when the constant exceeds the range of a
@@ -268,7 +268,7 @@
  * platforms. These macros accept 2, 4, 8, or 16 element constants to
  * form an aggregate initializer for a vector of the corresponding
  * element type. The elements are always arranged left to right, high
- * to low order. These macros are endian sensitive and either;
+ * to low order. These macros are endian sensitive and either
  * effectively pass-through for big endian or reverse the element
  * order for little endian.
  *
@@ -282,7 +282,7 @@
    const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_W(
                      0x39a5652f, 0xb1137856, 0xd30baf9a, 0x1e626a6d);
  * \endcode
- * These macros internally casts to a vector unsigned integer type for
+ * These macros internally cast to a vector unsigned integer type for
  * the aggregate initializer. This type corresponds to the size and
  * number of elements to fit in a 128-bit vector. This tells the
  * compiler how many elements to expect and the allowed value range
@@ -296,11 +296,11 @@
  * CONST_VINT8_B() )
  *
  * The methods above are effectively forming multi-digit constants
- * where each digit is itself a large (word or doubleword) binary
- * value. Because the digits are radix 2**N it is normal to convert
- * large decimal constants to hexadecimal. This makes it easier to
- * split the large constants into word or doubleword elements for the
- * initializer.
+ * where each digit is itself a large (word or doubleword) binary coded
+ * integer value. Because the digits are radix 2**N it is normal to
+ * convert large decimal constants to hexadecimal. This makes it easier
+ * to split the large constants into word or doubleword elements for
+ * the initializer.
  *
  * Most compilers support compile time computation on constants.
  * This is an optimization where only the final computed constant
@@ -331,7 +331,8 @@
    const vui128_t ten32_minus1 = CONST_VUINT128_Qx16d
          ( 9999999999999999UL, 9999999999999999UL );
  // The quadword multiplicative inverse to divide by 10**16
- // is 76624777043294442917917351357515459181
+ // is 76624777043294442917917351357515459181.
+ // Which is 38 digits, so we split into 2 consts of 19 digits each.
    const vui128_t mul_invs_ten16 = CONST_VUINT128_Qx19d(
       7662477704329444291UL, 7917351357515459181UL);
  * \endcode
@@ -1065,20 +1066,27 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  *  Combine 4 x 32-bit int constants into a single __int128 constant.
  *  The 4 parameters are integer constant values in high to low order.
  *  This order is consistent for big and little endian and the result
- *  loaded into vector registers is correct for quadword  integer
+ *  loaded into vector registers is correct for quadword integer
  *  operations.
+ *
+ *  The effect is to compute an unsigned __int128 constant from 4 x
+ *  32-bit unsigned int constants.
+ * \code
+ * int128 = (((((__q0 << 32) + __q1) << 32) + __q2) << 32) + q3
+ * \endcode
  *
  *  For example
  * \code
+ // const for 100000000000000000000000000000000 (AKA 10**32)
  vui128_t ten32 = CONST_VUINT128_QxW (0x000004ee, 0x2d6d415b, 0x85acef81, 0x00000000);
  * \endcode
  *
  */
 #define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
-    (((((((unsigned __int128) __q0) << 32) \
-    +    ((unsigned __int128) __q1)) << 32) \
-    +    ((unsigned __int128) __q2)) << 32) \
-    +    ((unsigned __int128) __q3) )
+    (( (( (((unsigned __int128) __q0) << 32) \
+    +      ((unsigned __int128) __q1) ) << 32) \
+    +      ((unsigned __int128) __q2) ) << 32) \
+    +      ((unsigned __int128) __q3))
 
 /** \brief Generate a vector unsigned __int128 constant from doublewords.
  *

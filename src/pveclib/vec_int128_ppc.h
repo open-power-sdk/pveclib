@@ -196,7 +196,7 @@
  *
  * The GCC compiler allows integer constants to be assigned/cast
  * to __int128 types. The support also allows __int128 constants to be
- * assigned/cast to vector __inter128 types. So the following are allowed:
+ * assigned/cast to vector __int128 types. So the following are allowed:
  * \code
  const vui128_t vec128_zeros = {(vui128_t) ((unsigned __int128) 0)};
  const vui128_t vec128_10 = {(vui128_t) ((unsigned __int128) 10)};

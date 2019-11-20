@@ -181,6 +181,163 @@
  * vec_vmuloud(), vec_mrgahd(), vec_mrgald(). and vec_permdi() are
  * defined to be endian stable.
  *
+ *
+ * \subsection int128_const_0_0_1 Quadword Integer Constants
+ *
+ * The compilers may not support 128-bit integers for constants
+ * and printf (integer to ascii). For example GCC provides ANSI
+ * mandated constant and runtime support for integers up to long long
+ * which for PowerPC is only 64-bit.
+ *
+ * The __int128 type is an extension that provides basic arithmetic
+ * operations but does not compile 128-bit constants or support printf
+ * formating for integers larger then long long. The following
+ * section provides examples and work around's for these restrictions.
+ *
+ * The GCC compiler allows integer constants to be assigned/cast
+ * to __int128 types. The support also allows __int128 constants to be
+ * assigned/cast to vector __int128 types. So the following are allowed:
+ * \code
+ const vui128_t vec128_zeros = {(vui128_t) ((unsigned __int128) 0)};
+ const vui128_t vec128_10 = {(vui128_t) ((unsigned __int128) 10)};
+ const vui128_t vec128_10to16 = {(vui128_t) ((unsigned __int128)
+				 10000000000000000UL)};
+ const vui128_t vec128_maxLong = {(vui128_t) ((unsigned __int128)
+				 __INT64_MAX__)};
+ const vui128_t vec128_max_Long = {(vui128_t) ((unsigned __int128)
+				 0x7fffffffffffffffL)};
+ // -1 signed extended to __int128 is 0xFFFF...FFFF
+ const vui128_t vec128_foxes = {(vui128_t) ((__int128) -1L)};
+ * \endcode
+ *
+ * It gets more complicated when the constant exceeds the range of a
+ * long long value. For example the magic numbers for the
+ * multiplicative inverse described in \ref int128_examples_0_1_1.
+ * The decimal integer constant we need for the quadword multiplier is
+ * "76624777043294442917917351357515459181"
+ * or the equivalent hexadecimal value
+ * "0x39a5652fb1137856d30baf9a1e626a6d".
+ * GCC does not allow constants this large to be expressed directly.
+ *
+ * GCC supports aggregate initializer lists for the elements of vectors.
+ * For example:
+ * \code
+   vui32_t xyzw = (vector int) { 1, 2, 3, 4 };
+ * \endcode
+ * So it is possible to compose a quadword constant by initializing
+ * a vector of word or doubleword elements then casting the result to
+ * a quadword type. For example:
+ * \code
+   const vui128_t invmul = (vui128_t) (vector unsigned long long)
+                     { 0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL };
+ * \endcode
+ * or
+ * \code
+   const vui128_t invmul = (vui128_t) (vector unsigned int)
+                     { 0x39a5652f, 0xb1137856, 0xd30baf9a, 0x1e626a6d };
+ * \endcode
+ * There is one small problem with this as element order is endian
+ * dependent, while a vector quadword integer is always big endian.
+ * So we would need to adjust the element order for endian.
+ * For example:
+ * \code
+   const vui128_t invmul = (vui128_t) (vector unsigned long long)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+                     { 0xd30baf9a1e626a6dUL, 0x39a5652fb1137856UL };
+#else
+                     { 0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL };
+#endif
+ * \endcode
+ * or
+ * \code
+   const vui128_t invmul = (vui128_t) (vector unsigned int)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+                     { 0x1e626a6d, 0xd30baf9a, 0xb1137856, 0x39a5652f };
+#else
+                     { 0x39a5652f, 0xb1137856, 0xd30baf9a, 0x1e626a6d };
+#endif
+ * \endcode
+ * Remembering to add the endian correction for constants used quadword
+ * operations is an issue and manually reversing the element order can
+ * be error prone. There should be an easier way.
+ *
+ * \subsection int128_const_0_0_2 Support for Quadword Integer Constants
+ *
+ * The vec_common_ppc.h header provides some helper macros for when
+ * quadword operations need big endian element order on little endian
+ * platforms. These macros accept 2, 4, 8, or 16 element constants to
+ * form an aggregate initializer for a vector of the corresponding
+ * element type. The elements are always arranged left to right, high
+ * to low order. These macros are endian sensitive and either
+ * effectively pass-through for big endian or reverse the element
+ * order for little endian.
+ *
+ * For example:
+ * \code
+   const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
+      0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+ * \endcode
+ * or
+ * \code
+   const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_W(
+                     0x39a5652f, 0xb1137856, 0xd30baf9a, 0x1e626a6d);
+ * \endcode
+ * These macros internally cast to a vector unsigned integer type for
+ * the aggregate initializer. This type corresponds to the size and
+ * number of elements to fit in a 128-bit vector. This tells the
+ * compiler how many elements to expect and the allowed value range
+ * for the initializer. A final explicit cast is required to the
+ * vector type needed (usually a signed or unsigned __int128).
+ * (See: CONST_VINT128_DW(), CONST_VINT128_W(), CONST_VINT128_H(),
+ * CONST_VINT128_B() ).
+ * Other macros require the programmer to provide a cast to match
+ * the element count and size.
+ * (See: CONST_VINT64_DW(), CONST_VINT32_W(), CONST_VINT16_H(),
+ * CONST_VINT8_B() )
+ *
+ * The methods above are effectively forming multi-digit constants
+ * where each digit is itself a large (word or doubleword) binary coded
+ * integer value. Because the digits are radix 2**N it is normal to
+ * convert large decimal constants to hexadecimal. This makes it easier
+ * to split the large constants into word or doubleword elements for
+ * the initializer.
+ *
+ * Most compilers support compile time computation on constants.
+ * This is an optimization where only the final computed constant
+ * result is used in the generated code.
+ * Compile time constant computation supports the usual arithmetic
+ * operations on the usual types.
+ * Some compilers (including GCC) support constant computation on
+ * extended types including __int128.
+ *
+ * For example:
+ * \code
+   const vui128_t ten32_minus1 = (vui128_t)
+         (((unsigned __int128) 9999999999999999UL) * 10000000000000000UL)
+        + ((unsigned __int128) 9999999999999999UL);
+ * \endcode
+ * produces the quadword integer value for the decimal constant
+ * 99999999999999999999999999999999.
+ *
+ * \note we must cast any int or long long constants to [unsigned]
+ * __int128 so the compiler will use 128-bits arithmetic to compute the
+ * final constant.
+ *
+ * With this technique we can split large decimal constants into 16,
+ * 18, or 19 digit blocks and then compute effective 32, 36, or 38
+ * digit constant. (see CONST_VUINT128_Qx16d(), CONST_VUINT128_Qx18d(),
+ * and CONST_VUINT128_Qx19d()). For example:
+ * \code
+   const vui128_t ten32_minus1 = CONST_VUINT128_Qx16d
+         ( 9999999999999999UL, 9999999999999999UL );
+ // The quadword multiplicative inverse to divide by 10**16
+ // is 76624777043294442917917351357515459181.
+ // Which is 38 digits, so we split into 2 consts of 19 digits each.
+   const vui128_t mul_invs_ten16 = CONST_VUINT128_Qx19d(
+      7662477704329444291UL, 7917351357515459181UL);
+ * \endcode
+ *
+ *
  * \section int128_examples_0_1 Vector Quadword Examples
  *
  * The PowerISA Vector facilities provide logical and integer
@@ -522,18 +679,18 @@ void
 test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
 	     vui128_t m2h, vui128_t m2l)
 {
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp, mq, mqhl;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1l, m2l);
   mp = vec_muludq (&mphl, m1h, m2l);
   mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphl, mc);
-  mp = vec_muludq (&mc, m2h, m1l);
+  mphl = vec_adduqm (mphl, mc);
+  mp = vec_muludq (&mqhl, m2h, m1l);
   mplh = vec_addcq (&mq, mplh, mp);
-  mphl = vec_addcq (&mc, mphl, mq);
+  mphl = vec_addeq (&mc, mphl, mqhl, mq);
   mp = vec_muludq (&mphh, m2h, m1h);
-  mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphh, mc);
+  mphl = vec_addcq (&mq, mphl, mp);
+  mphh = vec_addeuqm (mphh, mq, mc);
 
   mulu[0] = mpll;
   mulu[1] = mplh;
@@ -903,6 +1060,115 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  * <I>Latency</I> and <I>Throughput</I> are derived see:
  * \ref perf_data
  */
+
+/** \brief Generate a vector unsigned __int128 constant from words.
+ *
+ *  Combine 4 x 32-bit int constants into a single __int128 constant.
+ *  The 4 parameters are integer constant values in high to low order.
+ *  This order is consistent for big and little endian and the result
+ *  loaded into vector registers is correct for quadword integer
+ *  operations.
+ *
+ *  The effect is to compute an unsigned __int128 constant from 4 x
+ *  32-bit unsigned int constants.
+ * \code
+ * int128 = (__q0 << 96) + (__q1 << 64) + (__q2 << 32) + q3
+ * \endcode
+ *
+ *  For example
+ * \code
+ // const for 100000000000000000000000000000000 (AKA 10**32)
+ vui128_t ten32 = CONST_VUINT128_QxW (0x000004ee, 0x2d6d415b,
+                                      0x85acef81, 0x00000000);
+ * \endcode
+ *
+ */
+#define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
+      (((unsigned __int128) __q0) << 96) \
+    + (((unsigned __int128) __q1) << 64) \
+    + (((unsigned __int128) __q2) << 32) \
+    +  ((unsigned __int128) __q3) )
+
+/** \brief Generate a vector unsigned __int128 constant from doublewords.
+ *
+ *  Combine 2 x 64-bit long long constants into a single __int128 constant.
+ *  The 2 parameters are long integer constant values in high to low order.
+ *  This order is consistent for big and little endian and the result
+ *  loaded into vector registers is correct for quadword  integer
+ *  operations.
+ *
+ *  For example
+ *
+ * \code
+ vui128_t ten32 = CONST_VUINT128_QxD (0x000004ee2d6d415bUL, 0x85acef8100000000UL);
+ * \endcode
+ *
+ */
+#define CONST_VUINT128_QxD(__q0, __q1) ( (vui128_t) \
+    (((unsigned __int128) __q0) << 64) \
+    + (((unsigned __int128) __q1) )
+
+/** \brief Generate a vector unsigned __int128 constant from doublewords.
+ *
+ *  Combine 2 x 19 decimal digit long long constants into a single
+ *  38 decimal digit __int128 constant.
+ *  The 2 parameters are long integer constant values in high to low order.
+ *  This order is consistent for big and little endian and the result
+ *  loaded into vector registers is correct for quadword  integer
+ *  operations.
+ *
+ *  For example
+ *
+ * \code
+ const vui128_t mul_invs_ten16 = CONST_VUINT128_Qx19d(
+      7662477704329444291UL, 7917351357515459181UL);
+ * \endcode
+ *
+ */
+#define CONST_VUINT128_Qx19d(__q0, __q1) ( (vui128_t) \
+    (((unsigned __int128) __q0) * 10000000000000000000UL) \
+    + ((unsigned __int128) __q1) )
+
+/** \brief Generate a vector unsigned __int128 constant from doublewords.
+ *
+ *  Combine 2 x 18 decimal digit long long constants into a single
+ *  36 decimal digit __int128 constant.
+ *  The 2 parameters are long integer constant values in high to low order.
+ *  This order is consistent for big and little endian and the result
+ *  loaded into vector registers is correct for quadword  integer
+ *  operations.
+ *
+ *  For example
+ *
+ * \code
+ vui128_t ten36-1 = CONST_VUINT128_Qx18d (999999999999999999UL, 999999999999999999UL);
+ * \endcode
+ *
+ */
+#define CONST_VUINT128_Qx18d(__q0, __q1) ( (vui128_t) \
+    (((unsigned __int128) __q0) * 1000000000000000000UL) \
+    + ((unsigned __int128) __q1) )
+
+/** \brief Generate a vector unsigned __int128 constant from doublewords.
+ *
+ *  Combine 2 x 16 decimal digit long long constants into a single
+ *  32 decimal digit __int128 constant.
+ *  The 2 parameters are long integer constant values in high to low order.
+ *  This order is consistent for big and little endian and the result
+ *  loaded into vector registers is correct for quadword  integer
+ *  operations.
+ *
+ *  For example
+ *
+ * \code
+ const vui128_t ten32 = CONST_VUINT128_Qx16d (10000000000000000UL, 0UL);
+ * \endcode
+ *
+ */
+#define CONST_VUINT128_Qx16d(__q0, __q1) ( (vui128_t) \
+    (((unsigned __int128) __q0) * 10000000000000000UL) \
+    + ((unsigned __int128) __q1) )
+
 ///@cond INTERNAL
 static inline vui128_t vec_addecuq (vui128_t a, vui128_t b, vui128_t ci);
 static inline vui128_t vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci);

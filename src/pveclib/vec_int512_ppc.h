@@ -41,7 +41,7 @@
  * multiple quadword precision arithmetic.
  *
  * We provide static inline implementations for up to 512x512
- * multiplies and 512x152 add with carry/extend.
+ * multiplies and 512x512 add with carry/extend.
  * These in-line operations are provided as building blocks for
  * coding implementations of larger multiply and sum operations.
  * Otherwise the in-line code expansion is getting too large for
@@ -70,11 +70,11 @@
  *   values of the inputs or results.
  * - Internally the code can be organized as straight line code or
  *   loops, in-line functions or calls to carefully crafted leaf
- *   functions, as long as the above goals are meet.
+ *   functions, as long as the above goals are met.
  *
  * Achieving these goals requires some knowledge of the Application
  * Binary Interface (ABI) and foibles of the Instruction Set
- * Architecture (PowerISA) and how they impact what the compile can
+ * Architecture (PowerISA) and how they impact what the compiler can
  * generate. The compiler itself has internal strategies (and foibles)
  * that need to be managed as well.
  *
@@ -82,12 +82,12 @@
  *
  * The computation requires a number of internal temporary vectors
  * in addition to the inputs and outputs.
- * The Power Architecture, 64-Bit ELF V2 ABI Specifications
+ * The Power Architecture, 64-Bit ELF V2 ABI Specification
  * (AKA the ABI) places some generous but important restrictions on
  * how the compiler generates code (and how compliant assembler code
  * is written).
  * - Up to 20 volatile vector registers v0-v19 (VSRs vs32-vs51) of which
- * 12 can be use for function arguments/return values.
+ * 12 can be used for function arguments/return values.
  *  - Up to 12 vector arguments are passed in vector registers v2-v13
  * (VSRs vs34-vs45).
  *  - Longer vector argument lists are forced into the callers
@@ -138,7 +138,7 @@
  * non-volatile registers. This can be eliminated by in-lining the
  * 512x512 multiply into the 2048x2048 multiply function.
  *
- * \note GCC compilers before version 8 has an incomplete design for
+ * \note GCC compilers before version 8 have an incomplete design for
  * homogeneous aggregates of vectors and may generate sub-optimal code
  * for these parameters.
  *
@@ -183,7 +183,7 @@
  * Using compiler Altivec/VSX built-ins and vector extensions allows
  * the compiler visibility to and control of these optimizations.
  *
- * Internal function calls effectively <I>clobbers</I>
+ * Internal function calls effectively <I>clobber</I>
  * all (34 VSRs) volatile registers.
  * As the compiler marshals parameters into ABI prescribed VRs
  * it needs to preserve previous live content for later computation.
@@ -232,21 +232,21 @@
  *
  * For this specific (multi-precision integer multiply) example,
  * integer multiple and add/carry/extend instructions predominate.
- * For POWER9 vector integer multiply instructions run 7 cycles,
+ * For POWER9, vector integer multiply instructions run 7 cycles,
  * while integer add/carry/extend quadword instruction run 3 cycles.
  * The compiler will want to move the independent multiply instructions
  * earlier while the dependent add/carry instructions are moved later
  * until the latency of the (multiply) instruction
- * (it is dependent on) is satisfied.
+ * (on which it depends) is satisfied.
  * Moving dependent instructions apart and moving independent
- * instruction into scheduling gap increases register pressure.
+ * instructions into the scheduling gap increases register pressure.
  *
- * In extreme cases this can get out of hand.
- * At high optimization levels the compiler can push instruction
- * scheduling to point that it runs out of registers.
+ * In extreme cases, this can get out of hand.
+ * At high optimization levels, the compiler can push instruction
+ * scheduling to the point that it runs out of registers.
  * This forces the compiler to spill live register values,
- * splitting the live range into two smaller live ranges.
- * Any spilled values have to reloaded later so it can used in computation.
+ * splitting the live range into two smaller live ranges. Any spilled
+ * values have to be reloaded later so they can used in computation.
  * This causes the compiler to generate more instructions
  * that need additional register allocation and scheduling.
  *
@@ -258,13 +258,13 @@
  * When implemented as straight line code and expanded in-line
  * (<I>attribute (flatten)</I>) the total runs over 6000 instructions.
  *
- * Compiler spill code usually need registers in addition
+ * Compiler spill code usually needs registers in addition
  * (perhaps of a different class) to the registers being spilled.
  * This can be as simple as moving to a register of the same size but
  * different class.
- * For example; register moves to/from VRs and the lower 32 VSRs.
+ * For example, register moves to/from VRs and the lower 32 VSRs.
  * But it gets more complex when spilling vector registers to memory.
- * For example; vector register spill code needs GPRs to compute stack
+ * For example, vector register spill code needs GPRs to compute stack
  * addresses for vector load/store instructions.
  * Normally this OK, unless the the spill code consumes so many GPRs
  * that it needs to spill GPRs.
@@ -276,7 +276,7 @@
  * (no cache side-channel),
  * but spilling to memory must be avoided.
  * The compiler should have heuristics to back off in-lining and
- * scheduling driven code motions just enough,
+ * scheduling-driven code motions just enough
  * to avoid negative performance impacts.
  * But this is difficult to model and may not handle all cases with
  * equal grace.
@@ -288,10 +288,10 @@
  * heuristics to guarantee the result we want/need.
  * The PVECLIB implementation already marks most operations as
  * <B>static inline</B>.
- * But as we use these inline operations as building block to implement
+ * But as we use these inline operations as building blocks to implement
  * larger operations we can push the resulting code size over the
- * compilers default inline limits (<B>-finline-limit</B>).
- * Then compiler will start ignoring your advice for the
+ * compiler's default inline limits (<B>-finline-limit</B>).
+ * Then compiler will stop in-lining for the
  * duration of compiling the current function.
  *
  * This may require stronger options/attributes to the compiler like
@@ -309,11 +309,11 @@
  *
  * \note You should be compiling PVECLIB applications at <B>-O3</B> anyway.
  *
- * Now we have a large block of code for the compilers instruction
+ * Now we have a large block of code for the compiler's instruction
  * scheduler to work on.
  * In this case the code is very repetitive
  * (multiply, add the column, generate carries, repeat).
- * The instruction will lots of opportunity for scheduling long vs
+ * The instruction will have lots of opportunity for scheduling long vs
  * short latency instructions and create new and longer live ranges.
  *
  * /note In fact after applying <I>attribute (flatten)</I> to
@@ -323,7 +323,7 @@
  *
  * We need a mechanism to limit (set boundaries) on code motion
  * while preserving optimization over smaller blocks of code.
- * This normally called <I>compiler fence</I> but there multiple
+ * This normally called a <I>compiler fence</I> but there are multiple
  * definitions so we need to be careful what we use.
  *
  * We want something that will prevent the compiler from moving
@@ -378,7 +378,7 @@
  *
  * \subsection i512_security_issues_0_0_3 So what does this all mean?
  *
- * A 2048x2048 multiplicands and the resulting product are so large
+ * The 2048x2048 multiplicands and the resulting product are so large
  * (8192-bits, 64 quadwords total) that at the outer most function the
  * inputs and the result must be in memory and passed by reference.
  * The implementation of a 2048x2048-bit multiply requires 256
@@ -402,7 +402,7 @@
  * the output operand. Repeat for each 512-bit block of the other
  * 2048-bit multiplicand summing across the 512-bit columns.
  * The final sum, after the final 2048x512 partial
- * product, produces the high order 2048-bits of the 2048x2048 produce
+ * product, produces the high order 2048-bits of the 2048x2048 product
  * ready to store to the output operand.
  *
  * \note Security aware implementations could use masking
@@ -425,7 +425,7 @@
  * attacks. So the best case would be one large function implemented
  * as straight-line code.
  *
- * We will need all 64  VSX registers for operations and local
+ * We will need all 64 VSX registers for operations and local
  * variables. So the outer function will need to allocate a
  * stack-frame and save all of the non-volatile floating point
  * registers (allowing the use of  vs14-vs31 for local vector
@@ -434,7 +434,7 @@
  * for local vector variables within the outer multiply function.
  *
  * These saved registers reflect the state of the calling (or higher)
- * function and may not have any crypto sensitive  content.
+ * function and may not have any crypto sensitive content.
  * These register save areas will not be updated with internal state
  * from the 2048x2048-bit multiply operation itself.
  *
@@ -455,7 +455,7 @@
  * consistent independent of input values. The only measurable
  * variations would be as the processor changes Simultaneous
  * Multithreading (SMT) modes (controlled by the virtual machine and
- * kernel). The SMT mode (1,2,4,8) controls each hardware threads
+ * kernel). The SMT mode (1,2,4,8) controls each hardware thread's
  * priority to issue instructions to the core and if the instruction
  * stream is dual or single issue (from that thread's perspective).
  *
@@ -585,18 +585,19 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  * moved (eventually) to pveclibmaindox.h. While specifics of
  * multiple quadword precision integer multiply should remain here.
  *
- * Until recently (as of v1.0.3) PVECLIB operations where
+ * Until recently (as of v1.0.3) PVECLIB operations were
  * <B>static inline</B> only. This was reasonable as most operations
- * where small (a one to a few vector instructions).
- * This offered the compiler opportunity for;
+ * were small (one to a few vector instructions).
+ * This offered the compiler opportunity for:
  * - Better register allocation.
- * - Identifying common subexpressions and factoring them across operations instances.
+ * - Identifying common subexpressions and factoring them across
+ * operation instances.
  * - Better instruction scheduling across operations.
  *
- * Even then a few operations
+ * Even then, a few operations
  * (quadword multiply, BCD multiply, BCD <-> binary conversions,
  * and some POWER8/7 implementations of POWER9 instructions)
- * where getting uncomfortably large (10s of instructions).
+ * were getting uncomfortably large (10s of instructions).
  * But it was the multiple quadword precision operations that
  * forced the issue as they can run to 100s and sometimes 1000s of
  * instructions.
@@ -605,7 +606,7 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  *
  * Building libraries of compiled binaries is not that difficult.
  * The challenge is effectively supporting multiple processor
- * (POWER7/8/9) platforms as many PVECLIB operations have different
+ * (POWER7/8/9) platforms, as many PVECLIB operations have different
  * implementations for each platform.
  * This is especially evident on the multiply integer word, doubleword,
  * and quadword operations (see; vec_muludq(), vec_mulhuq(), vec_mulluq(),
@@ -695,7 +696,7 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  *
  * PVECLIB also depends on the <altivec.h> include file which provides
  * the mapping between the ABI defined intrinsics and compiler defined
- * build-ins. In some places PVECLIB conditionally tests if specific
+ * built-ins. In some places PVECLIB conditionally tests if specific
  * built-in is defined and substitutes an in-line assembler
  * implementation if not.
  * Altivec.h also depends on system-specific predefined macros to
@@ -705,7 +706,7 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  * The issue is that the compiler (GCC at least) only expands the
  * compiler and system-specific predefined macros once per source file.
  * They will not change due to embedded function attributes that change the target.
- * So the following does not work as expected.
+ * So the following do not work as expected.
  *
  * \code
 #include <altivec.h>
@@ -752,7 +753,7 @@ vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
  * This will all be established before the compiler starts to parse
  * and generate code for vec_mul128x128_PWR7.
  * This is likely to fail because the we are
- * trying to compiler code containing power8 instructions with a
+ * trying to compile code containing power8 instructions with a
  * -mcpu=power7 target.
  *
  * The compilation of vec_mul128x128_PWR8 should work as we are
@@ -942,10 +943,10 @@ CFLAGS-vec_runtime_PWR9.c += -mcpu=power9
  *
  * \subsubsection i512_libary_issues_0_0_1_1 Static linkage to platform specific functions
  * For static linkage the application is compiled for a specific
- * platform target (via -mcpu=).
- * So function calls should bound to the matching platform specific implementation.
- * The application may select the platform specific function directly
- * by defining a <I>extern</I> and invoking the platform qualified function.
+ * platform target (via -mcpu=). So function calls should be bound to
+ * the matching platform specific implementations. The application
+ * may select the platform specific function directly by defining
+ * a <I>extern</I> and invoking the platform qualified function.
  *
  * Or simply use the __VEC_PWR_IMP() macro as wrapper for the function
  * name in the application.
@@ -974,7 +975,7 @@ extern __VEC_U_256
 vec_mul128x128 (vui128_t, vui128_t);
  * \endcode
  *
- * This symbols implementation has a special <B>STT_GNU_IFUNC</B>
+ * This symbol's implementation has a special <B>STT_GNU_IFUNC</B>
  * attribute recognized by the dynamic linker which associates this
  * symbol with the corresponding runtime resolver function.
  * So in addition to any platform specific implementations we need to
@@ -1038,7 +1039,7 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  * need create static archive libraries and dynamically linked
  * <I>Shared Object</I> libraries.
  *
- * \note Here platform means a specific hardware generation
+ * \note Here, platform means a specific hardware generation
  * (power7, power8, power9) within a hardware family. For IBM systems
  * this identifies a specific combination of Instruction Set
  * Architecture and processor design (micro-architecture).
@@ -1048,16 +1049,16 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  * We use the <B>ar</B> command to create static archive libraries.
  * This utility collects any number of (relocatable) object files in
  * to a single archive file.
- * This utility also builds and includes a index of the symbols defined
+ * This utility also builds and includes an index of the symbols defined
  * in included object files.
  * As long as the function symbols are unique there is no problem
  * including multiple platform implementation in a single archive.
  *
  * When we use the <B>ld</B> (linker) command to link a program, application
  * provided object files are copied and relocated into to the program image.
- * Symbol reference are resolved (bound) to symbol references defined
+ * Symbol references are resolved (bound) to symbols defined
  * within the collection of relocated objects.
- * For any remaining unresolved symbols the linker will search the
+ * For any remaining unresolved symbols, the linker will search the
  * symbol index of any provided archives. Matching objects are copied
  * from the archive into the program image, and relocated.
  * The linker then attempts to resolve any remaining unresolved symbol
@@ -1066,10 +1067,10 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  *
  * If the application is statically linking to the PVECLIB archives
  * and using the __VEC_PWR_IMP() macro to qualify application references,
- * The linker match and extract only the appropriate platform specific
+ * The linker matches and extracts only the appropriate platform specific
  * objects for inclusion in the application.
  *
- * \note Once and application is compiled and statically linked with
+ * \note Once an application is compiled and statically linked with
  * this method, it is bound to that specific platform implementation.
  * Upgrading to an improved implementation required relinking the
  * application. To change the platform target implementation,
@@ -1078,14 +1079,14 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  *
  *
  * \subsubsection i512_libary_issues_0_0_2_1 Building Dynamic Shared Objects
- * Linking to Shared Objects (AKA Dynamically linked libraries) are
+ * Linking to Shared Objects (AKA Dynamically linked libraries) is
  * more flexible than static linking.
  * Shared Objects are separate executable files where search and
- * selection of the specific shared object files to use,
- * is delayed until the application is loaded for execution.
- * Similarly binding of dynamic symbol references to actual data or
+ * selection of the specific shared object files to use
+ * are delayed until the application is loaded for execution.
+ * Similarly, binding of dynamic symbol references to actual data or
  * function addressed is delayed until application execution.
- * This allows programs and libraries to developed and upgraded
+ * This allows programs and libraries to be developed and upgraded
  * independently.
  *
  * This separation of binaries and late binding enables Multi-platform
@@ -1107,7 +1108,7 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  *
  * Applications compiled to use these functions and linked to this
  * shared object will execute on any of the supported POWER platforms.
- * As the application starts up the dynamic linker will bind these
+ * As the application starts up, the dynamic linker will bind these
  * function calls (with help from the resolver functions) to the
  * appropriate platform specific implementation.
  *
@@ -1211,7 +1212,7 @@ typedef struct
 /*! \brief A vector representation of a 512-bit unsigned integer
  * and a 128-bit carry-out.
  *
- *  A Union of:
+ *  A union of:
  *  - homogeneous aggregate of 640-bit unsigned integer.
  *  - struct of:
  *    - homogeneous aggregate of 512-bit unsigned integer.
@@ -1362,9 +1363,9 @@ typedef struct
 } __VEC_U_2048;
 
 /*! \brief A vector representation of a 1024-bit unsigned integer
- * as two 512-bit field.
+ * as two 512-bit fields.
  *
- *  A Union of:
+ *  A union of:
  *  - homogeneous aggregate of 1024-bit unsigned integer.
  *  - struct of:
  *    - two x homogeneous aggregate of 512-bit unsigned integers.
@@ -1391,9 +1392,9 @@ typedef union
 } __VEC_U_1024x512;
 
 /*! \brief A vector representation of a 2048-bit unsigned integer
- * as 4 x 512-bit integers.
+ * as 4 x 512-bit integer fields.
  *
- *  A Union of:
+ *  A union of:
  *  - homogeneous aggregate of 2048-bit unsigned integer.
  *  - struct of:
  *    - 4 x homogeneous aggregate of 512-bit unsigned integers.
@@ -1567,9 +1568,9 @@ typedef struct
 } __VEC_U_4096;
 
 /*! \brief A vector representation of a 4096-bit unsigned integer
- * as 8 x 512-bit integers.
+ * as 8 x 512-bit integer fields.
  *
- *  A Union of:
+ *  A union of:
  *  - homogeneous aggregate of 4096-bit unsigned integer.
  *  - struct of:
  *    - 8 x homogeneous aggregate of 512-bit unsigned integers.
@@ -1635,7 +1636,7 @@ typedef union
 #endif
 #endif
 
-/** \brief Vector Add 512-bit Unsigned Integer & write Carry.
+/** \brief Vector Add 512-bit Unsigned Integer & Write Carry.
  *
  *  Compute the 512 bit sum of two 512 bit values a, b and
  *  produce the carry.
@@ -1665,7 +1666,7 @@ vec_add512cu (__VEC_U_512 a, __VEC_U_512 b)
   return result;
 }
 
-/** \brief Vector Add Extended 512-bit Unsigned Integer & write Carry.
+/** \brief Vector Add Extended 512-bit Unsigned Integer & Write Carry.
  *
  *  Compute the 512 bit sum of two 512 bit values a, b and
  *  1 bit value carry-in value c.

@@ -314,6 +314,8 @@ test_vec_iszerof32_PWR9 (vf32_t value)
 {
   return (vec_iszerof32 (value));
 }
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 int
 test_vec_all_finitef64_PWR9 (vf64_t value)
 {
@@ -420,6 +422,7 @@ test_vec_iszerof64_PWR9 (vf64_t value)
 {
   return (vec_iszerof64 (value));
 }
+#endif
 
 vb128_t
 test_vec_isfinitef128_PWR9 (__binary128 f128)
@@ -1437,3 +1440,4 @@ test_mul4uq_PWR9 (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui12
 }
 
 //#pragma GCC pop target
+

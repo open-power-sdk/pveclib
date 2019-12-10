@@ -91,6 +91,18 @@ __test_mulouw (vui32_t a, vui32_t b)
   return vec_mulouw (a, b);
 }
 
+vi64_t
+__test_mulesw (vi32_t a, vi32_t b)
+{
+  return vec_mulesw (a, b);
+}
+
+vi64_t
+__test_mulosw (vi32_t a, vi32_t b)
+{
+  return vec_mulosw (a, b);
+}
+
 vi32_t
 __test_mulhsw (vi32_t a, vi32_t b)
 {
@@ -296,8 +308,20 @@ __test_mulow (vui32_t vra, vui32_t vrb)
 #endif
 
 #if defined _ARCH_PWR7 && (__GNUC__ > 6)
+vi32_t
+__test_abssw (vi32_t vra)
+{
+  return vec_abs (vra);
+}
+
 vui32_t
 __test_mulluw (vui32_t vra, vui32_t vrb)
+{
+  return vec_mul (vra, vrb);
+}
+
+vi32_t
+__test_mullsw (vi32_t vra, vi32_t vrb)
 {
   return vec_mul (vra, vrb);
 }

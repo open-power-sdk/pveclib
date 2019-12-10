@@ -661,7 +661,7 @@ __test_splatd1 (vui64_t a)
   return vec_splat (a, 1);
 }
 
-#if (__GNUC__ > 7)
+#if (__GNUC__ > 7)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 
 vui64_t
 __test_mergee (vui64_t a, vui64_t b)

@@ -416,6 +416,336 @@ test_mrgeow (void)
 }
 //#undef __DEBUG_PRINT__
 
+//#define __DEBUG_PRINT__
+int
+test_mulesw (void)
+{
+  vi32_t i, j;
+  vi64_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mulesw Vector Multiply Even Signed words\n");
+
+  i = (vi32_t) {1, 2, 3, 4};
+  j = (vi32_t) {10, 20, 30, 40};
+  e = (vi64_t) {10, 90};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -2, 3, 4};
+  j = (vi32_t) {10, -20, 30, -40};
+  e = (vi64_t) {-10, 90};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -2, 3, 4};
+  j = (vi32_t) {-10, -20, -30, -40};
+  e = (vi64_t) {10, -90};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) {-1, -1, -1, -1};
+  e = (vi64_t) {1, 1};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) {-1,  1, -1,  1};
+  e = (vi64_t) {1, 1};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) { 1, -1,  1, -1};
+  e = (vi64_t) {-1, -1};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vi32_t) {99999999, -99999999, -99999999, 99999999};
+  e = (vi64_t) {9999999800000001LL, -9999999800000001LL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {88888888, 88888888, 88888888, 88888888};
+  j = (vi32_t) {88888888, -88888888, -88888888, 88888888};
+  e = (vi64_t) {7901234409876544LL, -7901234409876544LL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vi32_t) {88888888, -88888888, -88888888, 88888888};
+  e = (vi64_t) {8888888711111112LL, -8888888711111112LL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 0, 99999999, 0};
+  j = (vi32_t) {0, 99999999, 0, 99999999};
+  e = (vi64_t) {0UL, 0UL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {__INT_MAX__, __INT_MAX__, __INT_MAX__, __INT_MAX__};
+  j = (vi32_t) {__INT_MAX__, __INT_MAX__, -__INT_MAX__, __INT_MAX__};
+  e = (vi64_t) {4611686014132420609LL, -4611686014132420609LL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) { 0x80000000, 0x80000000, 0x80000000, 0x80000000};
+  j = (vi32_t) { 0x80000000, 0x80000000, __INT_MAX__, __INT_MAX__};
+  e = (vi64_t) { 0x4000000000000000LL, 0xc000000080000000LL};
+  k = vec_mulesw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulesw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulesw:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+//#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__
+int
+test_mulosw (void)
+{
+  vi32_t i, j;
+  vi64_t k, e;
+  int rc = 0;
+
+  printf ("\ntest_mulosw Vector Multiply Odd Signed words\n");
+
+  i = (vi32_t) {1, 2, 3, 4};
+  j = (vi32_t) {10, 20, 30, 40};
+  e = (vi64_t) {40, 160};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -2, 3, 4};
+  j = (vi32_t) {10, -20, 30, -40};
+  e = (vi64_t) {40, -160};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -2, 3, 4};
+  j = (vi32_t) {-10, -20, -30, -40};
+  e = (vi64_t) {40, -160};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) {-1, -1, -1, -1};
+  e = (vi64_t) {1, 1};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) {-1,  1, -1,  1};
+  e = (vi64_t) {-1, -1};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {-1, -1, -1, -1};
+  j = (vi32_t) { 1, -1,  1, -1};
+  e = (vi64_t) {1, 1};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vi32_t) {99999999, -99999999, -99999999, 99999999};
+  e = (vi64_t) {-9999999800000001LL, 9999999800000001LL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {88888888, 88888888, 88888888, 88888888};
+  j = (vi32_t) {88888888, -88888888, -88888888, 88888888};
+  e = (vi64_t) {-7901234409876544LL, 7901234409876544LL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 99999999, 99999999, 99999999};
+  j = (vi32_t) {88888888, -88888888, -88888888, 88888888};
+  e = (vi64_t) {-8888888711111112LL, 8888888711111112LL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {99999999, 0, 99999999, 0};
+  j = (vi32_t) {0, 99999999, 0, 99999999};
+  e = (vi64_t) {0UL, 0UL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) {__INT_MAX__, __INT_MAX__, __INT_MAX__, __INT_MAX__};
+  j = (vi32_t) {__INT_MAX__, -__INT_MAX__, -__INT_MAX__, __INT_MAX__};
+  e = (vi64_t) { -4611686014132420609LL, 4611686014132420609LL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t) { 0x80000000, 0x80000000, 0x80000000, 0x80000000};
+  j = (vi32_t) { 0x80000000, 0x80000000, __INT_MAX__, __INT_MAX__};
+  e = (vi64_t) { 0x4000000000000000LL, 0xc000000080000000LL};
+  k = vec_mulosw (i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32d  ("mulosw  ( ", (vui32_t)i);
+  print_vint32d  ("         ,", (vui32_t)j);
+  print_v2xint64 ("        )=", (vui64_t)k);
+#endif
+  rc += check_vuint128x ("vec_mulosw:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+//#undef __DEBUG_PRINT__
+
 int
 test_muleuw (void)
 {
@@ -791,6 +1121,8 @@ test_vec_i32 (void)
   rc += test_revbw ();
   rc += test_clzw ();
   rc += test_popcntw();
+  rc += test_mulesw();
+  rc += test_mulosw();
   rc += test_muleuw();
   rc += test_mulouw();
   rc += test_muluwm();

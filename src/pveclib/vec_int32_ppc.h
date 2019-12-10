@@ -385,6 +385,12 @@ example_convert_timebase (vui32_t *tb, vui32_t *timespec, int n)
  * \ref perf_data
  */
 
+///@cond INTERNAL
+static inline vui64_t vec_muleuw (vui32_t a, vui32_t b);
+static inline vui64_t vec_mulouw (vui32_t a, vui32_t b);
+static inline vi32_t vec_srawi (vi32_t vra, const unsigned int shb);
+///@endcond
+
 /** \brief Vector Absolute Difference Unsigned Word.
  *
  *  Compute the absolute difference for each word.
@@ -719,6 +725,16 @@ vec_mrgow (vui32_t vra, vui32_t vrb)
  * Multiple the even words of two vector signed int values and return
  * the signed long product of the even words.
  *
+ * For POWER8 and later we can use the vmulesw instruction.
+ * But for POWER7 and earlier we have to construct word multiplies
+ * from halfword multiplies. See vec_muleuw().
+ *
+ * Here we start with a unsigned vec_muleuw product, then correct the
+ * high 32-bits of the product to signed. Based on:
+ * Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ * Addison Wesley, 2013. Chapter 8 Multiplication, Section 8-3
+ * High-Order Product Signed from/to Unsigned.
+ *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
  * |power8   |   7   | 2/cycle  |
@@ -732,6 +748,8 @@ static inline vi64_t
 vec_mulesw (vi32_t a, vi32_t b)
 {
   vi64_t res;
+#ifdef _ARCH_PWR8
+  // The vector vmulosw/vmulesw instructions introduced in PRW8
 #if defined __GNUC__ && (__GNUC__ > 7)
   res = vec_mule (a, b);
 #else
@@ -746,6 +764,33 @@ vec_mulesw (vi32_t a, vi32_t b)
       "v" (b)
       : );
 #endif
+#else
+  // must be PWR7 or older
+  vui32_t uia, uib;
+  vui32_t amask, bmask, t1, t2, r;
+  vui64_t ui_prod;
+  const vui32_t zero= { 0,0,0,0};
+
+  uia = (vui32_t) a;
+  uib = (vui32_t) b;
+  // Generate 32-bit masks from the sign of each input word.
+  amask = (vui32_t) vec_srawi (a, 31);
+  bmask = (vui32_t) vec_srawi (b, 31);
+  // Extend the even masks to the right with zeros to form two 64-bit
+  // masks. We need the trailing zeros as the low 32-bits of the
+  // product are correct as-is and should not change.
+  amask = vec_mrgew (amask, zero);
+  bmask = vec_mrgew (bmask, zero);
+  // Compute the doubleword even unsigned word product
+  ui_prod = vec_muleuw (uia, uib);
+
+  // Generate t1 = amask & b and t2 = bmask & a
+  t1 = vec_and (amask, uib);
+  t2 = vec_and (bmask, uia);
+  // Apply the correction res = ui_prod - t1 - t2
+  r = vec_sub ((vui32_t) ui_prod, t1);
+  res = (vi64_t) vec_sub (r, t2);
+#endif
   return (res);
 }
 
@@ -753,6 +798,16 @@ vec_mulesw (vi32_t a, vi32_t b)
  *
  * Multiple the odd words of two vector signed int values and return
  * the signed long product of the odd words.
+ *
+ * For POWER8 and later we can use the vmulosw instruction.
+ * But for POWER7 and earlier we have to construct word multiplies
+ * from halfword multiplies. See vec_mulouw().
+ *
+ * Here we start with a unsigned vec_mulouw product, then correct the
+ * high-order 32-bits of the product to signed. Based on:
+ * Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ * Addison Wesley, 2013. Chapter 8 Multiplication, Section 8-3
+ * High-Order Product Signed from/to Unsigned.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -767,7 +822,9 @@ static inline vi64_t
 vec_mulosw (vi32_t a, vi32_t b)
 {
   vi64_t res;
-#if defined __GNUC__ && (__GNUC__ > 7)
+#ifdef _ARCH_PWR8
+  // The vector vmulosw/vmulesw instructions introduced in PRW8
+#if defined __GNUC__ && (__GNUC__ > 7) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   res = vec_mulo (a, b);
 #else
   __asm__(
@@ -781,6 +838,36 @@ vec_mulosw (vi32_t a, vi32_t b)
       "v" (b)
       : );
 #endif
+#else
+  // must be PWR7 or older
+  vui32_t uia, uib;
+  vui32_t amask, bmask, t1, t2, r;
+  vui64_t ui_prod;
+  const vui32_t zero= { 0,0,0,0};
+
+  // duplicate odd words to even
+  uia = (vui32_t) a;
+  uib = (vui32_t) b;
+  uia = vec_mrgow (uia, uia);
+  uib = vec_mrgow (uib, uib);
+  // Generate 32-bit masks from the sign of each input word.
+  amask = (vui32_t) vec_srawi ((vi32_t) uia, 31);
+  bmask = (vui32_t) vec_srawi ((vi32_t) uib, 31);
+  // Shift the odd masks to the left 32 and extend to the right with
+  // zeros to form two 64-bit masks. We need the trailing zeros as the
+  // low 32-bits of the product are correct as-is.
+  amask = vec_mrgow (amask, zero);
+  bmask = vec_mrgow (bmask, zero);
+  // Compute the doubleword odd unsigned word product
+  ui_prod = vec_mulouw (uia, uib);
+
+  // Generate t1 = amask & b and t2 = bmask & a
+  t1 = vec_and (amask, uib);
+  t2 = vec_and (bmask, uia);
+  // Apply the correction res = ui_prod - t1 - t2
+  r = vec_sub ((vui32_t) ui_prod, t1);
+  res = (vi64_t) vec_sub (r, t2);
+#endif
   return (res);
 }
 
@@ -788,6 +875,17 @@ vec_mulosw (vi32_t a, vi32_t b)
  *
  * Multiple the even words of two vector unsigned int values and return
  * the unsigned long product of the even words.
+ *
+ * For POWER8 and later we can use the vmuleuw instruction.
+ * But for POWER7 and earlier we have to construct word multiplies
+ * from two halfword multiplies (vmuleuh and vmulouh). Then sum the
+ * partial products for the final doubleword results. This is
+ * complicated the fact that vector add doubleword is not available
+ * for POWER7. So we need to construct the doubleword add from
+ * Vector Add Unsigned Word Modulo (vadduwm) and
+ * Vector Add and Write Carry-Out Unsigned Word (vaddcuw) with
+ * shift double quadword to reposition the low word carry and
+ * a final vadduwm to complete carry propagation the doubleword add.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -879,6 +977,17 @@ vec_muleuw (vui32_t a, vui32_t b)
  *
  * Multiple the odd words of two vector unsigned int values and return
  * the unsigned long product of the odd words.
+ *
+ * For POWER8 and later we can use the vmulouw instruction.
+ * But for POWER7 and earlier we have to construct word multiplies
+ * from two halfword multiplies (vmuleuh and vmulouh). Then sum the
+ * partial products for the final doubleword results. This is
+ * complicated the fact that vector add doubleword is not available
+ * for POWER7. So we need to construct the doubleword add from
+ * Vector Add Unsigned Word Modulo (vadduwm) and
+ * Vector Add and Write Carry-Out Unsigned Word (vaddcuw) with
+ * shift double quadword to reposition the low word carry and
+ * a final vadduwm to complete carry propagation the doubleword add.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|

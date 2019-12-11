@@ -29,6 +29,7 @@
 #include <math.h>
 
 #include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
 #include <pveclib/vec_f128_ppc.h>
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
@@ -1417,23 +1418,72 @@ test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11, vu
 void
 test_mul4uq_PWR9 (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l, vui128_t m2h, vui128_t m2l)
 {
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp, mq, mqhl;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1l, m2l);
   mp = vec_muludq (&mphl, m1h, m2l);
   mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphl, mc);
-  mp = vec_muludq (&mc, m2h, m1l);
+  mphl = vec_adduqm (mphl, mc);
+  mp = vec_muludq (&mqhl, m2h, m1l);
   mplh = vec_addcq (&mq, mplh, mp);
-  mphl = vec_addcq (&mc, mphl, mq);
+  mphl = vec_addeq (&mc, mphl, mqhl, mq);
   mp = vec_muludq (&mphh, m2h, m1h);
-  mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphh, mc);
+  mphl = vec_addcq (&mq, mphl, mp);
+  mphh = vec_addeuqm (mphh, mq, mc);
 
   mulu[0] = mpll;
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+void __attribute__((flatten ))
+#if 0
+test_vec_mul1024x1024_PWR9 (__VEC_U_2048* restrict r2048,
+				  __VEC_U_1024* restrict m1_1024,
+				  __VEC_U_1024* restrict m2_1024)
+#else
+test_vec_mul1024x1024_PWR9 (__VEC_U_2048* r2048,
+				  __VEC_U_1024* m1_1024,
+				  __VEC_U_1024* m2_1024)
+#endif
+{
+  __VEC_U_1024x512 subp0, subp1, subp2, subp3;
+  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512 temp[3];
+#if 0
+  __VEC_U_1024x512 * restrict pm1 = (__VEC_U_1024x512 *) m1_1024;
+  __VEC_U_1024x512 * restrict pm2 = (__VEC_U_1024x512 *) m2_1024;
+  __VEC_U_2048x512 * restrict pm2048 = (__VEC_U_2048x512 *) r2048;
+#else
+  __VEC_U_1024x512 * pm1 = (__VEC_U_1024x512 *) m1_1024;
+  __VEC_U_1024x512 * pm2 = (__VEC_U_1024x512 *) m2_1024;
+  __VEC_U_2048x512 * pm2048 = (__VEC_U_2048x512 *) r2048;
+#endif
+
+  subp0.x1024 = vec_mul512x512_inline (pm1->x2.v0x512, pm2->x2.v0x512);
+  pm2048->x4.v0x512 = subp0.x2.v0x512;
+
+  subp1.x1024 = vec_mul512x512_inline (pm1->x2.v1x512, pm2->x2.v0x512);
+  sum1.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
+
+  temp[0] = sum1.x2.v0x512;
+  temp[1] = vec_add512ze (subp1.x2.v1x512, sum1.x2.v1x128);
+  COMPILE_FENCE;
+
+  subp2.x1024 = vec_mul512x512_inline (pm1->x2.v0x512, pm2->x2.v1x512);
+  sum2.x640 = vec_add512cu (temp[0], subp2.x2.v0x512);
+  temp[2] = sum2.x2.v0x512;
+  pm2048->x4.v1x512 = temp[2];
+  sumx.x640 = vec_add512ecu (temp[1], subp2.x2.v1x512, sum2.x2.v1x128);
+  temp[1] = sumx.x2.v0x512;
+  COMPILE_FENCE;
+
+  subp3.x1024 = vec_mul512x512_inline (pm1->x2.v1x512, pm2->x2.v1x512);
+  sum3.x640 = vec_add512cu (sumx.x2.v0x512, subp3.x2.v0x512);
+  pm2048->x4.v2x512 = sum3.x2.v0x512;
+  pm2048->x4.v3x512 = vec_add512ze2 (subp3.x2.v1x512, sumx.x2.v1x128,
+				     sum3.x2.v1x128);
 }
 
 //#pragma GCC pop target

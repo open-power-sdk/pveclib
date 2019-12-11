@@ -653,7 +653,7 @@ test_vec_mul10uq_c (vui128_t *p, vui128_t a)
   return vec_mul10uq (a);
 }
 
-vui128_t
+vui128_t __attribute__((__target__("cpu=power9")))
 test_vec_mul10uq (vui128_t a)
 {
 	return vec_mul10uq (a);
@@ -905,18 +905,18 @@ void
 test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
 	     vui128_t m2h, vui128_t m2l)
 {
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp, mq, mqhl;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1l, m2l);
   mp = vec_muludq (&mphl, m1h, m2l);
   mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphl, mc);
-  mp = vec_muludq (&mc, m2h, m1l);
+  mphl = vec_adduqm (mphl, mc);
+  mp = vec_muludq (&mqhl, m2h, m1l);
   mplh = vec_addcq (&mq, mplh, mp);
-  mphl = vec_addcq (&mc, mphl, mq);
+  mphl = vec_addeq (&mc, mphl, mqhl, mq);
   mp = vec_muludq (&mphh, m2h, m1h);
-  mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphh, mc);
+  mphl = vec_addcq (&mq, mphl, mp);
+  mphh = vec_addeuqm (mphh, mq, mc);
 
   mulu[0] = mpll;
   mulu[1] = mplh;
@@ -936,14 +936,24 @@ example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
   /* Magic numbers for multiplicative inverse to divide by 10**16
    are 76624777043294442917917351357515459181, no corrective add,
    and shift right 51 bits.  */
+#if 0
   const vui128_t mul_invs_ten16 = (vui128_t) CONST_VINT128_DW(
       0x39a5652fb1137856UL, 0xd30baf9a1e626a6dUL);
+#else
+  const vui128_t mul_invs_ten16 = CONST_VUINT128_Qx19d(
+      7662477704329444291UL, 7917351357515459181UL);
+#endif
   const int shift_ten16 = 51;
-
+#if 0
   const vui128_t mul_ten32 = (vui128_t) (__int128) 100000000000000ll
       * (__int128) 1000000000000000000ll;
-  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(0UL,
-							 10000000000000000UL);
+  const vui128_t mul_ten16 = (vui128_t) CONST_VINT128_DW(0UL, 10000000000000000UL);
+#else
+  const vui128_t mul_ten32 =
+       CONST_VUINT128_Qx16d (10000000000000000UL, 0UL);
+  const vui128_t mul_ten16 =
+       CONST_VUINT128_Qx16d (0UL, 10000000000000000UL);
+#endif
 
   vui128_t tmpq, tmpr, tmpc, tmp;
 

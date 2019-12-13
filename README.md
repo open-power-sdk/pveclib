@@ -26,7 +26,7 @@ of useful vector and large number operations:
 
 It is likely sufficient to perform:
 
-    $ ./configure
+    $ ./configure  CFLAGS="-O3 -mcpu=power8"
     $ make
 
 and, optionally:

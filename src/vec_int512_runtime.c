@@ -113,11 +113,7 @@ __VEC_PWR_IMP (vec_mul1024x1024) (__VEC_U_2048* r2048,
 }
 
 void __attribute__((flatten ))
-#if 1
-__VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
-				  __VEC_U_2048* m1_2048,
-				  __VEC_U_2048* m2_2048)
-#else
+#if 0
 /* The Compiler team strongly suggested using  restrict here
  * but in practice (at least for GCC 8/9) we are better off without.
  * Waiting for a bug fix.
@@ -125,6 +121,10 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
 __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* restrict r4096,
 				  __VEC_U_2048* restrict m1_2048,
 				  __VEC_U_2048* restrict m2_2048)
+#else
+__VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
+				__VEC_U_2048* m1_2048,
+				__VEC_U_2048* m2_2048)
 #endif
   {
     __VEC_U_512 *p4096, *m1, *m2;

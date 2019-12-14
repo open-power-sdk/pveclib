@@ -25,8 +25,8 @@
  * \brief Source file for generating the dynamic IFUNC resolves for
  * Power Vector Library.
  *
- * The working assumption the base and highest supported platform
- * (-mcpu=) for Big/Little Endian can and should be different.
+ * The working assumption is that the base and highest supported
+ * platform (-mcpu=) for Big/Little Endian can and should be different.
  *
  * The base platform for Big Endian is POWER7 as the first
  * implementation of Vector Scalar Extended (VXS). The highest
@@ -78,8 +78,7 @@
 
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-/* Not BIG Endian, lets call the whole thing off.
-   LITTLE Endian requires power8 or later.  */
+// POWER7 supports only BIG Endian. So declare PWR7 externs only for BE.
 
 extern __VEC_U_256
 vec_mul128x128_PWR7 (vui128_t, vui128_t);
@@ -119,8 +118,8 @@ extern void
 vec_mul2048x2048_PWR8 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-/* Not LITTLE Endian, lets call the whole thing off.
-   Older distros running Big Endian are unlikely to support PWR9.  */
+/* Older distros running Big Endian are unlikely to support PWR9.
+ * So declare PWR9 externs only for LE.  */
 
 extern __VEC_U_256
 vec_mul128x128_PWR9 (vui128_t, vui128_t);
@@ -156,7 +155,7 @@ static
 __VEC_U_512
 (*resolve_vec_mul256x256 (void))(__VEC_U_256, __VEC_U_256)
 {
-  VEC_DYN_RESOLVER( vec_mul256x256);
+  VEC_DYN_RESOLVER(vec_mul256x256);
 }
 
 __VEC_U_512

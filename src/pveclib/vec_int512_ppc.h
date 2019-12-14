@@ -323,8 +323,8 @@
  *
  * We need a mechanism to limit (set boundaries) on code motion
  * while preserving optimization over smaller blocks of code.
- * This normally called a <I>compiler fence</I> but there are multiple
- * definitions so we need to be careful what we use.
+ * This is normally called a <I>compiler fence</I> but there are
+ * multiple definitions so we need to be careful what we use.
  *
  * We want something that will prevent the compiler from moving
  * instructions (in either direction) across specified
@@ -1619,7 +1619,7 @@ typedef union
  *  and code motion to smaller code blocks. This in turn reduces
  *  register pressure and avoids generating spill code.
  */
-#if 0
+#if 1
 #define COMPILE_FENCE __asm (";":::)
 #else
 #define COMPILE_FENCE __asm ("nop":::)

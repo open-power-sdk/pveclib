@@ -21,8 +21,7 @@
  */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-/* Not BIG Endian, lets call the whole thing off.
-   LITTLE Endian requires power8 or later.  */
+// POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
 #pragma GCC target ("cpu=power7")
 
 #include "vec_int512_runtime.c"

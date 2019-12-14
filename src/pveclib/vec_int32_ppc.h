@@ -880,12 +880,13 @@ vec_mulosw (vi32_t a, vi32_t b)
  * But for POWER7 and earlier we have to construct word multiplies
  * from two halfword multiplies (vmuleuh and vmulouh). Then sum the
  * partial products for the final doubleword results. This is
- * complicated the fact that vector add doubleword is not available
+ * complicated by the fact that vector add doubleword is not available
  * for POWER7. So we need to construct the doubleword add from
  * Vector Add Unsigned Word Modulo (vadduwm) and
  * Vector Add and Write Carry-Out Unsigned Word (vaddcuw) with
  * shift double quadword to reposition the low word carry and
- * a final vadduwm to complete carry propagation the doubleword add.
+ * a final vadduwm to complete the carry propagation for the
+ * doubleword add.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|
@@ -982,12 +983,13 @@ vec_muleuw (vui32_t a, vui32_t b)
  * But for POWER7 and earlier we have to construct word multiplies
  * from two halfword multiplies (vmuleuh and vmulouh). Then sum the
  * partial products for the final doubleword results. This is
- * complicated the fact that vector add doubleword is not available
+ * complicated by the fact that vector add doubleword is not available
  * for POWER7. So we need to construct the doubleword add from
  * Vector Add Unsigned Word Modulo (vadduwm) and
  * Vector Add and Write Carry-Out Unsigned Word (vaddcuw) with
  * shift double quadword to reposition the low word carry and
- * a final vadduwm to complete carry propagation the doubleword add.
+ * a final vadduwm to complete the carry propagation for the doubleword
+ * add.
  *
  * |processor|Latency|Throughput|
  * |--------:|:-----:|:---------|

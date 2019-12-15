@@ -5,8 +5,14 @@ noinst_LTLIBRARIES = libvecdummy.la
 #Any runtime and const tables needed by pveclib functions 
 lib_LTLIBRARIES = libpvec.la
 
-libpvec_la_SOURCES = tipowof10.c decpowof2.c
+libpvec_la_SOURCES = tipowof10.c decpowof2.c \
+	vec_runtime_PWR9.c \
+	vec_runtime_PWR8.c \
+	vec_runtime_PWR7.c \
+	vec_runtime_DYN.c
+
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
+	testsuite/vec_int512_dummy.c \
 	testsuite/vec_int64_dummy.c \
 	testsuite/vec_int32_dummy.c \
 	testsuite/vec_int16_dummy.c \
@@ -40,6 +46,7 @@ pveclibinclude_HEADERS = \
 	pveclib/vec_f128_ppc.h \
 	pveclib/vec_f64_ppc.h \
 	pveclib/vec_f32_ppc.h \
+	pveclib/vec_int512_ppc.h \
 	pveclib/vec_int128_ppc.h \
 	pveclib/vec_int64_ppc.h \
 	pveclib/vec_int32_ppc.h \
@@ -64,10 +71,12 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_print.c \
 	testsuite/vec_perf_f64.c \
 	testsuite/vec_perf_f32.c \
+	testsuite/vec_perf_i512.c \
 	testsuite/vec_perf_i128.c \
 	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
+	testsuite/arith128_test_i512.c \
 	testsuite/arith128_test_i128.c \
 	testsuite/arith128_test_i64.c \
 	testsuite/arith128_test_i32.c \
@@ -82,11 +91,13 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_f32.h \
 	testsuite/arith128_test_f64.h \
 	testsuite/arith128_test_i128.h \
+	testsuite/arith128_test_i512.h \
 	testsuite/arith128_test_i16.h \
 	testsuite/arith128_test_i32.h \
 	testsuite/arith128_test_i64.h \
 	testsuite/vec_perf_f32.h \
 	testsuite/vec_perf_f64.h \
+	testsuite/vec_perf_i512.h \
 	testsuite/vec_perf_i128.h
 	
 pveclib_test_LDADD = .libs/libpvec.a .libs/libvecdummy.a

@@ -33,6 +33,7 @@
 #include <pveclib/vec_int128_ppc.h>
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_i128.h>
+#include <testsuite/arith128_test_i512.h>
 #include <testsuite/arith128_test_i64.h>
 #include <testsuite/arith128_test_i32.h>
 #include <testsuite/arith128_test_i16.h>
@@ -71,6 +72,9 @@ main (void)
 #endif
 #if 1
   rc += test_vec_f128 ();
+#endif
+#if 1
+  rc += test_vec_i512 ();
 #endif
 
   if (rc > 0)

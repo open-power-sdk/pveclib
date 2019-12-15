@@ -653,7 +653,11 @@ test_vec_mul10uq_c (vui128_t *p, vui128_t a)
   return vec_mul10uq (a);
 }
 
-vui128_t
+/* This does not work because the target is applied after the CPP
+ * platform specific have been applied based on the command line
+ * =mcpu=<target>.
+ * Keep this example as a warning. */
+vui128_t __attribute__((__target__("cpu=power9")))
 test_vec_mul10uq (vui128_t a)
 {
 	return vec_mul10uq (a);
@@ -905,18 +909,18 @@ void
 test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
 	     vui128_t m2h, vui128_t m2l)
 {
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp, mq, mqhl;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1l, m2l);
   mp = vec_muludq (&mphl, m1h, m2l);
   mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphl, mc);
-  mp = vec_muludq (&mc, m2h, m1l);
+  mphl = vec_adduqm (mphl, mc);
+  mp = vec_muludq (&mqhl, m2h, m1l);
   mplh = vec_addcq (&mq, mplh, mp);
-  mphl = vec_addcq (&mc, mphl, mq);
+  mphl = vec_addeq (&mc, mphl, mqhl, mq);
   mp = vec_muludq (&mphh, m2h, m1h);
-  mplh = vec_addcq (&mc, mplh, mp);
-  mphl = vec_addcuq (mphh, mc);
+  mphl = vec_addcq (&mq, mphl, mp);
+  mphh = vec_addeuqm (mphh, mq, mc);
 
   mulu[0] = mpll;
   mulu[1] = mplh;

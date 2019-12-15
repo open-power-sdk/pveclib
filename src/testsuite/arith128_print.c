@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <float.h>
 #define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
@@ -678,6 +679,41 @@ print_vint256 (char *prefix, vui128_t val0_128, vui128_t val1_128)
 }
 
 void
+print_vuint512x (char *prefix, vui128_t val0_128, vui128_t val1_128, vui128_t val2_128, vui128_t val3_128)
+{
+  vui32_t val0 = (vui32_t) val0_128;
+  vui32_t val1 = (vui32_t) val1_128;
+  vui32_t val2 = (vui32_t) val2_128;
+  vui32_t val3 = (vui32_t) val3_128;
+  int i;
+  int len = strlen (prefix);
+  char pad[64];
+
+  len = (len < 64) ? len : 63;
+  for (i=0; i < len; i++)
+    pad [i] = ' ';
+
+  pad [len] = 0;
+
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[3], val0[2], val0[1], val0[0],
+	  val1[3], val1[2], val1[1], val1[0]);
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", pad,
+	  val2[3], val2[2], val2[1], val2[0],
+	  val3[3], val3[2], val3[1], val3[0]);
+#else
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[0], val0[1], val0[2], val0[3],
+	  val1[0], val1[1], val1[2], val1[3]);
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", pad,
+	  val2[3], val2[2], val2[1], val2[0],
+	  val3[3], val3[2], val3[1], val3[0]);
+#endif
+}
+
+void
 print_vb128c (char *prefix, vb128_t val)
 {
   const vui64_t true = { 'T', 'T' };
@@ -766,6 +802,88 @@ print_vint128_prod (char *prefix, vui32_t r, vui32_t a, vui32_t b, vui32_t c)
   print_vint128 ("  b = ", (vui128_t) b);
   print_vint128 (" *u = ", (vui128_t) c);
   print_vint128 (" *l = ", (vui128_t) r);
+}
+
+void
+print_vint512x (char *prefix, __VEC_U_512 r)
+{
+  printf ("vec %s\n", prefix);
+
+  vui32_t val0 = (vui32_t) r.vx3;
+  vui32_t val1 = (vui32_t) r.vx2;
+  vui32_t val2 = (vui32_t) r.vx1;
+  vui32_t val3 = (vui32_t) r.vx0;
+  int i;
+  int len = strlen (prefix);
+  char pad[64];
+
+  len = (len < 64) ? len : 63;
+  for (i=0; i < len; i++)
+    pad [i] = ' ';
+
+  pad [len] = 0;
+
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[3], val0[2], val0[1], val0[0],
+	  val1[3], val1[2], val1[1], val1[0]);
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", pad,
+	  val2[3], val2[2], val2[1], val2[0],
+	  val3[3], val3[2], val3[1], val3[0]);
+#else
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", prefix,
+	  val0[0], val0[1], val0[2], val0[3],
+	  val1[0], val1[1], val1[2], val1[3]);
+  printf ("%s%08x%08x%08x%08x %08x%08x%08x%08x\n", pad,
+	  val2[3], val2[2], val2[1], val2[0],
+	  val3[3], val3[2], val3[1], val3[0]);
+#endif
+}
+
+void
+print_vint640x (char *prefix, __VEC_U_640 r)
+{
+  printf ("vec %s\n", prefix);
+  print_vint128x ("  =rh ", (vui128_t) r.vx4);
+  print_vint128x ("      ", (vui128_t) r.vx3);
+  print_vint128x ("      ", (vui128_t) r.vx2);
+  print_vint128x ("      ", (vui128_t) r.vx1);
+  print_vint128x ("   rl ", (vui128_t) r.vx0);
+}
+
+void
+print_vint512x_prod (char *prefix, __VEC_U_512 r, __VEC_U_256 a, __VEC_U_256 b)
+{
+  printf ("vec %s\n", prefix);
+  print_vint128x ("  a   ", (vui128_t) a.vx1);
+  print_vint128x ("      ", (vui128_t) a.vx0);
+  print_vint128x (" *b   ", (vui128_t) b.vx1);
+  print_vint128x ("      ", (vui128_t) b.vx0);
+  print_vint128x ("  =rh ", (vui128_t) r.vx3);
+  print_vint128x ("      ", (vui128_t) r.vx2);
+  print_vint128x ("      ", (vui128_t) r.vx1);
+  print_vint128x ("   rl ", (vui128_t) r.vx0);
+}
+
+void
+print_vint256x_prod (char *prefix, __VEC_U_256 r, vui128_t a, vui128_t b)
+{
+  printf ("vec %s\n", prefix);
+  print_vint128x ("  a * ", (vui128_t) a);
+  print_vint128x ("  b = ", (vui128_t) b);
+  print_vint128x (" *rh= ", (vui128_t) r.vx1);
+  print_vint128x (" *rl= ", (vui128_t) r.vx0);
+}
+
+void
+print_vint256_prod (char *prefix, __VEC_U_256 r, vui128_t a, vui128_t b)
+{
+  printf ("vec %s\n", prefix);
+  print_vint128 ("  a * ", (vui128_t) a);
+  print_vint128 ("  b = ", (vui128_t) b);
+  print_vint128 (" *rh= ", (vui128_t) r.vx1);
+  print_vint128 (" *rl= ", (vui128_t) r.vx0);
 }
 
 void
@@ -932,6 +1050,26 @@ check_vint384_priv (char *prefix, vui128_t val0_128, vui128_t val1_128,
       printf ("%s\n", prefix);
       print_vint384 ("\tshould be: ", sb0_128, sb1_128, sb2_128);
       print_vint384 ("\t       is: ", val0_128, val1_128, val2_128);
+    }
+
+  return (rc);
+}
+
+int
+check_vint512_priv (char *prefix, __VEC_U_512 val_is, __VEC_U_512 val_sb)
+{
+  int rc = 0;
+  if (vec_any_ne ((vui32_t) val_is.vx0, (vui32_t) val_sb.vx0)
+   || vec_any_ne ((vui32_t) val_is.vx1, (vui32_t) val_sb.vx1)
+   || vec_any_ne ((vui32_t) val_is.vx2, (vui32_t) val_sb.vx2)
+   || vec_any_ne ((vui32_t) val_is.vx3, (vui32_t) val_sb.vx3))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_vuint512x ("    should be: ", val_sb.vx3, val_sb.vx2, val_sb.vx1,
+		       val_sb.vx0);
+      print_vuint512x ("           is: ", val_is.vx3, val_is.vx2, val_is.vx1,
+		       val_is.vx0);
     }
 
   return (rc);

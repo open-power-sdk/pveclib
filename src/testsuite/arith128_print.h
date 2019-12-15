@@ -25,6 +25,7 @@
 
 #include "arith128.h"
 #include <pveclib/vec_f128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
 
 static inline
 double
@@ -182,6 +183,21 @@ print_vint128_prod (char *prefix,
     vui32_t r, vui32_t a, vui32_t b, vui32_t c);
 
 extern void
+print_vint512x (char *prefix, __VEC_U_512 r);
+
+extern void
+print_vint640x (char *prefix, __VEC_U_640 r);
+
+extern void
+print_vint512x_prod (char *prefix, __VEC_U_512 r, __VEC_U_256 a, __VEC_U_256 b);
+
+extern void
+print_vint256x_prod (char *prefix, __VEC_U_256 r, vui128_t a, vui128_t b);
+
+extern void
+print_vint256_prod (char *prefix, __VEC_U_256 r, vui128_t a, vui128_t b);
+
+extern void
 print_vint128_extend (char *prefix,
     vui32_t r, vui32_t co, vui32_t a, vui32_t b, vui32_t c);
 
@@ -331,6 +347,9 @@ check_vint384_priv (char *prefix, vui128_t val0_128, vui128_t val1_128,
                     vui128_t val2_128, vui128_t sb0_128, vui128_t sb1_128,
                     vui128_t sb2_128);
 
+extern int
+check_vint512_priv (char *prefix, __VEC_U_512 val_is, __VEC_U_512 val_sb);
+
 static inline int
 check_vint384 (char *prefix, vui128_t val0_128, vui128_t val1_128,
                vui128_t val2_128, vui128_t sb0_128, vui128_t sb1_128,
@@ -357,6 +376,21 @@ check_vint256 (char *prefix, vui128_t val0_128, vui128_t val1_128,
   ||  vec_any_ne ((vui32_t)val1_128, (vui32_t)sb1_128))
     {
       rc = check_vint256_priv (prefix, val0_128, val1_128, sb0_128, sb1_128);
+    }
+
+  return (rc);
+}
+
+static inline int
+check_vint512 (char *prefix, __VEC_U_512 val_is, __VEC_U_512 val_sb)
+{
+  int rc = 0;
+  if (vec_any_ne ((vui32_t) val_is.vx0, (vui32_t) val_sb.vx0)
+   || vec_any_ne ((vui32_t) val_is.vx1, (vui32_t) val_sb.vx1)
+   || vec_any_ne ((vui32_t) val_is.vx2, (vui32_t) val_sb.vx2)
+   || vec_any_ne ((vui32_t) val_is.vx3, (vui32_t) val_sb.vx3))
+    {
+      rc = check_vint512_priv (prefix, val_is, val_sb);
     }
 
   return (rc);

@@ -24,11 +24,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#if 0
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
-#endif
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_common_ppc.h>
@@ -42,12 +37,13 @@
 #include <testsuite/vec_perf_i512.h>
 
 
-const __VEC_U_512 vec512_zeros = {
-    (vui128_t) ((unsigned __int128) 0),
-    (vui128_t) ((unsigned __int128) 0),
-    (vui128_t) ((unsigned __int128) 0),
-    (vui128_t) ((unsigned __int128) 0)
-};
+const __VEC_U_512 vec512_zeros =
+    {
+	(vui128_t) ((unsigned __int128) 0),
+	(vui128_t) ((unsigned __int128) 0),
+	(vui128_t) ((unsigned __int128) 0),
+	(vui128_t) ((unsigned __int128) 0)
+    };
 
 const __VEC_U_512 vec512_one = CONST_VINT512_Q
     (
@@ -162,7 +158,7 @@ const __VEC_U_512 vec512_ten1024_6 = CONST_VINT512_Q
 	CONST_VUINT128_QxW (0x00000000, 0x00000325, 0xD9D61A05, 0xD4305D94),
 	CONST_VUINT128_QxW (0x34F4A3C6, 0x2D433949, 0xAE6209D4, 0x926C3F5B),
 	CONST_VUINT128_QxW (0xD2DB49EF, 0x47187094, 0xC1A6970C, 0xA7E6BD2A)
-);
+    );
 
 const __VEC_U_512 vec512_ten1024_5 = CONST_VINT512_Q
     (
@@ -170,7 +166,7 @@ const __VEC_U_512 vec512_ten1024_5 = CONST_VINT512_Q
 	CONST_VUINT128_QxW (0x005B8041, 0x1640114A, 0x88BC491B, 0x9FC4ED52),
 	CONST_VUINT128_QxW (0x0190FBA0, 0x35FAABA6, 0xC356E38A, 0x31B5653F),
 	CONST_VUINT128_QxW (0x44597583, 0x6CB0B6C9, 0x75A351A2, 0x8E4262CE)
-);
+    );
 
 const __VEC_U_512 vec512_ten1024_4 = CONST_VINT512_Q
     (
@@ -178,7 +174,7 @@ const __VEC_U_512 vec512_ten1024_4 = CONST_VINT512_Q
 	CONST_VUINT128_QxW (0xFC8F1F90, 0x31EB0F66, 0x9A202882, 0x80BDA5A5),
 	CONST_VUINT128_QxW (0x80D98089, 0xDC1A47FE, 0x6B7595FB, 0x101A3616),
 	CONST_VUINT128_QxW (0xB6F4654B, 0x31FB6BFD, 0xF56DEEEC, 0xB1B896BC)
-);
+    );
 
 const __VEC_U_512 vec512_ten1024_3 = CONST_VINT512_Q
     (
@@ -186,7 +182,7 @@ const __VEC_U_512 vec512_ten1024_3 = CONST_VINT512_Q
 	CONST_VUINT128_QxW (0x8AD822A5, 0x1ABE1DE3, 0x045B7A74, 0x8E1042C4),
 	CONST_VUINT128_QxW (0x62BE695A, 0x9F9F2A07, 0xA7E89431, 0x922BBB9F),
 	CONST_VUINT128_QxW (0xC9635986, 0x1C5CD134, 0xF451218B, 0x65DC60D7)
-);
+    );
 
 const __VEC_U_512 vec512_ten1024_2 = CONST_VINT512_Q
     (
@@ -194,7 +190,7 @@ const __VEC_U_512 vec512_ten1024_2 = CONST_VINT512_Q
 	CONST_VUINT128_QxW (0x7DE16CFB, 0x896634EE, 0x0ED1440E, 0xCC2CD819),
 	CONST_VUINT128_QxW (0x4C7D1E1A, 0x140AC535, 0x15C51A88, 0x991C4E87),
 	CONST_VUINT128_QxW (0x1EC29F86, 0x6E7C215B, 0xF55B2B72, 0x2919F001)
-);
+    );
 
 const __VEC_U_512 vec512_ten1024_1 = CONST_VINT512_Q
     (

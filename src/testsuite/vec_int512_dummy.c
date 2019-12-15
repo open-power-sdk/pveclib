@@ -244,7 +244,6 @@ __VEC_PWR_IMP (test_mulu512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   __VEC_U_1024 result;
   vui128_t mc, mp, mq;
   __VEC_U_640 mp3, mp2, mp1, mp0;
-#if 1
 
   mp0 = test_mul512x128_inline (m1, m2.vx0);
   result.vx0 = mp0.vx0;
@@ -273,32 +272,6 @@ __VEC_PWR_IMP (test_mulu512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   result.vx5 = vec_addeq (&mq, mp3.vx2, result.vx5, mp);
   result.vx6 = vec_addeq (&mp, mp3.vx3, result.vx6, mq);
   result.vx7 = vec_addeuqm (result.vx7, mp3.vx4, mp);
-#else
-  mp0 = test_muluq512x128_inline_PWR9 (m1, m2.vx0);
-  result.vx0 = mp0.vx0;
-  result.vx1 = mp0.vx1;
-  result.vx2 = mp0.vx2;
-  result.vx3 = mp0.vx3;
-  result.vx4 = mp0.vx4;
-  mp1 = test_muluq512x128_inline_PWR9 (m1, m2.vx1);
-  result.vx1 = vec_addcq (&mq, mp1.vx0, result.vx1);
-  result.vx2 = vec_addeq (&mp, mp1.vx1, result.vx2, mq);
-  result.vx3 = vec_addeq (&mq, mp1.vx2, result.vx3, mp);
-  result.vx4 = vec_addeq (&mp, mp1.vx3, result.vx4, mq);
-  result.vx5 = vec_addcq (&result.vx6, mp1.vx4, mp);
-  mp2 = test_muluq512x128_inline_PWR9 (m1, m2.vx2);
-  result.vx2 = vec_addcq (&mq, mp2.vx0, result.vx2);
-  result.vx3 = vec_addeq (&mp, mp2.vx1, result.vx3, mq);
-  result.vx4 = vec_addeq (&mq, mp2.vx2, result.vx4, mp);
-  result.vx5 = vec_addeq (&mp, mp2.vx3, result.vx5, mq);
-  result.vx6 = vec_addeq (&result.vx7, mp2.vx4, result.vx6, mp);
-  mp3 = test_muluq512x128_inline_PWR9 (m1, m2.vx3);
-  result.vx3 = vec_addcq (&mq, mp3.vx0, result.vx3);
-  result.vx4 = vec_addeq (&mp, mp3.vx1, result.vx4, mq);
-  result.vx5 = vec_addeq (&mq, mp3.vx2, result.vx5, mp);
-  result.vx6 = vec_addeq (&mp, mp3.vx3, result.vx6, mq);
-  result.vx7 = vec_addeuqm (mp3.vx4, result.vx7, mp);
-#endif
   return result;
 #endif
 }

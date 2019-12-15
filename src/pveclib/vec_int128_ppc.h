@@ -2071,7 +2071,7 @@ int
 vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq((vui64_t)vra, (vui64_t)vrb);
 #else
   result = vec_all_eq((vui32_t)vra, (vui32_t)vrb);
@@ -2225,7 +2225,7 @@ int
 vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
@@ -2255,7 +2255,7 @@ int
 vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
@@ -2393,7 +2393,7 @@ int
 vec_cmpuq_all_ne (vui128_t vra, vui128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);

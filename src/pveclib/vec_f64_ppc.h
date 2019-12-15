@@ -246,7 +246,7 @@ static inline int
 vec_all_isfinitef64 (vf64_t vf64)
 {
   vui64_t tmp;
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x70);
@@ -289,7 +289,7 @@ vec_all_isinff64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x30);
@@ -335,7 +335,7 @@ vec_all_isnanf64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
@@ -382,7 +382,7 @@ vec_all_isnormalf64 (vf64_t vf64)
 {
   vui64_t tmp;
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x7f);
 #else
@@ -426,7 +426,7 @@ vec_all_issubnormalf64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x03);
@@ -474,7 +474,7 @@ vec_all_iszerof64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x0c);

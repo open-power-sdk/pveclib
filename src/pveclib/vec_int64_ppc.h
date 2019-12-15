@@ -1435,7 +1435,7 @@ int
 vec_cmpsd_all_eq (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq(a, b);
 #else
   result = vec_all_eq((vui32_t)a, (vui32_t)b);
@@ -1465,7 +1465,7 @@ int
 vec_cmpsd_all_ge (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1497,7 +1497,7 @@ int
 vec_cmpsd_all_gt (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1576,7 +1576,7 @@ int
 vec_cmpsd_all_ne (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1607,7 +1607,7 @@ int
 vec_cmpsd_any_eq (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_eq(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1639,7 +1639,7 @@ int
 vec_cmpsd_any_ge (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1671,7 +1671,7 @@ int
 vec_cmpsd_any_gt (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1750,7 +1750,7 @@ int
 vec_cmpsd_any_ne (vi64_t a, vi64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1781,7 +1781,7 @@ int
 vec_cmpud_all_eq (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq(a, b);
 #else
   result = vec_all_eq((vui32_t)a, (vui32_t)b);
@@ -1811,7 +1811,7 @@ int
 vec_cmpud_all_ge (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1843,7 +1843,7 @@ int
 vec_cmpud_all_gt (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1922,7 +1922,7 @@ int
 vec_cmpud_all_ne (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1953,7 +1953,7 @@ int
 vec_cmpud_any_eq (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_eq(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -1985,7 +1985,7 @@ int
 vec_cmpud_any_ge (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_ge(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -2017,7 +2017,7 @@ int
 vec_cmpud_any_gt (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_gt(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};
@@ -2096,7 +2096,7 @@ int
 vec_cmpud_any_ne (vui64_t a, vui64_t b)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6)
+#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_any_ne(a, b);
 #else
   vui32_t wt = { -1, -1, -1, -1};

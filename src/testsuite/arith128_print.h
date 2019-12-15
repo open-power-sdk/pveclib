@@ -457,7 +457,7 @@ static inline int
 check_v2b64x (char *prefix, vb64_t val128, vb64_t shouldbe)
 {
   int rc = 0;
-  if (vec_any_ne((vui64_t )val128, (vui64_t )shouldbe))
+  if (vec_cmpud_any_ne((vui64_t )val128, (vui64_t )shouldbe))
     {
       rc = check_v2b64x_priv (prefix, val128, shouldbe);
     }
@@ -660,4 +660,5 @@ print_dfp128p2 (char *prefix, _Decimal128 val128, long exp);
 
 
 #endif /* TESTSUITE_ARITH128_PRINT_H_ */
+
 

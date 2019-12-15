@@ -31,12 +31,13 @@
  * The base platform for Big Endian is POWER7 as the first
  * implementation of Vector Scalar Extended (VXS). The highest
  * supported platform is POWER8.
- * Distros supporting Big Endian are older and usual restricted to
+ * Distros supporting Big Endian are older and usually restricted to
  * POWER8 Compatibility mode when running on POWER9 hardware.
  *
  * The base platform for Little Endian is POWER8 as the first
- * officially supported LE platform. The highest supported platform
- * is is currently POWER9.  All the latest Distros are Little Endian.
+ * officially supported LE platform for POWER. The highest supported
+ * platform is is currently POWER9.  All the latest Distros are
+ * Little Endian.
  *
  * We depend on the compiler and runtime (GLIBC 2.23) to support
  * __builtin_cpu_is() in the resolver function.

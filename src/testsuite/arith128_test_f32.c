@@ -1797,7 +1797,7 @@ test_float_iszero (void)
 #undef __DEBUG_PRINT__
 
 
-#define TIME_10_ITERATION 10
+#define TIMING_ITERATIONS 10
 
 int
 test_time_f32 (void)
@@ -1809,7 +1809,7 @@ test_time_f32 (void)
 
   printf ("\n%s is_f32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_is_f32 ();
     }
@@ -1823,7 +1823,7 @@ test_time_f32 (void)
 
   printf ("\n%s fpclassify_f32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_fpclassify_f32 ();
     }

@@ -5932,7 +5932,7 @@ test_avguq (void)
 }
 #undef __DEBUG_PRINT__
 
-#define TIME_10_ITERATION 10
+#define TIMING_ITERATIONS 10
 
 int
 test_time_i128 (void)
@@ -5944,7 +5944,7 @@ test_time_i128 (void)
 
   printf ("\n%s mul10uq start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_mul10uq ();
     }
@@ -5958,7 +5958,7 @@ test_time_i128 (void)
 
   printf ("\n%s cmul10ecuq start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_cmul10ecuq ();
     }
@@ -5972,7 +5972,7 @@ test_time_i128 (void)
 
   printf ("\n%s mulluq start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_mulluq ();
     }
@@ -5986,7 +5986,7 @@ test_time_i128 (void)
 
   printf ("\n%s muludq start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_muludq ();
     }
@@ -6000,7 +6000,7 @@ test_time_i128 (void)
 
   printf ("\n%s muludqx start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_muludqx ();
     }
@@ -6014,7 +6014,7 @@ test_time_i128 (void)
 
   printf ("\n%s longdiv_e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_longdiv_e32 ();
     }
@@ -6028,7 +6028,7 @@ test_time_i128 (void)
 
   printf ("\n%s longbcdcf_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_longbcdcf_10e32 ();
     }
@@ -6042,7 +6042,7 @@ test_time_i128 (void)
 
   printf ("\n%s longbcdct_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_longbcdct_10e32 ();
     }
@@ -6056,7 +6056,7 @@ test_time_i128 (void)
 
   printf ("\n%s cfmaxdouble_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_cfmaxdouble_10e32 ();
     }
@@ -6070,7 +6070,7 @@ test_time_i128 (void)
 
   printf ("\n%s ctmaxdouble_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_ctmaxdouble_10e32 ();
     }

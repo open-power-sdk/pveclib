@@ -208,7 +208,7 @@ const __VEC_U_512 vec512_ten1024_0 = CONST_VINT512_Q
       (vui128_t) ((unsigned __int128) 0)
     );
 
-#define TIME_10_ITERATION 10
+#define TIMING_ITERATIONS 10
 
 int
 test_time_i512 (void)
@@ -220,7 +220,7 @@ test_time_i512 (void)
 
   printf ("\n%s mul512x512 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_mul512x512 ();
     }
@@ -234,7 +234,7 @@ test_time_i512 (void)
 
   printf ("\n%s mul1024x1024 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_mul1024x1024 ();
     }
@@ -248,7 +248,7 @@ test_time_i512 (void)
 
   printf ("\n%s mul2048x2048 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIME_10_ITERATION; i++)
+  for (i = 0; i < TIMING_ITERATIONS; i++)
     {
       rc += timed_mul2048x2048 ();
     }

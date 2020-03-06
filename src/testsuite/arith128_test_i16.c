@@ -454,6 +454,73 @@ test_mrgahlh (void)
 }
 
 int
+test_vmadduh (void)
+{
+  vui16_t i, j, k;
+  vui32_t l, e;
+  int rc = 0;
+
+  printf ("\ntest_vmadduh Vector Multiply-Add Even/Odd Halfwords\n");
+
+  i = (vui16_t) CONST_VINT16_H(0xffff, 0xffff, 0xffff, 0xffff,
+			       10000, 10000, 9999, 9999);
+  j = (vui16_t) CONST_VINT16_H(0xffff, 10000, 9999, 0xffff,
+			       0xffff, 9999, 10000, 0xffff);
+  k = (vui16_t) { 0, 0, 0, 0, 0, 0, 0, 0 };
+  l = vec_vmaddeuh (i, j, k);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x (" vmaddeuh ", i);
+  print_vint16x ("        * ", j);
+  print_vint16x ("        + ", k);
+  print_vint32x ("        = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0xfffe0001, 0x270ed8f1,
+				0x270fd8f0, 99990000);
+  rc += check_vuint128x ("vec_vmaddeuh 1:", (vui128_t) l, (vui128_t) e);
+
+  l = vec_vmaddouh (i, j, k);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x (" vmaddouh ", i);
+  print_vint16x ("        * ", j);
+  print_vint16x ("        + ", k);
+  print_vint32x ("        = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0x270fd8f0, 0xfffe0001,
+				99990000, 0x270ed8f1);
+  rc += check_vuint128x ("vec_vmaddouh 2:", (vui128_t) l, (vui128_t) e);
+
+  k = (vui16_t) { 0xffff, 10000, 9999, 0x0000,
+                  0x0000, 9999, 10000, 0xffff };
+  l = vec_vmaddeuh (i, j, k);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x (" vmaddeuh ", i);
+  print_vint16x ("        * ", j);
+  print_vint16x ("        + ", k);
+  print_vint32x ("        = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0xffff0000, 0x270f0000,
+				0x270fd8f0, 100000000);
+  rc += check_vuint128x ("vec_vmaddeuh 3:", (vui128_t) l, (vui128_t) e);
+
+  l = vec_vmaddouh (i, j, k);
+
+#ifdef __DEBUG_PRINT__
+  print_vint16x (" vmaddouh ", i);
+  print_vint16x ("        * ", j);
+  print_vint16x ("        + ", k);
+  print_vint32x ("        = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0x27100000, 0xfffe0001,
+				99999999, 0x270fd8f0);
+  rc += check_vuint128x ("vec_vmaddouh 4:", (vui128_t) l, (vui128_t) e);
+
+  return (rc);
+}
+
+int
 test_vec_i16 (void)
 {
   int rc = 0;
@@ -468,6 +535,7 @@ test_vec_i16 (void)
   rc += test_mulhuh();
   rc += test_mulhsh();
   rc += test_muluhm();
+  rc += test_vmadduh();
 #endif
   return (rc);
 }

@@ -1347,7 +1347,7 @@ vec_vmsumuwm (vui32_t a, vui32_t b, vui64_t c);
 
 /** \brief Vector Multiply Even Unsigned words.
  *
- * Multiple the even words of two vector unsigned int values and return
+ * Multiply the even words of two vector unsigned int values and return
  * the unsigned long product of the even words.
  *
  * For POWER8 and later we can use the vmuleuw instruction.
@@ -1453,7 +1453,7 @@ vec_vmuleuw (vui32_t vra, vui32_t vrb)
 
 /** \brief Vector Multiply Odd Unsigned Words.
  *
- * Multiple the odd words of two vector unsigned int values and return
+ * Multiply the odd words of two vector unsigned int values and return
  * the unsigned long product of the odd words.
  *
  * For POWER8 and later we can use the vmulouw instruction.

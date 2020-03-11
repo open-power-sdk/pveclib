@@ -2452,6 +2452,51 @@ vec_mrgod (vui64_t __VA, vui64_t __VB)
   return (result);
 }
 
+/** \brief \copybrief vec_int128_ppc.h::vec_msumudm()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_msumudm()
+ * as it requires vec_adduqm().
+ */
+static inline vui128_t
+vec_msumudm (vui64_t a, vui64_t b, vui128_t c);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_muleud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_muleud()
+ * as it requires vec_vmuleud and vec_adduqm().
+ */
+static inline vui128_t
+vec_muleud (vui64_t a, vui64_t b);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_mulhud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_mulhud()
+ * as it requires vec_vmuleud() and vec_vmuloud().
+ */
+static inline vui64_t
+vec_mulhud (vui64_t vra, vui64_t vrb);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_muloud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_muloud()
+ * as it requires vec_vmuloud() and vec_adduqm().
+ */
+static inline vui128_t
+vec_muloud (vui64_t a, vui64_t b);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_muludm()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_muludm()
+ * as it requires vec_vmuleud() and vec_vmuloud().
+ */
+static inline vui64_t
+vec_muludm (vui64_t vra, vui64_t vrb);
+
 /** \brief Vector doubleword paste.
  *  Concatenate the high doubleword of the 1st vector with the
  *  low double word of the 2nd vector.
@@ -3037,6 +3082,78 @@ vec_swapd (vui64_t vra)
   return (result);
 }
 
+/** \brief \copybrief vec_int128_ppc.h::vec_vmadd2eud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmadd2eud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmaddeud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmaddeud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmaddeud (vui64_t a, vui64_t b, vui64_t c);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmadd2oud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmadd2oud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmadd2oud (vui64_t a, vui64_t b, vui64_t c, vui64_t d);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmaddoud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmaddoud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmaddoud (vui64_t a, vui64_t b, vui64_t c);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmuleud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmuleud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmuleud (vui64_t a, vui64_t b);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmuloud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmuloud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmuloud (vui64_t a, vui64_t b);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmsumeud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmsumeud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c);
+
+/** \brief \copybrief vec_int128_ppc.h::vec_vmsumoud()
+ *
+ * \note this implementation exists in
+ * \ref vec_int128_ppc.h::vec_vmsumoud()
+ * as it requires vec_msumudm() and vec_adduqm().
+ */
+static inline vui128_t
+vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
+
 /** \brief Vector Pack Unsigned Doubleword Unsigned Modulo.
  *
  *  The doubleword source is the concatination of vra and vrb.
@@ -3364,6 +3481,144 @@ vec_xxspltd (vui64_t vra, const int ctl)
   return (result);
 }
 
+/** \brief Vector Multiply-Add Even Unsigned Words.
+ *
+ *  Multiply the even 32-bit Words of vector unsigned int
+ *  values (a * b) and return sums of the unsigned 64-bit product and
+ *  the even 32-bit words of c
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) + EXTZ(c<SUB>even</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 64 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   9   | 2/cycle  |
+ *  |power9   |   9   | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned int.
+ *  @param b 128-bit vector unsigned int.
+ *  @param c 128-bit vector unsigned int.
+ *  @return vector unsigned long int sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + EXTZ(c<SUB>even</SUB>).
+ */
+static inline vui64_t
+vec_vmaddeuw (vui32_t a, vui32_t b, vui32_t c)
+{
+  const vui32_t zero = { 0, 0, 0, 0 };
+  vui64_t res;
+  vui32_t c_euw = vec_mrgahw ((vui64_t) zero, (vui64_t) c);
+  res = vec_vmuleuw (a, b);
+  return vec_addudm (res, (vui64_t) c_euw);
+}
+
+/** \brief Vector Multiply-Add2 Even Unsigned Words.
+ *
+ *  Multiply the even 32-bit Words of vector unsigned int
+ *  values (a * b) and return sums of the unsigned 64-bit product and
+ *  the even 32-bit words of c and d
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
+ *  EXTZ(c<SUB>even</SUB> + EXTZ(d<SUB>even</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 64 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   9   | 1/cycle  |
+ *  |power9   |   9   | 1/cycle  |
+ *
+ *  @param a 128-bit vector unsigned int.
+ *  @param b 128-bit vector unsigned int.
+ *  @param c 128-bit vector unsigned int.
+ *  @param d 128-bit vector unsigned int.
+ *  @return vector unsigned long int sum (a<SUB>even</SUB> * b<SUB>even</SUB>) +
+ *  EXTZ(c<SUB>even</SUB>) + EXTZ(d<SUB>even</SUB>).
+ */
+static inline vui64_t
+vec_vmadd2euw (vui32_t a, vui32_t b, vui32_t c, vui32_t d)
+{
+  const vui32_t zero = { 0, 0, 0, 0 };
+  vui64_t res, sum;
+  vui32_t c_euw = vec_mrgahw ((vui64_t) zero, (vui64_t) c);
+  vui32_t d_euw = vec_mrgahw ((vui64_t) zero, (vui64_t) d);
+  res = vec_vmuleuw (a, b);
+  sum = vec_addudm ( (vui64_t) c_euw, (vui64_t) d_euw);
+  return vec_addudm (res, sum);
+}
+
+/** \brief Vector Multiply-Add Odd Unsigned Words.
+ *
+ *  Multiply the odd 32-bit Words of vector unsigned int
+ *  values (a * b) and return sums of the unsigned 64-bit product and
+ *  the odd 32-bit words of c
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + EXTZ(c<SUB>odd</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 64 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   9   | 2/cycle  |
+ *  |power9   |   9   | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned int.
+ *  @param b 128-bit vector unsigned int.
+ *  @param c 128-bit vector unsigned int.
+ *  @return vector unsigned long int sum (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + EXTZ(c<SUB>odd</SUB>).
+ */
+static inline vui64_t
+vec_vmaddouw (vui32_t a, vui32_t b, vui32_t c)
+{
+  const vui32_t zero = { 0, 0, 0, 0 };
+  vui64_t res;
+  vui32_t c_ouw = vec_mrgalw ((vui64_t) zero, (vui64_t) c);
+  res = vec_vmulouw (a, b);
+  return vec_addudm (res, (vui64_t) c_ouw);
+}
+
+/** \brief Vector Multiply-Add2 Odd Unsigned Words.
+ *
+ *  Multiply the odd 32-bit Words of vector unsigned int
+ *  values (a * b) and return sums of the unsigned 64-bit product and
+ *  the odd 32-bit words of c and d
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) +
+ *  EXTZ(c<SUB>odd</SUB> + EXTZ(d<SUB>odd</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 64 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   9   | 1/cycle  |
+ *  |power9   |   9   | 1/cycle  |
+ *
+ *  @param a 128-bit vector unsigned int.
+ *  @param b 128-bit vector unsigned int.
+ *  @param c 128-bit vector unsigned int.
+ *  @param d 128-bit vector unsigned int.
+ *  @return vector unsigned long int sum (a<SUB>odd</SUB> * b<SUB>odd</SUB>) +
+ *  EXTZ(c<SUB>odd</SUB> + EXTZ(d<SUB>odd</SUB>).
+ */
+static inline vui64_t
+vec_vmadd2ouw (vui32_t a, vui32_t b, vui32_t c, vui32_t d)
+{
+  const vui32_t zero = { 0, 0, 0, 0 };
+  vui64_t res, sum;
+  vui32_t c_ouw = vec_mrgalw ((vui64_t) zero, (vui64_t) c);
+  vui32_t d_ouw = vec_mrgalw ((vui64_t) zero, (vui64_t) d);
+  res = vec_vmulouw (a, b);
+  sum = vec_addudm ((vui64_t) c_ouw, (vui64_t) d_ouw);
+  return vec_addudm (res, sum);
+}
+
 /** \brief Vector Multiply-Sum Unsigned Word Modulo
  *
  *  Multiply the unsigned word elements of vra and vrb, internally
@@ -3386,8 +3641,8 @@ vec_xxspltd (vui64_t vra, const int ctl)
  *  @param vrb 128-bit vector unsigned int.
  *  @param vrc 128-bit vector unsigned long.
  *  @return vector of doubleword elements where each is the sum of
- *  the even and odd product of the vra and vrb,
- *  plus the doubleword elements of vrc.
+ *  the even and odd adjacent products of the vra and vrb,
+ *  plus the corresponding doubleword element of vrc.
  */
 static inline vui64_t
 vec_vmsumuwm (vui32_t vra, vui32_t vrb, vui64_t vrc)

@@ -566,6 +566,39 @@ __test_cmpleud (vui64_t a, vui64_t b)
 }
 
 vui64_t
+__test_vmaddeuw (vui32_t a, vui32_t b, vui32_t c)
+{
+  return vec_vmaddeuw (a, b, c);
+}
+
+vui64_t
+__test_vmaddouw (vui32_t a, vui32_t b, vui32_t c)
+{
+  return vec_vmaddouw (a, b, c);
+}
+
+vui64_t
+__test_vmadd2euw (vui32_t a, vui32_t b, vui32_t c, vui32_t d)
+{
+  return vec_vmadd2euw (a, b, c, d);
+}
+
+vui64_t
+__test_vmadd2ouw (vui32_t a, vui32_t b, vui32_t c, vui32_t d)
+{
+  return vec_vmadd2ouw (a, b, c, d);
+}
+
+vui64_t
+__test_vmadduw (vui32_t a, vui32_t b, vui32_t c)
+{
+  vui64_t ep, op;
+  ep = vec_vmaddeuw (a, b, c);
+  op = vec_vmaddouw (a, b, c);
+  return vec_addudm (ep, op);
+}
+
+vui64_t
 __test_vmuludm (vui64_t vra, vui64_t vrb)
 {
   vui64_t s32 = (vui64_t) { 32, 32 };

@@ -1976,12 +1976,10 @@ vec_bcdaddesqm (vBCD_t a, vBCD_t b, vBCD_t c)
  *  |power8   |166-176|1/19 cycle|
  *  |power9   |  37   |1/26 cycle|
  *
- *  @param vrb a 128-bit vector as an signed __int128
+ *  @param vrb vector signed __int128
  *  number in the range -9999999999999999999999999999999 to
  *  +9999999999999999999999999999999.
- *  @return 128-bit vector signed BCD value in
- *  the range -9999999999999999999999999999999 to
- *  +9999999999999999999999999999999.
+ *  @return vector signed BCD value.
  */
 static inline vBCD_t
 vec_bcdcfsq (vi128_t vrb)
@@ -4997,7 +4995,6 @@ vec_signbit_bcdsq (vBCD_t vra)
  *  |power8   |   2   | 1/cycle  |
  *  |power9   |   3   | 1/cycle  |
  *
- *  @param lval Vector of doublewords (long int).
  *  @param lval FPR pair containing a _Decimal128.
  *  @return FPR pair containing a _Decimal128.
  */

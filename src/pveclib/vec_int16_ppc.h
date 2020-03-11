@@ -79,7 +79,13 @@
  * - Commonly used operations, not covered by the ABI or
  * <altivec.h>, and require multiple instructions or
  * are not obvious.
- * Examples include the multiply high and shift immediate operations.
+ * Examples include the multiply-add, multiply-high and shift immediate
+ * operations.
+ *
+ * \section i16_recent_additions Recent Additions
+ *
+ * Added vec_vmaddeuh() and vec_vmaddouh() as an optimization for
+ * the vector multiply quadword implementations on POWER7.
  *
  * \section i16_endian_issues_0_0 Endian problems with halfword operations
  *
@@ -1060,6 +1066,78 @@ vec_srahi (vi16_t vra, const unsigned int shb)
     }
 
   return (vi16_t) result;
+}
+
+/** \brief Vector Multiply-Add Even Unsigned Halfwords.
+ *
+ *  Multiply the even 16-bit Words of vector unsigned short
+ *  values (a * b) and return sums of the unsigned 32-bit product and
+ *  the even 16-bit halfwords of c
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) + EXTZ(c<SUB>even</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 32 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 9-18  | 2/cycle  |
+ *  |power9   | 9-16  | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned short.
+ *  @param b 128-bit vector unsigned short.
+ *  @param c 128-bit vector unsigned short.
+ *  @return vector unsigned int sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + EXTZ(c<SUB>even</SUB>).
+ */
+static inline vui32_t
+vec_vmaddeuh (vui16_t a, vui16_t b, vui16_t c)
+{
+  const vui16_t zero = { 0, 0, 0, 0,  0, 0, 0, 0 };
+  vui32_t res;
+  vui16_t c_euh = vec_mrgahh ((vui32_t) zero, (vui32_t) c);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  res = vec_vmulouh (a, b);
+#else
+  res = vec_vmuleuh (a, b);
+#endif
+  return vec_vadduwm (res, (vui32_t) c_euh);
+}
+
+/** \brief Vector Multiply-Add Odd Unsigned Halfwords.
+ *
+ *  Multiply the odd 16-bit Halfwords of vector unsigned short
+ *  values (a * b) and return sums of the unsigned 32-bit product and
+ *  the odd 16-bit halfwords of c
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + EXTZ(c<SUB>odd</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 32 bit sums can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 9-18  | 2/cycle  |
+ *  |power9   | 9-16  | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned short.
+ *  @param b 128-bit vector unsigned short.
+ *  @param c 128-bit vector unsigned short.
+ *  @return vector unsigned int sum (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + EXTZ(c<SUB>odd</SUB>).
+ */
+static inline vui32_t
+vec_vmaddouh (vui16_t a, vui16_t b, vui16_t c)
+{
+  const vui16_t zero = { 0, 0, 0, 0,  0, 0, 0, 0 };
+  vui32_t res;
+  vui16_t c_ouh = vec_mrgalh ((vui32_t) zero, (vui32_t) c);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  res = vec_vmuleuh (a, b);
+#else
+  res = vec_vmulouh (a, b);
+#endif
+  return vec_vadduwm (res, (vui32_t) c_ouh);
 }
 
 /** \brief Vector Merge Even Halfwords.

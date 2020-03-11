@@ -78,6 +78,17 @@ test_mrgow (vui32_t a, vui32_t b)
   return vec_mrgow (a, b);
 }
 
+vui64_t
+__test_vmuleuw (vui32_t a, vui32_t b)
+{
+  return vec_vmuleuw (a, b);
+}
+
+vui64_t
+__test_vmulouw (vui32_t a, vui32_t b)
+{
+  return vec_vmulouw (a, b);
+}
 
 vui64_t
 __test_muleuw (vui32_t a, vui32_t b)

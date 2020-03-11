@@ -67,23 +67,32 @@
 *
 *  \subsection mainpage_ref_docs Reference Documentation
 *
-*  - Power Instruction Set Architecture, Versions 2.06B, 2.07B and 3.0B,
-*  IBM, 2010-2017. http://www.power.org
-*  and more recently from
-*  https://www-355.ibm.com/systems/power/openpower/
-*  - ALTIVEC PIM: AltiVecTM Technology Programming Interface Manual,
+*  - Power Instruction Set Architecture, Versions
+*  <a href="https://ibm.ent.box.com/s/jd5w15gz301s5b5dt375mshpq9c3lh4u">
+*  2.07B</a> and
+*  <a href="https://ibm.ent.box.com/s/1hzcwkwf8rbju5h9iyf44wm94amnlcrv">
+*  3.0B</a>,
+*  IBM, 2013-2017. Available from the
+*  <a href="https://www-355.ibm.com/systems/power/openpower/">
+*  IBM Portal for OpenPOWER</a> under the <B>Public Documents</B> tab.
+*   - Publicly available PowerISA docs for older processors are hard
+*   to find. But here is a link to
+*   <a href="http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=995FB78240B0A62F1629AB3454C3DFB7?doi=10.1.1.175.7365&rep=rep1&type=pdf">
+*   PowerISA-2.06B</a> for POWER7.
+*  - <a href="http://www.freescale.com/files/32bit/doc/ref_manual/ALTIVECPIM.pdf">
+*  ALTIVEC PIM</a>: AltiVecTM Technology Programming Interface Manual,
 *  Freescale Semiconductor, 1999.
-*  http://www.freescale.com/files/32bit/doc/ref_manual/ALTIVECPIM.pdf
-*  - 64-bit PowerPC ELF Application Binary Interface Supplement 1.9.
-*  http://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html
-*  - OpenPOWER ELF V2 application binary interface (ABI), OpenPOWER Foundation, 2017.
-*  https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture
-*  - Using the GNU Compiler Collection (GCC), Free Software Foundation, 1988-2018.
-*  https://gcc.gnu.org/onlinedocs/
-*  - POWER8 Processor User’s Manual for the Single-Chip Module
-*  https://ibm.ent.box.com/s/649rlau0zjcc0yrulqf4cgx5wk3pgbfk
-*  - POWER9 Processor User’s Manual
-*  https://ibm.ent.box.com/s/8uj02ysel62meji4voujw29wwkhsz6a4
+*  - <a href="http://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html">
+*  64-bit PowerPC ELF Application Binary Interface (ABI)</a> Supplement 1.9.
+*  - <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/leabi-20170510.pdf">
+*  OpenPOWER ELF V2 application binary interface (ABI)</a>,
+*  OpenPOWER Foundation, 2017.
+*  - <a href="https://gcc.gnu.org/onlinedocs/">
+*  Using the GNU Compiler Collection (GCC)</a>, Free Software Foundation, 1988-2018.
+*  - <a href="https://ibm.ent.box.com/s/649rlau0zjcc0yrulqf4cgx5wk3pgbfk">
+*  POWER8 Processor User’s Manual</a> for the Single-Chip Module.
+*  - <a href="https://ibm.ent.box.com/s/8uj02ysel62meji4voujw29wwkhsz6a4">
+*  POWER9 Processor User’s Manual</a>.
 *  -  Warren, Henry S. Jr, Hacker's Delight, 2nd Edition, Upper Saddle River, NJ:
 *  Addison Wesley, 2013.
 *

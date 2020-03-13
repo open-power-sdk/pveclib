@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <pveclib/vec_int128_ppc.h>
+#include "arith128.h"
+#include <testsuite/arith128_print.h>
 
 vui128_t
 __test_msumudm (vui64_t a, vui64_t b, vui128_t c)
@@ -814,9 +816,68 @@ __test_vmuleud (vui64_t a, vui64_t b)
 }
 
 vui128_t
+__test_vmsumoud (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_vmsumoud (a, b, c);
+}
+
+vui128_t
+__test_vmsumeud (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_vmsumeud (a, b, c);
+}
+
+vui128_t
+__test_vmaddoud (vui64_t a, vui64_t b, vui64_t c)
+{
+  return vec_vmaddoud (a, b, c);
+}
+
+vui128_t
+__test_vmadd2oud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  return vec_vmadd2oud (a, b, c, d);
+}
+
+vui128_t
+__test_vmaddeud (vui64_t a, vui64_t b, vui64_t c)
+{
+  return vec_vmaddeud (a, b, c);
+}
+
+vui128_t
+__test_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  return vec_vmadd2eud (a, b, c, d);
+}
+
+vui128_t
 __test_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 {
   return (vec_muludq (mulu, a, b));
+}
+
+vui128_t
+__test_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  return vec_madduq (mulu, a, b, c);
+}
+
+vui128_t
+__test_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c, vui128_t d)
+{
+  return vec_madd2uq (mulu, a, b, c, d);
+}
+
+vui128_t
+__test_madduq_x (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  vui128_t ph, pl, cl;
+  pl = vec_muludq (&ph, a, b);
+  pl = vec_adduqm (pl, c);
+  cl = vec_addcuq (pl, c);
+  *mulu = vec_adduqm (ph, cl);
+  return (pl);
 }
 
 vui128_t
@@ -926,6 +987,70 @@ test_mul4uq (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define __MDX(__index) (__index)
+#define __NDX(__index) (__index)
+#define __PDX(__index) (__index)
+#else
+#define __NDX(__index) ((nx - 1) - (__index))
+#define __MDX(__index) ((mx - 1) - (__index))
+#define __PDX(__index) ((px - 1) - (__index))
+#endif
+void
+test_mul128_MN (vui128_t *p, vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N)
+{
+  vui128_t *mp = m1;
+  vui128_t *np = m2;
+  unsigned long mx = M;
+  unsigned long nx = N;
+  unsigned long px = M+N;
+  unsigned long i, j;
+  vui128_t mpx0, mqx0, mpx1, mqx1;
+
+  /* sizeof(m1) < sizeof(m2) swap the pointers and quadword counts.
+   * This allows for early exit when size of either is 1. */
+  if (mx < nx)
+    {
+      vui128_t *xp;
+      unsigned long x;
+
+      x = mx;
+      xp = mp;
+      mx = nx;
+      mp = np;
+      nx = x;
+      np = xp;
+    }
+
+//  printf ("MXD(0)=%lu, NDX(0)=%lu, PDX(0)=%lu\n", __MDX(0), __NDX(0), __PDX(0));
+  mpx0 = vec_muludq (&mqx0, mp[__MDX(0)], np[__NDX(0)]);
+  p[__PDX(0)] = mpx0;
+  for ( i=1; i < mx; i++ )
+    {
+      mpx1 = vec_madduq (&mqx1, mp[__MDX(i)], np[__NDX(0)], mqx0);
+      p[__PDX(i)] = mpx1;
+      mqx0 = mqx1;
+//      printf ("MXD(i)=%lu, NDX(0)=%lu, PDX(i)=%lu\n", __MDX(i), __NDX(0), __PDX(i));
+    }
+  p[__PDX(mx)] = mqx0;
+//  printf ("PDX(mx)=%lu\n", __PDX(mx));
+
+  for  ( j=1; j < nx; j++ )
+    {
+      mpx0 = vec_madduq (&mqx0, mp[__MDX(0)], np[__NDX(j)], p[__PDX(j)]);
+      p[__PDX(j)] = mpx0;
+      for ( i=1; i < mx; i++ )
+        {
+          mpx1 = vec_madd2uq (&mqx1, mp[__MDX(i)], np[__NDX(j)], mqx0, p[__PDX(i+j)]);
+          p[__PDX(i+j)] = mpx1;
+          mqx0 = mqx1;
+        }
+      p[__PDX(mx+j)] = mqx0;
+    }
+
 }
 
 void

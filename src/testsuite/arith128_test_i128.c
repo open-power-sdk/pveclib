@@ -2386,6 +2386,169 @@ test_muludq (void)
   return (rc);
 }
 
+#define test_vec_madduq(_l, _i, _j, _m)	vec_madduq(_l, _i, _j, _m)
+#define test_vec_madd2uq(_l, _i, _j, _m, _n)	vec_madd2uq(_l, _i, _j, _m, _n)
+
+int
+test_madduq (void)
+{
+  vui32_t i, j, k, l, m, n;
+  vui32_t e, ec;
+  int rc = 0;
+
+  printf ("\ntest_madduq Vector Multiply-Add Unsigned Quadword, 256-bit Sum\n");
+
+  i = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = (vui32_t) test_vec_madduq((vui128_t* )&l, (vui128_t)i, (vui128_t)j, (vui128_t)m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**96-1 * 2**96-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0xfffffffe, 0x00000000, 0x00000000, 0x00000001);
+  ec = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000000, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madduq 1:", (vui128_t) l, (vui128_t) k, (vui128_t) ec,
+                       (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  k = (vui32_t) test_vec_madduq((vui128_t* )&l, (vui128_t)i, (vui128_t)j, (vui128_t)m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**96-1 * 2**96-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0xffffffff, 0x00000000, 0x00000000, 0x00000000);
+  ec = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000000, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madduq 2:", (vui128_t) l, (vui128_t) k, (vui128_t) ec,
+                       (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  k = (vui32_t) test_vec_madduq((vui128_t* )&l, (vui128_t)i, (vui128_t)j, (vui128_t)m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**96-1 * 2**96-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0xfffffffe, 0x00000000, 0x00000000, 0x00000000);
+  ec = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000001, 0x00000000, 0x00000000);
+  rc += check_vint256 ("vec_madduq 3:", (vui128_t) l, (vui128_t) k, (vui128_t) ec,
+                       (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = (vui32_t) test_vec_madduq((vui128_t* )&l, (vui128_t)i, (vui128_t)j, (vui128_t)m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**128-1 * 2**128-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000000, 0x00000000, 0x00000001);
+  ec = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe);
+  rc += check_vint256 ("vec_madduq 4:", (vui128_t) l, (vui128_t) k, (vui128_t) ec,
+                       (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  k = (vui32_t) test_vec_madduq((vui128_t* )&l, (vui128_t)i, (vui128_t)j, (vui128_t)m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**128-1 * 2**128-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ec = (vui32_t)CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madduq 5:", (vui128_t) l, (vui128_t) k, (vui128_t) ec,
+                       (vui128_t) e);
+
+  i = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  n = (vui32_t)
+	CONST_VINT32_W(0, 0, 0, 0);
+  k = (vui32_t) test_vec_madd2uq((vui128_t* )&l, (vui128_t )i, (vui128_t )j,
+				 (vui128_t )m, (vui128_t )n);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**128-1 * 2**128-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)
+	CONST_VINT32_W(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ec = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madd2uq 1:", (vui128_t) l, (vui128_t) k,
+		       (vui128_t) ec, (vui128_t) e);
+  i = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  n = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  k = (vui32_t) test_vec_madd2uq((vui128_t* )&l, (vui128_t )i, (vui128_t )j,
+				 (vui128_t )m, (vui128_t )n);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**128-1 * 2**128-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  ec = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madd2uq 2:", (vui128_t) l, (vui128_t) k,
+		       (vui128_t) ec, (vui128_t) e);
+
+  i = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  n = (vui32_t)
+	CONST_VINT32_W(0, 0, 0, 0);
+  k = (vui32_t) test_vec_madd2uq((vui128_t* )&l, (vui128_t )i, (vui128_t )j,
+				 (vui128_t )m, (vui128_t )n);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**96-1 * 2**96-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0x00000000, 0x00000000, 0x00000000);
+  ec = (vui32_t)
+	CONST_VINT32_W(0x00000000, 0x00000000, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madd2uq 3:", (vui128_t) l, (vui128_t) k,
+		       (vui128_t) ec, (vui128_t) e);
+
+  i = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  j = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  m = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  n = (vui32_t)
+	CONST_VINT32_W(0, 0xffffffff, 0xffffffff, 0xffffffff);
+  k = (vui32_t) test_vec_madd2uq((vui128_t* )&l, (vui128_t )i, (vui128_t )j,
+				 (vui128_t )m, (vui128_t )n);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128_prod ("2**96-1 * 2**96-1 ", k, i, j, l);
+#endif
+  e = (vui32_t)
+	CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  ec = (vui32_t)
+	CONST_VINT32_W(0x00000000, 0x00000000, 0xffffffff, 0xffffffff);
+  rc += check_vint256 ("vec_madd2uq 4:", (vui128_t) l, (vui128_t) k,
+		       (vui128_t) ec, (vui128_t) e);
+
+  return (rc);
+}
+
 
 //#define __DEBUG_PRINT__ 2
 int
@@ -9806,6 +9969,7 @@ test_vec_i128 (void)
   rc += test_mulluq ();
   rc += test_mulhuq ();
   rc += test_muludq ();
+  rc += test_madduq ();
 
   rc += test_msumudm ();
 

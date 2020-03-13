@@ -89,6 +89,98 @@ __test_vmuleud_PWR9 (vui64_t a, vui64_t b)
 }
 
 vui128_t
+__test_vmsumoud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_vmsumoud (a, b, c);
+}
+
+vui128_t
+__test_vmsumeud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_vmsumeud (a, b, c);
+}
+
+vui128_t
+__test_vmaddoud_PWR9 (vui64_t a, vui64_t b, vui64_t c)
+{
+  return vec_vmaddoud (a, b, c);
+}
+
+vui128_t
+__test_vmaddeud_PWR9 (vui64_t a, vui64_t b, vui64_t c)
+{
+  return vec_vmaddeud (a, b, c);
+}
+
+vui128_t
+__test_vmadd2oud_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  return vec_vmadd2oud (a, b, c, d);
+}
+
+vui128_t
+__test_vmadd2oud_x_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  /* msumudm provides 2 x DW muliplies and 3 way 128-bit sum of the
+   * two products and the addend c.
+   * We want the 3 way 128-bit sum of one DW multiply and two DW
+   * addends c and d ((A.odd * B.odd) + D.odd + C.odd).
+   * So we convert the inputs to compute:
+   * (A.odd * B.odd) + (1 * D.odd) + C.odd which executes
+   * in the single msumudm.
+   */
+  const vui64_t one =  CONST_VINT64_DW ( 0, 1 );
+  vui64_t admrg = vec_mrgald ((vui128_t) d, (vui128_t) a);
+  vui64_t b1mrg = vec_mrgald ((vui128_t) one, (vui128_t) b);
+  /* The high (even) DW of one is zero so only 1 QW const is needed.
+   * Effectively vec_mrgald ((vui128_t) zero, (vui128_t) c). */
+  vui64_t c_oud = vec_pasted ( one, c);
+  return vec_msumudm(admrg, b1mrg, (vui128_t) c_oud);
+}
+
+vui128_t
+__test_vmadd2eud_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  return vec_vmadd2eud (a, b, c, d);
+}
+
+vui128_t
+__test_vmadd2eud_x_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  /* msumudm provides 2 x DW muliplies and 3 way 128-bit sum of the
+   * two products and the addend c.
+   * We want the 3 way 128-bit sum of one DW multiply and two DW
+   * addends c and d ((A.even * B,even) + D.even + C.even).
+   * So we convert the inputs to compute:
+   * (A.even * B.even) + (D.even * 1) + C.even which executes
+   * in the single msumudm.
+   */
+  const vui64_t one =  CONST_VINT64_DW ( 0, 1 );
+  vui64_t admrg = vec_mrgahd ((vui128_t) a, (vui128_t) d);
+  vui64_t b1mrg = vec_pasted ( b, one);
+  vui64_t c_eud = vec_mrgahd ((vui128_t) one, (vui128_t) c);
+  return vec_msumudm(admrg, b1mrg, (vui128_t) c_eud);
+}
+
+vui128_t
+__test_vmadd2ud_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  vui128_t e, o;
+  e = vec_vmadd2eud (a, b, c, d);
+  o = vec_vmadd2oud (a, b, c, d);
+  return vec_adduqm (e, o);
+}
+
+vui128_t
+__test_vmadd2ud_x_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  vui128_t e, o;
+  e = __test_vmadd2eud_x_PWR9 (a, b, c, d);
+  o = __test_vmadd2oud_x_PWR9 (a, b, c, d);
+  return vec_adduqm (e, o);
+}
+
+vui128_t
 __test_mulhuq_PWR9 (vui128_t a, vui128_t b)
 {
   return vec_mulhuq (a, b);
@@ -104,6 +196,241 @@ vui128_t
 __test_muludq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
 {
   return vec_muludq (mulh, a, b);
+}
+
+vui128_t
+__test_muludq_x_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  /* compute the 256 bit product of two 128 bit values a, b.
+   * The high 128 bits are accumulated in t and the low 128-bits
+   * in tmq. The high 128-bits of the product are returned to the
+   * address of the 1st parm. The low 128-bits are the return
+   * value.
+   */
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t t0l, tc1;
+  vui128_t thh, thl, tlh, tll;
+  /* multiply the low 64-bits of a and b.  For PWR9 this is just
+   * vmsumudm with conditioned inputs.  */
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  thl = vec_vmuloud (a_swap, (vui64_t)b);
+  tlh = vec_vmuleud (a_swap, (vui64_t)b);
+  /* sum the two middle products (plus the high 64-bits of the low
+   * product.  This will generate a carry that we need to capture.  */
+  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  tc1 = vec_addcuq (thl, tlh);
+  tx   = vec_adduqm (thl, tlh);
+  tx   = vec_adduqm (tx, t0l);
+  /* result = t[l] || tll[l].  */
+  tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
+  /* Sum the high product plus the high sum (with carry) of middle
+   * partial products.  This can't overflow.  */
+  thq = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) tx, 2);
+  thq = vec_adduqm ( thh, thq);
+
+  *mulu = (vui128_t) thq;
+  return ((vui128_t) tlq);
+}
+
+vui128_t
+__test_muludq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  vui32_t t, tmq;
+  /* compute the 256 bit product of two 128 bit values a, b.
+   * The high 128 bits are accumulated in t and the low 128-bits
+   * in tmq. The high 128-bits of the product are returned to the
+   * address of the 1st parm. The low 128-bits are the return
+   * value.
+   */
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t tmh, tab, tba, tb0, tc1, tc2;
+  /* multiply the low 64-bits of a and b.  For PWR9 this is just
+   * vmsumudm with conditioned inputs.  */
+  tmq = (vui32_t) vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  /* compute the 2 middle partial projects.  Use vmaddeud to add the
+   * high 64-bits of the low product to one of the middle products.
+   * This can not overflow.  */
+  tab = vec_vmuloud (a_swap, (vui64_t) b);
+  tba = vec_vmaddeud (a_swap, (vui64_t) b, (vui64_t) tmq);
+  /* sum the two middle products (plus the high 64-bits of the low
+   * product.  This will generate a carry that we need to capture.  */
+  t   = (vui32_t) vec_adduqm (tab, tba);
+  tc1 = vec_addcuq (tab, tba);
+  /* result = t[l] || tmq[l].  */
+  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
+  /* we can use multiply sum here because the high product plus the
+   * high sum of middle partial products can't overflow.  */
+  t   = (vui32_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
+  // This is equivalent to vec_vmadd2eud(a, b, tab, tba)
+  // were (tab_even + tba_even) was pre-computed including the carry,
+  // so no masking is required.
+  t   = (vui32_t) vec_vmsumeud ((vui64_t) a, (vui64_t) b, (vui128_t) t);
+
+  *mulu = (vui128_t) t;
+  return ((vui128_t) tmq);
+}
+
+vui128_t
+__test_muludq_z_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  vui32_t t, tmq;
+  /* compute the 256 bit product of two 128 bit values a, b.
+   * The high 128 bits are accumulated in t and the low 128-bits
+   * in tmq. The high 128-bits of the product are returned to the
+   * address of the 1st parm. The low 128-bits are the return
+   * value.
+   */
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_splto = vec_spltd ((vui64_t) b, 1);
+  vui64_t b_splte = vec_spltd ((vui64_t) b, 0);
+  vui128_t tb0, tb1;
+  // multiply a by the odd 64-bits of b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.
+  tb1 = vec_vmuloud ((vui64_t)a, (vui64_t)b_splto);
+  tb0 = vec_vmuleud ((vui64_t)a, (vui64_t)b_splto);
+  // save the low dw of a_low * b_low in tmq
+  tmq = (vui32_t) tb1;
+  // shift a_odd * b_odd right 64-bits
+  tb1 = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tb1);
+  // Sum (a_even * b_odd) + ((a_odd * b_odd) >> 64))
+  t   = (vui32_t) vec_adduqm (tb0, tb1);
+
+  // multiply a by the even 64-bits of b sum with t.
+  // For PWR9 this is just vmsumudm with conditioned inputs.
+  tb1 = vec_vmaddoud ((vui64_t)a, (vui64_t)b_splte, (vui64_t)t);
+  tb0 = vec_vmaddeud ((vui64_t)a, (vui64_t)b_splte, (vui64_t)t);
+  // merge low dw of (a_odd * b_even + t_odd) with low dw of (a_low * b_low)
+  tmq = (vui32_t) vec_mrgald ((vui128_t) tb1, (vui128_t) tmq);
+  // shift a_odd * b_even + t_odd right 64-bits
+  tb1 = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tb1);
+  t   = (vui32_t) vec_adduqm (tb0, tb1);
+
+  *mulu = (vui128_t) t;
+  return ((vui128_t) tmq);
+}
+
+vui128_t
+__test_madduq_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  return vec_madduq (mulu, a, b, c);
+}
+
+vui128_t
+__test_madduq_x_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  // compute the 256 bit sum of product of two 128 bit values a, b
+  // plus the quadword addend c.
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t t0l, tc1;
+  vui128_t thh, thl, tlh, tll;
+  // multiply the low 64-bits of a and b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.
+  tll = vec_vmaddoud ((vui64_t)a, (vui64_t)b, (vui64_t)c);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  thl = vec_vmuloud (a_swap, (vui64_t)b);
+  tlh = vec_vmaddeud (a_swap, (vui64_t)b, (vui64_t)c);
+  // sum the two middle products (plus the high 64-bits of the low
+  // product.  This will generate a carry that we need to capture.
+  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  tc1 = vec_addcuq (thl, tlh);
+  tx   = vec_adduqm (thl, tlh);
+  tx   = vec_adduqm (tx, t0l);
+  // result = t[l] || tll[l].
+  tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
+  // Sum the high product plus the high sum (with carry) of middle
+  // partial products.  This can't overflow.
+  thq = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) tx, 2);
+  thq = vec_adduqm ( thh, thq);
+
+  *mulu = (vui128_t) thq;
+  return ((vui128_t) tlq);
+}
+
+vui128_t
+__test_madduq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  // compute the 256 bit sum of product of two 128 bit values a, b
+  // plus the quadword addend c.
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t t0l, tc1, tcl;
+  vui128_t thh, thl, tlh, tll;
+  // multiply the four combinations of a_odd/a_even by b_odd/b_even.
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  thl = vec_vmuloud (a_swap, (vui64_t)b);
+  tlh = vec_vmuleud (a_swap, (vui64_t)b);
+  /* Add c to lower 128-bits of the partial product. */
+  tcl = vec_addcuq (tll, c);
+  tll = vec_adduqm (tll, c);
+  t0l = (vui128_t) vec_permdi ((vui64_t) tcl, (vui64_t) tll, 2);
+  // sum the two middle products (plus the high 65-bits of the low
+  // product-sum.
+  tc1 = vec_addcuq (thl, tlh);
+  tx  = vec_adduqm (thl, tlh);
+  tx  = vec_adduqm (tx, t0l);
+  // result = tx[l]_odd || tll[l]_odd.
+  tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
+  // Sum the high product plus the high sum (with carry) of middle
+  // partial products.  This can't overflow.
+  thq = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) tx, 2);
+  thq = vec_adduqm ( thh, thq);
+
+  *mulu = (vui128_t) thq;
+  return ((vui128_t) tlq);
+}
+
+vui128_t
+__test_madd2uq_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c, vui128_t d)
+{
+  return vec_madd2uq (mulu, a, b, c, d);
+}
+
+vui128_t
+__test_madduq2_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
+{
+  vui128_t ph, pl, cl;
+  vui128_t t, tmq;
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_swap = vec_swapd ((vui64_t) b);
+  vui64_t b_oud, b_eud;
+  vui128_t tmh, tab, tba, tb0, tc1, tc2;
+  /* multiply the low 64-bits of a and b.  For PWR9 this is just
+   * vmsumudm with conditioned inputs.  */
+//  b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
+//  tmq   = vec_msumudm ((vui64_t) a, b_oud, (vui128_t) zero);
+  tmq = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  /* compute the 2 middle partial projects.  Can't directly use
+   * vmsumudm here because the sum of partial products can overflow.  */
+//  b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b_swap);
+//  tab   = vec_msumudm ((vui64_t) a, b_oud, (vui128_t) zero);
+  tab = vec_vmuloud ((vui64_t) a, b_swap);
+//  b_eud = vec_mrgahd ((vui128_t) b_swap, (vui128_t) zero);
+//  tba   = vec_msumudm ((vui64_t) a, b_eud, (vui128_t) zero);
+  tba = vec_vmaddeud ((vui64_t) a, b_swap, (vui64_t) tmq);
+  t   = vec_adduqm (tab, tba);
+  tc1 = vec_addcuq (tab, tba);
+  /* result = t[l] || tmq[l].  */
+  tmq = (vui128_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
+  /* we can use multiply sum here because the high product plus the
+   * high sum of middle partial products can't overflow.  */
+  t   = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
+  tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
+  t   = vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
+  ph = t;
+  pl = tmq;
+//  pl = vec_muludq (&ph, a, b);
+  cl = vec_addcuq (pl, c);
+  pl = vec_adduqm (pl, c);
+  *mulu = vec_adduqm (ph, cl);
+  return (pl);
 }
 
 vui128_t
@@ -1441,6 +1768,56 @@ test_mul4uq_PWR9 (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
   mulu[1] = mplh;
   mulu[2] = mphl;
   mulu[3] = mphh;
+}
+
+void
+test_mul128_MN_PWR9 (vui128_t *p, vui128_t *m1, vui128_t *m2, unsigned long M,
+		     unsigned long N)
+{
+  vui128_t *mp = m1;
+  vui128_t *np = m2;
+  unsigned long mx = M;
+  unsigned long nx = N;
+  unsigned long i, j;
+  vui128_t mpx0, mqx0, mpx1, mqx1;
+
+  /* sizeof(m1) < sizeof(m2) swap the pointers and quadword counts.
+   * This allows for early exit when size of either is 1. */
+  if (mx < nx)
+    {
+      vui128_t *xp;
+      unsigned long x;
+
+      x = mx;
+      xp = mp;
+      mx = nx;
+      mp = np;
+      nx = x;
+      np = xp;
+    }
+
+  mpx0 = vec_muludq (&mqx0, mp[0], np[0]);
+  p[0] = mpx0;
+  for (i = 1; i < mx; i++)
+    {
+      mpx1 = vec_madduq (&mqx1, mp[i], np[0], mqx0);
+      p[i] = mpx1;
+      mqx0 = mqx1;
+    }
+  p[mx] = mqx0;
+
+  for (j = 1; j < nx; j++)
+    {
+      mpx0 = vec_madduq (&mqx0, mp[0], np[j], p[j]);
+      p[j] = mpx0;
+      for (i = 1; i < mx; i++)
+	{
+	  mpx1 = vec_madd2uq (&mqx1, mp[i], np[j], mqx0, p[i + j]);
+	  p[i + j] = mpx1;
+	  mqx0 = mqx1;
+	}
+      p[mx + j] = mqx0;
+    }
 }
 
 void __attribute__((flatten ))

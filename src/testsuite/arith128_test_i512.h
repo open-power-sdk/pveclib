@@ -51,10 +51,26 @@ extern const __VEC_U_512 vec512_ten1024_2;
 extern const __VEC_U_512 vec512_ten1024_1;
 extern const __VEC_U_512 vec512_ten1024_0;
 
+extern const __VEC_U_512 vec512_ten2048_13;
+extern const __VEC_U_512 vec512_ten2048_12;
+extern const __VEC_U_512 vec512_ten2048_11;
+extern const __VEC_U_512 vec512_ten2048_10;
+extern const __VEC_U_512 vec512_ten2048_9;
+extern const __VEC_U_512 vec512_ten2048_8;
+extern const __VEC_U_512 vec512_ten2048_7;
+extern const __VEC_U_512 vec512_ten2048_6;
+extern const __VEC_U_512 vec512_ten2048_5;
+extern const __VEC_U_512 vec512_ten2048_4;
+extern const __VEC_U_512 vec512_ten2048_3;
+extern const __VEC_U_512 vec512_ten2048_2;
+extern const __VEC_U_512 vec512_ten2048_1;
+extern const __VEC_U_512 vec512_ten2048_0;
+
 extern int test_mul128x128 (void);
 extern int test_mul256x256 (void);
 extern int test_mul512x128 (void);
 extern int test_mul512x512 (void);
+extern int test_mul1024x1024 (void);
 extern int test_mul2048x2048 (void);
 
 extern int test_vec_i512 (void);

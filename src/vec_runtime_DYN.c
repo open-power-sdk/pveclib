@@ -98,6 +98,16 @@ vec_mul1024x1024_PWR7 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
 
 extern void
 vec_mul2048x2048_PWR7 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
+
+extern void
+vec_mul128_byMN_PWR7 (vui128_t *p,
+		  vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N);
+
+extern void
+vec_mul512_byMN_PWR7 (__VEC_U_512 *p,
+                  __VEC_U_512 *m1, __VEC_U_512 *m2,
+		  unsigned long M, unsigned long N);
 #endif
 
 extern __VEC_U_256
@@ -117,6 +127,16 @@ vec_mul1024x1024_PWR8 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
 
 extern void
 vec_mul2048x2048_PWR8 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
+
+extern void
+vec_mul128_byMN_PWR8 (vui128_t *p,
+		  vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N);
+
+extern void
+vec_mul512_byMN_PWR8 (__VEC_U_512 *p,
+                  __VEC_U_512 *m1, __VEC_U_512 *m2,
+		  unsigned long M, unsigned long N);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 /* Older distros running Big Endian are unlikely to support PWR9.
@@ -139,6 +159,16 @@ vec_mul1024x1024_PWR9 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
 
 extern void
 vec_mul2048x2048_PWR9 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
+
+extern void
+vec_mul128_byMN_PWR9 (vui128_t *p,
+		  vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N);
+
+extern void
+vec_mul512_byMN_PWR9 (__VEC_U_512 *p,
+                  __VEC_U_512 *m1, __VEC_U_512 *m2,
+		  unsigned long M, unsigned long N);
 #endif
 
 static
@@ -208,3 +238,32 @@ void
 void
 vec_mul2048x2048 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *)
 __attribute__ ((ifunc ("resolve_vec_mul2048x2048")));
+
+static
+void
+(*resolve_vec_mul128_byMN (void))
+(vui128_t *p, vui128_t *m1, vui128_t *m2,
+	  unsigned long M, unsigned long N)
+{
+  VEC_DYN_RESOLVER(vec_mul128_byMN);
+}
+
+void
+vec_mul128_byMN (vui128_t *p, vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N)
+__attribute__ ((ifunc ("resolve_vec_mul128_byMN")));
+
+static
+void
+(*resolve_vec_mul512_byMN (void))
+(__VEC_U_512 *p, __VEC_U_512 *m1, __VEC_U_512 *m2,
+	  unsigned long M, unsigned long N)
+{
+  VEC_DYN_RESOLVER(vec_mul512_byMN);
+}
+
+void
+vec_mul512_byMN (__VEC_U_512 *p, __VEC_U_512 *m1, __VEC_U_512 *m2,
+		  unsigned long M, unsigned long N)
+__attribute__ ((ifunc ("resolve_vec_mul512_byMN")));
+

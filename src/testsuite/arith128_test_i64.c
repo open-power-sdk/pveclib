@@ -2132,7 +2132,7 @@ test_vmaddoud (void)
   vui128_t k, e;
   int rc = 0;
 
-  printf ("\ntest_vmaddeud Vector Multiply-Add Odd Unsigned Doublewords\n");
+  printf ("\ntest_vmaddoud Vector Multiply-Add Odd Unsigned Doublewords\n");
   i = (vui64_t) CONST_VINT64_DW (1, 2);
   j = (vui64_t) CONST_VINT64_DW (101, 102);
   m = (vui64_t) CONST_VINT64_DW (10, 20);

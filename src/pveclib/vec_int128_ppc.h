@@ -386,7 +386,7 @@
  *
  * \subsection int128_arith_facts_0_1 Some useful arithmetic facts (you may of forgotten)
  *
- * First multiplying a M-digits by N-digits requires up to
+ * First multiplying a M-digits by N-digits number requires up to
  * (M+N)-digits to store the result. This is true independent of the
  * size of your digit, including decimal, hexadecimal, and computer
  * words/doublewords/quadwords. This explains why a 32-bit (word) by
@@ -1157,7 +1157,7 @@ __test_madduq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
   tll = vec_adduqm (tll, c);
   t0l = (vui128_t) vec_permdi ((vui64_t) tcl, (vui64_t) tll, 2);
   // sum the two middle products (plus the high 65-bits of the low
-  // product-sum.
+  // product-sum).
   tc1 = vec_addcuq (thl, tlh);
   tx  = vec_adduqm (thl, tlh);
   tx  = vec_adduqm (tx, t0l);

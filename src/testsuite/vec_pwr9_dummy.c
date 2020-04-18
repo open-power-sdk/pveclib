@@ -21,6 +21,7 @@
  */
 
 //#pragma GCC push target
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #pragma GCC target ("cpu=power9")
 #include <stdint.h>
 #include <stdio.h>
@@ -202,8 +203,8 @@ vui128_t
 __test_muludq_x_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
 {
   /* compute the 256 bit product of two 128 bit values a, b.
-   * The high 128 bits are accumulated in t and the low 128-bits
-   * in tmq. The high 128-bits of the product are returned to the
+   * The high 128 bits are accumulated in thq and the low 128-bits
+   * in tlq. The high 128-bits of the product are returned to the
    * address of the 1st parm. The low 128-bits are the return
    * value.
    */
@@ -219,7 +220,7 @@ __test_muludq_x_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
   thl = vec_vmuloud (a_swap, (vui64_t)b);
   tlh = vec_vmuleud (a_swap, (vui64_t)b);
   /* sum the two middle products (plus the high 64-bits of the low
-   * product.  This will generate a carry that we need to capture.  */
+   * product).  This will generate a carry that we need to capture.  */
   t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
   tc1 = vec_addcuq (thl, tlh);
   tx   = vec_adduqm (thl, tlh);
@@ -336,11 +337,11 @@ __test_madduq_x_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
   thl = vec_vmuloud (a_swap, (vui64_t)b);
   tlh = vec_vmaddeud (a_swap, (vui64_t)b, (vui64_t)c);
   // sum the two middle products (plus the high 64-bits of the low
-  // product.  This will generate a carry that we need to capture.
-  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  // product).  This will generate a carry that we need to capture.
+  t0l = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
   tc1 = vec_addcuq (thl, tlh);
-  tx   = vec_adduqm (thl, tlh);
-  tx   = vec_adduqm (tx, t0l);
+  tx  = vec_adduqm (thl, tlh);
+  tx  = vec_adduqm (tx, t0l);
   // result = t[l] || tll[l].
   tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
   // Sum the high product plus the high sum (with carry) of middle
@@ -390,47 +391,6 @@ vui128_t
 __test_madd2uq_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c, vui128_t d)
 {
   return vec_madd2uq (mulu, a, b, c, d);
-}
-
-vui128_t
-__test_madduq2_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
-{
-  vui128_t ph, pl, cl;
-  vui128_t t, tmq;
-  const vui64_t zero = { 0, 0 };
-  vui64_t b_swap = vec_swapd ((vui64_t) b);
-  vui64_t b_oud, b_eud;
-  vui128_t tmh, tab, tba, tb0, tc1, tc2;
-  /* multiply the low 64-bits of a and b.  For PWR9 this is just
-   * vmsumudm with conditioned inputs.  */
-//  b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
-//  tmq   = vec_msumudm ((vui64_t) a, b_oud, (vui128_t) zero);
-  tmq = vec_vmuloud ((vui64_t)a, (vui64_t)b);
-  /* compute the 2 middle partial projects.  Can't directly use
-   * vmsumudm here because the sum of partial products can overflow.  */
-//  b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b_swap);
-//  tab   = vec_msumudm ((vui64_t) a, b_oud, (vui128_t) zero);
-  tab = vec_vmuloud ((vui64_t) a, b_swap);
-//  b_eud = vec_mrgahd ((vui128_t) b_swap, (vui128_t) zero);
-//  tba   = vec_msumudm ((vui64_t) a, b_eud, (vui128_t) zero);
-  tba = vec_vmaddeud ((vui64_t) a, b_swap, (vui64_t) tmq);
-  t   = vec_adduqm (tab, tba);
-  tc1 = vec_addcuq (tab, tba);
-  /* result = t[l] || tmq[l].  */
-  tmq = (vui128_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
-  /* we can use multiply sum here because the high product plus the
-   * high sum of middle partial products can't overflow.  */
-  t   = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
-  tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
-  /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
-  t   = vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
-  ph = t;
-  pl = tmq;
-//  pl = vec_muludq (&ph, a, b);
-  cl = vec_addcuq (pl, c);
-  pl = vec_adduqm (pl, c);
-  *mulu = vec_adduqm (ph, cl);
-  return (pl);
 }
 
 vui128_t
@@ -1770,6 +1730,38 @@ test_mul4uq_PWR9 (vui128_t *__restrict__ mulu, vui128_t m1h, vui128_t m1l,
   mulu[3] = mphh;
 }
 
+__VEC_U_1024  __attribute__((flatten ))
+__test_madd512x512a512_PWR9 (__VEC_U_512 m1, __VEC_U_512 m2, __VEC_U_512 a1)
+{
+  __VEC_U_1024 result;
+  vui128_t mc, mp, mq;
+  register vui128_t t0 asm("vs10");
+  register vui128_t t1 asm("vs11");
+  register vui128_t t2 asm("vs12");
+  __VEC_U_512x1 mp3, mp2, mp1, mp0;
+
+  mp0.x640 = vec_madd512x128a512_inline (m1, m2.vx0, a1);
+  t0 = mp0.x3.v1x128;
+  COMPILE_FENCE;
+  mp1.x640 = vec_madd512x128a512_inline (m1, m2.vx1, mp0.x3.v0x512);
+  t1 = mp1.x3.v1x128;
+  COMPILE_FENCE;
+  mp2.x640 = vec_madd512x128a512_inline (m1, m2.vx2, mp1.x3.v0x512);
+  t2 = mp2.x3.v1x128;
+  COMPILE_FENCE;
+  mp3.x640 = vec_madd512x128a512_inline (m1, m2.vx3, mp2.x3.v0x512);
+
+  result.vx0 = t0;
+  result.vx1 = t1;
+  result.vx2 = t2;
+  result.vx3 = mp3.x3.v1x128;
+  result.vx4 = mp3.x3.v0x512.vx0;
+  result.vx5 = mp3.x3.v0x512.vx1;
+  result.vx6 = mp3.x3.v0x512.vx2;
+  result.vx7 = mp3.x3.v0x512.vx3;
+  return result;
+}
+
 void
 test_mul128_MN_PWR9 (vui128_t *p, vui128_t *m1, vui128_t *m2, unsigned long M,
 		     unsigned long N)
@@ -1868,5 +1860,5 @@ test_vec_mul1024x1024_PWR9 (__VEC_U_2048* r2048,
   pm2048->x4.v3x512 = vec_add512ze2 (subp3.x2.v1x512, sumx.x2.v1x128,
 				     sum3.x2.v1x128);
 }
-
+#endif
 //#pragma GCC pop target

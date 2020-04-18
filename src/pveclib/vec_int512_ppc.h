@@ -1646,7 +1646,7 @@ typedef union
  *  and code motion to smaller code blocks. This in turn reduces
  *  register pressure and avoids generating spill code.
  */
-#ifdef __VEC_EXPLICITE_FENCE_NOPS__
+#ifdef __VEC_EXPLICIT_FENCE_NOPS__
 // Generate NOPS inline to make compiler fences visible in obj code.
 #define COMPILE_FENCE __asm ("nop":::)
 #else
@@ -1889,7 +1889,7 @@ vec_mul128x128_inline (vui128_t a, vui128_t b)
  *  The product is returned as single 512-bit integer in a
  *  homogeneous aggregate structure.
  *
- *  \note Using the Multiple-Add form which applies the addend early
+ *  \note Using the Multiply-Add form which applies the addend early
  *  reduces the live ranges for registers passing partial products
  *  for larger multiple precision multiplies.
  *  \note We use the COMPILER_FENCE to limit instruction scheduling
@@ -1937,7 +1937,7 @@ vec_mul256x256_inline (__VEC_U_256 m1, __VEC_U_256 m2)
  *  The product is returned as single 640-bit integer in a
  *  homogeneous aggregate structure.
  *
- *  \note Using the Multiple-Add form which applies the addend early
+ *  \note Using the Multiply-Add form which applies the addend early
  *  reduces the live ranges for registers passing partial products
  *  for larger multiple precision multiplies.
  *  \note We use the COMPILER_FENCE to limit instruction scheduling
@@ -1958,7 +1958,7 @@ static inline __VEC_U_640
 vec_mul512x128_inline (__VEC_U_512 m1, vui128_t m2)
 {
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
 
   mpx0 = vec_muludq (&mq0, m1.vx0, m2);
@@ -2007,7 +2007,7 @@ static inline __VEC_U_640
 vec_madd512x128a128_inline (__VEC_U_512 m1, vui128_t m2, vui128_t a1)
 {
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
 
   mpx0 = vec_madduq (&mq0, m1.vx0, m2, a1);
@@ -2050,13 +2050,13 @@ vec_madd512x128a128_inline (__VEC_U_512 m1, vui128_t m2, vui128_t a1)
  *  @param m2 vector representation of a unsigned 128-bit integer.
  *  @param a2 vector representation of a unsigned 512-bit integer.
  *  @return homogeneous aggregate representation of the unsigned
- *  640-bit sum of (m1 * m2) + a1.
+ *  640-bit sum of (m1 * m2) + a2.
  */
 static inline __VEC_U_640
 vec_madd512x128a512_inline (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2)
 {
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
 
   mpx0 = vec_madduq (&mq0, m1.vx0, m2, a2.vx0);
@@ -2100,13 +2100,13 @@ vec_madd512x128a512_inline (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2)
  *  @param a1 vector representation of a unsigned 128-bit integer.
  *  @param a2 vector representation of a unsigned 512-bit integer.
  *  @return homogeneous aggregate representation of the unsigned
- *  640-bit sum of (m1 * m2) + a1.
+ *  640-bit sum of (m1 * m2) + a1 + a2.
  */
 static inline __VEC_U_640
 vec_madd512x128a128a512_inline (__VEC_U_512 m1, vui128_t m2, vui128_t a1, __VEC_U_512 a2)
 {
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
 
   mpx0 = vec_madd2uq (&mq0, m1.vx0, m2, a1, a2.vx0);
@@ -2133,25 +2133,24 @@ vec_madd512x128a128a512_inline (__VEC_U_512 m1, vui128_t m2, vui128_t a1, __VEC_
  *  and code motion to smaller code blocks. This in turn reduces
  *  register pressure and avoids generating spill code.
  *
- *  \note Using the Multiple-Add form which applies the addend early
+ *  \note Using the Multiply-Add form which applies the addend early
  *  reduces the live ranges for registers passing partial products
  *  for larger multiple precision multiplies.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | ?? | 1/cycle  |
- *  |power9   | ?? | 1/cycle  |
+ *  |power8   | ~600  | 1/cycle  |
+ *  |power9   | ~210  | 1/cycle  |
  *
  *  @param m1 vector representation of a unsigned 512-bit integer.
  *  @param m2 vector representation of a unsigned 512-bit integer.
  *  @return homogeneous aggregate representation of the unsigned
- *  1028-bit product of a * b.
+ *  1028-bit product of m1 * m2.
  */
 static inline __VEC_U_1024
 vec_mul512x512_inline (__VEC_U_512 m1, __VEC_U_512 m2)
 {
   __VEC_U_1024 result;
-  vui128_t mc, mp, mq;
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
   mp0.x640 = vec_mul512x128_inline (m1, m2.vx0);
@@ -2191,8 +2190,8 @@ vec_mul512x512_inline (__VEC_U_512 m1, __VEC_U_512 m2)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | ?? | 1/cycle  |
- *  |power9   | ?? | 1/cycle  |
+ *  |power8   | ~600  | 1/cycle  |
+ *  |power9   | ~210  | 1/cycle  |
  *
  *  @param m1 vector representation of a unsigned 512-bit integer.
  *  @param m2 vector representation of a unsigned 512-bit integer.
@@ -2204,7 +2203,6 @@ static inline __VEC_U_1024
 vec_madd512x512a512_inline (__VEC_U_512 m1, __VEC_U_512 m2, __VEC_U_512 a1)
 {
   __VEC_U_1024 result;
-  vui128_t mc, mp, mq;
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
   mp0.x640 = vec_madd512x128a512_inline (m1, m2.vx0, a1);
@@ -2404,8 +2402,8 @@ vec_mul2048x2048 (__VEC_U_4096 *p4096,
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | ??? | 1/cycle  |
- *  |power9   | ??? | 1/cycle  |
+ *  |power8   |  ???  | 1/cycle  |
+ *  |power9   |  ???  | 1/cycle  |
  *
  *  @param p pointer to vector result as a unsigned (M+N)x128-bit integer in storage.
  *  @param m1 pointer to vector representation of a unsigned Mx128-bit integer.

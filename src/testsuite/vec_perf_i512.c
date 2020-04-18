@@ -887,11 +887,7 @@ timed_mul2048x2048 (void)
   return (rc);
 }
 
-  /* Older (GCC6) compilers ignore the "no-unroll-loops" pragma and make
-   it hard to isolate each iteration of vec_muludq.  This version
-   calls __test_muludq from vec_int128_dummy.c as a work around.  */
-
-int __attribute__((optimize ("unroll-loops")))
+int
 timed_mul128x128 (void)
 {
   vui128_t i, j;
@@ -921,7 +917,7 @@ timed_mul128x128 (void)
   return rc;
 }
 
-int __attribute__((optimize ("unroll-loops")))
+int
 timed_mul256x256 (void)
 {
   __VEC_U_256 i, j;
@@ -961,7 +957,7 @@ timed_mul256x256 (void)
   return rc;
 }
 
-int __attribute__((optimize ("unroll-loops")))
+int
 timed_mul512x512by8 (void)
 {
   __VEC_U_512 i;

@@ -106,7 +106,7 @@ __VEC_PWR_IMP (vec_mul256x256) (__VEC_U_256 m1, __VEC_U_256 m2)
 #else
 #ifdef _ARCH_PWR8
   __VEC_U_512 result;
-  vui128_t mc, mp, mq, mqhl;
+  vui128_t mp, mq;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1.vx0, m2.vx0);
 
@@ -191,7 +191,7 @@ __VEC_PWR_IMP (vec_madd512x128a512) (__VEC_U_512 m1, vui128_t m2,
 {
 #ifdef _ARCH_PWR9
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
   mpx0 = vec_madduq (&mq0, m1.vx0, m2, a2.vx0);
 
@@ -211,7 +211,7 @@ __VEC_PWR_IMP (vec_madd512x128a512) (__VEC_U_512 m1, vui128_t m2,
 #else
 #ifdef _ARCH_PWR8
   __VEC_U_640 result;
-  vui128_t mq3, mq2, mq1, mq0, mq, mc;
+  vui128_t mq3, mq2, mq1, mq0;
   vui128_t mpx0, mpx1, mpx2, mpx3;
   mpx0 = vec_madduq (&mq0, m1.vx0, m2, a2.vx0);
 
@@ -246,7 +246,7 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
 #ifdef _ARCH_PWR8
   __VEC_U_1024 result;
 #ifdef _ARCH_PWR9
-  vui128_t mc, mp, mq;
+  vui128_t mp, mq;
   __VEC_U_640 mp3, mp2, mp1, mp0;
 
   mp0 = __VEC_PWR_IMP (vec_mul512x128) (m1, m2.vx0);
@@ -277,7 +277,6 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   result.vx6 = vec_addeq (&mp, mp3.vx3, result.vx6, mq);
   result.vx7 = vec_addeuqm (result.vx7, mp3.vx4, mp);
 #else
-  vui128_t mc, mp, mq;
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
   mp0.x640 = __VEC_PWR_IMP(vec_mul512x128) (m1, m2.vx0);
@@ -309,7 +308,6 @@ __VEC_PWR_IMP (vec_madd512x512a512) (__VEC_U_512 m1, __VEC_U_512 m2,
 #ifdef _ARCH_PWR8
   __VEC_U_1024 result;
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
-  vui128_t mc, mp, mq;
 
   mp0.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx0, a1);
   result.vx0 = mp0.x3.v1x128;
@@ -664,8 +662,8 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
 #define __NDX(__index) (__index)
 #define __PDX(__index) (__index)
 #else
-#define __NDX(__index) ((nx - 1) - (__index))
 #define __MDX(__index) ((mx - 1) - (__index))
+#define __NDX(__index) ((nx - 1) - (__index))
 #define __PDX(__index) ((px - 1) - (__index))
 #endif
 

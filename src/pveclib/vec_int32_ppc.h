@@ -466,14 +466,16 @@ vec_clzw (vui32_t vra)
 {
   vui32_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vclzw
+#if defined (vec_vclzw)
+  r = vec_vclzw (vra);
+#elif defined (__clang__)
+  r = vec_cntlz (vra);
+#else
   __asm__(
       "vclzw %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vclzw (vra);
 #endif
 #else
 //#warning Implememention pre POWER8
@@ -1093,14 +1095,16 @@ vec_popcntw (vui32_t vra)
 {
   vui32_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vpopcntw
+#if defined (vec_vpopcntw)
+  r = vec_vpopcntw (vra);
+#elif defined (__clang__)
+  r = vec_popcnt (vra);
+#else
   __asm__(
       "vpopcntw %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vpopcntw (vra);
 #endif
 #else
 //#warning Implememention pre power8
@@ -1137,14 +1141,14 @@ vec_revbw (vui32_t vra)
   vui32_t result;
 
 #ifdef _ARCH_PWR9
-#ifndef vec_revb
+#if defined (vec_revb) || defined (__clang__)
+  result = vec_revb (vra);
+#else
   __asm__(
       "xxbrw %x0,%x1;"
       : "=wa" (result)
       : "wa" (vra)
       : );
-#else
-  result = vec_revb (vra);
 #endif
 #else
   const vui64_t vconstp =

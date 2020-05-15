@@ -61,8 +61,8 @@
   else \
     return FNAME ## _PWR7;
 #else
-#define VEC_DYN_RESOLVER(__FNAME)
-   return FNAME ## _PWR7;
+#define VEC_DYN_RESOLVER(__FNAME) \
+   return __FNAME ## _PWR7;
 #endif
 #else // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #ifdef  __BUILTIN_CPU_SUPPORTS__

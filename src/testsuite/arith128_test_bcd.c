@@ -30,9 +30,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_common_ppc.h>
@@ -41,6 +38,8 @@
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_bcd.h>
 
+#ifndef __clang__
+// clang does not support Decimal Floating Point at this time.
 vui8_t
 db_vec_ZN2i128 (vui8_t zone00, vui8_t zone16)
 {
@@ -214,7 +213,7 @@ db_vec_BC10es2i128 (vui64_t bc10t2)
   print_vint128 ("           ", (vui128_t) bc10t2);
 
   /* k = 18436744073709551616UL */
-  k = vec_splats ((unsigned long)0xFFDC790D903F0000UL);
+  k = vec_splats ((unsigned long long)0xFFDC790D903F0000UL);
   l = vec_vmuleud (bc10t2, k);
   print_vint128x (" hd*10t ev ", l);
   print_vint128  ("           ", l);
@@ -8567,6 +8566,7 @@ test_longbcdct_10e32 (void)
 
   return (rc);
 }
+#endif
 
 int
 test_vec_bcd (void)
@@ -8574,6 +8574,8 @@ test_vec_bcd (void)
   int rc = 0;
 
   printf ("\n%s\n", __FUNCTION__);
+#ifndef __clang__
+// clang does not support Decimal Floating Point at this time.
 
   rc += test_bcd_addsub ();
 
@@ -8655,6 +8657,7 @@ test_vec_bcd (void)
 
   rc += test_longbcdcf_10e32 ();
   rc += test_longbcdct_10e32 ();
+#endif
 
   return (rc);
 }

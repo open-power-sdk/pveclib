@@ -10,9 +10,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
 
 //#define __DEBUG_PRINT__
 

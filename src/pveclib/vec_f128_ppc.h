@@ -185,12 +185,26 @@ test_cosf128 (__binary128 value)
 #include <pveclib/vec_int128_ppc.h>
 #include <pveclib/vec_f64_ppc.h>
 
+
 /* __float128 was added in GCC 6.0.  But only with -mfloat128.
-   Later compilers define __float128 to __ieee128.  */
+   Later compilers typedef __float128 to __ieee128 and
+   long double to __ibm128. The intent was to allow the switch of
+   long double from __ibm128 to __ieee128 (someday).
+
+   Clang does not define __FLOAT128__ or __float128 without both
+   -mcu=power9 and -mfloat128.
+   So far clang does not support/define the __ibm128 type. */
 #ifdef __FLOAT128__
 typedef __float128 __Float128;
 typedef __float128 __binary128;
+typedef __float128 __ieee128;
+#ifndef __clang__
 typedef __ibm128 __IBM128;
+#else
+/* Clang does not define __ibm128 over IBM long double.
+   So defined it here. */
+typedef long double __IBM128;
+#endif
 #else
 /* Before GCC 6.0 (or without -mfloat128) we need to fake it.  */
 /*! \brief vector of 128-bit binary128 element.
@@ -202,14 +216,16 @@ typedef vf128_t __Float128;
 /*! \brief Define __binary128 if not defined by the compiler.
  *  Same as __float128 for PPC.  */
 typedef vf128_t __binary128;
+#ifndef __clang__
+// Clang will allow redefining __float128 even is it not enabled
 /*! \brief Define __float128 if not defined by the compiler.
  *  Same as __float128 for PPC.  */
 typedef vf128_t __float128;
+#endif
 /*! \brief Define __IBM128 if not defined by the compiler.
  *  Same as old long double for PPC.  */
 typedef long double __IBM128;
 #endif
-
 
 /*! \brief Union used to transfer 128-bit data between vector and
  * __float128 types. */

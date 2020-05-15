@@ -1928,11 +1928,17 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  * \endcode
  *
  */
+#ifndef __clang__
 #define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
       (((unsigned __int128) __q0) << 96) \
     + (((unsigned __int128) __q1) << 64) \
     + (((unsigned __int128) __q2) << 32) \
     +  ((unsigned __int128) __q3) )
+#else
+// clang does not handle constant folding for __int128
+#define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
+	CONST_VINT128_W(__q0, __q1, __q2, __q3) )
+#endif
 
 /** \brief Generate a vector unsigned __int128 constant from doublewords.
  *
@@ -2129,15 +2135,17 @@ vec_addcuq (vui128_t a, vui128_t b)
 {
   vui32_t co;
 #ifdef _ARCH_PWR8
-#ifndef vec_vaddcuq
+#if defined (vec_vaddcuq)
+  co = (vui32_t) vec_vaddcuq (a, b);
+#elif defined (__clang__)
+  co = (vui32_t) vec_addc (a, b);
+#else
   __asm__(
       "vaddcuq %0,%1,%2;"
       : "=v" (co)
       : "v" (a),
       "v" (b)
       : );
-#else
-  co = (vui32_t) vec_vaddcuq (a, b);
 #endif
 #else
   vui32_t c, c2, t;
@@ -2181,7 +2189,11 @@ vec_addcuq (vui128_t a, vui128_t b)
  {
    vui32_t co;
  #ifdef _ARCH_PWR8
- #ifndef vec_vaddecuq
+ #if defined (vec_vaddcuq)
+   co = (vui32_t) vec_vaddecuq (a, b, ci);
+ #elif defined (__clang__)
+   co = (vui32_t) vec_addec (a, b, ci);
+# else
    __asm__(
        "vaddecuq %0,%1,%2,%3;"
        : "=v" (co)
@@ -2189,8 +2201,6 @@ vec_addcuq (vui128_t a, vui128_t b)
        "v" (b),
        "v" (ci)
        : );
- #else
-   co = (vui32_t) vec_vaddecuq (a, b, ci);
  #endif
  #else
    vui32_t c, c2, t;
@@ -2241,7 +2251,11 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vaddeuqm
+#if defined (vec_vaddeuqm)
+  t = (vui32_t) vec_vaddeuqm (a, b, ci);
+#elif defined (__clang__)
+  t = (vui32_t) vec_adde (a, b, ci);
+#else
   __asm__(
       "vaddeuqm %0,%1,%2,%3;"
       : "=v" (t)
@@ -2249,8 +2263,6 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
       "v" (b),
       "v" (ci)
       : );
-#else
-  t = (vui32_t) vec_vaddeuqm (a, b, ci);
 #endif
 #else
   vui32_t c2, c;
@@ -2294,15 +2306,17 @@ vec_adduqm (vui128_t a, vui128_t b)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vadduqm
+#if defined (vec_vadduqm)
+  t = (vui32_t) vec_vadduqm (a, b);
+#elif defined (__clang__)
+  t = (vui32_t) vec_add (a, b);
+#else
   __asm__(
       "vadduqm %0,%1,%2;"
       : "=v" (t)
       : "v" (a),
       "v" (b)
       : );
-#else
-  t = (vui32_t) vec_vadduqm (a, b);
 #endif
 #else
   vui32_t c, c2;
@@ -2341,18 +2355,21 @@ vec_addcq (vui128_t *cout, vui128_t a, vui128_t b)
 {
   vui32_t t, co;
 #ifdef _ARCH_PWR8
-#ifndef vec_vadduqm
+#if defined (vec_vadduqm) && defined (vec_vaddcuq)
+  t = (vui32_t) vec_vadduqm (a, b);
+  co = (vui32_t) vec_vaddcuq (a, b);
+#elif defined (__clang__)
+  t = (vui32_t) vec_add (a, b);
+  co = (vui32_t) vec_addc (a, b);
+#else
   __asm__(
       "vadduqm %0,%2,%3;\n"
       "\tvaddcuq %1,%2,%3;"
-      : "=v" (t),
+      : "=&v" (t),
       "=v" (co)
       : "v" (a),
       "v" (b)
       : );
-#else
-  t = (vui32_t) vec_vadduqm (a, b);
-  co = (vui32_t) vec_vaddcuq (a, b);
 #endif
 #else
   vui32_t c, c2;
@@ -2399,19 +2416,22 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
 {
   vui32_t t, co;
 #ifdef _ARCH_PWR8
-#ifndef vec_vaddeuqm
+#if defined (vec_vaddeuqm) && defined (vec_vaddecuq)
+  t = (vui32_t) vec_vaddeuqm (a, b, ci);
+  co = (vui32_t) vec_vaddecuq (a, b, ci);
+#elif defined (__clang__)
+  t = (vui32_t) vec_adde (a, b, ci);
+  co = (vui32_t) vec_addec (a, b, ci);
+#else
   __asm__(
       "vaddeuqm %0,%2,%3,%4;\n"
       "\tvaddecuq %1,%2,%3,%4;"
-      : "=v" (t),
+      : "=&v" (t),
       "=v" (co)
       : "v" (a),
       "v" (b),
-      "v" (c)
+      "v" (ci)
       : );
-#else
-  t = (vui32_t) vec_vaddeuqm (a, b, ci);
-  co = (vui32_t) vec_vaddecuq (a, b, ci);
 #endif
 #else
   vui32_t c, c2;
@@ -2479,7 +2499,7 @@ vec_clzq (vui128_t vra)
   vui64_t vzero = { 0, 0 };
   vui64_t v64 = { 64, 64 };
 
-  vt1 = vec_vclz ((vui64_t) vra);
+  vt1 = vec_clzd ((vui64_t) vra);
   vt2 = (vui64_t) vec_cmplt(vt1, v64);
   vt3 = (vui64_t) vec_sld ((vui8_t) vzero, (vui8_t) vt2, 8);
   result = vec_andc (vt1, vt3);
@@ -2876,7 +2896,7 @@ static inline vb128_t
 vec_cmpneuq (vui128_t vra, vui128_t vrb)
 {
 #ifdef _ARCH_PWR8
-  __vector unsigned long equd, swapd;
+  __vector unsigned long long equd, swapd;
 
   equd = (vui64_t) vec_cmpequd ((vui64_t) vra,
       (vui64_t) vrb);
@@ -4348,7 +4368,7 @@ static inline vui128_t
 vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
@@ -4492,7 +4512,7 @@ vec_muludm (vui64_t vra, vui64_t vrb)
   t2 = vec_vmulouw ((vui32_t)vra, (vui32_t)vrb);
   t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
   t4 = vec_vsld (t3, s32);
-  return (vui64_t) vec_vaddudm (t4, t2);
+  return (vui64_t) vec_addudm (t4, t2);
 #else
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #endif
@@ -5402,7 +5422,7 @@ vec_popcntq (vui128_t vra)
   vui64_t vt1;
   const vui64_t vzero = { 0, 0 };
 
-  vt1 = vec_vpopcnt ((__vector unsigned long long) vra);
+  vt1 = vec_popcntd ((__vector unsigned long long) vra);
   result = (vui64_t) vec_sums ((__vector int) vt1,
                                (__vector int) vzero);
 #else
@@ -5438,18 +5458,19 @@ vec_revbq (vui128_t vra)
   vui128_t result;
 
 #ifdef _ARCH_PWR9
-#ifndef vec_revb
+#if defined (vec_revb) || defined (__clang__)
+  result = vec_revb (vra);
+#else
   __asm__(
       "xxbrq %x0,%x1;"
       : "=wa" (result)
       : "wa" (vra)
       : );
-#else
-  result = vec_revb (vra);
 #endif
 #else
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  const vui64_t vconstp = CONST_VINT64_DW(0x0F0E0D0C0B0A0908UL, 0x0706050403020100UL);
+  const vui64_t vconstp =
+      CONST_VINT64_DW(0x0F0E0D0C0B0A0908UL, 0x0706050403020100UL);
 #else
   const vui64_t vconstp =
       CONST_VINT64_DW(0x0001020304050607UL, 0x08090A0B0C0D0E0FUL);
@@ -6106,15 +6127,17 @@ vec_subcuq (vui128_t vra, vui128_t vrb)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vsubcuq
+#if defined (vec_vsubcuq)
+  t = (vui32_t) vec_vsubcuq (vra, vrb);
+#elif defined (__clang__)
+  t = (vui32_t) vec_subc (vra, vrb);
+# else
   __asm__(
       "vsubcuq %0,%1,%2;"
       : "=v" (t)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  t = (vui32_t) vec_vsubcuq (vra, vrb);
 #endif
 #else
   /* vsubcuq is defined as (vra + NOT(vrb) + 1) >> 128.  */
@@ -6145,7 +6168,11 @@ vec_subecuq (vui128_t vra, vui128_t vrb, vui128_t vrc)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vsubcuq
+#if defined (vec_vsubecuq)
+  t = (vui32_t) vec_vsubecuq (vra, vrb, vrc);
+#elif defined (__clang__)
+  t = (vui32_t) vec_subec (vra, vrb, vrc);
+# else
   __asm__(
       "vsubecuq %0,%1,%2,%3;"
       : "=v" (t)
@@ -6153,8 +6180,6 @@ vec_subecuq (vui128_t vra, vui128_t vrb, vui128_t vrc)
 	"v" (vrb),
         "v" (vrc)
       : );
-#else
-  t = (vui32_t) vec_vsubecuq (vra, vrb, vrc);
 #endif
 #else
   /* vsubcuq is defined as (vra + NOT(vrb) + vrc.bit[127]) >> 128.  */
@@ -6184,7 +6209,11 @@ vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vsubuqm
+#if defined (vec_vsubeuqm)
+  t = (vui32_t) vec_vsubeuqm (vra, vrb, vrc);
+#elif defined (__clang__)
+  t = (vui32_t) vec_sube (vra, vrb, vrc);
+# else
   __asm__(
       "vsubeuqm %0,%1,%2,%3;"
       : "=v" (t)
@@ -6192,8 +6221,6 @@ vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc)
 	"v" (vrb),
         "v" (vrc)
       : );
-#else
-  t = (vui32_t) vec_vsubeuqm (vra, vrb, vrc);
 #endif
 #else
   /* vsubeuqm is defined as vra + NOT(vrb) + vrc.bit[127].  */
@@ -6222,15 +6249,16 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
 {
   vui32_t t;
 #ifdef _ARCH_PWR8
-#ifndef vec_vsubuqm
+#if defined (vec_vsubuqm)
+  t = (vui32_t) vec_vsubuqm (vra, vrb);
+#elif defined (__clang__)
+  t = (vui32_t) vec_sub (vra, vrb);
   __asm__(
       "vsubuqm %0,%1,%2;"
       : "=v" (t)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  t = (vui32_t) vec_vsubuqm (vra, vrb);
 #endif
 #else
   /* vsubuqm is defined as vra + NOT(vrb) + 1.  */
@@ -6269,7 +6297,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   __asm__(
@@ -6511,7 +6539,7 @@ vec_vmuloud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
   const vui64_t zero = { 0, 0 };
   vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
   __asm__(

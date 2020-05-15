@@ -24,10 +24,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <floatn.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <stdlib.h>
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
+#endif
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_int128_ppc.h>
@@ -283,6 +284,8 @@ timed_longdiv_e32 (void)
   return (rc);
 }
 
+#ifndef __clang__
+// Clang does not support _Decimal128 which is a dependency of vBCD
 //#define __DEBUG_PRINT__ 1
 extern vBCD_t
 example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
@@ -468,6 +471,7 @@ timed_longbcdct_10e32 (void)
 
   return (rc);
 }
+#endif
 
 // Time spriontf for comparison to timed_longbcdcf_10e32
 int
@@ -500,6 +504,7 @@ timed_ctmaxdouble_10e32 (void)
   double d = 0;
   int rc = 0;
 
+#ifndef __clang__
   d = strtod (buf, &res);
 
   if (d != __DBL_MAX__)
@@ -507,6 +512,6 @@ timed_ctmaxdouble_10e32 (void)
       printf ("strtod fail is % .13a should be % .13a\n", d, __DBL_MAX__);
       rc++;
     }
-
+#endif
   return rc;
 }

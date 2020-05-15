@@ -294,7 +294,7 @@ mul_hlq (unsigned __int128 *h_prod, unsigned __int128 a, unsigned __int128 b)
 
   return (l);
 }
-
+#ifndef __clang__
 static inline _Decimal128
 vec2FRp (vui64_t val)
 {
@@ -331,6 +331,7 @@ FRp2vec (_Decimal128 val)
   return (t.vx2);
 #endif
 }
+#endif
 
 static inline __int128
 adduqm (__int128 a, __int128 b)

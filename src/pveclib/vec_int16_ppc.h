@@ -554,14 +554,16 @@ vec_clzh (vui16_t vra)
 {
   vui16_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vclzh
+#if defined (vec_vclzh)
+  r = vec_vclzh (vra);
+#elif defined (__clang__)
+  r = vec_cntlz (vra);
+#else
   __asm__(
       "vclzh %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vclzh (vra);
 #endif
 #else
 //#warning Implememention pre power8
@@ -833,14 +835,16 @@ vec_popcnth (vui16_t vra)
 {
   vui16_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vpopcnth
+#if defined (vec_vpopcnth)
+  r = vec_vpopcnth (vra);
+#elif defined (__clang__)
+  r = vec_popcnt (vra);
+#else
   __asm__(
       "vpopcnth %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vpopcnth (vra);
 #endif
 #else
   //#warning Implememention pre power8
@@ -905,14 +909,14 @@ vec_revbh (vui16_t vra)
   vui16_t result;
 
 #ifdef _ARCH_PWR9
-#ifndef vec_revb
+#if defined (vec_revb) || defined (__clang__)
+  result = vec_revb (vra);
+#else
   __asm__(
       "xxbrh %x0,%x1;"
       : "=wa" (result)
       : "wa" (vra)
       : );
-#else
-  result = vec_revb (vra);
 #endif
 #else
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

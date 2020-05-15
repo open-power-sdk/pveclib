@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
-#include <math.h>
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
@@ -54,8 +53,10 @@ extern __vector bool int
 test_pred_f32_subnormal (vf32_t value);
 extern __vector bool int
 test_pred_f32_zero (vf32_t value);
+#ifndef __clang__
 extern vui32_t
 test_fpclassify_f32 (vf32_t value);
+#endif
 
 int timed_is_f32 (void)
 {
@@ -75,6 +76,7 @@ int timed_is_f32 (void)
 
 int timed_fpclassify_f32 (void)
 {
+#ifndef __clang__
   vb32_t accum = {0,0,0,0};
   int i;
 
@@ -82,5 +84,6 @@ int timed_fpclassify_f32 (void)
     {
       accum |= test_fpclassify_f32 (data0);
     }
+#endif
    return 0;
 }

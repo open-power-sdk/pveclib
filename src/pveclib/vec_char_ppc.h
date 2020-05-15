@@ -208,14 +208,15 @@ vec_clzb (vui8_t vra)
 {
   vui8_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vclzb
+#if defined (vec_vclzb)
+  r = vec_vclzb (vra);
+#elif defined (__clang__)
+  r = vec_cntlz (vra);
   __asm__(
       "vclzb %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vclzb (vra);
 #endif
 #else
 //#warning Implememention pre power8
@@ -630,14 +631,16 @@ vec_popcntb (vui8_t vra)
 {
   vui8_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vpopcntb
+#if defined (vec_vpopcntb)
+  r = vec_vpopcntb (vra);
+#elif defined (__clang__)
+  r = vec_popcnt (vra);
+#else
   __asm__(
       "vpopcntb %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vpopcntb (vra);
 #endif
 #else
 //#warning Implememention pre power8

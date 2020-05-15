@@ -21,8 +21,12 @@
  */
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifdef __clang__
+// hack clang does not support pragma GCC target
+#else
 // POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
 #pragma GCC target ("cpu=power7")
 
 #include "vec_int512_runtime.c"
+#endif
 #endif

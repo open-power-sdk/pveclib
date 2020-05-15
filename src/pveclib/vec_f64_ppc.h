@@ -254,7 +254,7 @@ vec_all_isfinitef64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x70;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_zero);
@@ -297,7 +297,7 @@ vec_all_isinff64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x30;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -343,7 +343,7 @@ vec_all_isnanf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x40;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -389,7 +389,7 @@ vec_all_isnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x7f;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_zero);
@@ -434,7 +434,7 @@ vec_all_issubnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x03;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -482,7 +482,7 @@ vec_all_iszerof64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -527,7 +527,7 @@ vec_any_isfinitef64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x70;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_zero);
@@ -569,7 +569,7 @@ vec_any_isinff64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x30;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -615,7 +615,7 @@ vec_any_isnanf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x40;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -661,7 +661,7 @@ vec_any_isnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x7f;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_zero);
@@ -708,7 +708,7 @@ vec_any_issubnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x03;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -760,7 +760,7 @@ vec_any_iszerof64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -835,7 +835,7 @@ vec_isfinitef64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x70;\n"
       : "=wa" (tmp2)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
@@ -880,7 +880,7 @@ vec_isinff64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x30;\n"
       : "=wa" (result)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
 #else
@@ -923,7 +923,7 @@ vec_isnanf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x40;\n"
       : "=wa" (result)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
 #else
@@ -968,7 +968,7 @@ vec_isnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x7f;\n"
       : "=wa" (tmp2)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
@@ -1015,7 +1015,7 @@ vec_issubnormalf64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x03;\n"
       : "=wa" (result)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
 #else
@@ -1063,7 +1063,7 @@ vec_iszerof64 (vf64_t vf64)
   __asm__(
       "xvtstdcdp %x0,%x1,0x0c;\n"
       : "=wa" (result)
-      : "wf" (vf64)
+      : "wa" (vf64)
       :);
 #endif
 #else
@@ -1085,6 +1085,11 @@ vec_iszerof64 (vf64_t vf64)
 static inline long double
 vec_pack_longdouble (vf64_t lval)
 {
+#ifdef __clang__
+  __VEC_U_128 t;
+  t.vf2 = lval;
+  return (t.ldbl128);
+#else
 #ifdef _ARCH_PWR7
   long double t;
   __asm__(
@@ -1095,9 +1100,10 @@ vec_pack_longdouble (vf64_t lval)
       : );
   return (t);
 #else
-  U_128 t;
+  __VEC_U_128 t;
   t.vf2 = lval;
   return (t.ldbl128);
+#endif
 #endif
 }
 
@@ -1110,6 +1116,11 @@ vec_pack_longdouble (vf64_t lval)
 static inline vf64_t
 vec_unpack_longdouble (long double lval)
 {
+#ifdef __clang__
+  __VEC_U_128 t;
+  t.ldbl128 = lval;
+  return (t.vf2);
+#else
 #ifdef _ARCH_PWR7
   vf64_t t;
   __asm__(
@@ -1119,9 +1130,10 @@ vec_unpack_longdouble (long double lval)
       : );
   return (t);
 #else
-  U_128 t;
+  __VEC_U_128 t;
   t.ldbl128 = lval;
   return (t.vf2);
+#endif
 #endif
 }
 

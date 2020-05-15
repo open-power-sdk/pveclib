@@ -913,15 +913,17 @@ vec_addudm(vui64_t a, vui64_t b)
   vui32_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vaddudm
+#if defined (vec_vaddudm)
+  r = (vui32_t) vec_vaddudm (a, b);
+#elif defined (__clang__)
+  r = (vui32_t) vec_add (a, b);
+#else
   __asm__(
       "vaddudm %0,%1,%2;"
       : "=v" (r)
       : "v" (a),
       "v" (b)
       : );
-#else
-  r = (vui32_t) vec_vaddudm (a, b);
 #endif
 #else
   vui32_t c;
@@ -957,14 +959,16 @@ vec_clzd (vui64_t vra)
 {
   vui64_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vclzd
+#if defined (vec_vclzd)
+  r = vec_vclzd (vra);
+#elif defined (__clang__)
+  r = (vui32_t) vec_cntlz (vra);
+#else
   __asm__(
       "vclzd %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vclzd (vra);
 #endif
 #else
   vui32_t n, nt, y, x, m;
@@ -2127,15 +2131,17 @@ vec_maxsd (vi64_t vra, vi64_t vrb)
   vi64_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vmaxsd
+#if defined (vec_vmaxsd)
+  r = vec_vmaxsd (vra, vrb);
+#elif defined (__clang__)
+  r = vec_max (vra, vrb);
+#else
   __asm__(
       "vmaxsd %0,%1,%2;"
       : "=v" (r)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  r = vec_vmaxsd (vra, vrb);
 #endif
 #else
   vb64_t maxmask;
@@ -2167,15 +2173,17 @@ vec_maxud (vui64_t vra, vui64_t vrb)
   vui64_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vmaxud
+#if defined (vec_vmaxud)
+  r = vec_vmaxud (vra, vrb);
+#elif defined (__clang__)
+  r = vec_max (vra, vrb);
+#else
   __asm__(
       "vmaxud %0,%1,%2;"
       : "=v" (r)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  r = vec_vmaxud (vra, vrb);
 #endif
 #else
   vb64_t maxmask;
@@ -2207,15 +2215,17 @@ vec_minsd (vi64_t vra, vi64_t vrb)
   vi64_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vmaxsd
+#if defined (vec_vminsd)
+  r = vec_vminsd (vra, vrb);
+#elif defined (__clang__)
+  r = vec_min (vra, vrb);
+#else
   __asm__(
       "vminsd %0,%1,%2;"
       : "=v" (r)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  r = vec_vminsd (vra, vrb);
 #endif
 #else
   vb64_t minmask;
@@ -2247,15 +2257,17 @@ vec_minud (vui64_t vra, vui64_t vrb)
   vui64_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vminud
+#if defined (vec_vminud)
+  r = vec_vminud (vra, vrb);
+#elif defined (__clang__)
+  r = vec_min (vra, vrb);
+#else
   __asm__(
       "vminud %0,%1,%2;"
       : "=v" (r)
       : "v" (vra),
       "v" (vrb)
       : );
-#else
-  r = vec_vminud (vra, vrb);
 #endif
 #else
   vb64_t minmask;
@@ -2649,14 +2661,16 @@ vec_popcntd (vui64_t vra)
 {
   vui64_t r;
 #ifdef _ARCH_PWR8
-#ifndef vec_vpopcntd
+#if defined (vec_vpopcntd)
+  r = vec_vpopcntd (vra);
+#elif defined (__clang__)
+  r = vec_popcnt (vra);
+#else
   __asm__(
       "vpopcntd %0,%1;"
       : "=v" (r)
       : "v" (vra)
       : );
-#else
-  r = vec_vpopcntd (vra);
 #endif
 #else
   vui32_t z= { 0,0,0,0};
@@ -2692,18 +2706,19 @@ vec_revbd (vui64_t vra)
   vui64_t result;
 
 #ifdef _ARCH_PWR9
-#ifndef vec_revb
+#if defined (vec_revb) || defined (__clang__)
+  result = vec_revb (vra);
+#else
   __asm__(
       "xxbrd %x0,%x1;"
       : "=wa" (result)
       : "wa" (vra)
       : );
-#else
-  result = vec_revb (vra);
 #endif
 #else
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  const vui64_t vconstp = CONST_VINT64_DW(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+  const vui64_t vconstp =
+	CONST_VINT64_DW(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
 #else
   const vui64_t vconstp =
       CONST_VINT64_DW(0x08090A0B0C0D0E0FUL, 0x0001020304050607UL);
@@ -2753,7 +2768,7 @@ vec_rldi (vui64_t vra, const unsigned int shb)
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui64_t) vec_splat_s32(shb);
       else
-	lshift = vec_splats ((unsigned long) shb);
+	lshift = vec_splats ((unsigned long long) shb);
 
       /* Vector Shift right bytes based on the lower 6-bits of
          corresponding element of lshift.  */
@@ -2799,7 +2814,7 @@ vec_sldi (vui64_t vra, const unsigned int shb)
       if (__builtin_constant_p (shb) && (shb < 16))
 	lshift = (vui64_t) vec_splat_s32(shb);
       else
-	lshift = vec_splats ((unsigned long) shb);
+	lshift = vec_splats ((unsigned long long) shb);
 
       /* Vector Shift right bytes based on the lower 6-bits of
          corresponding element of lshift.  */
@@ -2941,7 +2956,7 @@ vec_srdi (vui64_t vra, const unsigned int shb)
       if (__builtin_constant_p (shb) && (shb < 16))
 	rshift = (vui64_t) vec_splat_s32(shb);
       else
-	rshift = vec_splats ((unsigned long) shb);
+	rshift = vec_splats ((unsigned long long) shb);
 #else
       rshift = CONST_VINT128_DW (shb, shb);
 #endif
@@ -2990,7 +3005,7 @@ vec_sradi (vi64_t vra, const unsigned int shb)
       if (__builtin_constant_p (shb) && (shb < 16))
 	rshift = (vui64_t) vec_splat_s32(shb);
       else
-	rshift = vec_splats ((unsigned long) shb);
+	rshift = vec_splats ((unsigned long long) shb);
 #else
       rshift = CONST_VINT128_DW (shb, shb);
 #endif
@@ -3034,15 +3049,17 @@ vec_subudm(vui64_t a, vui64_t b)
   vui32_t r;
 
 #ifdef _ARCH_PWR8
-#ifndef vec_vsubudm
+#if defined (vec_vsubudm)
+  r = (vui32_t) vec_vsubudm (a, b);
+#elif defined (__clang__)
+  r = (vui32_t) vec_sub (a, b);
+#else
   __asm__(
       "vsubudm %0,%1,%2;"
       : "=v" (r)
       : "v" (a),
       "v" (b)
       : );
-#else
-  r = (vui32_t) vec_vsubudm (a, b);
 #endif
 #else
   vui32_t c;
@@ -3173,6 +3190,7 @@ vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
  *  @param vrb a 128-bit vector treated as 2 x unsigned long integers.
  *  @return 128-bit vector treated as 4 x unsigned integers.
  */
+#ifndef __clang__
 #ifndef vec_vpkudum
 static inline vui32_t
 vec_vpkudum (vui64_t vra, vui64_t vrb)
@@ -3198,6 +3216,7 @@ vec_vpkudum (vui64_t vra, vui64_t vrb)
   return (r);
 }
 #endif
+#endif
 
 /** \brief Vector Rotate Left Doubleword.
  *
@@ -3222,12 +3241,16 @@ vec_vrld (vui64_t vra, vui64_t vrb)
 {
   vui64_t r;
 #ifdef _ARCH_PWR8
+#ifdef __clang__
+  r = vec_rl (vra, vrb);
+#else
   __asm__(
       "vrld %0,%1,%2;"
       : "=v" (r)
       : "v" (vra),
 	"v" (vrb)
       : );
+#endif
 #else
   vui64_t hd, ld;
   vui32_t t1, t2;
@@ -3272,12 +3295,16 @@ vec_vsld (vui64_t vra, vui64_t vrb)
   vui64_t result;
 
 #ifdef _ARCH_PWR8
+#ifdef __clang__
+  result = vec_sl (vra, vrb);
+#else
   __asm__(
       "vsld %0,%1,%2;"
       : "=v" (result)
       : "v" (vra),
       "v" (vrb)
       : );
+#endif
 #else
   vui8_t  vsh_h, vsh_l;
   vui8_t  vr_h, vr_l;
@@ -3335,12 +3362,17 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
   vi64_t result;
 
 #ifdef _ARCH_PWR8
+#ifdef __clang__bad
+// clang8/9 has code gen bug here, disabled for now
+  result = vec_sra (vra, vrb);
+#else
   __asm__(
       "vsrad %0,%1,%2;"
       : "=v" (result)
       : "v" (vra),
-      "v" (brb)
+      "v" (vrb)
       : );
+#endif
 #else
   vui8_t  vsh_h, vsh_l;
   vui8_t  vr_h, vr_l;
@@ -3402,12 +3434,16 @@ vec_vsrd (vui64_t vra, vui64_t vrb)
   vui64_t result;
 
 #ifdef _ARCH_PWR8
+#ifdef __clang__
+  result = vec_sr (vra, vrb);
+#else
   __asm__(
       "vsrd %0,%1,%2;"
       : "=v" (result)
       : "v" (vra),
-      "v" (brb)
+      "v" (vrb)
       : );
+#endif
 #else
   vui8_t  vsh_h, vsh_l;
   vui8_t  vr_h, vr_l;

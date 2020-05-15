@@ -27,7 +27,11 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <math.h>
+#endif
 
 #include <pveclib/vec_int128_ppc.h>
 #include <pveclib/vec_int512_ppc.h>
@@ -806,6 +810,9 @@ test_f32_zero_demorm_PWR9 (vf32_t value)
   return result;
 }
 
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 vui32_t
 test_fpclassify_f32_PWR9 (vf32_t value)
 {
@@ -848,6 +855,7 @@ test_fpclassify_f32loop_PWR9 (vui32_t *out, vf32_t *in, int count)
       out[i] = test_fpclassify_f32_PWR9 (in[i]);
     }
 }
+#endif
 
 /* dummy sinf32 example. From Posix:
  * If value is NaN then return a NaN.
@@ -1174,6 +1182,7 @@ __test_vec_extract_sig_f32 (vf32_t val)
 }
 #endif
 
+#ifndef __clang__
 vBCD_t
 test_vec_bcdmulh_PWR9 (vBCD_t a, vBCD_t b)
 {
@@ -1443,6 +1452,7 @@ test_vec_bcdcfuq_PWR9 (vui128_t vra)
 {
   return vec_bcdcfuq (vra);
 }
+#endif
 
 vi128_t
 __test_remsq_10e31_PWR9  (vi128_t a, vi128_t b)
@@ -1576,7 +1586,7 @@ example_longdiv_10e31_PWR9 (vui128_t *q, vui128_t *d, long int _N)
 
   return rh;
 }
-
+#ifndef __clang__
 long int
 example_longbcdct_10e32_PWR9 (vui128_t *d, vBCD_t decimal, long int _C , long int _N)
 {
@@ -1684,7 +1694,7 @@ example_longbcdct_10e31_PWR9 (vui128_t *d, vBCD_t decimal, long int _C,
 
   return cnt;
 }
-
+#endif
 void
 test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11,
 		     vui128_t m12, vui128_t m13, vui128_t m2)
@@ -1735,9 +1745,13 @@ __test_madd512x512a512_PWR9 (__VEC_U_512 m1, __VEC_U_512 m2, __VEC_U_512 a1)
 {
   __VEC_U_1024 result;
   vui128_t mc, mp, mq;
+#ifndef __clang__
   register vui128_t t0 asm("vs10");
   register vui128_t t1 asm("vs11");
   register vui128_t t2 asm("vs12");
+#else
+  vui128_t t0, t1, t2;
+#endif
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
   mp0.x640 = vec_madd512x128a512_inline (m1, m2.vx0, a1);

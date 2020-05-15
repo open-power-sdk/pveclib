@@ -30,8 +30,11 @@ extern int timed_mulluq (void);
 extern int timed_muludq (void);
 extern int timed_muludqx (void);
 extern int timed_longdiv_e32 (void);
+#ifndef __clang__
+// Clang does not support _Decimal128 which is a dependency of vBCD
 extern int timed_longbcdcf_10e32 (void);
 extern int timed_longbcdct_10e32 (void);
+#endif
 extern int timed_cfmaxdouble_10e32 (void);
 extern int timed_ctmaxdouble_10e32 (void);
 

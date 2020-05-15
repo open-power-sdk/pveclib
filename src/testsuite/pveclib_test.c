@@ -22,12 +22,18 @@
 
 #define __STDC_WANT_DEC_FP__    1
 
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <floatn.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <stdlib.h>
+#else
+#define EXIT_SUCCESS 0
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
-#include <math.h>
+//#include <math.h>
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_int128_ppc.h>

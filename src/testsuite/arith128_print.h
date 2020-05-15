@@ -41,6 +41,8 @@ TimeDeltaSec (uint64_t tb_delta)
 
 extern long tcount;
 
+#ifndef __clang__
+// clang does not support Decimal Floating Point at this time.
 extern void
 print_dfp128 (char *prefix, _Decimal128 val128);
 
@@ -61,6 +63,7 @@ print_dfp32 (char *prefix, _Decimal32 val32);
 
 extern int
 check_dfp32 (char *prefix, _Decimal32 val32, _Decimal32 shouldbe);
+#endif
 
 extern void
 print_ibm128 (char *prefix, long double ldbl);
@@ -156,7 +159,7 @@ extern void
 print_vint128x (char *prefix, vui128_t val);
 
 extern void
-print_vfloat128x (char *prefix, __float128 val128);
+print_vfloat128x (char *prefix, __binary128 val128);
 
 extern void
 print_vint256 (char *prefix, vui128_t val0, vui128_t val1);
@@ -236,10 +239,10 @@ extern void
 print_vbool8 (char *prefix, vui8_t val);
 
 extern int
-check_isf128_priv (char *prefix, __float128 val128, int val, int shouldbe);
+check_isf128_priv (char *prefix, __binary128 val128, int val, int shouldbe);
 
 static inline int
-check_isf128 (char *prefix, __float128 val128, int val, int shouldbe)
+check_isf128 (char *prefix, __binary128 val128, int val, int shouldbe)
 {
   int rc = 0;
   if (__builtin_expect ((val != shouldbe), 0))
@@ -251,11 +254,11 @@ check_isf128 (char *prefix, __float128 val128, int val, int shouldbe)
 }
 
 extern int
-check_f128bool_priv (char *prefix, __float128 val128, vb128_t boolis,
+check_f128bool_priv (char *prefix, __binary128 val128, vb128_t boolis,
                      vb128_t shouldbe);
 
 static inline int
-check_f128bool (char *prefix, __float128 val128, vb128_t boolis,
+check_f128bool (char *prefix, __binary128 val128, vb128_t boolis,
                 vb128_t shouldbe)
 {
   int rc = 0;
@@ -268,8 +271,8 @@ check_f128bool (char *prefix, __float128 val128, vb128_t boolis,
 }
 
 static inline int
-check_f128 (char *prefix, __float128 val128, __float128 f128is,
-            __float128 shouldbe)
+check_f128 (char *prefix, __binary128 val128, __binary128 f128is,
+            __binary128 shouldbe)
 {
   __VF_128 xfer;
   vb128_t boolis, boolshould;
@@ -606,6 +609,8 @@ check_uint64 (char *prefix, unsigned long val64, unsigned long shouldbe);
 extern int
 check_int64 (char *prefix, long val64, long shouldbe);
 
+#ifndef __clang__
+// clang does not support 128-bit Decimnal Floating Point at this time.
 extern int
 check_frexptftd_priv (char *prefix, _Decimal128 val128, long exp,
                       _Decimal128 shouldbe, long shouldexp);
@@ -639,7 +644,7 @@ check_frexptfkf (char *prefix, vui128_t val128, long exp, vui128_t shouldbe,
 
   return (rc);
 }
-
+#endif
 extern int
 check_kf_priv (char *prefix, vui128_t val128, vui128_t shouldbe);
 
@@ -689,9 +694,11 @@ check_frexptfti (char *prefix, __int128 val128, long exp, __int128 shouldbe,
   return (rc);
 }
 
+#ifndef __clang__
+// clang does not support Decimal Floating Point at this time.
 extern void
 print_dfp128p2 (char *prefix, _Decimal128 val128, long exp);
-
+#endif
 
 #endif /* TESTSUITE_ARITH128_PRINT_H_ */
 

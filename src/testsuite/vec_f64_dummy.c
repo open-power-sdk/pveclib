@@ -24,7 +24,11 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <math.h>
+#endif
 
 //#define __DEBUG_PRINT__
 
@@ -161,6 +165,10 @@ test_pred_f64_zero (vf64_t value)
   return (vec_iszerof64 (value));
 }
 
+
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 vui64_t
 test_fpclassify_f64 (vf64_t value)
 {
@@ -189,6 +197,8 @@ test_fpclassify_f64 (vf64_t value)
 
   return result;
 }
+#endif
+
 /* dummy sinf64 example. From Posix:
  * If value is NaN then return a NaN.
  * If value is +-0.0 then return value.
@@ -306,16 +316,16 @@ test_vf64_ibm128_vec (vf64_t lval)
 {
   return (vec_pack_longdouble (lval));
 }
-
+#ifndef __clang__
 vf64_t
 test_ibm128_vf64_asm (long double lval)
 {
 #ifdef _ARCH_PWR7
   vf64_t t;
   __asm__(
-      "xxmrghd %x0,%1,%L1;\n"
+      "xxmrghd %x0,%x1,%L1;\n"
       : "=wa" (t)
-      : "f" (lval)
+      : "wa" (lval)
       : );
   return (t);
 #else
@@ -333,7 +343,7 @@ test_vf64_ibm128_asm (vf64_t lval)
   __asm__(
       "xxlor %0,%x1,%x1;\n"
       "\txxswapd %L0,%x1;\n"
-      : "=f" (t)
+      : "=wa" (t)
       : "wa" (lval)
       : );
   return (t);
@@ -343,7 +353,7 @@ test_vf64_ibm128_asm (vf64_t lval)
   return (t.ldbl128);
 #endif
 }
-
+#endif
 #ifdef _ARCH_PWR8
 /* POWER 64-bit (vector double) compiler tests.  */
 

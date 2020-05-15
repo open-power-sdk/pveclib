@@ -23,6 +23,7 @@
 #include <pveclib/vec_int32_ppc.h>
 
 #ifdef _ARCH_PWR8
+#ifndef __clang__
 vui32_t
 __test_mrgew (vui32_t a, vui32_t b)
 {
@@ -34,7 +35,7 @@ __test_mrgow (vui32_t a, vui32_t b)
 {
   return vec_vmrgow (a, b);
 }
-
+#endif
 vui32_t
 __test_mergeew (vui32_t a, vui32_t b)
 {

@@ -21,9 +21,8 @@
  */
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-/* Older distros running Big Endian are unlikely to support PWR9.
+/* Older Linux distros running Big Endian are unlikely to support PWR9.
  * So build PWR9 runtime for LE only.  */
-#pragma GCC target ("cpu=power9")
 
 #include "vec_int512_runtime.c"
 #endif

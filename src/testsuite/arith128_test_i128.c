@@ -24,15 +24,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#if 0
-#include <dfp/fenv.h>
-#include <dfp/float.h>
-#include <dfp/math.h>
-#else
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
-#endif
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_common_ppc.h>
@@ -6189,6 +6180,8 @@ test_time_i128 (void)
   printf ("\n%s longdiv_e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
 	  delta_sec);
 
+#ifndef __clang__
+// clang does not support Decimal Floating Point at this time.
   printf ("\n%s longbcdcf_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
@@ -6212,6 +6205,7 @@ test_time_i128 (void)
   t_end = __builtin_ppc_get_timebase ();
   t_delta = t_end - t_start;
   delta_sec = TimeDeltaSec (t_delta);
+#endif
 
   printf ("\n%s longbcdct_10e32 end", __FUNCTION__);
   printf ("\n%s longbcdct_10e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,

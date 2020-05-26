@@ -659,7 +659,11 @@ test_vec_mul10uq_c (vui128_t *p, vui128_t a)
  * platform specific have been applied based on the command line
  * =mcpu=<target>.
  * Keep this example as a warning. */
-vui128_t __attribute__((__target__("cpu=power9")))
+vui128_t
+#ifndef __clang__
+// cland does not either, generates a warning
+__attribute__((__target__("cpu=power9")))
+#endif
 test_vec_mul10uq (vui128_t a)
 {
 	return vec_mul10uq (a);
@@ -692,10 +696,17 @@ test_vec_revbq (vui128_t a)
 void
 test_vec_load_store (vui128_t *a, vui128_t *b)
   {
+#ifdef __clang__
+    vui32_t temp;
+
+    temp = vec_ld (0, (vui32_t *)a);
+    vec_st (temp, 0, (vui32_t *)b);
+#else
     vui64_t temp;
 
     temp = vec_ld (0, (vui64_t *)a);
     vec_st (temp, 0, (vui64_t *)b);
+#endif
   }
 
 vui64_t
@@ -1161,8 +1172,8 @@ example_print_vint128 (vi128_t value)
   t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
   tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
   t_mid = (vui64_t) vec_subuqm (val128, tmp);
-
-  printf ("%c%07ld%016ld%016ld", sign, t_high[VEC_DW_L],
+ 
+  printf ("%c%07llu%016llu%016llu", sign, t_high[VEC_DW_L],
 	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
 }
 
@@ -1369,7 +1380,7 @@ __test_clzq (vui128_t vra)
 	const __vector unsigned long long vzero = {0,0};
 	const __vector unsigned long long v64 = {64, 64};
 
-	vt1 = vec_vclz ((__vector unsigned long long)vra);
+	vt1 = vec_clzd ((__vector unsigned long long)vra);
 	vt2 = (__vector unsigned long long)vec_cmpeq (vt1, v64);
 	vt3 = (__vector unsigned long long)vec_sld ((__vector unsigned char)vzero, (__vector unsigned char)vt2, 8);
 	result = vec_andc(vt1, vt3);

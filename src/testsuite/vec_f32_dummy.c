@@ -24,7 +24,11 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <math.h>
+#endif
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
@@ -51,6 +55,9 @@ test_f32_zero_demorm (vf32_t value)
   return result;
 }
 
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <math.h>
+   incombination with -mcpu=power9 -mfloat128 */
 vui32_t
 test_fpclassify_f32 (vf32_t value)
 {
@@ -93,6 +100,7 @@ test_fpclassify_f32loop (vui32_t *out, vf32_t *in, int count)
       out[i] = test_fpclassify_f32 (in[i]);
     }
 }
+#endif
 
 int
 test512_any_f32_subnorm (vf32_t val0, vf32_t val1, vf32_t val2, vf32_t val3)

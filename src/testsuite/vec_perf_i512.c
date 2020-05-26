@@ -23,10 +23,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <fenv.h>
-#include <float.h>
-#include <math.h>
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_int128_ppc.h>

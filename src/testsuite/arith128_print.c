@@ -27,11 +27,11 @@
 #define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
 #include <testsuite/arith128_print.h>
-//#include "math_private.h"
 #include "ieee754.h"
 
 long tcount;
-
+#ifndef __clang__
+// Clang does not support _Decimal* types
 void
 print_dfp128 (char *prefix, _Decimal128 val128)
 {
@@ -94,7 +94,7 @@ check_dfp128 (char *prefix, _Decimal128 val128, _Decimal128 shouldbe)
 
   return (rc);
 }
-
+#endif
 void
 print_int128 (char *prefix, __int128 val128)
 {
@@ -343,11 +343,19 @@ void
 print_ibm128 (char *prefix, long double ldbl)
 {
   double high, low;
+  __VEC_U_128 t;
+
+  t.ldbl128 = ldbl;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  high = t.vf2 [1];
+  low = t.vf2 [0];
+#else
+  high = t.vf2 [0];
+  low = t.vf2 [1];
+#endif
 
   printf ("%s:% .34" "Le" " % .28" "La" "\n", prefix, ldbl, ldbl);
 
-  high = __builtin_unpack_longdouble (ldbl, 0);
-  low = __builtin_unpack_longdouble (ldbl, 1);
   printf ("   %s:% .14" "a" " % .14" "a" "\n", prefix, high, low);
 }
 
@@ -355,8 +363,17 @@ void
 print_ibm128x (char *prefix, long double ldbl)
 {
   double high, low;
-  high = __builtin_unpack_longdouble (ldbl, 0);
-  low = __builtin_unpack_longdouble (ldbl, 1);
+  __VEC_U_128 t;
+
+  t.ldbl128 = ldbl;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  high = t.vf2 [1];
+  low = t.vf2 [0];
+#else
+  high = t.vf2 [0];
+  low = t.vf2 [1];
+#endif
+
   printf ("%s:% .28La, /* %Lg */\n", prefix, ldbl, ldbl);
   printf ("\t:% .13a, % .13a*/\n", high, low);
 }
@@ -601,9 +618,9 @@ print_v2b64x (char *prefix, vb64_t boolval)
   vui64_t val = (vui64_t)boolval;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %016lx,%016lx\n", prefix, val[1], val[0]);
+  printf ("%s %016llx,%016llx\n", prefix, val[1], val[0]);
 #else
-  printf ("%s %016lx,%016lx\n", prefix, val[0], val[1]);
+  printf ("%s %016llx,%016llx\n", prefix, val[0], val[1]);
 #endif
 }
 
@@ -613,9 +630,9 @@ print_v2int64 (char *prefix, vui64_t val128)
   vui64_t val = (vui64_t) val128;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %ld,%ld\n", prefix, val[1], val[0]);
+  printf ("%s %lld,%lld\n", prefix, val[1], val[0]);
 #else
-  printf ("%s %ld,%ld\n", prefix, val[0], val[1]);
+  printf ("%s %lld,%lld\n", prefix, val[0], val[1]);
 #endif
 }
 
@@ -625,9 +642,9 @@ print_v2xint64 (char *prefix, vui64_t val128)
   vui64_t val = (vui64_t) val128;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %016lx,%016lx\n", prefix, val[1], val[0]);
+  printf ("%s %016llx,%016llx\n", prefix, val[1], val[0]);
 #else
-  printf ("%s %016lx,%016lx\n", prefix, val[0], val[1]);
+  printf ("%s %016llx,%016llx\n", prefix, val[0], val[1]);
 #endif
 }
 
@@ -911,7 +928,7 @@ print_vint128x_extend (char *prefix, vui32_t r, vui32_t co, vui32_t a,
 }
 
 void
-print_vfloat128x (char *prefix, __float128 val128)
+print_vfloat128x (char *prefix, __binary128 val128)
 {
   vui32_t val;
   vui16_t vh;
@@ -986,7 +1003,7 @@ print_vfloat128x (char *prefix, __float128 val128)
 }
 
 int
-check_isf128_priv (char *prefix, __float128 val128, int val, int shouldbe)
+check_isf128_priv (char *prefix, __binary128 val128, int val, int shouldbe)
 {
   int rc = 0;
   if (val != shouldbe)
@@ -1347,6 +1364,9 @@ check_int64 (char *prefix, long val64, long shouldbe)
 
   return (rc);
 }
+
+#ifndef __clang__ // Clang does not support _Decimal* types
+
 // TODO make this hidden so we can use TOC relative
 extern const _Decimal128 decpowof2[];
 
@@ -1369,22 +1389,6 @@ print_dfp128p2 (char *prefix, _Decimal128 val128, long exp)
 }
 
 int
-check_f128bool_priv (char *prefix, __float128 val128, vb128_t boolis,
-                     vb128_t shouldbe)
-{
-  int rc = 0;
-  if (!vec_all_eq ((vui32_t)boolis, (vui32_t)shouldbe))
-    {
-      rc = 1;
-      print_vfloat128x (prefix, val128);
-      print_vint128x ("\tshould be: ", (vui128_t) shouldbe);
-      print_vint128x ("\t       is: ", (vui128_t) boolis);
-    }
-
-  return (rc);
-}
-
-int
 check_frexptftd_priv (char *prefix, _Decimal128 val128, long exp,
                       _Decimal128 shouldbe, long shouldexp)
 {
@@ -1399,6 +1403,23 @@ check_frexptftd_priv (char *prefix, _Decimal128 val128, long exp,
       printf ("\t      exp: %ld\n", exp);
 
       print_dfp128p2 ("\t  decpow2: ", val128, exp);
+    }
+
+  return (rc);
+}
+#endif
+
+int
+check_f128bool_priv (char *prefix, __binary128 val128, vb128_t boolis,
+                     vb128_t shouldbe)
+{
+  int rc = 0;
+  if (!vec_all_eq ((vui32_t)boolis, (vui32_t)shouldbe))
+    {
+      rc = 1;
+      print_vfloat128x (prefix, val128);
+      print_vint128x ("\tshould be: ", (vui128_t) shouldbe);
+      print_vint128x ("\t       is: ", (vui128_t) boolis);
     }
 
   return (rc);

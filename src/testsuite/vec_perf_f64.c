@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
-#include <math.h>
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f64_ppc.h>
@@ -37,18 +36,21 @@
 static const vf64_t data0 = { __DBL_MAX__, __DBL_MIN__ };
 static const vf64_t data1 = { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
 
-extern __vector bool long
+extern __vector bool long long
 test_pred_f64_inf (vf64_t value);
-extern __vector bool long
+extern __vector bool long long
 test_pred_f64_nan (vf64_t value);
-extern __vector bool long
+extern __vector bool long long
 test_pred_f64_normal (vf64_t value);
-extern __vector bool long
+extern __vector bool long long
 test_pred_f64_subnormal (vf64_t value);
-extern __vector bool long
+extern __vector bool long long
 test_pred_f64_zero (vf64_t value);
+#ifndef __clang__
+// Clang does not define vec_test_data_class and friends.
 extern vui64_t
 test_fpclassify_f64 (vf64_t value);
+#endif
 
 int timed_is_f64 (void)
 {
@@ -73,6 +75,8 @@ int timed_is_f64 (void)
 
 int timed_fpclassify_f64 (void)
 {
+#ifndef __clang__
+// Clang does not define vec_test_data_class and friends.
   vb64_t accum = {0,0};
   int i;
 
@@ -80,5 +84,6 @@ int timed_fpclassify_f64 (void)
     {
       accum |= test_fpclassify_f64 (data0);
     }
+#endif
    return 0;
 }

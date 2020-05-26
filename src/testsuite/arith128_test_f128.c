@@ -34,6 +34,7 @@
 
 #undef __DEBUG_PRINT__
 //#define __DEBUG_PRINT__
+
 #ifdef __DEBUG_PRINT__
 
 static vb128_t
@@ -134,7 +135,7 @@ test_isinf_signf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -143,7 +144,7 @@ test_isinf_signf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -153,7 +154,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -163,7 +164,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -173,7 +174,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -183,7 +184,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -193,7 +194,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -203,7 +204,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -213,7 +214,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -223,7 +224,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -233,7 +234,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -243,7 +244,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -253,7 +254,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -263,7 +264,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -273,7 +274,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -283,7 +284,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -293,7 +294,7 @@ test_isinf_signf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -352,7 +353,7 @@ test_setb_qp (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -361,7 +362,7 @@ test_setb_qp (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -371,7 +372,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -381,7 +382,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -391,7 +392,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -401,7 +402,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -411,7 +412,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -421,7 +422,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -431,7 +432,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -441,7 +442,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -451,7 +452,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -461,7 +462,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -471,7 +472,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -481,7 +482,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -491,7 +492,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -501,7 +502,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -511,7 +512,7 @@ test_setb_qp (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -571,43 +572,43 @@ test_signbitf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
 
 #ifdef __DEBUG_PRINT__
-  x = (__float128)f128_zero;
+  x = (__binary128)f128_zero;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nzero;
+  x = (__binary128)f128_nzero;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_one;
+  x = (__binary128)f128_one;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_none;
+  x = (__binary128)f128_none;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_max;
+  x = (__binary128)f128_max;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nmax;
+  x = (__binary128)f128_nmax;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_min;
+  x = (__binary128)f128_min;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nmin;
+  x = (__binary128)f128_nmin;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_sub;
+  x = (__binary128)f128_sub;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nsub;
+  x = (__binary128)f128_nsub;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_inf;
+  x = (__binary128)f128_inf;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_ninf;
+  x = (__binary128)f128_ninf;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nan;
+  x = (__binary128)f128_nan;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nnan;
+  x = (__binary128)f128_nnan;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_snan;
+  x = (__binary128)f128_snan;
   print_vfloat128x(" x=  ", x);
-  x = (__float128)f128_nsnan;
+  x = (__binary128)f128_nsnan;
   print_vfloat128x(" x=  ", x);
 #endif
 
@@ -615,7 +616,7 @@ test_signbitf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -625,7 +626,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -635,7 +636,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -645,7 +646,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -655,7 +656,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -665,7 +666,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -675,7 +676,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -685,7 +686,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -695,7 +696,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -705,7 +706,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -715,7 +716,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -725,7 +726,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -735,7 +736,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -745,7 +746,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -755,7 +756,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -765,7 +766,7 @@ test_signbitf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -823,7 +824,7 @@ test_isinff128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -832,7 +833,7 @@ test_isinff128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -842,7 +843,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -852,7 +853,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -862,7 +863,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -872,7 +873,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -882,7 +883,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -892,7 +893,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -902,7 +903,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -912,7 +913,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -922,7 +923,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -932,7 +933,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -942,7 +943,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -952,7 +953,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -962,7 +963,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -972,7 +973,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -982,7 +983,7 @@ test_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1041,7 +1042,7 @@ test_isnanf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -1050,7 +1051,7 @@ test_isnanf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1060,7 +1061,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1070,7 +1071,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1080,7 +1081,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1090,7 +1091,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1100,7 +1101,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1110,7 +1111,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1120,7 +1121,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1130,7 +1131,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1140,7 +1141,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1150,7 +1151,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1160,7 +1161,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1170,7 +1171,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1180,7 +1181,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1190,7 +1191,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1200,7 +1201,7 @@ test_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1259,7 +1260,7 @@ test_isfinitef128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -1268,7 +1269,7 @@ test_isfinitef128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1278,7 +1279,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1288,7 +1289,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1298,7 +1299,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1308,7 +1309,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1318,7 +1319,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1328,7 +1329,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1338,7 +1339,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1348,7 +1349,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1358,7 +1359,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1368,7 +1369,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1378,7 +1379,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1388,7 +1389,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1398,7 +1399,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1408,7 +1409,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1418,7 +1419,7 @@ test_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1477,7 +1478,7 @@ test_isnormalf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -1486,7 +1487,7 @@ test_isnormalf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1496,7 +1497,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1506,7 +1507,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1516,7 +1517,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1526,7 +1527,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1536,7 +1537,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1546,7 +1547,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1556,7 +1557,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1566,7 +1567,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1576,7 +1577,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1586,7 +1587,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1596,7 +1597,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1606,7 +1607,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1616,7 +1617,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1626,7 +1627,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1636,7 +1637,7 @@ test_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1700,7 +1701,7 @@ test_issubnormalf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -1709,7 +1710,7 @@ test_issubnormalf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1719,7 +1720,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1729,7 +1730,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1739,7 +1740,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1749,7 +1750,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1759,7 +1760,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1769,7 +1770,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1779,7 +1780,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1789,7 +1790,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1799,7 +1800,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1809,7 +1810,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub2;
+  x = (__binary128) f128_sub2;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1819,7 +1820,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub2;
+  x = (__binary128) f128_nsub2;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1829,7 +1830,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1839,7 +1840,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1849,7 +1850,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1859,7 +1860,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1869,7 +1870,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1879,7 +1880,7 @@ test_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1944,7 +1945,7 @@ test_iszerof128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   vb128_t test, expt;
   long tests_count = 0;
   int rc = 0;
@@ -1953,7 +1954,7 @@ test_iszerof128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1963,7 +1964,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1973,7 +1974,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1983,7 +1984,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -1993,7 +1994,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2003,7 +2004,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2013,7 +2014,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2023,7 +2024,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2033,7 +2034,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2043,7 +2044,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2053,7 +2054,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub2;
+  x = (__binary128) f128_sub2;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2063,7 +2064,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub2;
+  x = (__binary128) f128_nsub2;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2073,7 +2074,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2083,7 +2084,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2093,7 +2094,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2103,7 +2104,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2113,7 +2114,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2123,7 +2124,7 @@ test_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2184,8 +2185,8 @@ test_absf128 (void)
       CONST_VINT128_DW(0xffff400000000000, 0));
 
 
-  __float128 x;
-  __float128 t, e;
+  __binary128 x;
+  __binary128 t, e;
   long tests_count = 0;
   int rc = 0;
 
@@ -2193,37 +2194,27 @@ test_absf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_absf128 (x);
-  e = (__float128) f128_zero;
+  e = (__binary128) f128_zero;
   rc += check_f128 ("check vec_absf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_absf128 (x);
-  e = (__float128) f128_zero;
+  e = (__binary128) f128_zero;
   rc += check_f128 ("check vec_absf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_absf128 (x);
-  e = f128_one;
-  rc += check_f128 ("check vec_absf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2233,7 +2224,17 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_none;
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+#endif
+  t = vec_absf128 (x);
+  e = f128_one;
+  rc += check_f128 ("check vec_absf128", x, t, e);
+#endif
+#if 1
+  tests_count++;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2243,7 +2244,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2253,7 +2254,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2263,7 +2264,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2273,7 +2274,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2283,7 +2284,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2293,7 +2294,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2303,7 +2304,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2313,7 +2314,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2323,7 +2324,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2333,7 +2334,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2343,7 +2344,7 @@ test_absf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2401,7 +2402,7 @@ test_copysignf128 (void)
   const __binary128 f128_snan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0x7fff400000000000, 0));
 
-  __float128 x, y, t, e;
+  __binary128 x, y, t, e;
   long tests_count = 0;
   int rc = 0;
 
@@ -2409,39 +2410,29 @@ test_copysignf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
-  y = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__float128) f128_zero;
+  e = (__binary128) f128_zero;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__float128) f128_zero;
+  e = (__binary128) f128_zero;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_one;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2451,7 +2442,17 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_none;
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+#endif
+  t = vec_copysignf128 (x, y);
+  e = f128_one;
+  rc += check_f128 ("check vec_copysignf128", x, t, e);
+#endif
+#if 1
+  tests_count++;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2461,7 +2462,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2471,7 +2472,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2481,7 +2482,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2491,7 +2492,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2501,7 +2502,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2511,7 +2512,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2521,7 +2522,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2531,7 +2532,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2541,7 +2542,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2551,7 +2552,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2562,39 +2563,29 @@ test_copysignf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
-  y = (__float128) f128_nzero;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__float128) f128_nzero;
+  e = (__binary128) f128_nzero;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__float128) f128_nzero;
+  e = (__binary128) f128_nzero;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_none;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2604,7 +2595,17 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_none;
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+#endif
+  t = vec_copysignf128 (x, y);
+  e = f128_none;
+  rc += check_f128 ("check vec_copysignf128", x, t, e);
+#endif
+#if 1
+  tests_count++;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2614,7 +2615,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2624,7 +2625,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2634,7 +2635,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2644,7 +2645,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2654,7 +2655,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2664,7 +2665,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2674,7 +2675,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2684,7 +2685,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2694,7 +2695,7 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -2723,7 +2724,7 @@ test_const_f128 (void)
   const __binary128 f128_snan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0x7fff400000000000, 0));
 
-  __float128 x, t, e;
+  __binary128 x, t, e;
   long tests_count = 0;
   int rc = 0;
 #if 1
@@ -2817,7 +2818,7 @@ test_all_isfinitef128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -2826,7 +2827,7 @@ test_all_isfinitef128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128)f128_zero;
+  x = (__binary128)f128_zero;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2836,7 +2837,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nzero;
+  x = (__binary128)f128_nzero;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2846,7 +2847,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_one;
+  x = (__binary128)f128_one;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2856,7 +2857,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_none;
+  x = (__binary128)f128_none;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2866,7 +2867,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_max;
+  x = (__binary128)f128_max;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2876,7 +2877,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nmax;
+  x = (__binary128)f128_nmax;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2886,7 +2887,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_min;
+  x = (__binary128)f128_min;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2896,7 +2897,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nmin;
+  x = (__binary128)f128_nmin;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2906,7 +2907,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_sub;
+  x = (__binary128)f128_sub;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2916,7 +2917,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nsub;
+  x = (__binary128)f128_nsub;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2926,7 +2927,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_inf;
+  x = (__binary128)f128_inf;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2936,7 +2937,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_ninf;
+  x = (__binary128)f128_ninf;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2946,7 +2947,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nan;
+  x = (__binary128)f128_nan;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2956,7 +2957,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nnan;
+  x = (__binary128)f128_nnan;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2966,7 +2967,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_snan;
+  x = (__binary128)f128_snan;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -2976,7 +2977,7 @@ test_all_isfinitef128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128)f128_nsnan;
+  x = (__binary128)f128_nsnan;
 #ifdef __DEBUG_PRINT__
 	print_vfloat128x(" x=  ", x);
 #endif
@@ -3036,7 +3037,7 @@ test_all_isnanf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -3045,7 +3046,7 @@ test_all_isnanf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3055,7 +3056,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3065,7 +3066,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3075,7 +3076,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3085,7 +3086,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3095,7 +3096,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3105,7 +3106,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3115,7 +3116,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3125,7 +3126,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3135,7 +3136,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3145,7 +3146,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3155,7 +3156,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3165,7 +3166,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3175,7 +3176,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3185,7 +3186,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3195,7 +3196,7 @@ test_all_isnanf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3275,7 +3276,7 @@ test_all_isinff128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -3284,7 +3285,7 @@ test_all_isinff128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3294,7 +3295,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3304,7 +3305,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3314,7 +3315,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3324,7 +3325,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3334,7 +3335,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3344,7 +3345,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3354,7 +3355,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3364,7 +3365,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3374,7 +3375,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3384,7 +3385,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3394,7 +3395,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3404,7 +3405,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3414,7 +3415,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3424,7 +3425,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3434,7 +3435,7 @@ test_all_isinff128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3494,7 +3495,7 @@ test_all_isnormalf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -3503,7 +3504,7 @@ test_all_isnormalf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3513,7 +3514,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3523,7 +3524,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3533,7 +3534,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3543,7 +3544,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3553,7 +3554,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3563,7 +3564,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3573,7 +3574,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3583,7 +3584,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3593,7 +3594,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3603,7 +3604,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3613,7 +3614,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3623,7 +3624,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3633,7 +3634,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3643,7 +3644,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3653,7 +3654,7 @@ test_all_isnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3718,7 +3719,7 @@ test_all_issubnormalf128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -3728,7 +3729,7 @@ test_all_issubnormalf128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3738,7 +3739,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3748,7 +3749,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3758,7 +3759,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3768,7 +3769,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3778,7 +3779,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3788,7 +3789,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3798,7 +3799,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3808,7 +3809,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3818,7 +3819,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3828,7 +3829,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_submin;
+  x = (__binary128) f128_submin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3838,7 +3839,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsubmin;
+  x = (__binary128) f128_nsubmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3848,7 +3849,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3858,7 +3859,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3868,7 +3869,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3878,7 +3879,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3888,7 +3889,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3898,7 +3899,7 @@ test_all_issubnormalf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3963,7 +3964,7 @@ test_all_iszerof128 (void)
   const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0xffff000080000000, 0));
 
-  __float128 x;
+  __binary128 x;
   long tests_count = 0;
   int test, expt;
   int rc = 0;
@@ -3972,7 +3973,7 @@ test_all_iszerof128 (void)
 
 #if 1
   tests_count++;
-  x = (__float128) f128_zero;
+  x = (__binary128) f128_zero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3982,7 +3983,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nzero;
+  x = (__binary128) f128_nzero;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -3992,7 +3993,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_one;
+  x = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4002,7 +4003,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_none;
+  x = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4012,7 +4013,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_max;
+  x = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4022,7 +4023,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmax;
+  x = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4032,7 +4033,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_min;
+  x = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4042,7 +4043,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nmin;
+  x = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4052,7 +4053,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_sub;
+  x = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4062,7 +4063,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsub;
+  x = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4072,7 +4073,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_submin;
+  x = (__binary128) f128_submin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4082,7 +4083,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsubmin;
+  x = (__binary128) f128_nsubmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4092,7 +4093,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_inf;
+  x = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4102,7 +4103,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_ninf;
+  x = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4112,7 +4113,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nan;
+  x = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4122,7 +4123,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nnan;
+  x = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4132,7 +4133,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_snan;
+  x = (__binary128) f128_snan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4142,7 +4143,7 @@ test_all_iszerof128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__float128) f128_nsnan;
+  x = (__binary128) f128_nsnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4229,8 +4230,5 @@ test_vec_f128 (void)
   rc += test_all_is_f128 ();
   rc += test_vec_bool_f128 ();
   rc += test_vec_f128_f128 ();
-
-//  rc += test_time_f128 ();
-
   return (rc);
 }

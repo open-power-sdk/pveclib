@@ -20,7 +20,13 @@
       Created on: Nov 15, 2017
  */
 
+#ifndef __clang__
+/* Disable for __clang__ because of bug involving <floatn.h>
+   incombination with -mcpu=power9 -mfloat128 */
 #include <stdlib.h>
+#else
+#define EXIT_SUCCESS 0
+#endif
 #include <stdint.h>
 #include <stdio.h>
 

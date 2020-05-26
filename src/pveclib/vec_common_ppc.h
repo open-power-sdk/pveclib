@@ -230,18 +230,23 @@ typedef __vector __bool int vb32_t;
 typedef __vector __bool long long vb64_t;
 
 /* did not get vector __int128 until GCC4.8.  */
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 typedef __vector __int128 vi128_t;
 typedef __vector unsigned __int128 vui128_t;
 /*! \brief vector of 128-bit bool __int128 elements. */
 typedef __vector __bool __int128 vb128_t;
+#elif defined(__clang__) 
+typedef __vector __int128 vi128_t;
+typedef __vector unsigned __int128 vui128_t;
+/*! \brief vector of 128-bit bool __int128 elements. */
+typedef __vector __bool int vb128_t;
 #else
 /*! \brief vector of one 128-bit signed __int128 element. */
 typedef __vector int vi128_t;
 /*! \brief vector of one 128-bit unsigned __int128 element. */
 typedef __vector unsigned int vui128_t;
 /*! \brief vector of 128-bit bool __int128 elements. */
-typedef __vector __bool unsigned int vb128_t;
+typedef __vector __bool int vb128_t;
 #endif
 
 /*! \brief Union used to transfer 128-bit data between vector and
@@ -252,8 +257,11 @@ typedef union
   unsigned __int128 i128;
   /*! \brief Unsigned 128-bit integer from pair of 64-bit GPRs.  */
   unsigned __int128 ui128;
+#ifdef __clang__
+#else
   /*! \brief 128 bit Decimal Float from pair of double float registers.  */
   _Decimal128 dpd128;
+#endif
   /*! \brief IBM long double float from pair of double float registers.  */
   long double ldbl128;
   /*! \brief 128 bit Vector of 16 unsigned char elements.  */

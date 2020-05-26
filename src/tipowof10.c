@@ -41,6 +41,10 @@ const __int128 tipowof10[] = { 1ll, /* 10**0 */
   10000000000000000ll, /* 10**16 */
   100000000000000000ll, /* 10**17 */
   1000000000000000000ll, /* 10**18 */
+#ifndef __clang__
+// Clang does support constant folding for __int128
+// Simply not posible to defind a const larger than __UINT64_MAX__
+
   (__int128 ) 10ll * (__int128 ) 1000000000000000000ll, /* 10**19 */
   (__int128 ) 100ll * (__int128 ) 1000000000000000000ll, /* 10**20 */
   (__int128 ) 1000ll * (__int128 ) 1000000000000000000ll, /* 10**21 */
@@ -63,7 +67,9 @@ const __int128 tipowof10[] = { 1ll, /* 10**0 */
       * (__int128 ) 1000000000000000000ll, /* 10**37 */
   (__int128 ) 100ll * (__int128 ) 1000000000000000000ll
       * (__int128 ) 1000000000000000000ll, /* 10**38 */
-  0L };/* 10**308 */
+#endif
+  0L 
+};/* 10**308 */
 
 const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
   (vui128_t) (__int128 ) 10ll, /* 10**1 */
@@ -84,6 +90,31 @@ const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
   (vui128_t) (__int128 ) 10000000000000000ll, /* 10**16 */
   (vui128_t) (__int128 ) 100000000000000000ll, /* 10**17 */
   (vui128_t) (__int128 ) 1000000000000000000ll, /* 10**18 */
+#ifdef __clang__
+// Clang does support constant folding for __int128
+// Simply not posible to defind a const larger than __UINT64_MAX__
+// For vector initialized can use two long long elements.
+  CONST_VINT128_DW128 ( 0x0000000000000000ll,0x8ac7230489e80000ll ), /* 10**19 */
+  CONST_VINT128_DW128 ( 0x0000000000000005ll,0x6bc75e2d63100000ll ), /* 10**20 */
+  CONST_VINT128_DW128 ( 0x0000000000000036ll,0x35c9adc5dea00000ll ), /* 10**21 */
+  CONST_VINT128_DW128 ( 0x000000000000021ell,0x19e0c9bab2400000ll ), /* 10**22 */
+  CONST_VINT128_DW128 ( 0x000000000000152dll,0x02c7e14af6800000ll ), /* 10**23 */
+  CONST_VINT128_DW128 ( 0x000000000000d3c2ll,0x1bcecceda1000000ll ), /* 10**24 */
+  CONST_VINT128_DW128 ( 0x0000000000084595ll,0x161401484a000000ll ), /* 10**25 */
+  CONST_VINT128_DW128 ( 0x000000000052b7d2ll,0xdcc80cd2e4000000ll ), /* 10**26 */
+  CONST_VINT128_DW128 ( 0x00000000033b2e3cll,0x9fd0803ce8000000ll ), /* 10**27 */
+  CONST_VINT128_DW128 ( 0x00000000204fce5ell,0x3e25026110000000ll ), /* 10**28 */
+  CONST_VINT128_DW128 ( 0x00000001431e0faell,0x6d7217caa0000000ll ), /* 10**29 */
+  CONST_VINT128_DW128 ( 0x0000000c9f2c9cd0ll,0x4674edea40000000ll ), /* 10**30 */
+  CONST_VINT128_DW128 ( 0x0000007e37be2022ll,0xc0914b2680000000ll ), /* 10**31 */
+  CONST_VINT128_DW128 ( 0x000004ee2d6d415bll,0x85acef8100000000ll ), /* 10**32 */
+  CONST_VINT128_DW128 ( 0x0000314dc6448d93ll,0x38c15b0a00000000ll ), /* 10**33 */
+  CONST_VINT128_DW128 ( 0x0001ed09bead87c0ll,0x378d8e6400000000ll ), /* 10**34 */
+  CONST_VINT128_DW128 ( 0x0013426172c74d82ll,0x2b878fe800000000ll ), /* 10**35 */
+  CONST_VINT128_DW128 ( 0x00c097ce7bc90715ll,0xb34b9f1000000000ll ), /* 10**36 */
+  CONST_VINT128_DW128 ( 0x0785ee10d5da46d9ll,0x00f436a000000000ll ), /* 10**37 */
+  CONST_VINT128_DW128 ( 0x4b3b4ca85a86c47all,0x098a224000000000ll ), /* 10**38 */
+#else
   (vui128_t) (__int128 ) 10ll * (__int128 ) 1000000000000000000ll, /* 10**19 */
   (vui128_t) (__int128 ) 100ll * (__int128 ) 1000000000000000000ll, /* 10**20 */
   (vui128_t) (__int128 ) 1000ll * (__int128 ) 1000000000000000000ll, /* 10**21 */
@@ -107,6 +138,7 @@ const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
       * (__int128 ) 1000000000000000000ll, /* 10**37 */
   (vui128_t) (__int128 ) 100ll * (__int128 ) 1000000000000000000ll
       * (__int128 ) 1000000000000000000ll, /* 10**38 */
+#endif
   (vui128_t) (__int128 ) 0L };/* 10**308 */
 
 const vui128_t vtifrexpof10[] =
@@ -133,6 +165,28 @@ const vui128_t vtifrexpof10[] =
   (vui128_t) (__int128 ) 6103515625000000ll, /* 10**20 */
   (vui128_t) (__int128 ) 7629394531250000ll, /* 10**21 */
   (vui128_t) (__int128 ) 4768371582031250ll, /* 10**22 */
+
+#ifdef __clang__
+// Clang does support constant folding for __int128
+// Simply not posible to defind a const larger than __UINT64_MAX__
+// For vector initialized can use two long long elements.
+  CONST_VINT128_DW128 ( 0x000002a5a058fc29ll,0x5ed0000000000000ll ), /* 10**23 */
+  CONST_VINT128_DW128 ( 0x00000d3c21bceccell,0xda10000000000000ll ), /* 10**24 */
+  CONST_VINT128_DW128 ( 0x00000422ca8b0a00ll,0xa425000000000000ll ), /* 10**25 */
+  CONST_VINT128_DW128 ( 0x0000052b7d2dcc80ll,0xcd2e400000000000ll ), /* 10**26 */
+  CONST_VINT128_DW128 ( 0x000019d971e4fe84ll,0x01e7400000000000ll ), /* 10**27 */
+  CONST_VINT128_DW128 ( 0x00000813f3978f89ll,0x4098440000000000ll ), /* 10**28 */
+  CONST_VINT128_DW128 ( 0x0000050c783eb9b5ll,0xc85f2a8000000000ll ), /* 10**29 */
+  CONST_VINT128_DW128 ( 0x00000c9f2c9cd046ll,0x74edea4000000000ll ), /* 10**30 */
+  CONST_VINT128_DW128 ( 0x000007e37be2022cll,0x0914b26800000000ll ), /* 10**31 */
+  CONST_VINT128_DW128 ( 0x000004ee2d6d415bll,0x85acef8100000000ll ), /* 10**32 */
+  CONST_VINT128_DW128 ( 0x00000629b8c891b2ll,0x67182b6140000000ll ), /* 10**33 */
+  CONST_VINT128_DW128 ( 0x000007b426fab61fll,0x00de363990000000ll ), /* 10**34 */
+  CONST_VINT128_DW128 ( 0x000009a130b963a6ll,0xc115c3c7f4000000ll ), /* 10**35 */
+  CONST_VINT128_DW128 ( 0x00000604be73de48ll,0x38ad9a5cf8800000ll ), /* 10**36 */
+  CONST_VINT128_DW128 ( 0x00000785ee10d5dall,0x46d900f436a00000ll ), /* 10**37 */
+  CONST_VINT128_DW128 ( 0x000012ced32a16a1ll,0xb11e826288900000ll ), /* 10**38 */
+#else
   (vui128_t) (__int128 ) 53687091200000ll * (__int128 ) 1000000000000000000ll, /* 10**23 */
   (vui128_t) (__int128 ) 268435456000000ll * (__int128 ) 1000000000000000000ll, /* 10**24 */
   (vui128_t) (__int128 ) 83886080000000ll * (__int128 ) 1000000000000000000ll, /* 10**25 */
@@ -149,6 +203,7 @@ const vui128_t vtifrexpof10[] =
   (vui128_t) (__int128 ) 122070312500000ll * (__int128 ) 1000000000000000000ll, /* 10**36 */
   (vui128_t) (__int128 ) 152587890625000ll * (__int128 ) 1000000000000000000ll, /* 10**37 */
   (vui128_t) (__int128 ) 381469726562500ll * (__int128 ) 1000000000000000000ll, /* 10**38 */
+#endif
   (vui128_t) (__int128 ) 0L };/* 10**308 */
 
 const __int128 tifrexpof10 [] =
@@ -175,6 +230,11 @@ const __int128 tifrexpof10 [] =
   (__int128 ) 6103515625000000ll, /* 10**20 */
   (__int128 ) 7629394531250000ll, /* 10**21 */
   (__int128 ) 4768371582031250ll, /* 10**22 */
+
+#ifndef __clang__
+// Clang does support constant folding for __int128
+// Simply not posible to defind a const larger than __UINT64_MAX__
+// For vector initialized can use two long long elements.
   (__int128 ) 53687091200000ll * (__int128 ) 1000000000000000000ll, /* 10**23 */
   (__int128 ) 268435456000000ll * (__int128 ) 1000000000000000000ll, /* 10**24 */
   (__int128 ) 83886080000000ll * (__int128 ) 1000000000000000000ll, /* 10**25 */
@@ -191,6 +251,7 @@ const __int128 tifrexpof10 [] =
   (__int128 ) 122070312500000ll * (__int128 ) 1000000000000000000ll, /* 10**36 */
   (__int128 ) 152587890625000ll * (__int128 ) 1000000000000000000ll, /* 10**37 */
   (__int128 ) 381469726562500ll * (__int128 ) 1000000000000000000ll, /* 10**38 */
+#endif
   (__int128 ) 0L };/* 10**308 */
 
 const long tiexpof10[] = {

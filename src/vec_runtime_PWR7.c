@@ -22,7 +22,6 @@
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 // POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
-#pragma GCC target ("cpu=power7")
 
 #include "vec_int512_runtime.c"
 #endif

@@ -355,7 +355,7 @@ static inline vui128_t
 vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
@@ -417,7 +417,7 @@ static inline vui128_t
 vec_vmuleud (vui64_t a, vui64_t b)
 {
   vui64_t res;
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   __asm__(
@@ -2578,7 +2578,7 @@ vec_permdi (vui64_t vra, vui64_t vrb, const int ctl)
 #ifdef _ARCH_PWR7
   switch (ctl & 3)
     {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || (defined (__clang__) && (__clang_major__ < 7))
     case 0:
       result = vec_xxpermdi (vra, vrb, 0);
       break;
@@ -3190,7 +3190,7 @@ vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
  *  @param vrb a 128-bit vector treated as 2 x unsigned long integers.
  *  @return 128-bit vector treated as 4 x unsigned integers.
  */
-#ifndef __clang__
+#ifndef __clang__ // Already defined as inline function for clang
 #ifndef vec_vpkudum
 static inline vui32_t
 vec_vpkudum (vui64_t vra, vui64_t vrb)

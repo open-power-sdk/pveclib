@@ -30,6 +30,10 @@
 #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
 #endif
 #ifndef __clang__
+/* Disable <math.h> for __clang__ because of a bug involving <floatn.h>
+   incombination with -mcpu=power9 -mfloat128. This means that ISO
+   mandated <math.h> functions __finitef128, __isinff128, etc are not
+   available.  */ 
 #include <math.h>
 #endif
 
@@ -263,9 +267,9 @@ _test_xfer_bin128_2_vui16t (__binary128 f128)
 
 #ifdef __FLOAT128__
 /* Mostly compiler and library tests follow to see what the various
- * compilers will do.  
- * Need to disable __clang__ because it doesn't. */
-#ifndef __clang__
+ * compilers will do. */
+
+#ifndef __clang__ // to disable __clang__ because <math.h> fails
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 int
 test_gcc_f128_signbit (__Float128 value)

@@ -25,7 +25,7 @@
 #include <fenv.h>
 #include <float.h>
 #ifndef __clang__
-/* Disable for __clang__ because of bug involving <math.h>
+/* Disable for __clang__ because of bug involving <math.h>/<floatn.h>
    incombination with -mcpu=power9 -mfloat128 */
 #include <math.h>
 #endif
@@ -316,7 +316,10 @@ test_vf64_ibm128_vec (vf64_t lval)
 {
   return (vec_pack_longdouble (lval));
 }
+
 #ifndef __clang__
+/* Disable for clange becuase does not support the asm constraints
+   (%L) to access 2nd FRP of FPR pair. */
 vf64_t
 test_ibm128_vf64_asm (long double lval)
 {
@@ -354,6 +357,7 @@ test_vf64_ibm128_asm (vf64_t lval)
 #endif
 }
 #endif
+
 #ifdef _ARCH_PWR8
 /* POWER 64-bit (vector double) compiler tests.  */
 

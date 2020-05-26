@@ -1365,8 +1365,8 @@ check_int64 (char *prefix, long val64, long shouldbe)
   return (rc);
 }
 
-#ifndef __clang__
-// Clang does not support _Decimal* types
+#ifndef __clang__ // Clang does not support _Decimal* types
+
 // TODO make this hidden so we can use TOC relative
 extern const _Decimal128 decpowof2[];
 

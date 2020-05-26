@@ -19,6 +19,5 @@
       Steven Munroe
       Created on: Aug 20, 2019
  */
-#pragma GCC target ("cpu=power8")
 
 #include "vec_int512_runtime.c"

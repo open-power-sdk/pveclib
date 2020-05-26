@@ -22,7 +22,7 @@
 
 //#pragma GCC push target
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#pragma GCC target ("cpu=power9")
+//#pragma GCC target ("cpu=power9")
 #include <stdint.h>
 #include <stdio.h>
 #include <fenv.h>
@@ -1183,6 +1183,7 @@ __test_vec_extract_sig_f32 (vf32_t val)
 #endif
 
 #ifndef __clang__
+// Clang does not support vec_bcd_ppc.h.
 vBCD_t
 test_vec_bcdmulh_PWR9 (vBCD_t a, vBCD_t b)
 {
@@ -1586,7 +1587,9 @@ example_longdiv_10e31_PWR9 (vui128_t *q, vui128_t *d, long int _N)
 
   return rh;
 }
+
 #ifndef __clang__
+// Clang does not support vec_bcd_ppc.h
 long int
 example_longbcdct_10e32_PWR9 (vui128_t *d, vBCD_t decimal, long int _C , long int _N)
 {
@@ -1695,6 +1698,7 @@ example_longbcdct_10e31_PWR9 (vui128_t *d, vBCD_t decimal, long int _C,
   return cnt;
 }
 #endif
+
 void
 test_muluq_4x1_PWR9 (vui128_t *__restrict__ mulu, vui128_t m10, vui128_t m11,
 		     vui128_t m12, vui128_t m13, vui128_t m2)
@@ -1746,6 +1750,7 @@ __test_madd512x512a512_PWR9 (__VEC_U_512 m1, __VEC_U_512 m2, __VEC_U_512 a1)
   __VEC_U_1024 result;
   vui128_t mc, mp, mq;
 #ifndef __clang__
+// Clang does not support register variables.
   register vui128_t t0 asm("vs10");
   register vui128_t t1 asm("vs11");
   register vui128_t t2 asm("vs12");

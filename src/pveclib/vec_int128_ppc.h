@@ -4368,7 +4368,7 @@ static inline vui128_t
 vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
-#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
@@ -6297,7 +6297,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   __asm__(
@@ -6539,7 +6539,7 @@ vec_vmuloud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#if defined (_ARCH_PWR9) && (__GNUC__ > 5)
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
   __asm__(

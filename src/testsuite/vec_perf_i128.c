@@ -505,6 +505,8 @@ timed_ctmaxdouble_10e32 (void)
   int rc = 0;
 
 #ifndef __clang__
+/* Disable for __clang__ because of bug involving <floatn.h>
+   incombination with -mcpu=power9 -mfloat128 */
   d = strtod (buf, &res);
 
   if (d != __DBL_MAX__)

@@ -258,7 +258,7 @@ vec_all_isfinitef32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x70;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_zero);
@@ -301,7 +301,7 @@ vec_all_isinff32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x30;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -347,7 +347,7 @@ vec_all_isnanf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x40;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -393,7 +393,7 @@ vec_all_isnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x7f;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_zero);
@@ -437,7 +437,7 @@ vec_all_issubnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x03;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -484,7 +484,7 @@ vec_all_iszerof32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_all_eq(tmp, vec_ones);
@@ -528,7 +528,7 @@ vec_any_isfinitef32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x70;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_zero);
@@ -570,7 +570,7 @@ vec_any_isinff32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x30;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -616,7 +616,7 @@ vec_any_isnanf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x40;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -662,7 +662,7 @@ vec_any_isnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x7f;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_zero);
@@ -708,7 +708,7 @@ vec_any_issubnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x03;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -761,7 +761,7 @@ vec_any_iszerof32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x0c;\n"
       : "=wa" (tmp)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_any_eq(tmp, vec_ones);
@@ -836,7 +836,7 @@ vec_isfinitef32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x70;\n"
       : "=wa" (tmp2)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
@@ -880,7 +880,7 @@ vec_isinff32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x30;\n"
       : "=wa" (result)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
 #else
@@ -922,7 +922,7 @@ vec_isnanf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x40;\n"
       : "=wa" (result)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
 #else
@@ -968,7 +968,7 @@ vec_isnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x7f;\n"
       : "=wa" (tmp2)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
@@ -1014,7 +1014,7 @@ vec_issubnormalf32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x03;\n"
       : "=wa" (result)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
 #else
@@ -1062,7 +1062,7 @@ vec_iszerof32 (vf32_t vf32)
   __asm__(
       "xvtstdcsp %x0,%x1,0x0c;\n"
       : "=wa" (result)
-      : "wf" (vf32)
+      : "wa" (vf32)
       :);
 #endif
 #else

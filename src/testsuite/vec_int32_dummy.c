@@ -24,6 +24,8 @@
 
 #ifdef _ARCH_PWR8
 #ifndef __clang__
+// clang does not support specific built-ins for new (PWR8) operations.
+// These are supported for GCC.
 vui32_t
 __test_mrgew (vui32_t a, vui32_t b)
 {

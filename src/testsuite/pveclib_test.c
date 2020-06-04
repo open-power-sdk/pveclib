@@ -22,7 +22,7 @@
 
 #define __STDC_WANT_DEC_FP__    1
 
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable <stdlib.h> for __clang__ because of bug involving <floatn.h>
    incombination with -mcpu=power9 -mfloat128 */
 #include <stdlib.h>

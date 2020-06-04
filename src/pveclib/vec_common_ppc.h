@@ -257,8 +257,7 @@ typedef union
   unsigned __int128 i128;
   /*! \brief Unsigned 128-bit integer from pair of 64-bit GPRs.  */
   unsigned __int128 ui128;
-#ifdef __clang__
-#else
+#ifndef PVECLIB_DISABLE_DFP
   /*! \brief 128 bit Decimal Float from pair of double float registers.  */
   _Decimal128 dpd128;
 #endif
@@ -388,6 +387,16 @@ typedef union
 #define VEC_BYTE_L_DWL 15
 #define VEC_BYTE_H 0
 #define VEC_BYTE_HHW 1
+#endif
+
+/*! \brief table powers of 10 [0-38] in vector __int128 format.  */
+extern const vui128_t vtipowof10[];
+/*! \brief table used to verify 128-bit frexp operations for powers of 10.  */
+extern const vui128_t vtifrexpof10[];
+
+#ifndef PVECLIB_DISABLE_DFP
+/*! \brief table powers of 2 [0-1077] in _Decimal128 format.  */
+extern const _Decimal128 decpowof2[];
 #endif
 
 #endif /* VEC_COMMON_PPC_H_ */

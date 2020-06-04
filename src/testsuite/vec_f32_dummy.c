@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable for __clang__ because of bug involving <math.h>
-   incombination with -mcpu=power9 -mfloat128 */
+   in combination with -mcpu=power9 -mfloat128 */
 #include <math.h>
 #endif
 
@@ -55,9 +55,9 @@ test_f32_zero_demorm (vf32_t value)
   return result;
 }
 
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable for __clang__ because of bug involving <math.h>
-   incombination with -mcpu=power9 -mfloat128 */
+   in combination with -mcpu=power9 -mfloat128 */
 vui32_t
 test_fpclassify_f32 (vf32_t value)
 {
@@ -325,6 +325,7 @@ test_pred_f32_zero (vf32_t value)
 {
 	return (vec_iszerof32 (value));
 }
+
 /* Compiler generation tests.  */
 #ifdef vec_float
 vf32_t

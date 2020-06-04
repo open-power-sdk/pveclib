@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <fenv.h>
 #include <float.h>
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable for __clang__ because of bug involving <math.h>
    incombination with -mcpu=power9 -mfloat128 */
 #include <math.h>
@@ -810,7 +810,7 @@ test_f32_zero_demorm_PWR9 (vf32_t value)
   return result;
 }
 
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable for __clang__ because of bug involving <math.h>
    incombination with -mcpu=power9 -mfloat128 */
 vui32_t
@@ -1182,7 +1182,7 @@ __test_vec_extract_sig_f32 (vf32_t val)
 }
 #endif
 
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_DFP
 // Clang does not support vec_bcd_ppc.h.
 vBCD_t
 test_vec_bcdmulh_PWR9 (vBCD_t a, vBCD_t b)
@@ -1588,7 +1588,7 @@ example_longdiv_10e31_PWR9 (vui128_t *q, vui128_t *d, long int _N)
   return rh;
 }
 
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_DFP
 // Clang does not support vec_bcd_ppc.h
 long int
 example_longbcdct_10e32_PWR9 (vui128_t *d, vBCD_t decimal, long int _C , long int _N)

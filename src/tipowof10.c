@@ -167,7 +167,7 @@ const vui128_t vtifrexpof10[] =
   (vui128_t) (__int128 ) 4768371582031250ll, /* 10**22 */
 
 #ifdef __clang__
-// Clang does support constant folding for __int128
+// Clang does not support constant folding for __int128
 // Simply not posible to defind a const larger than __UINT64_MAX__
 // For vector initialized can use two long long elements.
   CONST_VINT128_DW128 ( 0x000002a5a058fc29ll,0x5ed0000000000000ll ), /* 10**23 */
@@ -232,7 +232,7 @@ const __int128 tifrexpof10 [] =
   (__int128 ) 4768371582031250ll, /* 10**22 */
 
 #ifndef __clang__
-// Clang does support constant folding for __int128
+// Clang does not support constant folding for __int128
 // Simply not posible to defind a const larger than __UINT64_MAX__
 // For vector initialized can use two long long elements.
   (__int128 ) 53687091200000ll * (__int128 ) 1000000000000000000ll, /* 10**23 */

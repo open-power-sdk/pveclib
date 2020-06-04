@@ -293,7 +293,7 @@ vec_all_isinff32 (vf32_t vf32)
 {
   vui32_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
   tmp = (vui32_t)vec_test_data_class (vf32, 0x30);
@@ -339,7 +339,7 @@ vec_all_isnanf32 (vf32_t vf32)
 {
   vui32_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
   tmp = (vui32_t)vec_test_data_class (vf32, 0x40);
@@ -562,7 +562,7 @@ vec_any_isinff32 (vf32_t vf32)
 {
   vui32_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
   tmp = (vui32_t)vec_test_data_class (vf32, 0x30);
@@ -608,7 +608,7 @@ vec_any_isnanf32 (vf32_t vf32)
 {
   vui32_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui32_t vec_ones = CONST_VINT128_W(-1, -1, -1, -1);
 #ifdef vec_test_data_class
   tmp = (vui32_t)vec_test_data_class (vf32, 0x40);
@@ -873,7 +873,7 @@ static inline vb32_t
 vec_isinff32 (vf32_t vf32)
 {
   vb32_t result;
-#if _ARCH_PWR9
+#if _ARCH_PWR9  && !(defined(__clang__) && __clang_major__ < 9)
 #ifdef vec_test_data_class
   result = vec_test_data_class (vf32, 0x30);
 #else
@@ -915,7 +915,7 @@ static inline vb32_t
 vec_isnanf32 (vf32_t vf32)
 {
   vb32_t result;
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
 #ifdef vec_test_data_class
   result = vec_test_data_class (vf32, 0x40);
 #else

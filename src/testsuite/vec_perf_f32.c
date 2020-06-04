@@ -53,8 +53,9 @@ extern __vector bool int
 test_pred_f32_subnormal (vf32_t value);
 extern __vector bool int
 test_pred_f32_zero (vf32_t value);
-#ifndef __clang__
-// Clang does not define vec_test_data_class and friends.
+#ifndef PVECLIB_DISABLE_F128MATH
+/* Disable for __clang__ because of bug involving <math.h>
+   in combination with -mcpu=power9 -mfloat128 */
 extern vui32_t
 test_fpclassify_f32 (vf32_t value);
 #endif
@@ -77,7 +78,7 @@ int timed_is_f32 (void)
 
 int timed_fpclassify_f32 (void)
 {
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 // Clang does not define vec_test_data_class and friends.
   vb32_t accum = {0,0,0,0};
   int i;

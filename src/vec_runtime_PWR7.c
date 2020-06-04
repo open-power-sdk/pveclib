@@ -20,7 +20,7 @@
       Created on: Aug 20, 2019
  */
 
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef PVECLIB_DISABLE_POWER7
 // POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
 
 #include "vec_int512_runtime.c"

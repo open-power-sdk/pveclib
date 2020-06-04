@@ -22,12 +22,12 @@
 
 #ifndef VEC_BCD_PPC_H_
 #define VEC_BCD_PPC_H_
-#ifdef __clang__
+#ifdef PVECLIB_DISABLE_DFP
 // clang does not support Decimal Floating Point at this time.
 // Pveclib uses decimal FP quadword instructions to fill in functional
 // gaps in the vector BCD operations before POWER9.
 #ifndef NDEBUG
-#warning Clang support for BCD is disabled until _Decimal128 support is added.
+#warning Support for BCD is disabled until _Decimal128 support is added.
 #endif
 #else
 #include <pveclib/vec_common_ppc.h>
@@ -5058,5 +5058,5 @@ vec_zndctuq (vui8_t zone00, vui8_t zone16)
   d10e = vec_rdxct10E16d (d100m);
   return vec_rdxct10e32q (d10e);
 }
-#endif /* ndef __clang__ */
+#endif /* ndef PVECLIB_DISABLE_DFP */
 #endif /* VEC_BCD_PPC_H_ */

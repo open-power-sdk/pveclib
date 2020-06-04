@@ -294,7 +294,7 @@ mul_hlq (unsigned __int128 *h_prod, unsigned __int128 a, unsigned __int128 b)
 
   return (l);
 }
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_DFP
 static inline _Decimal128
 vec2FRp (vui64_t val)
 {

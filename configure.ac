@@ -22,7 +22,7 @@ AC_SUBST(PVECLIB_SO_VERSION)
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
-# This directive is to avoid buggy libtool that don't add the -Wl,--no-as-needed
+# This directive is to avoid buggy libtool that doesn't add the '-Wl,--no-as-needed'
 # directive in the correct position of LDFLAGS
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed -lc"
 
@@ -80,12 +80,12 @@ if test "$retval" != "0"; then
 fi
 
 ##### Compiler default includes VSX #####
-## Use this test to set the minimum flags required to compile PVECLIB
+## Use this test to set the minimum flags required to compile PVECLIB.
 ## This should cover BE compilers where the compiler default -mcpu is
 ## not at least power7. Otherwise the compiler will disable VSX
 ## features (like vector double) and associated built-ins.
-## VSX by the PowerISA architecture compliance rules this should
-## include
+## Base VSX by the PowerISA architecture compliance rules should
+## include VMX, DFP, and vector double.
 
 CFLAGS=$AM_CFLAGS
 AC_MSG_CHECKING([if $CNAME default supports VSX])
@@ -109,13 +109,12 @@ AC_LINK_IFELSE(
                     [AC_LANG_SOURCE([`cat testprograms/test_ppc_VSX.c`])],
                     [AC_MSG_RESULT([yes])]
                         AC_SUBST([PVECLIB_DEFAULT_CFLAGS], [$POWER8_CFLAGS]),
-		    [AC_MSG_RESULT([no])]
-			AC_DEFINE([PVECLIB_DISABLE_VSX], [1], [Disable VSX])
+				    [AC_MSG_RESULT([no])]
+						AC_DEFINE([PVECLIB_DISABLE_VSX], [1], [Disable VSX])
                 )
             ]
         )
     ]
-
 )
 
 ##### Compiler default includes Float128 or needs added CFLAGS #####

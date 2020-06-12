@@ -6181,7 +6181,6 @@ test_time_i128 (void)
 	  delta_sec);
 
 #ifndef PVECLIB_DISABLE_DFP
-// clang does not support Decimal Floating Point at this time.
   printf ("\n%s longbcdcf_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)

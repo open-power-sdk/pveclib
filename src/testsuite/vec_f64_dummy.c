@@ -166,8 +166,6 @@ test_pred_f64_zero (vf64_t value)
 }
 
 #ifndef PVECLIB_DISABLE_F128MATH
-/* Disable for __clang__ because of bug involving <math.h>
-   in combination with -mcpu=power9 -mfloat128 */
 vui64_t
 test_fpclassify_f64 (vf64_t value)
 {
@@ -318,7 +316,7 @@ test_vf64_ibm128_vec (vf64_t lval)
 
 #ifndef __clang__
 /* Disable for clang becuase does not support the asm constraints
-   (%L) to access 2nd FRP of FPR pair. */
+   (%L) to access 2nd FPR of FPR pair. */
 vf64_t
 test_ibm128_vf64_asm (long double lval)
 {

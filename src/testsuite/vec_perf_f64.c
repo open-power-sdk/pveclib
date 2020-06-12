@@ -46,9 +46,8 @@ extern __vector bool long long
 test_pred_f64_subnormal (vf64_t value);
 extern __vector bool long long
 test_pred_f64_zero (vf64_t value);
+
 #ifndef  PVECLIB_DISABLE_F128MATH
-/* Disable for __clang__ because of bug involving <math.h>
-   in combination with -mcpu=power9 -mfloat128 */
 extern vui64_t
 test_fpclassify_f64 (vf64_t value);
 #endif
@@ -77,8 +76,6 @@ int timed_is_f64 (void)
 int timed_fpclassify_f64 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
-/* Disable for __clang__ because of bug involving <math.h>
-   in combination with -mcpu=power9 -mfloat128 */
   vb64_t accum = {0,0};
   int i;
 

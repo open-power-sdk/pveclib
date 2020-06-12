@@ -46,8 +46,8 @@ libpvecPWR8_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER8_CFLAGS) $(AM_CFLAG
 
 libpvecPWR7_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER7_CFLAGS) $(AM_CFLAGS)
 
-# C source files that correspond to .o's required for IFUNC targers
-# for all machines.
+# C source files that correspond to .o's required for IFUNC targets
+# for supported all machines.
 
 # Alternative to LTCOMPILE which avoids user CFLAGS which interfere
 # with the IFUNC library build

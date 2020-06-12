@@ -56,8 +56,6 @@ test_f32_zero_demorm (vf32_t value)
 }
 
 #ifndef PVECLIB_DISABLE_F128MATH
-/* Disable for __clang__ because of bug involving <math.h>
-   in combination with -mcpu=power9 -mfloat128 */
 vui32_t
 test_fpclassify_f32 (vf32_t value)
 {

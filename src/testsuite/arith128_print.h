@@ -42,7 +42,6 @@ TimeDeltaSec (uint64_t tb_delta)
 extern long tcount;
 
 #ifndef PVECLIB_DISABLE_DFP
-// clang does not support Decimal Floating Point at this time.
 extern void
 print_dfp128 (char *prefix, _Decimal128 val128);
 
@@ -610,7 +609,6 @@ extern int
 check_int64 (char *prefix, long val64, long shouldbe);
 
 #ifndef PVECLIB_DISABLE_DFP
-// clang does not support 128-bit Decimnal Floating Point at this time.
 extern int
 check_frexptftd_priv (char *prefix, _Decimal128 val128, long exp,
                       _Decimal128 shouldbe, long shouldexp);
@@ -696,7 +694,6 @@ check_frexptfti (char *prefix, __int128 val128, long exp, __int128 shouldbe,
 }
 
 #ifndef PVECLIB_DISABLE_DFP
-// clang does not support Decimal Floating Point at this time.
 extern void
 print_dfp128p2 (char *prefix, _Decimal128 val128, long exp);
 #endif

@@ -46,8 +46,8 @@ extern __vector bool long long
 test_pred_f64_subnormal (vf64_t value);
 extern __vector bool long long
 test_pred_f64_zero (vf64_t value);
-#ifndef __clang__
-// Clang does not define vec_test_data_class and friends.
+
+#ifndef  PVECLIB_DISABLE_F128MATH
 extern vui64_t
 test_fpclassify_f64 (vf64_t value);
 #endif
@@ -75,8 +75,7 @@ int timed_is_f64 (void)
 
 int timed_fpclassify_f64 (void)
 {
-#ifndef __clang__
-// Clang does not define vec_test_data_class and friends.
+#ifndef PVECLIB_DISABLE_F128MATH
   vb64_t accum = {0,0};
   int i;
 

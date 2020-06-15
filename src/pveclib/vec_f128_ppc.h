@@ -217,7 +217,7 @@ typedef vf128_t __Float128;
  *  Same as __float128 for PPC.  */
 typedef vf128_t __binary128;
 #ifndef __clang__
-// Clang will allow redefining __float128 even is it not enabled
+// Clang will not allow redefining __float128 even is it not enabled
 /*! \brief Define __float128 if not defined by the compiler.
  *  Same as __float128 for PPC.  */
 typedef vf128_t __float128;

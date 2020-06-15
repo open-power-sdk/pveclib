@@ -289,7 +289,7 @@ vec_all_isinff64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x30);
@@ -335,7 +335,7 @@ vec_all_isnanf64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9 && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if _ARCH_PWR9  && !(defined(__clang__) && __clang_major__ < 9)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
@@ -561,7 +561,7 @@ vec_any_isinff64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9  && !(defined(__clang__) && __clang_major__ < 9)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x30);
@@ -607,7 +607,7 @@ vec_any_isnanf64 (vf64_t vf64)
 {
   vui64_t tmp;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
   const vui64_t vec_ones = CONST_VINT128_DW (-1, -1);
 #ifdef vec_test_data_class
   tmp = (vui64_t)vec_test_data_class (vf64, 0x40);
@@ -873,7 +873,7 @@ vec_isinff64 (vf64_t vf64)
 {
   vb64_t result;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
 #ifdef vec_test_data_class
   result = vec_test_data_class (vf64, 0x30);
 #else
@@ -916,7 +916,7 @@ vec_isnanf64 (vf64_t vf64)
 {
   vb64_t result;
 
-#if _ARCH_PWR9
+#if _ARCH_PWR9 && !(defined(__clang__) && __clang_major__ < 9)
 #ifdef vec_test_data_class
   result = vec_test_data_class (vf64, 0x40);
 #else

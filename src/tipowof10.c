@@ -43,7 +43,7 @@ const __int128 tipowof10[] = { 1ll, /* 10**0 */
   1000000000000000000ll, /* 10**18 */
 #ifndef __clang__
 // Clang does support constant folding for __int128
-// Simply not posible to defind a const larger than __UINT64_MAX__
+// Simply not possible to defind a const larger than __UINT64_MAX__
 
   (__int128 ) 10ll * (__int128 ) 1000000000000000000ll, /* 10**19 */
   (__int128 ) 100ll * (__int128 ) 1000000000000000000ll, /* 10**20 */
@@ -92,7 +92,7 @@ const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
   (vui128_t) (__int128 ) 1000000000000000000ll, /* 10**18 */
 #ifdef __clang__
 // Clang does support constant folding for __int128
-// Simply not posible to defind a const larger than __UINT64_MAX__
+// Simply not possible to defind a const larger than __UINT64_MAX__
 // For vector initialized can use two long long elements.
   CONST_VINT128_DW128 ( 0x0000000000000000ll,0x8ac7230489e80000ll ), /* 10**19 */
   CONST_VINT128_DW128 ( 0x0000000000000005ll,0x6bc75e2d63100000ll ), /* 10**20 */
@@ -167,8 +167,8 @@ const vui128_t vtifrexpof10[] =
   (vui128_t) (__int128 ) 4768371582031250ll, /* 10**22 */
 
 #ifdef __clang__
-// Clang does support constant folding for __int128
-// Simply not posible to defind a const larger than __UINT64_MAX__
+// Clang does not support constant folding for __int128
+// Simply not possible to defind a const larger than __UINT64_MAX__
 // For vector initialized can use two long long elements.
   CONST_VINT128_DW128 ( 0x000002a5a058fc29ll,0x5ed0000000000000ll ), /* 10**23 */
   CONST_VINT128_DW128 ( 0x00000d3c21bceccell,0xda10000000000000ll ), /* 10**24 */
@@ -232,8 +232,8 @@ const __int128 tifrexpof10 [] =
   (__int128 ) 4768371582031250ll, /* 10**22 */
 
 #ifndef __clang__
-// Clang does support constant folding for __int128
-// Simply not posible to defind a const larger than __UINT64_MAX__
+// Clang does not support constant folding for __int128
+// Simply not possible to defind a const larger than __UINT64_MAX__
 // For vector initialized can use two long long elements.
   (__int128 ) 53687091200000ll * (__int128 ) 1000000000000000000ll, /* 10**23 */
   (__int128 ) 268435456000000ll * (__int128 ) 1000000000000000000ll, /* 10**24 */

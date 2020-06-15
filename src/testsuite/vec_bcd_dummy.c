@@ -4,8 +4,7 @@
  *  Created on: Mar 1, 2018
  *      Author: sjmunroe
  */
-#ifndef __clang__
-// Clang support for BCD is disabled until clang supports _Decimal128.
+#ifndef PVECLIB_DISABLE_DFP
 
 #include <pveclib/vec_common_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>

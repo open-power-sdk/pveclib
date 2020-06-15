@@ -1,5 +1,5 @@
-/*
- Copyright (c) [2017] IBM Corporation.
+ /*
+ Copyright (c) [2020] Steven Munroe.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,29 +13,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 
- vec_dummy_main.c
+ vec_runtime_common.c
 
  Contributors:
-      IBM Corporation, Steven Munroe
-      Created on: Nov 15, 2017
+      Steven Munroe
+      Created on: June 01, 2020
  */
 
-#ifndef PVECLIB_DISABLE_F128MATH
-/* Disable for __clang__ because of bug involving <floatn.h>
-   incombination with -mcpu=power9 -mfloat128 */
-#include <stdlib.h>
-#else
-#define EXIT_SUCCESS 0
-#endif
-#include <stdint.h>
-#include <stdio.h>
+#include <pveclib/vec_int512_ppc.h>
 
-int
-main (void)
-{
-  int rc = EXIT_SUCCESS;
-
-  puts ("Dummy for reviewing generated assembly code\n");
-
-  return (rc);
-}
+#include "decpowof2.c"
+#include "tipowof10.c"

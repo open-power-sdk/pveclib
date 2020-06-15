@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2019] Steven Munroe.
+ Copyright (c) [2019, 2020] Steven Munroe.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
       Created on: Aug 20, 2019
  */
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-/* Older Linux distros running Big Endian are unlikely to support PWR9.
- * So build PWR9 runtime for LE only.  */
+#ifndef PVECLIB_DISABLE_POWER9
+/* Older Linux distros running Big Endian are unlikely to support
+   PWR9.  */
 
 #include "vec_int512_runtime.c"
 #endif

@@ -38,8 +38,7 @@
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_bcd.h>
 
-#ifndef __clang__
-// clang does not support Decimal Floating Point at this time.
+#ifndef PVECLIB_DISABLE_DFP
 vui8_t
 db_vec_ZN2i128 (vui8_t zone00, vui8_t zone16)
 {
@@ -8574,9 +8573,8 @@ test_vec_bcd (void)
   int rc = 0;
 
   printf ("\n%s\n", __FUNCTION__);
-#ifndef __clang__
-// clang does not support Decimal Floating Point at this time.
 
+#ifndef PVECLIB_DISABLE_DFP
   rc += test_bcd_addsub ();
 
   rc += test_bcd_muldiv ();

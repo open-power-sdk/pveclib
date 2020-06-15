@@ -27,9 +27,8 @@
  *  2 are needed as negative exponents are handled via divide. Entries
  *  1023-1076 are required to handle denormal doubles (-1022 - 54)
 */
-#ifdef __clang__
+#ifndef PVECLIB_DISABLE_DFP
 // clang does not support Decimal Floating Point at this time.
-#else
 
 const _Decimal128 decpowof2 [] = {
 	1.0E+0DL,	/* 2**0 */

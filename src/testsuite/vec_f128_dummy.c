@@ -29,11 +29,11 @@
 #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
 #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
 #endif
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable <math.h> for __clang__ because of a bug involving <floatn.h>
    incombination with -mcpu=power9 -mfloat128. This means that ISO
-   mandated <math.h> functions __finitef128, __isinff128, etc are not
-   available.  */ 
+   mandated <math.h> functions signbit(), isfinite(), isnormal(),
+   isinf(), isnan(), etc are not available for __float128.  */
 #include <math.h>
 #endif
 
@@ -269,42 +269,44 @@ _test_xfer_bin128_2_vui16t (__binary128 f128)
 /* Mostly compiler and library tests follow to see what the various
  * compilers will do. */
 
-#ifndef __clang__ // to disable __clang__ because <math.h> fails
+#ifndef PVECLIB_DISABLE_F128MATH
+// Enable only if math.h supports generic C11 functions for __float128
+// __clang__ has a bug whenever -mfloat128 is enabled, maybe clang 10.0.1
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 int
 test_gcc_f128_signbit (__Float128 value)
   {
-    return (__signbitf128(value));
+    return (signbit(value));
   }
 
 int
 test_gcc_f128_isinf (__Float128 value)
   {
-    return (__isinff128(value));
+    return (isinf(value));
   }
 
 int
 test_gcc_float128_isnan (__Float128 value)
   {
-    return (__isnanf128(value));
+    return (isnan(value));
   }
 
 __Float128
 test_gcc_f128_copysign (__Float128 valx, __Float128 valy)
   {
-    return (__copysignf128(valx, valy));
+    return (__builtin_copysignf128(valx, valy));
   }
 
 int
 test_glibc_f128_classify (__Float128 value)
   {
-    if (__finitef128(value))
+    if (isfinite(value))
     return 1;
 
-    if (__isinff128(value))
+    if (isinf(value))
     return 2;
 
-    if (__isnanf128(value))
+    if (isnan(value))
     return 3;
     /* finite */
     return 0;

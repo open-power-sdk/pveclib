@@ -6180,8 +6180,7 @@ test_time_i128 (void)
   printf ("\n%s longdiv_e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
 	  delta_sec);
 
-#ifndef __clang__
-// clang does not support Decimal Floating Point at this time.
+#ifndef PVECLIB_DISABLE_DFP
   printf ("\n%s longbcdcf_10e32 start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)

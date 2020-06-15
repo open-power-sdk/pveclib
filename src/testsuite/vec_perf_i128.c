@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_F128MATH
 /* Disable for __clang__ because of bug involving <floatn.h>
    incombination with -mcpu=power9 -mfloat128 */
 #include <stdlib.h>
@@ -284,8 +284,7 @@ timed_longdiv_e32 (void)
   return (rc);
 }
 
-#ifndef __clang__
-// Clang does not support _Decimal128 which is a dependency of vBCD
+#ifndef PVECLIB_DISABLE_DFP
 //#define __DEBUG_PRINT__ 1
 extern vBCD_t
 example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
@@ -504,9 +503,7 @@ timed_ctmaxdouble_10e32 (void)
   double d = 0;
   int rc = 0;
 
-#ifndef __clang__
-/* Disable for __clang__ because of bug involving <floatn.h>
-   incombination with -mcpu=power9 -mfloat128 */
+#ifndef PVECLIB_DISABLE_F128MATH
   d = strtod (buf, &res);
 
   if (d != __DBL_MAX__)

@@ -30,8 +30,7 @@
 #include "ieee754.h"
 
 long tcount;
-#ifndef __clang__
-// Clang does not support _Decimal* types
+#ifndef PVECLIB_DISABLE_DFP
 void
 print_dfp128 (char *prefix, _Decimal128 val128)
 {
@@ -1365,7 +1364,7 @@ check_int64 (char *prefix, long val64, long shouldbe)
   return (rc);
 }
 
-#ifndef __clang__ // Clang does not support _Decimal* types
+#ifndef PVECLIB_DISABLE_DFP
 
 // TODO make this hidden so we can use TOC relative
 extern const _Decimal128 decpowof2[];

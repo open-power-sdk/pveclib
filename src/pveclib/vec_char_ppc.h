@@ -212,6 +212,7 @@ vec_clzb (vui8_t vra)
   r = vec_vclzb (vra);
 #elif defined (__clang__)
   r = vec_cntlz (vra);
+#else
   __asm__(
       "vclzb %0,%1;"
       : "=v" (r)

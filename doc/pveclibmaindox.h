@@ -87,8 +87,10 @@
 *  - <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/leabi-20170510.pdf">
 *  OpenPOWER ELF V2 application binary interface (ABI)</a>,
 *  OpenPOWER Foundation, 2017.
-*  - <a href="https://gcc.gnu.org/onlinedocs/">
+*  - <a href="https://sourceware.org/glibc/wiki/GNU_IFUNC">
 *  Using the GNU Compiler Collection (GCC)</a>, Free Software Foundation, 1988-2018.
+*  - <a href="https://gcc.gnu.org/onlinedocs/">
+*  What is an indirect function (IFUNC)?</a>, glibc wiki.
 *  - <a href="https://ibm.ent.box.com/s/649rlau0zjcc0yrulqf4cgx5wk3pgbfk">
 *  POWER8 Processor User’s Manual</a> for the Single-Chip Module.
 *  - <a href="https://ibm.ent.box.com/s/8uj02ysel62meji4voujw29wwkhsz6a4">
@@ -172,9 +174,15 @@
 *  - Provide higher order functions not provided directly by the PowerISA.
 *  For example vector SIMD implementation for ASCII __isalpha, etc.
 *  As another example full __int128 implementations of Count Leading Zeros,
-*  Population Count, Shift left/right immediate, and integer divide.
-*  - Such implementations should be small enough to inline and allow
+*  Population Count, Shift left/right immediate, and large integer
+*  multiply/divide.
+*  - Most implementations should be small enough to inline and allow
 *  the compiler opportunity to apply common optimization techniques.
+*  - Larger Implementations should be built into platform specific
+*  object archives and dynamic shared objects.
+*  Shared objects should use <B>IFUNC resolvers</B> to bind the
+*  dynamic symbol to best implementation for the platform
+*  (see \ref main_libary_issues_0_0).
 *
 *  \subsubsection mainpage_sub0_1 POWER Vector Library Intrinsic headers
 *
@@ -255,20 +263,22 @@
 *  (from the -mcpu compiler option).
 *
 *  While this is an improvement over writing assembler code,  it does
-*  not provide much function beyond the specific operations specified in
-*  the PowerISA.
-*
-*  Another issue is that generic operations were not
-*  uniformly applicable across vector types.
-*  For example:
-*  - vec_add / vec_sub applied to float, int, short and char.
+*  not provide much function beyond the specific operations specified
+*  in the PowerISA. As a result the generic operations were not
+*  uniformly applied across vector element types. And this situation
+*  often persisted long after the PowerISA added instructions for wider
+*  elements. Some examples:
+*  - Initially vec_add / vec_sub applied to float, int, short and char.
 *  - Later compilers added support for double
 *  (with POWER7 and the Vector Scalar Extensions (VSX) facility)
-*  - Integer long (64-bit) and __int128 support for POWER8
-*  (PowerISA 2.07B).
+*  - Later still, integer long (64-bit) and __int128 support
+*  (with POWER8 and PowerISA 2.07B).
 *
 *  But vec_mul / vec_div did not:
-*  - vec_mul applied to float (and later double, with POWER7 VSX).
+*  - Initially vec_mul applied to vector float only.
+*  Later vector double was supported for POWER7 VSX.
+*  Much later integer multiply modulo under the generic
+*  vec_mul intrinsic.
 *  - vec_mule / vec_mulo (Multiply even / odd elements)
 *  applied to [signed | unsigned] integer short and char.
 *  Later compilers added support for vector int after
@@ -277,7 +287,8 @@
 *  Altivec (VMX) only included vector reciprocal estimate for float
 *  and no vector integer divide for any size.
 *  Later compilers added support for vec_div float / double after
-*  POWER7 (VSX) added vector divide single/double-precision instructions.
+*  POWER7 (VSX) added vector divide single/double-precision
+*  instructions.
 *
 *  \note While the processor you (plan to) use,  may support the
 *  specific instructions you want to exploit,  the compiler you are
@@ -292,12 +303,28 @@
 *  AT is free for download and new AT versions are released yearly
 *  (usually in August) with the latest stable GCC from that spring.
 *
-*  This all can be very frustrating, at minimum,  or even a show
-*  stopper, if you are on a tight schedule for your project.
-*  Especially if you are not familiar with the evolving history of the
-*  PowerISA and supporting compilers.
+*  This can be a frustrating situation unless you are familiar with:
+*  - the PowerISA and how it has evolved.
+*  - the history and philosophy behind the implementation of
+*  <altivec.h>.
+*  - The specific level of support provided by the compiler(s) you are
+*  using.
+*
+*  And to be fair, this author believes, this too much to ask from your
+*  average library or application developer. A higher level and more
+*  intuitive API is needed.
 *
 *  \subsubsection mainpage_sub_1_1 What can we do about this?
+*
+*  A lot can be done to improve this situation.
+*  For older compilers we substitute inline assemble for missing
+*  <altivec.h> operations.
+*  For older processors we can substitute short instruction sequences
+*  as equivalents for new instructions.
+*  And useful higher level (and more intuitive) operations can written and shared.
+*  All can be collected and provided in headers and libraries.
+*
+*  \paragraph mainpage_sub_1_1_1 Use inline assembler carefully
 *
 *  First the Binutils assembler is usually updated within weeks of the
 *  public release of the PowerISA document. So while your compiler
@@ -333,6 +360,8 @@
 *  Again wrapping these implementations in static inline functions for
 *  collection in header files for reuse and distribution is recommended.
 *
+*  \paragraph mainpage_sub_1_1_2 Define multi-instruction sequences to fill in gaps
+*
 *  The PowerISA vector facility has all the instructions you need to
 *  implement extended precision operations for add, subtract,
 *  and multiply. Add / subtract with carry-out and permute or
@@ -353,24 +382,29 @@
 *  support generic vec_mul() for vector int. But this is not
 *  documented. Similarly for char (byte) and short (halfword) elements.
 *
-*  POWER8 also introduced Vector Multiply Even Signed Word
-*  (<B>vmulesw</B>) and Vector Multiply Odd Signed Word
-*  (<B>vmulosw</B>) instructions.  So you would expect the generic
+*  POWER8 also introduced Vector Multiply Even Signed|Unsigned Word
+*  (<B>vmulesw</B>|<B>vmuleuw</B>)
+*  and Vector Multiply Odd Signed|Unsigned Word
+*  (<B>vmulosw</B>|<B>vmulouw</B>) instructions.
+*  So you would expect the generic
 *  vec_mule and vec_mulo operations to be extended to support
 *  <I>vector int</I>,  as these operations have long been supported for
-*  char and short.  Sadly this is not supported as of GCC 7.3.
-*  We hope to see this implemented for GCC 8.
+*  char and short.  Sadly this is not supported as of GCC 7.3 and inline
+*  assembler is required for this case.
+*  This support was added for GCC 8.
 *
 *  So what will the compiler do for vector multiply int (modulo, even,
 *  or odd) for targeting power7?  Older compilers will reject this as a
 *  <I>invalid parameter combination ...</I>.  A newer compiler may
 *  implement the equivalent function in a short sequence of VMX
 *  instructions from PowerISA 2.06 or earlier.
-*  And GCC 7.3 does support vec_mul for element types char,
+*  And GCC 7.3 does support vec_mul (modulo) for element types char,
 *  short, and int. These sequences are in the 2-7 instruction range
 *  depending on the operation and element type. This includes some
 *  constant loads and permute control vectors that can be factored
-*  and reused across operations.
+*  and reused across operations.  See vec_muluwm() code for details.
+*
+*  \paragraph mainpage_sub_1_1_3 Define new and useful operations
 *
 *  Once the pattern is understood it is not hard to write equivalent
 *  sequences using operations from the original <altivec.h>.  With a
@@ -382,7 +416,10 @@
 *  doubleword, or quadword). This might take 10-12 instructions to
 *  implement the next element size bigger then the current processor.
 *  A full 128-bit by 128-bit multiply with 256-bit result only
-*  requires 32 instructions on a POWER8 (using multiple word even/odd).
+*  requires 36 instructions on POWER8 (using multiple word even/odd)
+*  and 15 instructions on POWER9 (using vmsumudm).
+*
+*  \paragraph mainpage_sub_1_1_4 Leverage other PowerISA facilities
 *
 *  Also many of the operations missing from the vector facility,
 *  exist in the Fixed-point, Floating-point,
@@ -398,9 +435,12 @@
 *  And with power8 we have direct transfer (GPR <-> FPR | VR | VSR)
 *  instructions in the 4-5 cycle latency range.
 *
-*  For example POWER8 added Binary Coded Decimal (<B>BCD</B>)
-*  add/subtract for signed 31 digit vector values. The vector unit
-*  does not support BCD multiply / divide.
+*  For example POWER8 added Decimal (<B>BCD</B>) Add/Subtract Modulo
+*  (<B>bcdadd</B>, <B>bcdsub</B>) instructions for signed 31 digit
+*  vector values.
+*  POWER9 added Decimal Convert From/To Signed Quadword
+*  (<B>bcdcfsq</B>, <B>bcdctsq</B>) instructions.
+*  So far vector unit does not support BCD multiply / divide.
 *  But the Decimal Floating-Point (<B>DFP</B>) facility (introduced
 *  with PowerISA 2.05 and Power6) supports up to 34-digit
 *  (__Decimal128) precision and all the expected
@@ -409,12 +449,21 @@
 *  This is all supported with a hardware Decimal Floating-Point Unit
 *  (<B>DFU</B>).
 *
-*  So bcd_add / bcd_sub can be generated as a single instruction on
-*  POWER8 and later, and 10-11 instructions for Power6/7.
+*  So we can implement vec_bcdadd() and vec_bcdsub() with single instructions
+*  on POWER8, and 10-11 instructions for Power6/7.
 *  This count include the VSR <-> FPRp transfers,
 *  BCD <-> DFP conversions, and DFP add/sub.
-*  Similarly bcd_mul / bcd_div are implemented in 11 instructions using
-*  register transfer and the DFU operations for Power6/7/8.
+*  Similarly for vec_bcdcfsq() and vec_bcdctsq(). The POWER8 and earlier
+*  implementations are a bit bigger (83 and 32 instruction respectively)
+*  but even the POWER9 hardware implementation runs 37 and 23 cycles
+*  (respectively).
+*
+*  The vec_bcddiv() and vec_bcdmul() operations are implement by
+*  transfer/conversion to __Decimal128 and execute in the DFU.
+*  This is slightly complicated by the requirement to preserve correct
+*  fix-point alignment/truncation in the floating-point format.
+*  The operation timing runs ~100-200 cycles mostly driven the DFP
+*  multiply/divide and the number of digits involved.
 *
 *  \note So why does anybody care about BCD and DFP? Sometimes you get
 *  large numbers in decimal that you need converted to binary for
@@ -422,99 +471,11 @@
 *  your extended binary computation in decimal. The multiply by 10 and
 *  BCD vector operations help simplify and speed-up these conversions.
 *
+*  \paragraph mainpage_sub_1_1_5 Use clever tricks
+*
 *  And finally: Henry S. Warren's wonderful book Hacker's Delight
 *  provides inspiration for SIMD versions of; count leading zeros,
 *  population count, parity, etc.
-*
-*  \subsubsection mainpage_endian_issues_1_1 General Endian Issues
-*
-*  For POWER8, IBM made the explicit decision to support Little Endian
-*  (<B>LE</B>) data format in the Linux ecosystem.  The goal was to
-*  enhance application code portability across Linux platforms.
-*  This goal was integrated into the OpenPOWER ELF V2
-*  Application Binary Interface <B>ABI</B> specification.
-*
-*  The POWER8 processor architecturally supports an <I>Endian Mode</I>
-*  and supports both BE and LE storage access in hardware.  However,
-*  register to register operations are not effected by endian mode.
-*  The ABI extends the LE storage format to vector register (logical)
-*  element numbering.
-*  See OpenPOWER ABI specification
-*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_pgfId-1095944.html"
-*  >Chapter 6. Vector Programming Interfaces</a> for details.
-*
-*  This has no effect for most altivec.h
-*  operations where the input elements and the results "stay in their
-*  lanes".  For operations of the form (T[n] = A[n] op B[n]),
-*  it does not matter if elements are numbered [0, 1, 2, 3] or
-*  [3, 2, 1, 0].
-*
-*  But there are cases where element renumbering can change the
-*  results.  Changing element numbering does change the even / odd
-*  relationship for merge and integer multiply.  For <B>LE</B>
-*  targets, operations accessing even vector elements are
-*  implemented using the equivalent odd instruction (and visa versa)
-*  and inputs are swapped.  Similarly for high and low merges.
-*  Inputs are also swapped for Pack, Unpack, and Permute operations
-*  and the permute select vector is inverted.
-*  The above is just a sampling of a larger list of
-*  <I>LE transforms</I>.
-*  The OpenPOWER ABI specification provides a helpful table of
-*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_90667.html"
-*  >Endian-Sensitive Operations</a>.
-*
-*  \note This means that the vector built-ins provided by altivec.h
-*  may not generate the instructions you expect.
-*
-*  This does matter when doing extended precision arithmetic.
-*  Here we need to maintain most-to-least significant byte order and
-*  align "digit" columns for summing partial products.  Many of these
-*  operations where defined long before Little Endian was seriously
-*  considered and are decidedly Big Endian in register format.
-*  Basically, any operation where the element changes size
-*  (truncated, extended, converted, subseted) from input to output
-*  is suspect for <B>LE</B> targets.
-*
-*  The coding for these higher level operations
-*  is complicated by <I>Little Endian</I> (LE) support as
-*  specified in the OpenPOWER ABI and as implemented in the compilers.
-*  Little Endian changes the effective vector element numbering and
-*  the location of even and odd elements.
-*
-*  This is a general problem for using vectors to implement extended
-*  precision arithmetic.
-*  The multiply even/odd operations being the primary example.
-*  The products are double-wide and in BE order in the vector register.
-*  This is reinforced by the Vector Add/Subtract Unsigned Quadword
-*  instructions.
-*  And the products from multiply even instructions are always
-*  <I>numerically</I> higher digits then multiply odd products.
-*  The pack, unpack, and sum operations have similar issues.
-*
-*  This matters when you need to align (shift) the partial products
-*  or select the <I>numeric</I> high or lower portion of the products.
-*  The (high to low) order of elements for the multiply has to match
-*  the order of the largest element size used in accumulating partial
-*  sums. This is normally a quadword (vadduqm instruction).
-*
-*  So the element order is fixed while
-*  the element numbering and the partial products (between even and
-*  odd) will change between BE and LE. This effects splatting and octet
-*  shift operations required to align partial product for summing.
-*  These are the places where careful programming is
-*  required, to nullify the compilers LE transforms, so we will get
-*  the correct numerical answer.
-*
-*  So what can the Power Vector Library do to help?
-*  - Be aware of these mandated LE transforms and if required provide
-*  compliant inline assembler implementations for LE.
-*  - Where required for correctness provide LE specific implementations
-*  that have the effect of nullifying the unwanted transforms.
-*  - Provide higher level operations that help pveclib and
-*  applications code in an endian neutral way and get correct results.
-*
-*  \sa \ref i32_endian_issues_0_0
-*  \sa \ref mainpage_para_1_2_1
 *
 *  \subsubsection  mainpage_sub_1_2 So what can the Power Vector Library project do?
 *
@@ -620,8 +581,9 @@ vec_adduqm (vui128_t a, vui128_t b)
 *  and Vector Add and Write Carry-Out Unsigned Word (<B>vaddcuw</B>).
 *  This treats the vector __int128 as 4 32-bit binary digits.
 *  The first instruction sums each (32-bit digit) column and the second
-*  records the carry out of the high order bit.  This leaves the carry
-*  bit in the original (word) column, so use a shift left to line up
+*  records the carry out of the high order bitof each word.
+*  This leaves the carry bit in the original (word) column,
+*  so a shift left 32-bits is needed to line up
 *  the carries with the next higher word.
 *
 *  To propagate any carries across all 4 (word) digits,  repeat this
@@ -756,6 +718,118 @@ vec_mul10uq (vui128_t a)
 *  \sa \ref i32_example_0_0_0
 *  \sa \ref i32_example_0_0_1
 *
+*  \subsubsection mainpage_sub3 pveclib is not a matrix math library
+*
+*  The pveclib does not implement general purpose matrix math operations.
+*  These should continue to be developed and improved within existing
+*  projects (ie LAPACK, OpenBLAS, ATLAS, etc).
+*  We believe that pveclib will be helpful to implementors of matrix
+*  math libraries by providing a higher level, more portable,
+*  and more consistent vector interface for the PowerISA.
+*
+*  The decision is still pending on;
+*  extended arithmetic, cryptographic,
+*  compression/decompression, pattern matching / search
+*  and small vector libraries (libmvec).
+*  This author believes that the small vector math
+*  implementation should be part of GLIBC (libmvec).
+*  But the lack of optimized implementations or even good documentation
+*  and examples for these topics is a concern.
+*  This may be something that PVECLIB can address by providing enabling
+*  kernels or examples.
+*
+*  \subsection  mainpage_sub_2x Practical considerations.
+*
+*  \subsubsection mainpage_endian_issues_1_1 General Endian Issues
+*
+*  For POWER8, IBM made the explicit decision to support Little Endian
+*  (<B>LE</B>) data format in the Linux ecosystem.  The goal was to
+*  enhance application code portability across Linux platforms.
+*  This goal was integrated into the OpenPOWER ELF V2
+*  Application Binary Interface <B>ABI</B> specification.
+*
+*  The POWER8 processor architecturally supports an <I>Endian Mode</I>
+*  and supports both BE and LE storage access in hardware.  However,
+*  register to register operations are not effected by endian mode.
+*  The ABI extends the LE storage format to vector register (logical)
+*  element numbering.
+*  See OpenPOWER ABI specification
+*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_pgfId-1095944.html"
+*  >Chapter 6. Vector Programming Interfaces</a> for details.
+*
+*  This has no effect for most altivec.h
+*  operations where the input elements and the results "stay in their
+*  lanes".  For operations of the form (T[n] = A[n] op B[n]),
+*  it does not matter if elements are numbered [0, 1, 2, 3] or
+*  [3, 2, 1, 0].
+*
+*  But there are cases where element renumbering can change the
+*  results.  Changing element numbering does change the even / odd
+*  relationship for merge and integer multiply.  For <B>LE</B>
+*  targets, operations accessing even vector elements are
+*  implemented using the equivalent odd instruction (and visa versa)
+*  and inputs are swapped.  Similarly for high and low merges.
+*  Inputs are also swapped for Pack, Unpack, and Permute operations
+*  and the permute select vector is inverted.
+*  The above is just a sampling of a larger list of
+*  <I>LE transforms</I>.
+*  The OpenPOWER ABI specification provides a helpful table of
+*  <a href="http://openpowerfoundation.org/wp-content/uploads/resources/leabi/content/dbdoclet.50655244_90667.html"
+*  >Endian-Sensitive Operations</a>.
+*
+*  \note This means that the vector built-ins provided by altivec.h
+*  may not generate the instructions you expect.
+*
+*  This does matter when doing extended precision arithmetic.
+*  Here we need to maintain most-to-least significant byte order and
+*  align "digit" columns for summing partial products.  Many of these
+*  operations where defined long before Little Endian was seriously
+*  considered and are decidedly Big Endian in register format.
+*  Basically, any operation where the element changes size
+*  (truncated, extended, converted, subseted) from input to output
+*  is suspect for <B>LE</B> targets.
+*
+*  The coding for these higher level operations
+*  is complicated by <I>Little Endian</I> (LE) support as
+*  specified in the OpenPOWER ABI and as implemented in the compilers.
+*  Little Endian changes the effective vector element numbering and
+*  the location of even and odd elements.
+*
+*  This is a general problem for using vectors to implement extended
+*  precision arithmetic.
+*  The multiply even/odd operations being the primary example.
+*  The products are double-wide and in BE order in the vector register.
+*  This is reinforced by the Vector Add/Subtract Unsigned
+*  Doubleword/Quadword instructions.
+*  And the products from multiply even instructions are always
+*  <I>numerically</I> higher digits then multiply odd products.
+*  The pack, unpack, and sum operations have similar issues.
+*
+*  This matters when you need to align (shift) the partial products
+*  or select the <I>numeric</I> high or lower portion of the products.
+*  The (high to low) order of elements for the multiply has to match
+*  the order of the largest element size used in accumulating partial
+*  sums. This is normally a quadword (vadduqm instruction).
+*
+*  So the element order is fixed while
+*  the element numbering and the partial products (between even and
+*  odd) will change between BE and LE. This effects splatting and octet
+*  shift operations required to align partial product for summing.
+*  These are the places where careful programming is
+*  required, to nullify the compilers LE transforms, so we will get
+*  the correct numerical answer.
+*
+*  So what can the Power Vector Library do to help?
+*  - Be aware of these mandated LE transforms and if required provide
+*  compliant inline assembler implementations for LE.
+*  - Where required for correctness provide LE specific implementations
+*  that have the effect of nullifying the unwanted transforms.
+*  - Provide higher level operations that help pveclib and
+*  applications code in an endian neutral way and get correct results.
+*
+*  \sa \ref i32_endian_issues_0_0
+*  \sa \ref mainpage_para_1_2_1
+*
 *  \subsubsection  mainpage_sub_1_3 Returning extended quadword results.
 *
 *  Extended quadword add, subtract and multiply results can exceed the
@@ -880,7 +954,7 @@ vec_mul10uq (vui128_t a)
 *  The details are defined in the appropriate Application Binary
 *  Interface (ABI) documentation.
 *
-*  The POWER processor provides lots (96) of registers so we want to
+*  The POWER processor provides lots of registers (96) so we want to
 *  use registers wherever possible.  Especially when our application is
 *  composed of collections of small functions.  And more especially
 *  when these functions are small enough to inline and we want the
@@ -914,10 +988,28 @@ vec_mul10uq (vui128_t a)
 *  GCC also adds the __int128 type for some targets including the
 *  PowerPC64 ABIs. Values of __int128 type are held (for operations,
 *  parameter passing and function return) in 64-bit GPR pairs.
-*  GCC  adds __ibm128 and _Decimal128 floating point types which are
+*  Starting with version 4.9 GCC supports the vector signed/unsigned
+*  __int128 type.
+*  This is passed and returned as a single vector register and should
+*  be used for all 128-bit integer types
+*  (bool/signed/unsigned).
+*
+*  GCC supports __ibm128 and _Decimal128 floating point types which are
 *  held in Floating-point Registers pairs.
+*  These are distinct types from vector double and oriented differently
+*  in the VXS register file.
+*  But the doubleword halves can be moved between types using the VSX
+*  permute double word immediate instructions (xxpermdi).
+*  This useful for type conversions and implementing some vector
+*  BCD operations.
+*
 *  GCC recently added the __float128 floating point type which are held
-*  in single vector register.  Similarly for vector __int128.
+*  in single vector register. The compiler considers this to be floating
+*  scalar and is not cast compatible with any vector type. To access the
+*  __float128 value as a vector it must be passed through a union.
+*
+*  \note The implementation will need to provide transfer functions between
+*  vectors and other 128-bit types.
 *
 *  GCC defines Generic Vector Extensions that allow typedefs for
 *  vectors of various element sizes/types and generic SIMD
@@ -931,25 +1023,29 @@ vec_mul10uq (vui128_t a)
 *
 *  The OpenPOWER 64-Bit ELF V2 ABI Specification makes specific
 *  provisions for passing/returning <I>homogeneous aggregates</I>
-*  of multiple like data types.  Such aggregates can be passed
-*  as up to eight floating-point or  vector registers.
+*  of multiple like (scalar/vector) data types.
+*  Such aggregates can be passed/returned
+*  as up to eight floating-point or vector registers.
+*  A parameter list may include multiple <I>homogeneous aggregates</I>
+*  with up to a total of twelve parameter registers.
+*
 *  This is defined for the Little Endian ELF V2 ABI and is
 *  not applicable to Big Endian ELF V1 targets.
-*  Also current GCC versions, in common use,
-*  do not fully implement this ABI feature.
+*  Also GCC versions before GCC8, do not fully implement this ABI
+*  feature, and revert to to old ABI structure passing
+*  (passing through storage).
+*
+*  Passing large <I>homogeneous aggregates</I> becomes the preferred
+*  solution as PVECLIB starts to address wider (256 and 512-bit)
+*  vector operations. For example the ABI allows passing up to 3
+*  512-bit parameters and return a 1024-bit result in vector registers
+*  (as in vec_madd512x512a512_inline()). For large multi-quadword
+*  precision operations the only practical solution uses reference
+*  parameters to arrays or structs in storage
+*  (as in vec_mul2048x2048()). See vec_int512_ppc.h for more examples.
 *
 *  So we have shown that there are mechanisms for functions to return
-*  multiple vector register values.  But none are really practical at
-*  this time as they not yet available (function or optimal code
-*  generation) in current GCC compilers, that are in common use.
-*
-*  Returning pairs of vector __int128 values as _Complex
-*  __float128 would be awkward at best. And it is not clear when or if
-*  _Complex vector __int128 will be supported.  GCC's Generic Vector
-*  Extensions are only implemented for vector_size(16).
-*  And current GCC compilers can generate some sub-optimal code for
-*  passing/returning <I>homogeneous aggregates</I> as suggested in the
-*  OpenPOWER ABI.
+*  multiple vector register values.
 *
 *  \paragraph mainpage_sub_1_3_3 Subsetting the problem.
 *
@@ -958,7 +1054,9 @@ vec_mul10uq (vui128_t a)
 *  one 128-bit vector.
 *  - The PowerISA normally splits these cases into multiple
 *  instructions anyway.
-*  - So far these functions are small and fully inlined.
+*  - Most of these functions are small and fully inlined.
+*  - The exception will be the multiple quadword precision arithmetic
+*  operations.
 *
 *  So we have two (or three) options given the current state of GCC
 *  compilers in common use:
@@ -966,7 +1064,10 @@ vec_mul10uq (vui128_t a)
 *  where each function only returns (up to) 128-bits of the result.
 *  - Use pointer parameters to return a second vector value in
 *  addition to the function return.
-*  - Support both and let the user decide which works best.
+*  - Support both options above and let the user decide which works
+*  best.
+*  - With a availability of GCC 8/9 compilers, pass/return 256, 512
+*  and 1024-bit vectors as <I>homogeneous aggregates</I>.
 *
 *  The add/subtract quadword operations provide good examples.
 *  For exmaple adding two 256-bit unsigned integer values and returning
@@ -1024,7 +1125,7 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 *  Here the compiler may not recognize all the common subexpressions,
 *  as the "split forms" are expanded before optimization.
 *
-*  \subsection mainpage_sub2 Background on the evolution  of <altivec.h>
+*  \section mainpage_sub2 Background on the evolution  of <altivec.h>
 *
 *  The original
 *  <a href="https://www.nxp.com/docs/en/reference-manual/ALTIVECPIM.pdf">
@@ -1064,7 +1165,7 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 *  - vec_mule / vec_mulo (multiply even / odd) are defined for
 *  integer multiply as integer products require twice as many bits
 *  as the inputs (the results don't stay in their lane).
-*  \par
+*
 *  The RISC philosophy resists and POWER Architecture avoids
 *  instructions that write to more than one register.
 *  So the hardware and PowerISA vector integer multiply generate
@@ -1075,22 +1176,32 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 *  and selects the specific instructions based on the operand
 *  (char or short) type.
 *
-*  This is complicated as the PowerISA evolves.
-*  The original Altivec (VMX) provided vector multiply (even / odd)
-*  operations for byte (char) and halfword (short) integers.
-*  Multiple even / odd word (int) instructions were not introduced
-*  until PowerISA V2.07 (POWER8). PowerISA 2.07 also introduced vector
-*  multiply word modulo which is included under the generic vec_mul.
-*
 *  As the PowerISA evolved adding new vector (VMX) instructions,
 *  new facilities (Vector Scalar Extended (VSX)),
 *  and specialized vector categories (little endian, AES, SHA2, RAID),
-*  these new operators were added to <altivec.h>.
-*  This included new specific and generic operations and
+*  some of these new operators were added to <altivec.h>.
+*  This included new some new specific and generic operations and
 *  additional vector element types (long (64-bit) int, __int128,
 *  double and quad precision (__Float128) float).
+*  This support was <I>staged</I> across multiple compiler releases
+*  in response to perceived need and stake-holder requests.
 *
-*  However the PIM documents were primarily focused on embedded
+*  The result was a patchwork of <altivec.h> built-ins support versus
+*  new instructions in the PowerISA and shipped hardware.
+*  The original Altivec (VMX) provided vector multiply (even / odd)
+*  operations for byte (char) and halfword (short) integers.
+*  Vector Multiply even / odd word (int) instructions were not
+*  introduced until PowerISA V2.07 (POWER8) under the generic
+*  built-ins vec_mule, vec_mulo.
+*  PowerISA 2.07 also introduced vector multiply word modulo under the
+*  generic built-in vec_mul. Both where first available in GCC 8.
+*  Specific built-in forms (vec_vmuleuw, vec_vmulouw,
+*  vec_vmuluwm) where not provided.
+*  PowerISA V3.0 (POWER9) added Multiply-Sum Unsigned Doubleword Modulo
+*  but neither generic (vec_msum) or specific (vec_msumudm) forms
+*  have been provided (so far as of GCC 9).
+*
+*  However the original PIM documents were primarily focused on embedded
 *  processors and were not updated to include the vector extensions
 *  implemented by the server processors.
 *  So any documentation for new vector operations were relegated to
@@ -1104,59 +1215,1050 @@ s0 = vec_addeq (&c0, a0, b0, c1);
 *  documented in a common place so the various compilers could
 *  implement a common vector built-in API. So ...
 *
+*  \subsection mainpage_sub2_1 The ABI is evolving
+*
 *  The
 *  <a href="https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture">
 *  OpenPOWER ELF V2 application binary interface (ABI)</a>:
-*  Chapter 6. Vector Programming Interfaces and Appendix A.
-*  Predefined Functions for Vector Programming document the
+*  Chapter 6. <B>Vector Programming Interfaces</B> and <B>Appendix A.
+*  Predefined Functions for Vector Programming</B> document the
 *  current and proposed vector built-ins we expect all C/C++
 *  compilers to implement for the PowerISA.
 *
-*  The ABI also defines many overloaded built-in functions as
-*  generic operations. Here the compiler selects a specific PowerISA
+*  The ABI defined generic operations as overloaded built-in functions.
+*  Here the ABI suggests a specific PowerISA
 *  implementation based on the operand (vector element) types.
-*  The ABI also defines the (big/little) endian behavior and the
-*  compiler may select different instructions based on the endianness
+*  The ABI also defines the (big/little) endian behavior and the ABI
+*  may suggests different instructions based on the endianness
 *  of the target.
 *
-*  Also note that the vector element numbering
+*  This is a important point as the vector element numbering
 *  changes between big and little endian, and so does the meaning of
 *  even and odd. Both affect what the compiler supports and the
 *  instruction sequence generated.
-*  - <B>vec_muleub</B> and <B>vec_muloub</B> (multiply even / odd
+*  - <B>vec_mule</B> and <B>vec_mulo</B> (multiply even / odd
+*  are examples of generic built-ins  defined by the ABI.
+*  One would assume these built-ins will generate the matching
+*  instruction based only on the input vector type,
+*  however the GCC compiler will adjust the generated
+*  instruction based on the target endianness
+*  (reversing even / odd for little endian).
+*  - Similarly for the merge (even/odd high/low) operations.
+*  For little endian the compiler reverses even/oss (high/low) and
+*  swaps operands as well.
+*  - See <B>Table 6.1. Endian-Sensitive Operations</B> for details.
+*
+*  The many existing specific built-ins (where the name include
+*  explicit type and signed/unsigned notation) are included in the
+*  ABI but listed as deprecated.
+*  Specifically the Appendix <B>A.6. Deprecated Compatibility Functions</B>
+*  and <B>Table A.8. Functions Provided for Compatibility</B>.
+*
+*  This reflects an explicit decision by the ABI and compiler
+*  maintainers that a generic only interface would be smaller/easier
+*  to implement and document as the PowewrISA evolves.
+*
+*  Certainly the addition of VSX to POWER7 and the many vector
+*  extensions added to POWER8 and POWER9 added hundreds of vector
+*  instructions. Many of these new instructions needed build-ins to:
+*  - Enable early library exploitation.
+*  For example new floating point element sizes (double and Float128).
+*  - Support specialize operations not generally supported in the
+*  language.  For example detecting Not-a-Number and Infinities without
+*  triggering exceptions. These are needed in the POSIX library
+*  implementation.
+*  - Supporting wider integer element sizes can result in large
+*  multiples of specific built-ins if you include variants for:
+*    - signed and unsigned
+*    - saturated
+*    - even, odd, modulo, write-Carry, and extend
+*    - high and low
+*    - and additional associatd  merge, pack, unpack, splat, operations
+*
+*  So implementing new instructions as generic built-ins first, and
+*  delaying the specific built-in permutations,
+*  is a wonderful simplification. This move naturally from tactical
+*  to strategy to plan quickly.
+*  Dropping the specific built-ins for new instructions and deprecating
+*  the existing specific built-ins saves a lot of work.
+*
+*  As the ABI places more emphasis on generic built-in operations,
+*  we are seeing more cases
+*  where the compiler generates multiple instruction sequences.
+*  The first example was vec_abs (vector absolute value) from the
+*  original Altivec PIM. There was no vector absolute instruction for
+*  any of the supported types (including vector float at the time).
+*  But this
+*  could be implemented implemented in a 3 instruction sequence.
+*  This generic operation was extended to vector double with for
+*  VSX (PowerISA 2.06) which introduced hardware instructions for
+*  absolute value of single and double precision vectors. But
+*  Vec_abs remains a multiple instruction sequence for integer
+*  elements.
+*
+*  Another example is vec_mul. POWER8 (PowerISA 2.07) introduced
+*  Vector Multiply Unsigned Word Modulo (vmuluwm). This was included
+*  in the ISA as it simplified vectorizing C language (int) loops.
+*  This also allowed a single instruction implementation for vec_mul
+*  for vector (signed/unsigned) int.
+*  The PowerISA does not provide direct vector multiply modulo
+*  instructions for char, short, or long. Again this requires a
+*  multiple-instruction sequence to implement.
+*
+*  \subsection mainpage_sub2_2 The current <altivec.h> is a mixture
+*
+*  The current of the vector ABI implementation in the compiler and
+*  <altivec.h> is mixture of old and new.
+*  - Many new instruction (since PowerISA 2.06) are supported
+*  only under existing (with new element types; vec_mul, vec_mule,
+*  vec_mulo) built-ins.
+*  Or as newly defined generic built-ins (vec_eqv. vec_nand, vec_orc).
+*   - Specific types/element sizes under these generic built-ins may be
+*   marked <I>Phased in</I>.
+*  - Some new instructions are supported with both generic (vec_popcnt)
+*  and specific (vec_vpopcntb, vec_vpopcntd, vec_vpopcnth,
+*  vec_vpopcntw) built-ins.
+*  - Others new instructions are only supported with specific built-ins
+*  (vec_vaddcuq, vec_vaddecuq, vec_vaddeuqm, vec_vsubcuq, vec_vsubecuq,
+*  vec_vsubeuqm). To be fair only the quadword element supports the
+*  write-Carry and extend variants.
+*  - Endian sensitivity may be applied in surprising ways.
+*   - <B>vec_muleub</B> and <B>vec_muloub</B> (multiply even / odd
 *  unsigned byte) are examples of non-overloaded built-ins provided by
 *  the GCC compiler but not defined in the ABI.
 *  One would assume these built-ins will generate the matching
 *  instruction, however the GCC compiler will adjust the generated
 *  instruction based on the target endianness
 *  (even / odd is reversed for little endian).
+*   - <B>vec_sld</B>, <B>vec_sldw</B>, <B>vec_sll</B>, and
+*   <B>vec_slo</B> (vector shift left) are <B>not</B> endian sensitive.
+*   Historically, these built-ins often used to shift by amounts not
+*   a multiple of the element size, across types.
+*  - A number of built-ins are defined in the ABI and marked
+*  (all or in part) as <I>Phased in</I>.
+*  This implies that compilers <B>shall</B> implement
+*  these build-ins (eventually) in <altivec.h>.
+*  However the specific compiler version you are using many not have
+*  implemented it yet.
 *
-*  The ABI also defines vec_mul as an overloaded operation on integer
-*  types, where only the low order half (modulo element size)
-*  of the product is returned.
-*  The PowerISA does not provide direct multiply modulo instructions
-*  for all the integer sizes / types. So this requires a
-*  multiple-instruction sequence to implement.
-*  Also integer vec_mul is defined in the ABI as "phased in" and is
-*  only implemented in the latest GCC versions.
+*  \subsection mainpage_sub2_3 Best practices
 *
 *  This is a small sample of the complexity we encounter programming
-*  at this low level (vector intrinsic) API. Partially this is due to
-*  RISC design philosophy where there is a trade-off of software
-*  complexity for simpler (hopefully faster) hardware design.
+*  at this low level (vector intrinsic) API.
+*  This is also an opportunity for a project like the Power Vector
+*  Library (PVECLIB) to smooth off the rough edges and simplify
+*  software development for the OpenPOWER ecosystem.
+*
+*  - If the generic vector built-in operation you need is defined in the ABI.
+*    - And defined in the PowerISA across the processor versions you need to support.
+*    - And defined in <altivec.h> for the compilers and compiler versions you expect to use.
+*    - And implemented for the vector types/element sizes you need for the compilers and compiler versions you expect to use.
+*    - Then use the generic vector built-in from <altivec.h> in your application/library.
+*  - Otherwise if the specific vector built-in operation you need is defined in <altivec.h>
+*    - For the vector types/element sizes you need.
+*    - And defined in the PowerISA across the processor versions you need to support.
+*    - And implemented for the compilers and compiler versions you expect to use.
+*    - Then use the specific vector built-in from <altivec.h> in your application/library.
+*  - Otherwise if the vector operation you need is defined in PVECLIB.
+*    - For the vector types/element sizes you need.
+*    - Then use the vector operation from PVECLIB in your application/library.
+*  - Otherwise
+*    - Check on https://github.com/open-power-sdk/pveclib and see if there is newer version of PVECLIB
+*    - Open an issue on https://github.com/open-power-sdk/pveclib/issues for the operation you would like to see.
+*    - Look at source for for PVECLIB for examples similar to what you are trying to do.
+*
+* \section main_libary_issues_0_0 Putting the Library into PVECLIB
+*
+* Until recently (as of v1.0.3) PVECLIB operations were
+* <B>static inline</B> only. This was reasonable as most operations
+* were small (one to a few vector instructions).
+* This offered the compiler opportunity for:
+* - Better register allocation.
+* - Identifying common subexpressions and factoring them across
+* operation instances.
+* - Better instruction scheduling across operations.
+*
+* Even then, a few operations
+* (quadword multiply, BCD multiply, BCD <-> binary conversions,
+* and some POWER8/7 implementations of POWER9 instructions)
+* were getting uncomfortably large (10s of instructions).
+* But it was the multiple quadword precision operations that
+* forced the issue as they can run to 100s and sometimes 1000s of
+* instructions.
+*
+* \subsection main_libary_issues_0_0_0 Building Multi-target Libraries
+*
+* Building libraries of compiled binaries is not that difficult.
+* The challenge is effectively supporting multiple processor
+* (POWER7/8/9) targets, as many PVECLIB operations have different
+* implementations for each target.
+* This is especially evident on the multiply integer word, doubleword,
+* and quadword operations (see; vec_muludq(), vec_mulhuq(), vec_mulluq(),
+* vec_vmuleud(), vec_vmuloud(), vec_msumudm(), vec_muleuw(),
+* vec_mulouw()).
+*
+* This is dictated by both changes in the PowerISA and in
+* the micro-architecture as it evolved across processor generations.
+* So an implementation to run on a POWER7 is necessarily restricted to
+* the instructions of PowerISA 2.06.
+* But if we are running on a POWER9, leveraging new instructions from
+* PowerISA 3.0 can yield better performance than the POWER7
+* compatible implementation. When we are dealing with larger operations
+* (10s and 100s of instructions) the compiler can schedule instruction
+* sequences based on the platform (-mtune=) for better performance.
+*
+* So we need to deliver multiple implementations for some operations
+* and we need to provide mechanisms to select a specific target
+* implementation statically at compile/build or dynamically at
+* runtime. First we need to compile multiple version of these
+* operations, as unique functions, each with a different effective
+* compile target (-mcpu= options).
+*
+* Obviously creating multiple source files implementing the same large
+* operation, each supporting a different specific target platform,
+* is a possibility.
+* However this could cause maintenance problems where changes to a
+* operation must be coordinated across multiple source files.
+* This is also inconsistent with the current PVECLIB coding style
+* where a file contains an operations complete implementation,
+* including documentation and target specific implementation variants.
+*
+* The current PVECLIB implementation makes extensive use of C
+* Preprocessor (<B>CPP</B>) conditional source code.
+* These includes testing for; compiler version,
+* target Endian, and current target processor, then selects the
+* appropriate source code snippet (\ref mainpage_sub_1_2).
+* This was intended to simplify the application/library developers
+* life were they could use the PVECLIB API and not worry about
+* these details.
+*
+* So far this works as intended (single vector source for multiple
+* PowerISA VMX/VSX targets) when the entire application is compiled
+* for a single target.
+* However this dependence on CPP conditionals is mixed blessing then
+* the application needs to support multiple platforms in a single package.
+*
+* \subsubsection main_libary_issues_0_0_0_0 The mechanisms available
+* The compiler and ABI offer options that at first glance
+* seem to allow multiple target specific binaries from a single source.
+* Besides the compilers command level target options a number of
+* source level mechanisms to change the target.
+* These include:
+* - __ attribute __ (target ("cpu=power8"))
+* - __ attribute __ (target_clones ("cpu=power9,default"))
+* - \#pragma GCC target ("cpu=power8")
+* - multiple compiles with different command line options (i.e. -mcpu=)
+*
+* The target and target_clones attributes are function attributes
+* (apply to single function).
+* The target attribute overrides the command line -mcpu= option.
+* However it is not clear which version of GCC added explicit support
+* for (target ("cpu="). This was not explicitly documented until GCC 5.
+* The target_clones attribute will cause GCC will create two (or more)
+* function clones, one (or more) compiled with the specified cpu=
+* target and another with the default (or command line -mcpu=) target.
+* It also creates a resolver function that dynamically selects a clone
+* implementation suitable for current platform architecture. This
+* PowerPC specific variant was not explicitly documented until GCC 8.
+*
+* There are a few issues with function attributes:
+* - The Doxygen preprocessor can not parse function attributes without
+* a lot of intervention.
+* - The availability of these attributes seems to be limited to the
+* latest GCC compilers.
+*
+* \note The Clang/LLVM compilers don't provide equivalents to attribute
+* (target) or \#pragma target.
+*
+* But these is deeper problem related to the usage of CPP conditionals.
+* Many PVECLIB operation implementations depend on GCC/compiler predefined macros including:
+* - __ GNUC __
+* - __ GNUC_MINOR __
+* - __ BYTE_ORDER __
+* - __ ORDER_LITTLE_ENDIAN __
+* - __ ORDER_BIG_ENDIAN __
+*
+* PVECLIB also depends on many system-specific predefined macros including:
+* - __ ALTIVEC __
+* - __ VSX __
+* - __ FLOAT128 __
+* - _ARCH_PWR9
+* - _ARCH_PWR8
+* - _ARCH_PWR7
+*
+* PVECLIB also depends on the <altivec.h> include file which provides
+* the mapping between the ABI defined intrinsics and compiler defined
+* built-ins. In some places PVECLIB conditionally tests if specific
+* built-in is defined and substitutes an in-line assembler
+* implementation if not.
+* Altivec.h also depends on system-specific predefined macros to
+* enable/disable blocks of intrinsic built-ins based on PowerISA level
+* of the compile target.
+*
+* \subsubsection main_libary_issues_0_0_0_1 Some things just do not work
+* The issue is that the compiler (GCC at least) only expands the
+* compiler and system-specific predefined macros once per source file.
+* The preprocessed source does not change due to embedded function
+* attributes that change the target.
+* So the following does not work as expected.
+*
+* \code
+#include <altivec.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
+
+// Defined in vec_int512_ppc.h but included here for clarity.
+static inline __VEC_U_256
+vec_mul128x128_inline (vui128_t a, vui128_t b)
+{
+  __VEC_U_256 result;
+  // vec_muludq is defined in vec_int128_ppc.h
+  result.vx0 = vec_muludq (&result.vx1, a, b);
+  return result;
+}
+
+__VEC_U_256 __attribute__(target ("cpu=power7"))
+vec_mul128x128_PWR7 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+
+__VEC_U_256 __attribute__(target ("cpu=power8"))
+vec_mul128x128_PWR8 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+
+__VEC_U_256 __attribute__(target ("cpu=power9"))
+vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+* \endcode
+* For example if we assume that the compiler default is (or the
+* command line specifies) -mcpu=power8 the compiler will use this to
+* generate the system-specific predefined macros.
+* This is done before the first include file is processed.
+* In this case <altivec.h>, vec_int128_ppc.h, and vec_int512_ppc.h
+* source will be expanded for power8 (PowerISA-2.07).
+* The result is the vec_muludq and vec_muludq inline source
+* implementations will be the power8 specific version.
+*
+* This will all be established before the compiler starts to parse
+* and generate code for vec_mul128x128_PWR7.
+* This compile is likely to fail because we are
+* trying to compile code containing power8 instructions for a
+* -mcpu=power7 target.
+*
+* The compilation of vec_mul128x128_PWR8 should work as we are
+* compiling power8 code with a -mcpu=power8 target.
+* The compilation of vec_mul128x128_PWR9 will compile without error
+* but will generate essentially the same code as vec_mul128x128_PWR8.
+* The target("cpu=power9") allows that compiler to use power9
+* instructions but the expanded source coded from  vec_muludq and
+* vec_mul128x128_inline will not contain any power9 intrinsic
+* built-ins.
+*
+* \note The GCC attribute <B>target_clone</B> has the same issue.
+*
+* Pragma GCC target has a similar issue if you try to change the
+* target multiple times within the same source file.
+*
+* \code
+#include <altivec.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
+
+// Defined in vec_int512_ppc.h but included here for clarity.
+static inline __VEC_U_256
+vec_mul128x128_inline (vui128_t a, vui128_t b)
+{
+  __VEC_U_256 result;
+  // vec_muludq is defined in vec_int128_ppc.h
+  result.vx0 = vec_muludq (&result.vx1, a, b);
+  return result;
+}
+
+#pragma GCC push_options
+#pragma GCC target ("cpu=power7")
+
+__VEC_U_256
+vec_mul128x128_PWR7 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+
+#pragma GCC pop_options
+#pragma GCC push_options
+#pragma GCC target ("cpu=power8")
+
+__VEC_U_256
+vec_mul128x128_PWR8 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+
+#pragma GCC pop_options
+#pragma GCC push_options
+#pragma GCC target ("cpu=power9")
+
+__VEC_U_256
+vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+* \endcode
+* This has the same issues at the target attribute example above.
+* However you can use \#pragma GCC target if;
+* - it proceeds the first \#include in the source file.
+* - there is only one target \#pragma in the file.
+*
+* For example:
+* \code
+#pragma GCC target ("cpu=power9")
+#include <altivec.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
+
+// vec_mul128x128_inline is defined in vec_int512_ppc.h
+__VEC_U_256
+vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+* \endcode
+* In this case the cpu=power9 option is applied before the compiler
+* reads the first include file and initializes the system-specific
+* predefined macros. So the CPP source expansion reflects the power9
+* target.
+*
+* \note So far the techniques described only work reliably for C/C++
+* codes, compiled with GCC, that don't use <altivec.h> intrinsics or
+* use CPP conditionals.
+*
+* The Implication is we need a build system that allows
+* source files to be compiled multiple times, each with different
+* compile targets.
+*
+* \subsubsection main_libary_issues_0_0_0_2 Some tricks to build targeted runtime objects.
+* We need a unique compiled object implementation for each target processor.
+* We still prefer a single file implementation for each function
+* to improve maintenance. So we need a way to separate setting the platform
+* target from the implementation source. Also we need to provide a
+* unique external symbol for each target specific implementation of a function.
+*
+* This can be handled with a simple macro to append a suffix based on
+* system-specific predefined macro settings.
+*
+* \code
+#ifdef _ARCH_PWR9
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
+#else
+#ifdef _ARCH_PWR8
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
+#else
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
+#endif
+#endif
+* \endcode
+* Then use __VEC_PWR_IMP() as function name wrapper in the implementation source file.
 *
 *
-*  \subsection mainpage_sub3 pveclib is not a vector math library
+* \code
+ //
+ //  \file  vec_int512_runtime.c
+ //
+
+#include <altivec.h>
+#include <pveclib/vec_int128_ppc.h>
+#include <pveclib/vec_int512_ppc.h>
+
+// vec_mul128x128_inline is defined in vec_int512_ppc.h
+__VEC_U_256
+__VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l)
+{
+  return vec_mul128x128_inline (m1l, m2l);
+}
+* \endcode
+* Then the use __VEC_PWR_IMP() function wrapper for any calling function
+* that is linked statically to that library function.
+* \code
+__VEC_U_1024
+__VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
+{
+  __VEC_U_1024 result;
+  __VEC_U_512x1 mp3, mp2, mp1, mp0;
+
+  mp0.x640 = __VEC_PWR_IMP(vec_mul512x128) (m1, m2.vx0);
+  result.vx0 = mp0.x3.v1x128;
+  mp1.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx1, mp0.x3.v0x512);
+  result.vx1 = mp1.x3.v1x128;
+  mp2.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx2, mp1.x3.v0x512);
+  result.vx2 = mp2.x3.v1x128;
+  mp3.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx3, mp2.x3.v0x512);
+  result.vx3 = mp3.x3.v1x128;
+  result.vx4 = mp3.x3.v0x512.vx0;
+  result.vx5 = mp3.x3.v0x512.vx1;
+  result.vx6 = mp3.x3.v0x512.vx2;
+  result.vx7 = mp3.x3.v0x512.vx3;
+  return result;
+}
+* \endcode
 *
-*  The pveclib does not implement general purpose vector math operations.
-*  These should continue to be developed and improved within existing
-*  projects (ie LAPACK, OpenBLAS, ATLAS and libmvec).
+* The <B>runtime</B> library implementation is in a separate file from
+* the <B>inline</B> implementation. The vec_int512_ppc.h file contains:
+* - static inline implementations and associated doxygen interface
+* descriptions.  These are still small enough to used directly by
+* application codes and as building blocks for larger library
+* implementations.
+* - extern function declarations and associated doxygen interface
+* descriptions. These names are for the dynamic shared object
+* (<B>DSO</B>) function implementations. The functions are not
+* qualified with inline or target suffixes. The expectation is the
+* dynamic linker mechanism with bind to the appropriate implementation.
+* - extern function declarations qualified with a target suffix.
+* These names are for the statically linked (<B>archive</B>)
+* function implementations.
+* The suffix is applied by the __VEC_PWR_IMP() macro for the current
+* (default) target processor. These have no doxygen descriptions
+* as using the __VEC_PWR_IMP() macro interferes with the doxygen
+* scanner. But the interface is the same as the unqualified extern for
+* the DSO implementation of the same name.
 *
-*  We believe that pveclib will be helpful to implementors of vector
-*  math libraries by providing a higher level, more portable,
-*  and more consistent vector interface for the PowerISA.
-*  Similarly for implementors of extended arithmetic, cryptographic,
-*  compression/decompression, and pattern matching / search libraries.
+* The runtime source file (for example vec_int512_runtime.c) contains
+* the common implementations for all the target qualified
+* static interfaces.
+* - Again the function names are target qualified via
+* the __VEC_PWR_IMP() macro.
+* - The runtime implementation can use any of
+* the PVECLIB inline operations
+* (see: vec_mul128x128() and vec_mul256x256())
+* as well as other function implementations from the same file
+* (see: vec_mul512x512() and vec_mul2048x2048()).
+* - At the -O3 optimization level the compiler will attempt to inline
+* functions referenced from the same file. Compiler heuristics will
+* limit this based on estimates for the final generated object size.
+* GCC also supports the function __ attribute __ ((flatten )) which
+* overrides the in-lining size heuristics.
+* - These implementations can also use target specific CPP
+* conditional codes to manually tweak code optimization or generated
+* code size for specific targets.
+*
+* This simple strategy allows the collection of the larger function
+* implementations into a single source file and build object files
+* for multiple platform targets. For example collect all the multiple
+* precision quadword implementations into a source file named
+* <B>vec_int512_runtime.c</B>.
+*
+* \subsection main_libary_issues_0_0_1 Building static runtime libraries
+* This source file can be compiled multiple times for different
+* platform targets. The resulting object files have unique function
+* symbols due to the platform specific suffix provided by the
+* __VEC_PWR_IMP() macro.
+* There are a number of build strategies for this.
+*
+* For example, create a small source file named
+* <B>vec_runtime_PWR8.c</B> that starts with the
+* target pragma and includes the multi-platform source file.
+* \code
+//  \file  vec_runtime_PWR8.c
+
+#pragma GCC target ("cpu=power8")
+
+#include "vec_int512_runtime.c"
+* \endcode
+* Similarly for <B>vec_runtime_PWR7.c</B>, <B>vec_runtime_PWR9.c</B>
+* with appropriate changes for "cpu='.
+* Additional runtime source files can be included as needed.
+* Other multiple precision functions supporting BCD and BCD <-> binary
+* conversions are likely candidates.
+*
+* \note Current Clang compilers silently ignore "#pragme GCC Target".
+* This causes all such targeted runtimes to revert to the compiler
+* default target or configure CFLAGS "-mcpu=". In this case the
+* __VEC_PWR_IMP()
+* macro will apply the same suffix to all functions across the targeted
+* runtime builds. As a result linking these targeted runtime objects
+* into the DSO will fail with duplicate symbols.
+*
+* Projects using autotools (like PVECLIB) can use Makefile.am rules to
+* associate rumtime source files with a library. For example:
+* \code
+libpvec_la_SOURCES = vec_runtime_PWR9.c \
+	vec_runtime_PWR8.c \
+	vec_runtime_PWR7.c
+* \endcode
+* If compiling with GCC this is sufficient for automake to generate
+* Makefiles to compile each of the runtime sources and combine them
+* into a single static archive named libpvec.a. However it is not that
+* simple, especially if the build uses a different compiler.
+*
+* We would like to use Makefile.am rules to specify different -mcpu=
+* compile options. This eliminates the \#pragma GCC target and
+* simplifies the platform source files too something like:
+* \code
+ //
+ //  \file  vec_runtime_PWR8.c
+ //
+
+#include "vec_int512_runtime.c"
+ * \endcode
+ * This requires splitting the target specific runtimes into distinct
+ * automake libraries.
+ * \code
+libpveccommon_la_SOURCES = tipowof10.c decpowof2.c
+libpvecPWR9_la_SOURCES = vec_runtime_PWR9.c
+libpvecPWR8_la_SOURCES = vec_runtime_PWR8.c
+libpvecPWR7_la_SOURCES = vec_runtime_PWR7.c
+* \endcode
+* Then add the -mcpu compile option to runtime library CFLAGS
+* \code
+libpvecPWR9_la_CFLAGS = -mcpu=power9
+libpvecPWR8_la_CFLAGS = -mcpu=power8
+libpvecPWR7_la_CFLAGS = -mcpu=power7
+* \endcode
+* Then use additional automake rules to combine these targeted runtimes
+* into a single static archive library.
+* \code
+libpvecstatic_la_LIBADD = libpveccommon.la
+libpvecstatic_la_LIBADD += libpvecPWR9.la
+libpvecstatic_la_LIBADD += libpvecPWR8.la
+libpvecstatic_la_LIBADD += libpvecPWR7.la
+* \endcode
+*
+* However this does not work if the user (build configure) specifies
+* flag variables (i.e. CFLAGS) containing -mcpu= options internal use
+* of target options.
+*
+* \note Automake/libtool will always apply the user CFLAGS  after any
+* AM_CFLAGS or yourlib_la_CFLAGS (See:
+* <a href="https://www.gnu.org/software/automake/manual/html_node/Flag-Variables-Ordering.html">
+* Automake documentation: Flag Variables Ordering</a>)
+* and the last -mcpu option always wins.
+* This has the same affect as the compiler ignoring the
+* \#pragma GCC target options described above.
+*
+* \subsubsection main_libary_issues_0_0_0_4 A deeper look at library Makefiles
+* This requires a deeper dive into the black arts of automake and
+* libtools.
+* In this case the libtool macro LTCOMPILE expands the various flag
+* variables in a specific order (with $CFLAGS last) for all --tag=CC
+* --mode=compile commands. In this case we need to either:
+* - locally edit CFLAGS to eliminates any -mcpu= (or -O) options so
+* that our internal build targets are applied.
+* - provide our own alternative to the LTCOMPILE macro and use our own
+* explicit make rules. (See ./pveclib/src/Makefile.am for examples.)
+*
+* So lets take a look at LTCOMPILE:
+* \code
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+* \endcode
+* \note "$(CFLAGS)" is always applied after all other <I>FLAGS</I>.
+*
+* The generated Makefile.in includes rules that depend on LTCOMPILE.
+* For example the general rule for compile .c source to .lo objects.
+* \code
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+* \endcode
+* Or the more specific rule to compile the vec_runtime_PWR9.c for the
+* \-mcpu=power9 target:
+* \code
+ libpvecPWR9_la-vec_runtime_PWR9.lo: vec_runtime_PWR9.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+ $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+ $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) \
+ -MT libpvecPWR9_la-vec_runtime_PWR9.lo -MD -MP -MF \
+ $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo -c -o libpvecPWR9_la-vec_runtime_PWR9.lo \
+ `test -f 'vec_runtime_PWR9.c' || echo '$(srcdir)/'`vec_runtime_PWR9.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo \
+ $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vec_runtime_PWR9.c' \
+ object='libpvecPWR9_la-vec_runtime_PWR9.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) \
+ $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC \
+ $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
+ $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) -c \
+ -o libpvecPWR9_la-vec_runtime_PWR9.lo `test -f 'vec_runtime_PWR9.c' \
+ || echo '$(srcdir)/'`vec_runtime_PWR9.c
+* \endcode
+* Which is eventually generated into the Makefile as:
+* \code
+libpvecPWR9_la-vec_runtime_PWR9.lo: vec_runtime_PWR9.c
+	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) -MT libpvecPWR9_la-vec_runtime_PWR9.lo \
+	-MD -MP -MF $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo -c -o \
+	libpvecPWR9_la-vec_runtime_PWR9.lo `test -f 'vec_runtime_PWR9.c' || \
+	echo '$(srcdir)/'`vec_runtime_PWR9.c
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo \
+	$(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Plo
+#	$(AM_V_CC)source='vec_runtime_PWR9.c' object='libpvecPWR9_la-vec_runtime_PWR9.lo' \
+#       libtool=yes DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+#       --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+#       $(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) -c -o libpvecPWR9_la-vec_runtime_PWR9.lo \
+#       `test -f 'vec_runtime_PWR9.c' || echo '$(srcdir)/'`vec_runtime_PWR9.c
+* \endcode
+* Somehow in the internal struggle for the dark soul of
+* automake/libtools,
+* the <I>\@am__fastdepCC_TRUE\@</I> conditional wins out over
+* <I>\@AMDEP_TRUE\@\@am__fastdepCC_FALSE\@</I> ,
+* and the alternate rule was commented out as the
+* Makefile was generated.
+*
+* However this still leaves a problem. While we see that
+* \$(libpvecPWR9_la_CFLAGS) applies the "-mcpu=power9" target option,
+* it is immediately followed by \$(CFLAGS). And it CFLAGS contains
+* any "-mcpu=" option the last "-mcpu=" option always wins.
+* The result will a broken library archives with duplicate symbols.
+*
+* \note The techniques described work reliably for most codes and
+* compilers as long as the user does not override target (-mcpu=) with
+* CFLAGS on configure.
+*
+* \subsubsection main_libary_issues_0_0_0_5 Adding our own Makefile magic
+*
+* \todo Is there a way for automake to compile vec_int512_runtime.c
+* with -mcpu=power9 and -o vec_runtime_PWR9.o?
+* And similarly for PWR7/PWR8.
+*
+* Once we get a glimpse of the underlying automake/libtool rule
+* generation we have a template for how to solve this problem.
+* However while we need to workaround some automake/libtool constraints
+* we also want fit into overall flow.
+*
+* First we need an alternative to <B>LTCOMPILE</B> where we can bypass
+* user provided <B>CFLAGS</B>. For example:
+* \code
+PVECCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS)
+* \endcode
+* In this variant (<B>PVECCOMPILE</B>) we simply leave \$(CFLAGS) off
+* the end of the macro.
+*
+* Now we can use the generated rule above as an example to provide our
+* own Makefile rules. These rules will be passed directly to the
+* generated Makefile. For example:
+* \code{.m4}
+vec_staticrt_PWR9.lo: vec_runtime_PWR9.c $(pveclibinclude_HEADERS)
+if am__fastdepCC
+	$(PVECCOMPILE) $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF \
+	$(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
+	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+else
+if AMDEP
+	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
+	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif
+	$(PVECCOMPILE) $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
+endif
+* \endcode
+* We change the target (vec_staticrt_PWR9.lo) of the rule to indicate
+* that this object is intended for a <I>static</I> runtime archive.
+* And we list prerequisites vec_runtime_PWR9.c and
+* \$(pveclibinclude_HEADERS)
+*
+* For the recipe we expand both clauses (am__fastdepCC and AMDEP) from
+* the example. We don't know exactly what they represent or do, but
+* assume they both are needed for some configurations.
+* We use the alternative PVECCOMPILE to provide all the
+* libtool commands and options we need without the CFLAGS.
+* We use new PVECLIB_POWER9_CFLAGS macro to provide all the platform
+* specific target options we need. The automatic variable \$\@ provides
+* the file name of the target object (vec_staticrt_PWR9.lo).
+* And we specify the \$(srcdir) qualified source file
+* (vec_runtime_PWR9.c) as input to the compile.
+* We can provide similar rules for the other processor targets
+* (PWR8/PWR7).
+*
+* With this technique we control the compilation of specific targets
+* without requiring unique LTLIBRARIES. This was only required before
+* so libtool would allow target specific CFLAGS. So we can eliminate
+* libpvecPWR9.la, libpvecPWR8.la, and libpvecPWR7.la from
+* lib_LTLIBRARIES.
+*
+* Continuing the theme of separating the static archive elements from
+* DSO elements we rename libpveccommon.la to libpvecstatic.la.
+* We can add the common (none target specific) source files and CFLAGS
+* to <I>libpvecstatic_la</I>.
+* \code
+libpvecstatic_la_SOURCES = tipowof10.c decpowof2.c
+
+libpvecstatic_la_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
+* \endcode
+* We still need to add the target specific objects generated by the
+* rules above to the libpvecstatic.a archive.
+* \code
+# libpvecstatic_la already includes tipowof10.c decpowof2.c.
+# Now add the name qualified -mcpu= target runtimes.
+libpvecstatic_la_LIBADD = vec_staticrt_PWR9.lo
+libpvecstatic_la_LIBADD += vec_staticrt_PWR8.lo
+libpvecstatic_la_LIBADD += vec_staticrt_PWR7.lo
+* \endcode
+* \note the libpvecstatic archive will contain 2 or 3 implementations
+* of each target specific function
+* (i.e. the function vec_mul128x128() will have implementations
+* vec_mul128x128_PWR7() and vec_mul128x128_PWR8(),
+* vec_mul128x128_PWR9()).
+* This OK because because the target suffix insures the name is unique
+* within the archive.
+* When an application calls function with the appropriate target suffix
+* (using the __VEC_PWR_IMP() wrapper macro) and links to libpvecstatic,
+* the linker will extract only the matching implementations and include
+* them in the static program image.
+*
+*
+* \subsection main_libary_issues_0_0_2 Building dynamic runtime libraries
+*
+* Building objects for dynamic runtime libraries is a bit more
+* complicated than building static archives. For one dynamic libraries
+* requires position independent code (<B>PIC</B>) while static code
+* does not. Second we want to leverage the Dynamic Linker/Loader's
+* GNU Indirect Function (See: <a href="https://gcc.gnu.org/onlinedocs/">
+* What is an indirect function (IFUNC)?</a>) binding mechanism.
+*
+* PIC functions may require a more complicated call linkage or
+* function prologue. This usually require the -fpic compiler option.
+* This is the case for the OpenPOWER ELF V2 ABI. Any PIC function must
+* assume that the caller may be from an different execution unit
+* (library or main executable).
+* So the called function needs to establish the Table of Contents
+* (<B>TOC</B>) base address for itself. This is the case if
+* the called function needs to reference static or const storage
+* variables or calls to functions in other dynamic libraries.
+* So it is normal to compile library runtime codes separately for
+* static archives and DSOs.
+*
+* \note The details of how the <B>TOC</B> is established differs
+* between the ELF V1 ABI (Big Endian POWER) and the
+* ELF V2 ABI (Little Endian POWER). This should not be
+* an issue if compile options (-fpic) are used correctly.
+*
+* There are additional differences associated with dynamic selection of
+* function Implementations for different processor targets.
+* The Linux dynamic linker/loader (ld64.so) provides general mechanism
+* for target specific binding of function call linkage.
+*
+* The dynamic linker employees a user supplied resolver mechanism as
+* function calls are dynamically bound to to an implementation.
+* The DSO exports function symbols that externally look like a normal
+* <I>extern</I>. For example:
+* \code
+extern __VEC_U_256
+vec_mul128x128 (vui128_t, vui128_t);
+* \endcode
+* This symbol's implementation has a special <B>STT_GNU_IFUNC</B>
+* attribute recognized by the dynamic linker which associates this
+* symbol with the corresponding runtime resolver function.
+* So in addition to any platform specific implementations we need to
+* provide the resolver function referenced by the <I>IFUNC</I> symbol.
+* For example:
+* \code
+ //
+ //  \file  vec_runtime_DYN.c
+ //
+extern __VEC_U_256
+vec_mul128x128_PWR7 (vui128_t, vui128_t);
+
+extern __VEC_U_256
+vec_mul128x128_PWR8 (vui128_t, vui128_t);
+
+extern __VEC_U_256
+vec_mul128x128_PWR9 (vui128_t, vui128_t);
+
+static
+__VEC_U_256
+(*resolve_vec_mul128x128 (void))(vui128_t, vui128_t)
+{
+#ifdef  __BUILTIN_CPU_SUPPORTS__
+  if (__builtin_cpu_is ("power9"))
+    return vec_mul128x128_PWR9;
+  else
+    {
+      if (__builtin_cpu_is ("power8"))
+        return vec_mul128x128_PWR8;
+      else
+        return vec_mul128x128_PWR7;
+    }
+#else // ! __BUILTIN_CPU_SUPPORTS__
+    return vec_mul128x128_PWR7;
+#endif
+}
+
+__VEC_U_256
+vec_mul128x128 (vui128_t, vui128_t)
+__attribute__ ((ifunc ("resolve_vec_mul128x128")));
+* \endcode
+* For convince we collect the:
+* - IFUNC symbols
+* - corresponging resolver functions
+* - and externs to target specific implementations
+*
+* into a one or more sources files (For example: vec_runtime_DYN.c).
+*
+* On the program's first call to an <I>IFUNC</I> symbol, the dynamic
+* linker calls the resolver function associated with that symbol.
+* The resolver function performs a runtime check to determine the platform,
+* selects the (closest) matching platform specific function,
+* then returns that function pointer to the dynamic linker.
+*
+* The dynamic linker stores this function pointer in the callers
+* Procedure Linkage Tables (PLT) before forwarding the call to the
+* resolved implementation.  Any subsequent calls to this
+* function symbol branch (via the PLT) directly to the appropriate
+* platform specific implementation.
+*
+* \note The platform specific implementations we use here are compiled
+* from the same source files we used to build the static library
+* archive.
+*
+* Like the static libraries we need to build multiple target specific
+* implementations of the functions. So we can leverage the example of
+* explicit Makefile rules we used for the static archive but with some
+* minor differences. For example:
+* \code
+vec_dynrt_PWR9.lo: vec_runtime_PWR9.c $(pveclibinclude_HEADERS)
+if am__fastdepCC
+	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF \
+	$(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
+	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+else
+if AMDEP
+	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
+	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif
+	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -c -o $@ \
+	$(srcdir)/vec_runtime_PWR9.c
+endif
+* \endcode
+* Again we change the rule target (vec_dynrt_PWR9.lo) of the rule to
+* indicate that this object is intended for a <I>DSO</I> runtime.
+* And we list the same prerequisites vec_runtime_PWR9.c and
+* \$(pveclibinclude_HEADERS)
+*
+* For the recipe we expand both clauses (am__fastdepCC and AMDEP) from
+* the example.
+* We use the alternative PVECCOMPILE to provide all the
+* libtool commands and options we need without the CFLAGS.
+* But we insert the \-fpic option so the compiler will  will generate
+* position independent code.
+* We use a new PVECLIB_POWER9_CFLAGS macro to provide all the platform
+* specific target options we need. The automatic variable \$\@ provides
+* the file name of the target object (vec_dynrt_PWR9.lo).
+* And we specify the same \$(srcdir) qualified source file
+* (vec_runtime_PWR9.c) we used for the static library.
+* We can provide similar rules for the other processor targets
+* (PWR8/PWR7). We also build an \-fpic version of vec_runtime_common.c.
+*
+* Continuing the theme of separating the static archive elements from
+* DSO elements we use libpvec.la as the libtool name for libpvec.so.
+* Here we add the source files for the IFUNC resolvers and add \-fpic
+* as library specific CFLAGS to <I>libpvec_la</I>.
+* \code
+libpvec_la_SOURCES = vec_runtime_DYN.c
+
+libpvec_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
+* \endcode
+* We still need to add the target specific and common objects generated
+* by the rules above to the libpvec library.
+* \code
+# libpvec_la already includes vec_runtime_DYN.c compiled compiled -fpic
+# for IFUNC resolvers.
+# Now adding the -fpic -mcpu= target built runtimes.
+libpvec_la_LDFLAGS = -version-info $(PVECLIB_SO_VERSION)
+libpvec_la_LIBADD = vec_dynrt_PWR9.lo
+libpvec_la_LIBADD += vec_dynrt_PWR8.lo
+libpvec_la_LIBADD += vec_dynrt_PWR7.lo
+libpvec_la_LIBADD += vec_dynrt_common.lo
+libpvec_la_LIBADD += -lc
+* \endcode
+*
+* \subsection make_libary_issues_0_0_3 Calling Multi-platform functions
+*
+* The next step is to provide mechanisms for applications to call
+* these functions via static or dynamic linkage.
+* For static linkage the application needs to reference a specific
+* platform variant of the functions name.
+* For dynamic linkage we will use <B>STT_GNU_IFUNC</B> symbol resolution
+* (a symbol type extension to the ELF standard).
+*
+* \subsubsection main_libary_issues_0_0_1_1 Static linkage to platform specific functions
+* For static linkage the application is compiled for a specific
+* platform target (via -mcpu=). So function calls should be bound to
+* the matching platform specific implementations. The application
+* may select the platform specific function directly by defining
+* a <I>extern</I> and invoking the platform qualified function.
+*
+* Or simply use the __VEC_PWR_IMP() macro as wrapper for the function
+* name in the application.
+* This selects the appropriate platform specific implementation based
+* on the -mcpu= specified for the application compile.
+* For example.
+* \code
+  k = __VEC_PWR_IMP (vec_mul128x128)(i, j);
+* \endcode
+*
+* The vec_int512_ppc.h header provides the default platform qualified
+* <I>extern</I>  declarations for this and related functions based on
+* the \-mcpu= specified for the compile of application including this
+* header. For example.
+* \code
+extern __VEC_U_256
+__VEC_PWR_IMP (vec_mul128x128) (vui128_t, vui128_t);
+* \endcode
+* For example if the applications calling vec_mul128x128() is itself
+* compiled with -mcpu=power8, then the __VEC_PWR_IMP() will insure
+* that:
+* - The vec_int512_ppc.h header will define an extern for
+* vec_mul128x128_PWR8.
+* - That application's calls to __VEC_PWR_IMP (vec_mul128x128) will
+* reference vec_mul128x128_PWR8.
+*
+* The application should then link to the libpvecstatic.a archive.
+* Where the application references PVECLIB functions with the
+* appropriate target suffix, the linker will extract only the matching
+* implementations and include them in the program image.
+*
+* \subsubsection main_libary_issues_0_0_1_2 Dynamic linkage to platform specific functions
+* Applications using dynamic linkage will call the unqualified
+* function symbol.
+* For example:
+* \code
+extern __VEC_U_256
+vec_mul128x128 (vui128_t, vui128_t);
+* \endcode
+*
+* This symbol's implementation (in libpvec.so) has a special
+* <B>STT_GNU_IFUNC</B>
+* attribute recognized by the dynamic linker which associates this
+* symbol with the corresponding runtime resolver function.
+* The application simply calls the (unqualified) function and the
+* dynamic linker (with the help of PVECLIB's IFUNC resolvers) handles
+* the details.
+*
+* On the application first call to a <I>IFUNC</I> symbol, the dynamic
+* linker calls the resolver function associated with that symbol.
+* The resolver function performs a runtime check to determine the platform,
+* selects the (closest) matching platform specific function,
+* then returns that functions address to the dynamic linker.
+*
+* The dynamic linker stores this function address in the callers
+* Procedure Linkage Tables (PLT) before forwarding the call to the
+* resolved implementation.  Any subsequent calls to this
+* function symbol branch (via the PLT) directly to appropriate
+* platform specific implementation.
 *
 * \section perf_data Performance data.
 *

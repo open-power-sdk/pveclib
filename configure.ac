@@ -153,12 +153,12 @@ AC_LINK_IFELSE(
 
 PVECLIB_DEFAULT_CFLAGS+=" $PVECLIB_FLOAT128_CFLAGS"
 
-##### Provide a nice message is the compiler default is OK #####
+##### Provide a nice message if the compiler default is OK #####
 if test "$PVECLIB_DEFAULT_CFLAGS" != " "; then
 	PVECLIB_DEFAULT_TEXT=$PVECLIB_DEFAULT_CFLAGS
-    AC_MSG_RESULT(["PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'"])
+	AC_MSG_RESULT(["PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'"])
 else
-	PVECLIB_DEFAULT_TEXT="default"
+	PVECLIB_DEFAULT_TEXT=default
 fi
 
 ##### Compiler default|CFLAGS includes Float128 Arithmetic #####

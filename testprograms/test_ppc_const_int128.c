@@ -12,7 +12,7 @@
 
 /* Current compilers do not support 128-bit integer constants. But most
  * support 64-bit (long long int) constants. If the compiler also
- * support constant folding on __int128 constants then a little simple
+ * supports constant folding on __int128 constants then a little simple
  * arithmetic will generate a 128-bit constant.
  *
  * Apparently __clang__ does not support this.
@@ -98,38 +98,37 @@ const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
   (vui128_t) (__int128 ) 0L };/* end marker */
 
 #include <altivec.h>
-int main(int argc, char* argv[])
+int
+main (int argc, char* argv[])
 {
-#if defined(__VSX__) && defined(__ALTIVEC__)
-	{
-	    __vector unsigned __int128 r = CONST_VUINT128_QxW (1, 1, 1, 1);
-	    __vector unsigned __int128 s = CONST_VUINT128_QxD (1UL, 1UL);
-	    __vector unsigned __int128 t =
-		CONST_VUINT128_Qx19d(9999999999999999999UL, 9999999999999999999UL);
-	    __vector unsigned __int128 u =
-		CONST_VUINT128_Qx18d(999999999999999999UL, 999999999999999999UL);
-	    __vector unsigned __int128 v =
-		CONST_VUINT128_Qx16d(9999999999999999UL, 9999999999999999UL);
+#if defined(__ALTIVEC__) && defined(__VSX__)
+  __vector unsigned __int128 r = CONST_VUINT128_QxW(1, 1, 1, 1);
+  __vector unsigned __int128 s = CONST_VUINT128_QxD(1UL, 1UL);
+  __vector unsigned __int128 t = CONST_VUINT128_Qx19d(9999999999999999999UL,
+						      9999999999999999999UL);
+  __vector unsigned __int128 u = CONST_VUINT128_Qx18d(999999999999999999UL,
+						      999999999999999999UL);
+  __vector unsigned __int128 v = CONST_VUINT128_Qx16d(9999999999999999UL,
+						      9999999999999999UL);
 
-	    __vector unsigned __int128 ten18_hex =
-		(vui128_t) (__int128 ) 1000000000000000000ll; /* 10**18 */
-	    __vector unsigned __int128 ten36_hex =
-		CONST_VINT128_DW128 ( 0x00c097ce7bc90715ll,0xb34b9f1000000000ll ); /* 10**36 */
-	    __vector unsigned __int128 ten37_hex =
-		CONST_VINT128_DW128 ( 0x0785ee10d5da46d9ll,0x00f436a000000000ll ); /* 10**37 */
-	    __vector unsigned __int128 ten38_hex =
-		CONST_VINT128_DW128 ( 0x4b3b4ca85a86c47all,0x098a224000000000ll ); /* 10**38 */
+  __vector unsigned __int128 ten18_hex =
+      (vui128_t) (__int128) 1000000000000000000ll; /* 10**18 */
+  __vector unsigned __int128 ten36_hex = CONST_VINT128_DW128(
+      0x00c097ce7bc90715ll, 0xb34b9f1000000000ll); /* 10**36 */
+  __vector unsigned __int128 ten37_hex = CONST_VINT128_DW128(
+      0x0785ee10d5da46d9ll, 0x00f436a000000000ll); /* 10**37 */
+  __vector unsigned __int128 ten38_hex = CONST_VINT128_DW128(
+      0x4b3b4ca85a86c47all, 0x098a224000000000ll); /* 10**38 */
 
-	    if (vec_all_eq ((vui32_t)ten18_hex, (vui32_t) vtipowof10[18])
-	      & vec_all_eq ((vui32_t)ten36_hex, (vui32_t) vtipowof10[36])
-	      & vec_all_eq ((vui32_t)ten37_hex, (vui32_t) vtipowof10[37])
-	      & vec_all_eq ((vui32_t)ten38_hex, (vui32_t) vtipowof10[38]))
-	      return 0;
-	    else
-	      return -1;
-	}
-#else
-    int x[-1]; // fail compile
-#endif
+  if (vec_all_eq ( (vui32_t ) ten18_hex, (vui32_t) vtipowof10[18])
+      & vec_all_eq ((vui32_t) ten36_hex, (vui32_t) vtipowof10[36])
+      & vec_all_eq ((vui32_t) ten37_hex, (vui32_t) vtipowof10[37])
+      & vec_all_eq ((vui32_t) ten38_hex, (vui32_t) vtipowof10[38]))
+    return 0;
+  else
     return -1;
+#else
+  int x[-1]; // fail compile
+  return -1;
+#endif
 }

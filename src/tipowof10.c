@@ -22,7 +22,6 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
-
 const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
   (vui128_t) (__int128 ) 10ll, /* 10**1 */
   (vui128_t) (__int128 ) 100ll, /* 10**2 */

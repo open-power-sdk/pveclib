@@ -661,7 +661,7 @@ test_vec_mul10uq_c (vui128_t *p, vui128_t a)
  * Keep this example as a warning. */
 vui128_t
 #ifndef __clang__
-// cland does not either, generates a warning
+// clang does not either, generates a warning
 __attribute__((__target__("cpu=power9")))
 #endif
 test_vec_mul10uq (vui128_t a)

@@ -13024,13 +13024,13 @@ rm -f core conftest.err conftest.$ac_objext \
 
 PVECLIB_DEFAULT_CFLAGS+=" $PVECLIB_FLOAT128_CFLAGS"
 
-##### Provide a nice message is the compiler default is OK #####
+##### Provide a nice message if the compiler default is OK #####
 if test "$PVECLIB_DEFAULT_CFLAGS" != " "; then
 	PVECLIB_DEFAULT_TEXT=$PVECLIB_DEFAULT_CFLAGS
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&5
 $as_echo "\"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&6; }
 else
-	PVECLIB_DEFAULT_TEXT="default"
+	PVECLIB_DEFAULT_TEXT=default
 fi
 
 ##### Compiler default|CFLAGS includes Float128 Arithmetic #####

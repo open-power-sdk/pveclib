@@ -11,17 +11,15 @@
 #endif
 
 #include <altivec.h>
-int main(int argc, char* argv[])
+int
+main (int argc, char* argv[])
 {
-#if defined(__VSX__) && defined(__ALTIVEC__)
-	{
-	    __vector unsigned __int128 r = {1};
-	    __vector signed __int128 s = {-2};
-	    return 0;
-	}
+#if defined(__ALTIVEC__) && defined(__VSX__)
+  __vector unsigned __int128 r = { 1 };
+  __vector signed __int128 s = { -2 };
 #else
-    int x[-1]; // fail compile
+  int x[-1]; // fail compile
 #endif
-    return -1;
+  return 0;
 }
 

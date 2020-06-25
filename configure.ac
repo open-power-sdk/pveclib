@@ -153,12 +153,18 @@ AC_LINK_IFELSE(
 
 PVECLIB_DEFAULT_CFLAGS+=" $PVECLIB_FLOAT128_CFLAGS"
 
-AC_MSG_RESULT(["PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'"])
+##### Provide a nice message if the compiler default is OK #####
+if test "$PVECLIB_DEFAULT_CFLAGS" != " "; then
+	PVECLIB_DEFAULT_TEXT=$PVECLIB_DEFAULT_CFLAGS
+	AC_MSG_RESULT(["PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'"])
+else
+	PVECLIB_DEFAULT_TEXT=default
+fi
 
 ##### Compiler default|CFLAGS includes Float128 Arithmetic #####
 
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
-AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 arithmetic])
+AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 arithmetic])
 AC_LINK_IFELSE(
 	[AC_LANG_SOURCE([`cat testprograms/test_ppc_F128arith.c`])],
 	[AC_MSG_RESULT([yes])]
@@ -170,13 +176,49 @@ AC_LINK_IFELSE(
 ##### Compiler default|CFLAGS includes Float128 math.h #####
 
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
-AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 math.h])
+AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 math.h])
 AC_LINK_IFELSE(
 	[AC_LANG_SOURCE([`cat testprograms/test_ppc_F128math.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_FLOAT128MATH_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
 		AC_DEFINE([PVECLIB_DISABLE_F128MATH], [1], [Disable Float128 math.h])
+)
+
+##### Compiler default|CFLAGS includes vector __int128 #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128])
+AC_LINK_IFELSE(
+	[AC_LANG_SOURCE([`cat testprograms/test_ppc_int128.c`])],
+	[AC_MSG_RESULT([yes])]
+		AC_SUBST([PVECLIB_VINT128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
+	[AC_MSG_RESULT([no])]
+		AC_DEFINE([PVECLIB_DISABLE_INT128], [1], [Disable vector __int128])
+)
+
+##### Compiler default|CFLAGS includes vector __bool __int128 #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __bool __int128])
+AC_LINK_IFELSE(
+	[AC_LANG_SOURCE([`cat testprograms/test_ppc_bool_int128.c`])],
+	[AC_MSG_RESULT([yes])]
+		AC_SUBST([PVECLIB_VBOOL128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
+	[AC_MSG_RESULT([no])]
+		AC_DEFINE([PVECLIB_DISABLE_BOOLINT128], [1], [Disable vector __bool __int128])
+)
+
+##### Compiler default|CFLAGS includes vector __int128 comstants #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128 comstants])
+AC_LINK_IFELSE(
+	[AC_LANG_SOURCE([`cat testprograms/test_ppc_const_int128.c`])],
+	[AC_MSG_RESULT([yes])]
+		AC_SUBST([PVECLIB_VCONST128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
+	[AC_MSG_RESULT([no])]
+		AC_DEFINE([PVECLIB_DISABLE_CONSTINT128], [1], [Disable vector __int128 constants])
 )
 
 ##### Power7 #####

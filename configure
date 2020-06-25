@@ -689,6 +689,9 @@ POWER8_CFLAGS
 PVECLIB_POWER8_CFLAGS
 POWER7_CFLAGS
 PVECLIB_POWER7_CFLAGS
+PVECLIB_VCONST128_CFLAGS
+PVECLIB_VBOOL128_CFLAGS
+PVECLIB_VINT128_CFLAGS
 PVECLIB_FLOAT128MATH_CFLAGS
 PVECLIB_FLOAT128ARITH_CFLAGS
 PVECLIB_FLOAT128PWR9_CFLAGS
@@ -799,6 +802,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -892,6 +896,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1144,6 +1149,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1281,7 +1295,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1434,6 +1448,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -12767,7 +12782,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# This directive is to avoid buggy libtool that don't add the -Wl,--no-as-needed
+# This directive is to avoid buggy libtool that doesn't add the '-Wl,--no-as-needed'
 # directive in the correct position of LDFLAGS
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed -lc"
 
@@ -12866,12 +12881,12 @@ if test "$retval" != "0"; then
 fi
 
 ##### Compiler default includes VSX #####
-## Use this test to set the minimum flags required to compile PVECLIB
+## Use this test to set the minimum flags required to compile PVECLIB.
 ## This should cover BE compilers where the compiler default -mcpu is
 ## not at least power7. Otherwise the compiler will disable VSX
 ## features (like vector double) and associated built-ins.
-## VSX by the PowerISA architecture compliance rules this should
-## include
+## Base VSX by the PowerISA architecture compliance rules should
+## include VMX, DFP, and vector double.
 
 CFLAGS=$AM_CFLAGS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME default supports VSX" >&5
@@ -12932,7 +12947,6 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-
 
 
 fi
@@ -13010,14 +13024,20 @@ rm -f core conftest.err conftest.$ac_objext \
 
 PVECLIB_DEFAULT_CFLAGS+=" $PVECLIB_FLOAT128_CFLAGS"
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&5
+##### Provide a nice message if the compiler default is OK #####
+if test "$PVECLIB_DEFAULT_CFLAGS" != " "; then
+	PVECLIB_DEFAULT_TEXT=$PVECLIB_DEFAULT_CFLAGS
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&5
 $as_echo "\"PVECLIB_DEFAULT base target set to '$PVECLIB_DEFAULT_CFLAGS'\"" >&6; }
+else
+	PVECLIB_DEFAULT_TEXT=default
+fi
 
 ##### Compiler default|CFLAGS includes Float128 Arithmetic #####
 
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 arithmetic" >&5
-$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 arithmetic... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 arithmetic" >&5
+$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 arithmetic... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 `cat testprograms/test_ppc_F128arith.c`
@@ -13041,8 +13061,8 @@ rm -f core conftest.err conftest.$ac_objext \
 ##### Compiler default|CFLAGS includes Float128 math.h #####
 
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 math.h" >&5
-$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_CFLAGS supports Float128 math.h... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 math.h" >&5
+$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 math.h... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 `cat testprograms/test_ppc_F128math.c`
@@ -13057,6 +13077,81 @@ else
 $as_echo "no" >&6; }
 
 $as_echo "#define PVECLIB_DISABLE_F128MATH 1" >>confdefs.h
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+##### Compiler default|CFLAGS includes vector __int128 #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128" >&5
+$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+`cat testprograms/test_ppc_int128.c`
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		PVECLIB_VINT128_CFLAGS="$PVECLIB_DEFAULT_CFLAGS"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+$as_echo "#define PVECLIB_DISABLE_INT128 1" >>confdefs.h
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+##### Compiler default|CFLAGS includes vector __bool __int128 #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __bool __int128" >&5
+$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __bool __int128... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+`cat testprograms/test_ppc_bool_int128.c`
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		PVECLIB_VBOOL128_CFLAGS="$PVECLIB_DEFAULT_CFLAGS"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+$as_echo "#define PVECLIB_DISABLE_BOOLINT128 1" >>confdefs.h
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+##### Compiler default|CFLAGS includes vector __int128 comstants #####
+
+CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128 comstants" >&5
+$as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128 comstants... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+`cat testprograms/test_ppc_const_int128.c`
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		PVECLIB_VCONST128_CFLAGS="$PVECLIB_DEFAULT_CFLAGS"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+$as_echo "#define PVECLIB_DISABLE_CONSTINT128 1" >>confdefs.h
 
 
 fi

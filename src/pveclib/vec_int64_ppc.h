@@ -3190,8 +3190,10 @@ vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
  *  @param vrb a 128-bit vector treated as 2 x unsigned long integers.
  *  @return 128-bit vector treated as 4 x unsigned integers.
  */
-#ifndef __clang__ // Already defined as inline function for clang
 #ifndef vec_vpkudum
+// May be defined as inline function for clang
+// But only for _ARCH_PWR8 or higher.
+#if !defined(__clang__) || !defined(_ARCH_PWR8)
 static inline vui32_t
 vec_vpkudum (vui64_t vra, vui64_t vrb)
 {

@@ -1928,7 +1928,7 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  * \endcode
  *
  */
-#ifndef __clang__
+#ifndef PVECLIB_DISABLE_CONSTINT128
 #define CONST_VUINT128_QxW(__q0, __q1, __q2, __q3) ( (vui128_t) \
       (((unsigned __int128) __q0) << 96) \
     + (((unsigned __int128) __q1) << 64) \
@@ -1957,7 +1957,7 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
  */
 #define CONST_VUINT128_QxD(__q0, __q1) ( (vui128_t) \
     (((unsigned __int128) __q0) << 64) \
-    + (((unsigned __int128) __q1) )
+    + ((unsigned __int128) __q1) )
 
 /** \brief Generate a vector unsigned __int128 constant from doublewords.
  *

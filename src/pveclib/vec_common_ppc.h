@@ -230,22 +230,24 @@ typedef __vector __bool int vb32_t;
 typedef __vector __bool long long vb64_t;
 
 /* did not get vector __int128 until GCC4.8.  */
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#ifndef PVECLIB_DISABLE_INT128
+/*! \brief vector of one 128-bit signed __int128 element. */
 typedef __vector __int128 vi128_t;
+/*! \brief vector of one 128-bit unsigned __int128 element. */
 typedef __vector unsigned __int128 vui128_t;
-/*! \brief vector of 128-bit bool __int128 elements. */
+#ifndef PVECLIB_DISABLE_BOOLINT128
+/*! \brief vector of one 128-bit bool __int128 element. */
 typedef __vector __bool __int128 vb128_t;
-#elif defined(__clang__) 
-typedef __vector __int128 vi128_t;
-typedef __vector unsigned __int128 vui128_t;
-/*! \brief vector of 128-bit bool __int128 elements. */
+#else
+/*! \brief vector of one 128-bit bool __int128 element. */
 typedef __vector __bool int vb128_t;
+#endif
 #else
 /*! \brief vector of one 128-bit signed __int128 element. */
 typedef __vector int vi128_t;
 /*! \brief vector of one 128-bit unsigned __int128 element. */
 typedef __vector unsigned int vui128_t;
-/*! \brief vector of 128-bit bool __int128 elements. */
+/*! \brief vector of one 128-bit bool __int128 element. */
 typedef __vector __bool int vb128_t;
 #endif
 

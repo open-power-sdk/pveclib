@@ -175,9 +175,11 @@ pveclibinclude_HEADERS = \
 	pveclib/vec_char_ppc.h \
 	pveclib/vec_bcd_ppc.h
 
-pveclib_la_INCLUDES = $(pveclibinclude_HEADERS)
+pveclib_la_INCLUDES = \
+	$(pveclibinclude_HEADERS)
 
-pveclib_test_la_INCLUDES = $(pveclibinclude_HEADERS)
+pveclib_test_la_INCLUDES = \
+	$(pveclibinclude_HEADERS)
 
 EXTRA_DIST += $(pveclib_la_INCLUDES)
 
@@ -220,7 +222,8 @@ pveclib_test_SOURCES = \
 	testsuite/vec_perf_i128.h
 
 pveclib_test_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-pveclib_test_LDADD = .libs/libpvecstatic.a .libs/libvecdummy.a
+pveclib_test_LDADD = .libs/libpvecstatic.a \
+	.libs/libvecdummy.a
 	
 TESTS += vec_dummy
 

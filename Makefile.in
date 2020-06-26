@@ -133,7 +133,20 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = src/testprograms/test_ppc_970.c \
+	src/testprograms/test_ppc_PWR6.c \
+	src/testprograms/test_ppc_PWR7.c \
+	src/testprograms/test_ppc_PWR8.c \
+	src/testprograms/test_ppc_PWR9.c \
+	src/testprograms/test_ppc_DFP.c \
+	src/testprograms/test_ppc_VMX.c \
+	src/testprograms/test_ppc_VSX.c \
+	src/testprograms/test_ppc_int128.c \
+	src/testprograms/test_ppc_bool_int128.c \
+	src/testprograms/test_ppc_const_int128.c \
+	src/testprograms/test_ppc_F128.c \
+	src/testprograms/test_ppc_F128arith.c \
+	src/testprograms/test_ppc_F128math.c
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -221,8 +234,22 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/doxygen.am \
-	AUTHORS COPYING ChangeLog INSTALL NEWS README compile \
-	config.guess config.sub depcomp install-sh ltmain.sh missing
+	$(top_srcdir)/src/testprograms/test_ppc_970.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_DFP.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_F128.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_F128arith.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_F128math.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_PWR6.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_PWR7.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_PWR8.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_PWR9.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_VMX.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_VSX.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_bool_int128.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_const_int128.c.in \
+	$(top_srcdir)/src/testprograms/test_ppc_int128.c.in AUTHORS \
+	COPYING ChangeLog INSTALL NEWS README compile config.guess \
+	config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -496,6 +523,34 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
+src/testprograms/test_ppc_970.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_970.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_PWR6.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_PWR6.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_PWR7.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_PWR7.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_PWR8.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_PWR8.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_PWR9.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_PWR9.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_DFP.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_DFP.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_VMX.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_VMX.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_VSX.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_VSX.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_int128.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_int128.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_bool_int128.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_bool_int128.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_const_int128.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_const_int128.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_F128.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_F128.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_F128arith.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_F128arith.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/testprograms/test_ppc_F128math.c: $(top_builddir)/config.status $(top_srcdir)/src/testprograms/test_ppc_F128math.c.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -137,8 +137,8 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" \
 	"$(DESTDIR)$(pveclibincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
-libpvec_la_DEPENDENCIES = vec_runtime_PWR9.lo vec_runtime_PWR8.lo \
-	vec_runtime_PWR7.lo vec_runtime_common.lo
+libpvec_la_DEPENDENCIES = vec_dynrt_PWR9.lo vec_dynrt_PWR8.lo \
+	vec_dynrt_PWR7.lo vec_dynrt_common.lo
 am_libpvec_la_OBJECTS = libpvec_la-vec_runtime_DYN.lo
 libpvec_la_OBJECTS = $(am_libpvec_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -148,34 +148,14 @@ am__v_lt_1 =
 libpvec_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libpvec_la_CFLAGS) \
 	$(CFLAGS) $(libpvec_la_LDFLAGS) $(LDFLAGS) -o $@
-libpvecPWR7_la_LIBADD =
-am_libpvecPWR7_la_OBJECTS = libpvecPWR7_la-vec_runtime_PWR7.lo
-libpvecPWR7_la_OBJECTS = $(am_libpvecPWR7_la_OBJECTS)
-libpvecPWR7_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+libpvecstatic_la_DEPENDENCIES = vec_staticrt_PWR9.lo \
+	vec_staticrt_PWR8.lo vec_staticrt_PWR7.lo
+am_libpvecstatic_la_OBJECTS = libpvecstatic_la-tipowof10.lo \
+	libpvecstatic_la-decpowof2.lo
+libpvecstatic_la_OBJECTS = $(am_libpvecstatic_la_OBJECTS)
+libpvecstatic_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libpvecPWR7_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
-libpvecPWR8_la_LIBADD =
-am_libpvecPWR8_la_OBJECTS = libpvecPWR8_la-vec_runtime_PWR8.lo
-libpvecPWR8_la_OBJECTS = $(am_libpvecPWR8_la_OBJECTS)
-libpvecPWR8_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libpvecPWR8_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
-libpvecPWR9_la_LIBADD =
-am_libpvecPWR9_la_OBJECTS = libpvecPWR9_la-vec_runtime_PWR9.lo
-libpvecPWR9_la_OBJECTS = $(am_libpvecPWR9_la_OBJECTS)
-libpvecPWR9_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libpvecPWR9_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
-libpveccommon_la_LIBADD =
-am_libpveccommon_la_OBJECTS = libpveccommon_la-tipowof10.lo \
-	libpveccommon_la-decpowof2.lo
-libpveccommon_la_OBJECTS = $(am_libpveccommon_la_OBJECTS)
-libpveccommon_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libpveccommon_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	$(libpvecstatic_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 libvecdummy_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
@@ -222,14 +202,13 @@ am_pveclib_test_OBJECTS =  \
 	testsuite/pveclib_test-arith128_test_char.$(OBJEXT) \
 	testsuite/pveclib_test-arith128_test_bcd.$(OBJEXT)
 pveclib_test_OBJECTS = $(am_pveclib_test_OBJECTS)
-pveclib_test_DEPENDENCIES = .libs/libpveccommon.a .libs/libpvecPWR9.a \
-	.libs/libpvecPWR8.a .libs/libpvecPWR7.a .libs/libvecdummy.a
+pveclib_test_DEPENDENCIES = .libs/libpvecstatic.a .libs/libvecdummy.a
 pveclib_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(pveclib_test_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_vec_dummy_OBJECTS = testsuite/vec_dummy-vec_dummy_main.$(OBJEXT)
 vec_dummy_OBJECTS = $(am_vec_dummy_OBJECTS)
-vec_dummy_DEPENDENCIES = libpveccommon.la libvecdummy.la \
+vec_dummy_DEPENDENCIES = libpvecstatic.la libvecdummy.la \
 	libvecdummyPWR9.la
 vec_dummy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(vec_dummy_CFLAGS) \
@@ -268,16 +247,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libpvec_la_SOURCES) $(libpvecPWR7_la_SOURCES) \
-	$(libpvecPWR8_la_SOURCES) $(libpvecPWR9_la_SOURCES) \
-	$(libpveccommon_la_SOURCES) $(libvecdummy_la_SOURCES) \
-	$(libvecdummyPWR9_la_SOURCES) $(pveclib_test_SOURCES) \
-	$(vec_dummy_SOURCES)
-DIST_SOURCES = $(libpvec_la_SOURCES) $(libpvecPWR7_la_SOURCES) \
-	$(libpvecPWR8_la_SOURCES) $(libpvecPWR9_la_SOURCES) \
-	$(libpveccommon_la_SOURCES) $(libvecdummy_la_SOURCES) \
-	$(libvecdummyPWR9_la_SOURCES) $(pveclib_test_SOURCES) \
-	$(vec_dummy_SOURCES)
+SOURCES = $(libpvec_la_SOURCES) $(libpvecstatic_la_SOURCES) \
+	$(libvecdummy_la_SOURCES) $(libvecdummyPWR9_la_SOURCES) \
+	$(pveclib_test_SOURCES) $(vec_dummy_SOURCES)
+DIST_SOURCES = $(libpvec_la_SOURCES) $(libpvecstatic_la_SOURCES) \
+	$(libvecdummy_la_SOURCES) $(libvecdummyPWR9_la_SOURCES) \
+	$(pveclib_test_SOURCES) $(vec_dummy_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -653,14 +628,9 @@ AM_CFLAGS = -m64 -O3
 #Test only codes mostly for eyeballing the generated code
 noinst_LTLIBRARIES = libvecdummy.la libvecdummyPWR9.la
 #Any runtime and const tables needed by pveclib functions 
-lib_LTLIBRARIES = libpvec.la libpveccommon.la \
-	libpvecPWR7.la libpvecPWR8.la libpvecPWR9.la
-
+lib_LTLIBRARIES = libpvec.la libpvecstatic.la
 libpvec_la_SOURCES = vec_runtime_DYN.c
-libpveccommon_la_SOURCES = tipowof10.c decpowof2.c
-libpvecPWR9_la_SOURCES = vec_runtime_PWR9.c
-libpvecPWR8_la_SOURCES = vec_runtime_PWR8.c
-libpvecPWR7_la_SOURCES = vec_runtime_PWR7.c
+libpvecstatic_la_SOURCES = tipowof10.c decpowof2.c
 libvecdummyPWR9_la_SOURCES = testsuite/vec_pwr9_dummy.c
 libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_int512_dummy.c \
@@ -674,12 +644,9 @@ libvecdummy_la_SOURCES = testsuite/vec_int128_dummy.c \
 	testsuite/vec_char_dummy.c
 
 libvecdummy_la_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-libpvec_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
 libvecdummyPWR9_la_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_POWER9_CFLAGS) $(AM_CFLAGS)
-libpveccommon_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-libpvecPWR9_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER9_CFLAGS) $(AM_CFLAGS)
-libpvecPWR8_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER8_CFLAGS) $(AM_CFLAGS)
-libpvecPWR7_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER7_CFLAGS) $(AM_CFLAGS)
+libpvecstatic_la_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
+libpvec_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
 
 # C source files that correspond to .o's required for IFUNC targets
 # for supported all machines.
@@ -689,14 +656,23 @@ libpvecPWR7_la_CFLAGS = $(AM_CPPFLAGS) -fpic $(PVECLIB_POWER7_CFLAGS) $(AM_CFLAG
 PVECCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) -fpic
+	$(AM_CFLAGS)
 
 EXTRA_DIST = $(pveclib_la_INCLUDES)
 
-# libpvec definitions
+# libpvec definitions.
+# libpvec_la already includes vec_runtime_DYN.c compiled compiled -fpic
+# for IFUNC resolvers.
+# Now adding the -fpic -mcpu= target built runtimes.
 libpvec_la_LDFLAGS = -version-info $(PVECLIB_SO_VERSION)
-libpvec_la_LIBADD = vec_runtime_PWR9.lo vec_runtime_PWR8.lo \
-	vec_runtime_PWR7.lo vec_runtime_common.lo -lc
+libpvec_la_LIBADD = vec_dynrt_PWR9.lo vec_dynrt_PWR8.lo \
+	vec_dynrt_PWR7.lo vec_dynrt_common.lo -lc
+
+# libpvecstatic definitions, compiled without -fpic
+# libpvecstatic_la already includes tipowof10.c decpowof2.c.
+# Now adding the name qualified -mcpu= target built runtimes.
+libpvecstatic_la_LIBADD = vec_staticrt_PWR9.lo vec_staticrt_PWR8.lo \
+	vec_staticrt_PWR7.lo
 
 # pveclib definitions
 pveclibincludedir = $(includedir)/pveclib
@@ -719,12 +695,8 @@ pveclibinclude_HEADERS = \
 	pveclib/vec_char_ppc.h \
 	pveclib/vec_bcd_ppc.h
 
-pveclib_la_INCLUDES = \
-	$(pveclibinclude_HEADERS)
-
-pveclib_test_la_INCLUDES = \
-       $(pveclibinclude_HEADERS)
-
+pveclib_la_INCLUDES = $(pveclibinclude_HEADERS)
+pveclib_test_la_INCLUDES = $(pveclibinclude_HEADERS)
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
@@ -760,15 +732,12 @@ pveclib_test_SOURCES = \
 	testsuite/vec_perf_i128.h
 
 pveclib_test_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-pveclib_test_LDADD = .libs/libpveccommon.a \
- 	.libs/libpvecPWR9.a .libs/libpvecPWR8.a .libs/libpvecPWR7.a \
-	.libs/libvecdummy.a
-
+pveclib_test_LDADD = .libs/libpvecstatic.a .libs/libvecdummy.a
 
 #Dummy main to force generation of vec_dummy_* codes
 vec_dummy_SOURCES = testsuite/vec_dummy_main.c 
 vec_dummy_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-vec_dummy_LDADD = libpveccommon.la libvecdummy.la libvecdummyPWR9.la
+vec_dummy_LDADD = libpvecstatic.la libvecdummy.la libvecdummyPWR9.la
 all: all-am
 
 .SUFFIXES:
@@ -852,17 +821,8 @@ clean-noinstLTLIBRARIES:
 libpvec.la: $(libpvec_la_OBJECTS) $(libpvec_la_DEPENDENCIES) $(EXTRA_libpvec_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libpvec_la_LINK) -rpath $(libdir) $(libpvec_la_OBJECTS) $(libpvec_la_LIBADD) $(LIBS)
 
-libpvecPWR7.la: $(libpvecPWR7_la_OBJECTS) $(libpvecPWR7_la_DEPENDENCIES) $(EXTRA_libpvecPWR7_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libpvecPWR7_la_LINK) -rpath $(libdir) $(libpvecPWR7_la_OBJECTS) $(libpvecPWR7_la_LIBADD) $(LIBS)
-
-libpvecPWR8.la: $(libpvecPWR8_la_OBJECTS) $(libpvecPWR8_la_DEPENDENCIES) $(EXTRA_libpvecPWR8_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libpvecPWR8_la_LINK) -rpath $(libdir) $(libpvecPWR8_la_OBJECTS) $(libpvecPWR8_la_LIBADD) $(LIBS)
-
-libpvecPWR9.la: $(libpvecPWR9_la_OBJECTS) $(libpvecPWR9_la_DEPENDENCIES) $(EXTRA_libpvecPWR9_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libpvecPWR9_la_LINK) -rpath $(libdir) $(libpvecPWR9_la_OBJECTS) $(libpvecPWR9_la_LIBADD) $(LIBS)
-
-libpveccommon.la: $(libpveccommon_la_OBJECTS) $(libpveccommon_la_DEPENDENCIES) $(EXTRA_libpveccommon_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libpveccommon_la_LINK) -rpath $(libdir) $(libpveccommon_la_OBJECTS) $(libpveccommon_la_LIBADD) $(LIBS)
+libpvecstatic.la: $(libpvecstatic_la_OBJECTS) $(libpvecstatic_la_DEPENDENCIES) $(EXTRA_libpvecstatic_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libpvecstatic_la_LINK) -rpath $(libdir) $(libpvecstatic_la_OBJECTS) $(libpvecstatic_la_LIBADD) $(LIBS)
 testsuite/$(am__dirstamp):
 	@$(MKDIR_P) testsuite
 	@: > testsuite/$(am__dirstamp)
@@ -957,12 +917,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvecPWR7_la-vec_runtime_PWR7.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvecPWR8_la-vec_runtime_PWR8.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvec_la-vec_runtime_DYN.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpveccommon_la-decpowof2.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpveccommon_la-tipowof10.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvecstatic_la-decpowof2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpvecstatic_la-tipowof10.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/libvecdummyPWR9_la-vec_pwr9_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/libvecdummy_la-vec_bcd_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/libvecdummy_la-vec_char_dummy.Plo@am__quote@
@@ -1023,40 +980,19 @@ libpvec_la-vec_runtime_DYN.lo: vec_runtime_DYN.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvec_la_CFLAGS) $(CFLAGS) -c -o libpvec_la-vec_runtime_DYN.lo `test -f 'vec_runtime_DYN.c' || echo '$(srcdir)/'`vec_runtime_DYN.c
 
-libpvecPWR7_la-vec_runtime_PWR7.lo: vec_runtime_PWR7.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR7_la_CFLAGS) $(CFLAGS) -MT libpvecPWR7_la-vec_runtime_PWR7.lo -MD -MP -MF $(DEPDIR)/libpvecPWR7_la-vec_runtime_PWR7.Tpo -c -o libpvecPWR7_la-vec_runtime_PWR7.lo `test -f 'vec_runtime_PWR7.c' || echo '$(srcdir)/'`vec_runtime_PWR7.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecPWR7_la-vec_runtime_PWR7.Tpo $(DEPDIR)/libpvecPWR7_la-vec_runtime_PWR7.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vec_runtime_PWR7.c' object='libpvecPWR7_la-vec_runtime_PWR7.lo' libtool=yes @AMDEPBACKSLASH@
+libpvecstatic_la-tipowof10.lo: tipowof10.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecstatic_la_CFLAGS) $(CFLAGS) -MT libpvecstatic_la-tipowof10.lo -MD -MP -MF $(DEPDIR)/libpvecstatic_la-tipowof10.Tpo -c -o libpvecstatic_la-tipowof10.lo `test -f 'tipowof10.c' || echo '$(srcdir)/'`tipowof10.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecstatic_la-tipowof10.Tpo $(DEPDIR)/libpvecstatic_la-tipowof10.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tipowof10.c' object='libpvecstatic_la-tipowof10.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR7_la_CFLAGS) $(CFLAGS) -c -o libpvecPWR7_la-vec_runtime_PWR7.lo `test -f 'vec_runtime_PWR7.c' || echo '$(srcdir)/'`vec_runtime_PWR7.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecstatic_la_CFLAGS) $(CFLAGS) -c -o libpvecstatic_la-tipowof10.lo `test -f 'tipowof10.c' || echo '$(srcdir)/'`tipowof10.c
 
-libpvecPWR8_la-vec_runtime_PWR8.lo: vec_runtime_PWR8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR8_la_CFLAGS) $(CFLAGS) -MT libpvecPWR8_la-vec_runtime_PWR8.lo -MD -MP -MF $(DEPDIR)/libpvecPWR8_la-vec_runtime_PWR8.Tpo -c -o libpvecPWR8_la-vec_runtime_PWR8.lo `test -f 'vec_runtime_PWR8.c' || echo '$(srcdir)/'`vec_runtime_PWR8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecPWR8_la-vec_runtime_PWR8.Tpo $(DEPDIR)/libpvecPWR8_la-vec_runtime_PWR8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vec_runtime_PWR8.c' object='libpvecPWR8_la-vec_runtime_PWR8.lo' libtool=yes @AMDEPBACKSLASH@
+libpvecstatic_la-decpowof2.lo: decpowof2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecstatic_la_CFLAGS) $(CFLAGS) -MT libpvecstatic_la-decpowof2.lo -MD -MP -MF $(DEPDIR)/libpvecstatic_la-decpowof2.Tpo -c -o libpvecstatic_la-decpowof2.lo `test -f 'decpowof2.c' || echo '$(srcdir)/'`decpowof2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecstatic_la-decpowof2.Tpo $(DEPDIR)/libpvecstatic_la-decpowof2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='decpowof2.c' object='libpvecstatic_la-decpowof2.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR8_la_CFLAGS) $(CFLAGS) -c -o libpvecPWR8_la-vec_runtime_PWR8.lo `test -f 'vec_runtime_PWR8.c' || echo '$(srcdir)/'`vec_runtime_PWR8.c
-
-libpvecPWR9_la-vec_runtime_PWR9.lo: vec_runtime_PWR9.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) -MT libpvecPWR9_la-vec_runtime_PWR9.lo -MD -MP -MF $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo -c -o libpvecPWR9_la-vec_runtime_PWR9.lo `test -f 'vec_runtime_PWR9.c' || echo '$(srcdir)/'`vec_runtime_PWR9.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Tpo $(DEPDIR)/libpvecPWR9_la-vec_runtime_PWR9.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vec_runtime_PWR9.c' object='libpvecPWR9_la-vec_runtime_PWR9.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecPWR9_la_CFLAGS) $(CFLAGS) -c -o libpvecPWR9_la-vec_runtime_PWR9.lo `test -f 'vec_runtime_PWR9.c' || echo '$(srcdir)/'`vec_runtime_PWR9.c
-
-libpveccommon_la-tipowof10.lo: tipowof10.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpveccommon_la_CFLAGS) $(CFLAGS) -MT libpveccommon_la-tipowof10.lo -MD -MP -MF $(DEPDIR)/libpveccommon_la-tipowof10.Tpo -c -o libpveccommon_la-tipowof10.lo `test -f 'tipowof10.c' || echo '$(srcdir)/'`tipowof10.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpveccommon_la-tipowof10.Tpo $(DEPDIR)/libpveccommon_la-tipowof10.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tipowof10.c' object='libpveccommon_la-tipowof10.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpveccommon_la_CFLAGS) $(CFLAGS) -c -o libpveccommon_la-tipowof10.lo `test -f 'tipowof10.c' || echo '$(srcdir)/'`tipowof10.c
-
-libpveccommon_la-decpowof2.lo: decpowof2.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpveccommon_la_CFLAGS) $(CFLAGS) -MT libpveccommon_la-decpowof2.lo -MD -MP -MF $(DEPDIR)/libpveccommon_la-decpowof2.Tpo -c -o libpveccommon_la-decpowof2.lo `test -f 'decpowof2.c' || echo '$(srcdir)/'`decpowof2.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpveccommon_la-decpowof2.Tpo $(DEPDIR)/libpveccommon_la-decpowof2.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='decpowof2.c' object='libpveccommon_la-decpowof2.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpveccommon_la_CFLAGS) $(CFLAGS) -c -o libpveccommon_la-decpowof2.lo `test -f 'decpowof2.c' || echo '$(srcdir)/'`decpowof2.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpvecstatic_la_CFLAGS) $(CFLAGS) -c -o libpvecstatic_la-decpowof2.lo `test -f 'decpowof2.c' || echo '$(srcdir)/'`decpowof2.c
 
 testsuite/libvecdummy_la-vec_int128_dummy.lo: testsuite/vec_int128_dummy.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libvecdummy_la_CFLAGS) $(CFLAGS) -MT testsuite/libvecdummy_la-vec_int128_dummy.lo -MD -MP -MF testsuite/$(DEPDIR)/libvecdummy_la-vec_int128_dummy.Tpo -c -o testsuite/libvecdummy_la-vec_int128_dummy.lo `test -f 'testsuite/vec_int128_dummy.c' || echo '$(srcdir)/'`testsuite/vec_int128_dummy.c
@@ -1790,41 +1726,59 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-pveclibincludeHEADERS
 .PRECIOUS: Makefile
 
 
-vec_runtime_PWR9.lo: vec_runtime_PWR9.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR9.lo: vec_runtime_PWR9.c $(pveclibinclude_HEADERS)
+@am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
+
+vec_staticrt_PWR9.lo: vec_runtime_PWR9.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 
-vec_runtime_PWR8.lo: vec_runtime_PWR8.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR8.lo: vec_runtime_PWR8.c $(pveclibinclude_HEADERS)
+@am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR8.c' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
+
+vec_staticrt_PWR8.lo: vec_runtime_PWR8.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR8.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 
-vec_runtime_PWR7.lo: vec_runtime_PWR7.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR7.lo: vec_runtime_PWR7.c $(pveclibinclude_HEADERS)
+@am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR7.c' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR7.c
+
+vec_staticrt_PWR7.lo: vec_runtime_PWR7.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR7.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) $(PVECLIB_POWER7_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 
-vec_runtime_common.lo: vec_runtime_common.c $(pveclibinclude_HEADERS)
-@am__fastdepCC_TRUE@	$(PVECCOMPILE) $(PVECLIB_DEFAULT_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_common.c
+vec_dynrt_common.lo: vec_runtime_common.c $(pveclibinclude_HEADERS)
+@am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_DEFAULT_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_common.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_common.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(PVECCOMPILE) $(PVECLIB_DEFAULT_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_common.c
+@am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_DEFAULT_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_common.c
 
 # This rule is necessary because pvec_test needs to statically link
-# .libs/pveclib.a and if make is executed in parallel (-jN) the 
-# pveclib_test rule may be run before .libs/pveclib.a is built.
-.libs/libpveccommon.a: libpveccommon.la
-.libs/libpvecPWR7.a: libpvecPWR7.la
-.libs/libpvecPWR8.a: libpvecPWR8.la
-.libs/libpvecPWR9.a: libpvecPWR9.la
+# .libs/libpvecstatic.a and if make is executed in parallel (-jN) the 
+# pveclib_test rule may be run before .libs/libpvecstatic.a is built.
+.libs/libpvecstatic.a: libpvecstatic.la
 .libs/libpvecdummy.a: libpvecdummy.la
 .libs/libpvecdummyPWR9.a: libpvecdummyPWR9.la
 

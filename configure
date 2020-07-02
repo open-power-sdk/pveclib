@@ -12827,7 +12827,7 @@ CFLAGS=$AM_CFLAGS
 $as_echo_n "checking if $CNAME default supports ALTIVEC... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_VMX.c`
+`cat $srcdir/testprograms/test_ppc_VMX.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12857,7 +12857,7 @@ CFLAGS=$AM_CFLAGS
 $as_echo_n "checking if $CNAME default supports DFP... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_DFP.c`
+`cat $srcdir/testprograms/test_ppc_DFP.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12893,7 +12893,7 @@ CFLAGS=$AM_CFLAGS
 $as_echo_n "checking if $CNAME default supports VSX... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_VSX.c`
+`cat $srcdir/testprograms/test_ppc_VSX.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12909,7 +12909,7 @@ $as_echo "no" >&6; }
 $as_echo_n "checking if $CNAME requires -mcpu=power7 for VSX... " >&6; }
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_VSX.c`
+`cat $srcdir/testprograms/test_ppc_VSX.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12925,7 +12925,7 @@ $as_echo "no" >&6; }
 $as_echo_n "checking if $CNAME requires -mcpu=power8 for VSX... " >&6; }
                 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_VSX.c`
+`cat $srcdir/testprograms/test_ppc_VSX.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12960,7 +12960,7 @@ CFLAGS=$AM_CFLAGS
 $as_echo_n "checking if $CNAME default supports Float128... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_F128.c`
+`cat $srcdir/testprograms/test_ppc_F128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12976,7 +12976,7 @@ $as_echo "no" >&6; }
 $as_echo_n "checking if $CNAME requires -mfloat128 for Float128... " >&6; }
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_F128.c`
+`cat $srcdir/testprograms/test_ppc_F128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -12992,7 +12992,7 @@ $as_echo "no" >&6; }
 $as_echo_n "checking if $CNAME requires $POWER9_CFLAGS for Float128... " >&6; }
                 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_F128.c`
+`cat $srcdir/testprograms/test_ppc_F128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13040,7 +13040,7 @@ CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 $as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 arithmetic... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_F128arith.c`
+`cat $srcdir/testprograms/test_ppc_F128arith.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13065,7 +13065,7 @@ CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 $as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 math.h... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_F128math.c`
+`cat $srcdir/testprograms/test_ppc_F128math.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13090,7 +13090,7 @@ CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 $as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_int128.c`
+`cat $srcdir/testprograms/test_ppc_int128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13115,7 +13115,7 @@ CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 $as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __bool __int128... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_bool_int128.c`
+`cat $srcdir/testprograms/test_ppc_bool_int128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13140,7 +13140,7 @@ CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 $as_echo_n "checking if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128 comstants... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_const_int128.c`
+`cat $srcdir/testprograms/test_ppc_const_int128.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13165,7 +13165,7 @@ CFLAGS="$POWER7_CFLAGS"
 $as_echo_n "checking if $CNAME supports $CFLAGS (Power7)... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_PWR7.c`
+`cat $srcdir/testprograms/test_ppc_PWR7.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13195,7 +13195,7 @@ CFLAGS="$POWER8_CFLAGS"
 $as_echo_n "checking if $CNAME supports $CFLAGS (Power8)... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_PWR8.c`
+`cat $srcdir/testprograms/test_ppc_PWR8.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -13225,7 +13225,7 @@ CFLAGS="$POWER9_CFLAGS"
 $as_echo_n "checking if $CNAME supports $CFLAGS (Power9)... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-`cat testprograms/test_ppc_PWR9.c`
+`cat $srcdir/testprograms/test_ppc_PWR9.c`
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

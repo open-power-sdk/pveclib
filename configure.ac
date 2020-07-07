@@ -52,7 +52,7 @@ AC_SUBST([PVECLIB_DEFAULT_CFLAG], [""])
 CFLAGS=$AM_CFLAGS
 AC_MSG_CHECKING([if $CNAME default supports ALTIVEC])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_VMX.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_VMX.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_DEFAULT_CFLAG], [""]),
 	[AC_MSG_RESULT([no])]
@@ -68,7 +68,7 @@ fi
 CFLAGS=$AM_CFLAGS
 AC_MSG_CHECKING([if $CNAME default supports DFP])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_DFP.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_DFP.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_DEFAULT_CFLAGS], [""]),
 	[AC_MSG_RESULT([no])]
@@ -90,7 +90,7 @@ fi
 CFLAGS=$AM_CFLAGS
 AC_MSG_CHECKING([if $CNAME default supports VSX])
 AC_LINK_IFELSE(
-    [AC_LANG_SOURCE([`cat testprograms/test_ppc_VSX.c`])],
+    [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_VSX.c`])],
     [AC_MSG_RESULT([yes])]
 	AC_SUBST([PVECLIB_DEFAULT_CFLAGS], [""]),
     [
@@ -98,7 +98,7 @@ AC_LINK_IFELSE(
 	CFLAGS="$AM_CFLAGS $POWER7_CFLAGS"
         AC_MSG_CHECKING([if $CNAME requires -mcpu=power7 for VSX])
         AC_LINK_IFELSE(
-            [AC_LANG_SOURCE([`cat testprograms/test_ppc_VSX.c`])],
+            [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_VSX.c`])],
             [AC_MSG_RESULT([yes])]
                 AC_SUBST([PVECLIB_DEFAULT_CFLAGS], [$POWER7_CFLAGS]),
             [
@@ -106,7 +106,7 @@ AC_LINK_IFELSE(
                 CFLAGS="$AM_CFLAGS $POWER8_CFLAGS"
                 AC_MSG_CHECKING([if $CNAME requires -mcpu=power8 for VSX])
                 AC_LINK_IFELSE(
-                    [AC_LANG_SOURCE([`cat testprograms/test_ppc_VSX.c`])],
+                    [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_VSX.c`])],
                     [AC_MSG_RESULT([yes])]
                         AC_SUBST([PVECLIB_DEFAULT_CFLAGS], [$POWER8_CFLAGS]),
 				    [AC_MSG_RESULT([no])]
@@ -122,7 +122,7 @@ AC_LINK_IFELSE(
 CFLAGS=$AM_CFLAGS
 AC_MSG_CHECKING([if $CNAME default supports Float128])
 AC_LINK_IFELSE(
-    [AC_LANG_SOURCE([`cat testprograms/test_ppc_F128.c`])],
+    [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_F128.c`])],
     [AC_MSG_RESULT([yes])]
         AC_SUBST([PVECLIB_FLOAT128_CFLAGS], [""]),
     [
@@ -130,7 +130,7 @@ AC_LINK_IFELSE(
         CFLAGS+=" $POWER_F128_CFLAGS"
         AC_MSG_CHECKING([if $CNAME requires -mfloat128 for Float128])
         AC_LINK_IFELSE(
-            [AC_LANG_SOURCE([`cat testprograms/test_ppc_F128.c`])],
+            [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_F128.c`])],
             [AC_MSG_RESULT([yes])]
                 AC_SUBST([PVECLIB_FLOAT128_CFLAGS], ["$POWER_F128_CFLAGS"]),
             [
@@ -138,7 +138,7 @@ AC_LINK_IFELSE(
                 CFLAGS="$AM_CFLAGS $POWER9_CFLAGS"
                 AC_MSG_CHECKING([if $CNAME requires $POWER9_CFLAGS for Float128])
                 AC_LINK_IFELSE(
-                    [AC_LANG_SOURCE([`cat testprograms/test_ppc_F128.c`])],
+                    [AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_F128.c`])],
                     [AC_MSG_RESULT([yes])]
                         AC_SUBST([PVECLIB_FLOAT128PWR9_CFLAGS], ["POWER9_CFLAGS"]),
                     [AC_MSG_RESULT([no])]
@@ -166,7 +166,7 @@ fi
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 arithmetic])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_F128arith.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_F128arith.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_FLOAT128ARITH_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
@@ -178,7 +178,7 @@ AC_LINK_IFELSE(
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports Float128 math.h])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_F128math.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_F128math.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_FLOAT128MATH_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
@@ -190,7 +190,7 @@ AC_LINK_IFELSE(
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_int128.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_int128.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_VINT128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
@@ -202,7 +202,7 @@ AC_LINK_IFELSE(
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __bool __int128])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_bool_int128.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_bool_int128.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_VBOOL128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
@@ -214,7 +214,7 @@ AC_LINK_IFELSE(
 CFLAGS="$AM_CFLAGS $PVECLIB_DEFAULT_CFLAGS"
 AC_MSG_CHECKING([if $CNAME $PVECLIB_DEFAULT_TEXT supports vector __int128 comstants])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_const_int128.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_const_int128.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_VCONST128_CFLAGS], ["$PVECLIB_DEFAULT_CFLAGS"]),
 	[AC_MSG_RESULT([no])]
@@ -226,7 +226,7 @@ AC_LINK_IFELSE(
 CFLAGS="$POWER7_CFLAGS"
 AC_MSG_CHECKING([if $CNAME supports $CFLAGS (Power7)])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_PWR7.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_PWR7.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_POWER7_CFLAGS], [$POWER7_CFLAGS]),
 	[AC_MSG_RESULT([no])]
@@ -242,7 +242,7 @@ fi
 CFLAGS="$POWER8_CFLAGS"
 AC_MSG_CHECKING([if $CNAME supports $CFLAGS (Power8)])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_PWR8.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_PWR8.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_POWER8_CFLAGS], [$POWER8_CFLAGS]),
 	[AC_MSG_RESULT([no])]
@@ -258,7 +258,7 @@ fi
 CFLAGS="$POWER9_CFLAGS"
 AC_MSG_CHECKING([if $CNAME supports $CFLAGS (Power9)])
 AC_LINK_IFELSE(
-	[AC_LANG_SOURCE([`cat testprograms/test_ppc_PWR9.c`])],
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_PWR9.c`])],
 	[AC_MSG_RESULT([yes])]
 		AC_SUBST([PVECLIB_POWER9_CFLAGS], [$POWER9_CFLAGS]),
 	[AC_MSG_RESULT([no])]

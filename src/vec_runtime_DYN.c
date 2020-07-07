@@ -100,6 +100,9 @@ vec_mul256x256_PWR7 (__VEC_U_256, __VEC_U_256);
 extern __VEC_U_640
 vec_mul512x128_PWR7 (__VEC_U_512, vui128_t);
 
+extern __VEC_U_640
+vec_madd512x128a512_PWR7 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
+
 extern __VEC_U_1024
 vec_mul512x512_PWR7 (__VEC_U_512, __VEC_U_512);
 
@@ -128,6 +131,9 @@ vec_mul256x256_PWR8 (__VEC_U_256, __VEC_U_256);
 
 extern __VEC_U_640
 vec_mul512x128_PWR8 (__VEC_U_512, vui128_t);
+
+extern __VEC_U_640
+vec_madd512x128a512_PWR8 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
 
 extern __VEC_U_1024
 vec_mul512x512_PWR8 (__VEC_U_512, __VEC_U_512);
@@ -160,6 +166,9 @@ vec_mul512x128_PWR9 (__VEC_U_512, vui128_t);
 
 extern __VEC_U_512
 vec_mul256x256_PWR9 (__VEC_U_256, __VEC_U_256);
+
+extern __VEC_U_640
+vec_madd512x128a512_PWR9 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
 
 extern __VEC_U_1024
 vec_mul512x512_PWR9 (__VEC_U_512, __VEC_U_512);
@@ -213,6 +222,17 @@ __VEC_U_640
 __VEC_U_640
 vec_mul512x128 (__VEC_U_512, vui128_t)
 __attribute__ ((ifunc ("resolve_vec_mul512x128")));
+
+static
+__VEC_U_640
+(*resolve_vec_madd512x128a512 (void))(__VEC_U_512, vui128_t, __VEC_U_512)
+{
+  VEC_DYN_RESOLVER(vec_madd512x128a512);
+}
+
+__VEC_U_640
+vec_madd512x128a512 (__VEC_U_512, vui128_t, __VEC_U_512)
+__attribute__ ((ifunc ("resolve_vec_madd512x128a512")));
 
 static
 __VEC_U_1024

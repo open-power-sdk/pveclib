@@ -563,272 +563,57 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  * used a constants in program source to represent arbitrarily large
  * binary values.
  *
- * \section i512_libary_issues_0_0 Putting the Library into PVECLIB
+ * \section i512_libary_issues_0_0 Building libraries for vec_int512_ppc
  *
- * \todo General discussion of static and dynamic libraries should be
- * moved (eventually) to the main page. While specifics of
- * multiple quadword precision integer multiply should remain here.
+ * \sa \ref main_libary_issues_0_0
  *
- * Until recently (as of v1.0.3) PVECLIB operations were
- * <B>static inline</B> only. This was reasonable as most operations
- * were small (one to a few vector instructions).
- * This offered the compiler opportunity for:
- * - Better register allocation.
- * - Identifying common subexpressions and factoring them across
- * operation instances.
- * - Better instruction scheduling across operations.
+ * Many of the implementations associated with 512-bit integer
+ * operations are uncomfortably large to expand as in-line code
+ * (Examples include vec_mul512x512(), vec_mul1024x1024(), and
+ * vec_mul2048x2048()).
+ * It is better to collect these large implementations in separately
+ * compiled run-time libraries. Another consideration is that most
+ * of these operations are multiple quadword multiplies and the
+ * optimum quadword multiply is processor (and PowerISA
+ * version) dependent. This is especially true for Vector integer
+ * multiplies across POWER7-POWER9.
  *
- * Even then, a few operations
- * (quadword multiply, BCD multiply, BCD <-> binary conversions,
- * and some POWER8/7 implementations of POWER9 instructions)
- * were getting uncomfortably large (10s of instructions).
- * But it was the multiple quadword precision operations that
- * forced the issue as they can run to 100s and sometimes 1000s of
- * instructions.
+ * This places requirements on the structure of runtime implementation
+ * codes and the library build process.
+ * - Building a set of source implementations for multiple compile
+ * (\-mcpu=) targets.
+ * - Providing unique function names based on the operation and the
+ * compile target.
+ * - Providing static (archive) and dynamic (DSO) libraries,
+ * while adjusting the the compile options appropriately for each.
+ *  - Objects compiled for inclusion in dynamic libraries should be
+ *  position independent code (i.e. compiled with -fpic or -fPIC).
+ *  - DSOs supporting operations optimized for multiple compile
+ *  (-mcpu=) targets need to export matching
+ *  <a href="https://sourceware.org/glibc/wiki/GNU_IFUNC">IFUNC</a>
+ *  symbols and resolver stubs.
  *
- * \subsection i512_libary_issues_0_0_0 Building Multi-platform Libraries
- *
- * Building libraries of compiled binaries is not that difficult.
- * The challenge is effectively supporting multiple processor
- * (POWER7/8/9) platforms, as many PVECLIB operations have different
- * implementations for each platform.
- * This is especially evident on the multiply integer word, doubleword,
- * and quadword operations (see; vec_muludq(), vec_mulhuq(), vec_mulluq(),
- * vec_vmuleud(), vec_vmuloud(), vec_msumudm(), vec_muleuw(),
- * vec_mulouw()).
- *
- * This is dictated by both changes in the PowerISA and in
- * the micro-architecture as it evolved across processor generations.
- * So an implementation to run on a POWER7 is necessarily restricted to
- * the instructions of PowerISA 2.06.
- * But if we are running on a POWER9, leveraging new instructions from
- * PowerISA 3.0 can yield better performance than the POWER7
- * compatible implementation. When we are dealing with larger operations
- * (10s and 100s of instructions) the compiler can schedule instruction
- * sequences based on the platform (-mtune=) for better performance.
- *
- * So we need to deliver multiple implementations for some operations
- * and we need to provide mechanisms to select a specific platform
- * implementation statically at compile/build or dynamically at
- * runtime. First we need to compile multiple version of these
- * operations, as unique functions, each with a different effective
- * target platform (-mcpu=).
- *
- * Obviously creating multiple source files implementing the same large
- * operation, each supporting a specific target platform,
- * is a possibility.
- * However this could cause maintenance problems where changes to a
- * operation must be coordinated across multiple source files.
- * This is also inconsistent with the current PVECLIB coding style
- * where a file contains an operations complete implementation,
- * including documentation and platform implementation variants.
- *
- * The current PVECLIB implementation makes extensive use of CPP
- * conditions. These include testing for compiler version,
- * target Endian, and current target platform then selects the
- * appropriate source code snippet (\ref mainpage_sub_1_2).
- * This was intended to simplify the application/library developers
- * life were they could use the PVECLIB API and not worry about
- * these details.
- *
- * So far this works as intended (single vector source for multiple
- * PowerISA VMX/VSX targets) when the entire application is compiled
- * for a single target.
- * However this dependence on CPP conditionals is mixed blessing then
- * the application needs to support multiple platforms in a single package.
- *
- * \subsubsection i512_libary_issues_0_0_0_0 The mechanisms available
- * The compiler and ABI offer options that at first glance
- * seem to allow multiple target specific binaries from a single source.
- * Besides the compilers command level target options a number of
- * source level mechanisms to change the target.
- * These include:
- * - __ attribute __ (target ("cpu=power8"))
- * - __ attribute __ (target_clones ("cpu=power9,default"))
- * - \#pragma GCC target ("cpu=power8")
- *
- * The target and target_clones attributes are function attributes
- * (apply to single function).
- * The target attribute overrides the command line -mcpu= option.
- * However it is not clear which version of GCC added explicit support for (target ("cpu=").
- * This was not explicitly documented until GCC 5.
- * The target_clones attribute will cause GCC will create two function clones,
- * one compiled with the specified -mcpu= target and another with the default options.
- * It also creates a resolver function that dynamically selects a clone implementation
- * suitable for current platform architecture.
- * This PowerPC specific variant was not explicitly documented until GCC 8.
- *
- * There are a few issues with function attributes:
- * - The Doxygen preprocessor can not parse function attributes.
- * - The availability of these attributes seems to be limited to the latest compilers.
- *
- * But these is deeper problem related to the usage of CPP conditionals.
- * Many PVECLIB operation implementations depend on GCC/compiler predefined macros including:
- * - __ GNUC __
- * - __ GNUC_MINOR __
- * - __ BYTE_ORDER __
- * - __ ORDER_LITTLE_ENDIAN __
- * - __ ORDER_BIG_ENDIAN __
- *
- * PVECLIB also depends on many system-specific predefined macros including:
- * - __ ALTIVEC __
- * - __ VSX __
- * - __ FLOAT128 __
- * - _ARCH_PWR9
- * - _ARCH_PWR8
- * - _ARCH_PWR7
- *
- * PVECLIB also depends on the <altivec.h> include file which provides
- * the mapping between the ABI defined intrinsics and compiler defined
- * built-ins. In some places PVECLIB conditionally tests if specific
- * built-in is defined and substitutes an in-line assembler
- * implementation if not.
- * Altivec.h also depends on system-specific predefined macros to
- * enable/disable blocks of intrinsic built-ins based on PowerISA level.
- *
- * \subsubsection i512_libary_issues_0_0_0_1 Some things just do not work
- * The issue is that the compiler (GCC at least) only expands the
- * compiler and system-specific predefined macros once per source file.
- * They will not change due to embedded function attributes that change the target.
- * So the following do not work as expected.
- *
+ * For the first requirement we can collect the runtime implementations
+ * for vec_int512_ppc in to a single source file (vec_int512_runtime.c).
+ * The build system can then collect this and other runtime source
+ * files to compile for different targets.
+ * This can be as simple as:
  * \code
-#include <altivec.h>
-#include <pveclib/vec_int128_ppc.h>
-#include <pveclib/vec_int512_ppc.h>
-
-// Defined in vec_int512_ppc.h but included here for clarity.
-static inline __VEC_U_256
-vec_mul128x128_inline (vui128_t a, vui128_t b)
-{
-  __VEC_U_256 result;
-  // vec_muludq is defined in vec_int128_ppc.h
-  result.vx0 = vec_muludq (&result.vx1, a, b);
-  return result;
-}
-
-__VEC_U_256 __attribute__(target ("cpu=power7"))
-vec_mul128x128_PWR7 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
-
-__VEC_U_256 __attribute__(target ("cpu=power8"))
-vec_mul128x128_PWR8 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
-
-__VEC_U_256 __attribute__(target ("cpu=power9"))
-vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
+//  \file  vec_runtime_PWR9.c
+#include "vec_int512_runtime.c"
+...
  * \endcode
- * For example if we assume that the compiler default is (or the
- * command line specifies) -mcpu=power8 the compiler will use this to
- * generate the system-specific predefined macros.
- * This is done before the first include file is processed.
- * In this case <altivec.h>, vec_int128_ppc.h, and vec_int512_ppc.h
- * source will be expanded for power8 (PowerISA-2.07).
- * So the vec_muludq and vec_muludq inline source implementations will
- * be the power8 version.
+ * and similarly for vec_runtime_PWR7.c and vec_runtime_PWR8.c.
  *
- * This will all be established before the compiler starts to parse
- * and generate code for vec_mul128x128_PWR7.
- * This is likely to fail because the we are
- * trying to compile code containing power8 instructions with a
- * -mcpu=power7 target.
+ * As the implementation of vec_int512_ppc.c is already leveraging
+ * \_ARCH_PWR7/8/9 tuned static inline operations from vec_int512_ppc.h,
+ * vec_int128_ppc.h, etc, all we need to do is apply the appropriate
+ * \-mcpu=power7/8/9 compile option to each (target qualified) runtime
+ * source file.
  *
- * The compilation of vec_mul128x128_PWR8 should work as we are
- * compiling power8 code with a -mcpu=power8 target.
- * The compilation of vec_mul128x128_PWR9 will compile without error
- * but will generate essentially the same code as vec_mul128x128_PWR8.
- * The -mcpu=power9 target allows that compiler to use power9
- * instructions but the expanded source coded from  vec_muludq and
- * vec_mul128x128_inline will not contain any power9 intrinsic
- * built-ins.
- *
- * Pragma GCC target has a similar issue if you try to change the
- * target multiple times within the source file.
- *
- * \code
-#include <altivec.h>
-#include <pveclib/vec_int128_ppc.h>
-#include <pveclib/vec_int512_ppc.h>
-
-// Defined in vec_int512_ppc.h but included here for clarity.
-static inline __VEC_U_256
-vec_mul128x128_inline (vui128_t a, vui128_t b)
-{
-  __VEC_U_256 result;
-  // vec_muludq is defined in vec_int128_ppc.h
-  result.vx0 = vec_muludq (&result.vx1, a, b);
-  return result;
-}
-
-#pragma GCC push_options
-#pragma GCC target ("cpu=power7")
-
-__VEC_U_256
-vec_mul128x128_PWR7 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
-
-#pragma GCC pop_options
-#pragma GCC push_options
-#pragma GCC target ("cpu=power8")
-
-__VEC_U_256
-vec_mul128x128_PWR8 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
-
-#pragma GCC pop_options
-#pragma GCC push_options
-#pragma GCC target ("cpu=power9")
-
-__VEC_U_256
-vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
- * \endcode
- * This has the same issues at the target attribute example above.
- * However you can use pragma GCC target if it proceeds the first
- * \#include in the source file.
- *
- * \code
-#pragma GCC target ("cpu=power9")
-#include <altivec.h>
-#include <pveclib/vec_int128_ppc.h>
-#include <pveclib/vec_int512_ppc.h>
-
-// vec_mul128x128_inline is defined in vec_int512_ppc.h
-
-__VEC_U_256
-vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
-{
-  return vec_mul128x128_inline (m1l, m2l);
-}
- * \endcode
- * In this case the cpu=power9 option is applied before the compiler
- * reads the first include file and initializes the system-specific
- * predefined macros. So the CPP source expansion reflects the power9
- * target.
- *
- * \subsubsection i512_libary_issues_0_0_0_2 Some things that do work
- * This will require a unique implementation for each platform target.
- * We still prefer a single file implementation for each function
- * to improve maintenance. So we need to separate setting the platform
- * target from the implementation source. Also we need to provide a
- * unique extern symbol for each platform implementation.
- *
- * This can be handled with a simple macro to append a suffix based on
- * system-specific predefined macro settings.
- *
+ * The second requirement is addressed by applying a target
+ * qualifying suffix to each runtime function implementation.
+ * Here we use the __VEC_PWR_IMP() as function name wrapper macro.
  * \code
 #ifdef _ARCH_PWR9
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
@@ -840,18 +625,28 @@ vec_mul128x128_PWR9 (vui128_t m1l, vui128_t m2l)
 #endif
 #endif
  * \endcode
- * Then use __VEC_PWR_IMP() as function name wrapper in the implementation source file.
- *
+ * We need to apply the name wrapper to both the functions extern
+ * (in vec_int512_ppc.h) and the function implementation
+ * (in vec_int512_runtime.c). For example:
+ * \code
+//  \file  vec_int512_ppc.h
+ ...
+extern __VEC_U_256
+__VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l);
+ ...
+ * \endcode
+ * \note Doxygen does not tolerate attributes or macros in function
+ * prototypes. So these externs are guarded by a
+ * \@cond INTERNAL ... \@endcond" block. The \\brief and \@param
+ * descriptions are provided for the unqualified dynamic function
+ * symbol and apply to the corresponding qualified function symbols.
  *
  * \code
- //
- //  \file  vec_int512_runtime.c
- //
-
+//  \file  vec_int512_runtime.c
 #include <altivec.h>
 #include <pveclib/vec_int128_ppc.h>
 #include <pveclib/vec_int512_ppc.h>
-
+ ...
 // vec_mul128x128_inline is defined in vec_int512_ppc.h
 __VEC_U_256
 __VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l)
@@ -859,115 +654,74 @@ __VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l)
   return vec_mul128x128_inline (m1l, m2l);
 }
  * \endcode
- * This simple strategy allows the collection of the larger function
- * implementations into a single source file and build object files
- * for multiple platform targets. For example collect all the multiple
- * precision quadword implementations into a source file named
- * <B>vec_int512_runtime.c</B>.
+ * This ensures that target specific runtime
+ * implementations have unique function symbols. This is important to
+ * avoid linker errors (due to duplicate symbol names).
  *
- * This source file can be compiled multiple times for different
- * platform targets. The resulting object files have unique function
- * symbols due to the platform specific suffix provided by the
- * __VEC_PWR_IMP() macro.
- * There are a number of build strategies for this.
+ * \note Each runtime operation will have 2 or 3 target qualified
+ * implementations. This is times 2 with separate builds for static
+ * archives and dynamic (DSO) libraries.
+ * The big endian powerpc64 platform supports 3
+ * VSX enabled targets -mcpu=[power7|power8|power9].
+ * The little endian powerpc64le platform currently supports 2
+ * VSX enabled targets -mcpu=[power8|power9]. POWER7 is not
+ * supported for powerpc64le and the vec_runtime_PWR7.c source
+ * files are conditionally nulled out for powerpc64le targets.
+ * As new POWER processors are released, additional targets will be
+ * added.
  *
- * For example, create a small source file named <B>vec_runtime_PWR8.c</B>that starts with the
- * target pragma and includes the multi-platform source file.
- * \code
- //
- //  \file  vec_runtime_PWR8.c
- //
-
-#pragma GCC target ("cpu=power8")
-
-#include "vec_int512_runtime.c"
- * \endcode
- * Similarly for <B>vec_runtime_PWR7.c</B>, <B>vec_runtime_PWR9.c</B>.
- *
- * \note Additional runtime source files can be included as needed.
- * Other multiple precision functions supporting BCD and BCD <-> binary
- * conversions are likely candidates.
- *
- * Then include these files in the Makefile.am list of sources to build.
- * \code
-libpvec_la_SOURCES = vec_runtime_PWR9.c \
-	vec_runtime_PWR8.c \
-	vec_runtime_PWR7.c
- * \endcode
- *
- * Alternatively use Makefile.am rules to specify different -mcpu= compile options.
- * This simplifies the platform source files too:
- * \code
- //
- //  \file  vec_runtime_PWR8.c
- //
-
-#include "vec_int512_runtime.c"
- * \endcode
- * Then add the -mcpu compile option to CFLAGS
- * \code
-CFLAGS-vec_runtime_PWR7.c += -mcpu=power7
-CFLAGS-vec_runtime_PWR8.c += -mcpu=power8
-CFLAGS-vec_runtime_PWR9.c += -mcpu=power9
- * \endcode
- *
- * \todo Is there a way for automake to compile vec_int512_runtime.c
- * with -mcpu=power7 with -o vec_runtime_PWR7.o.
- * And similarly for PWR8/PWR9.
- *
- * \subsection i512_libary_issues_0_0_1 Calling Multi-platform functions
- *
- * The next step is to provide mechanisms for applications to call
- * these functions via static or dynamic linkage.
- * For static linkage the application needs to reference a specific
- * platform variant of the functions name.
- * For dynamic linkage we will use <B>STT_GNU_IFUNC</B> symbol resolution
- * (a symbol type extension to the ELF standard).
- *
- * \subsubsection i512_libary_issues_0_0_1_1 Static linkage to platform specific functions
+ * \subsection i512_libary_issues_0_0_1_1 Static linkage to platform specific functions
  * For static linkage the application is compiled for a specific
  * platform target (via -mcpu=). So function calls should be bound to
  * the matching platform specific implementations. The application
  * may select the platform specific function directly by defining
  * a <I>extern</I> and invoking the platform qualified function.
  *
- * Or simply use the __VEC_PWR_IMP() macro as wrapper for the function
- * name in the application.
- * This selects the appropriate platform specific implementation based
- * on the -mcpu= specified for the application compile.
- * For example.
+ * For applications binding to PVECLIB via static archives
+ * it is convenient to apply the __VEC_PWR_IMP() wrapper to the
+ * function call:
  * \code
   k = __VEC_PWR_IMP (vec_mul128x128)(i, j);
  * \endcode
+ * The function call symbol picks up the target suffix based on
+ * the compile target (\-mcpu=) for the application
+ * (see \ref main_libary_issues_0_0_1_1).
+ * The linker will extract the matching implementations from the
+ * PVECLIB archive and (statically) bind them with the application.
+ * This simplifies binding the application to the matching target
+ * specific implementations.
  *
- * This header provides the default platform qualified <I>extern</I>
- * declarations for provided functions based on the -mcpu=
- * specified for the compile of application including this header.
- * For example.
- * \code
-extern __VEC_U_256
-__VEC_PWR_IMP (vec_mul128x128) (vui128_t, vui128_t);
- * \endcode
+ * \subsection i512_libary_issues_0_0_1_2 Dynamic linkage to platform specific functions
  *
- * \subsubsection i512_libary_issues_0_0_1_2 Dynamic linkage to platform specific functions
+ * For applications binding to dynamic libraries, the target qualified
+ * naming strategy also simplifies the implementation of IFUNC
+ * resolvers for the DSO library (see \ref main_libary_issues_0_0_2).
+ * Here the target qualified names of the PIC implementations are
+ * known to the corresponding resolver function but are not exported
+ * from the DSO. Allowing the application to bind to the target
+ * qualified names would defeat the automatic selection of target
+ * optimized implementations.
+ *
  * Applications using dynamic linkage will call the unqualified
  * function symbol.
  * For example:
  * \code
+//  \file  vec_int512_ppc.h
+ ...
 extern __VEC_U_256
 vec_mul128x128 (vui128_t, vui128_t);
  * \endcode
  *
  * This symbol's implementation has a special <B>STT_GNU_IFUNC</B>
- * attribute recognized by the dynamic linker which associates this
+ * attribute recognized by the dynamic linker.
+ * This attribute associates this
  * symbol with the corresponding runtime resolver function.
  * So in addition to any platform specific implementations we need to
  * provide the resolver function referenced by the <I>IFUNC</I> symbol.
  * For example:
  * \code
- //
- //  \file  vec_runtime_DYN.c
- //
+//  \file  vec_runtime_DYN.c
+ ...
 extern __VEC_U_256
 vec_mul128x128_PWR7 (vui128_t, vui128_t);
 
@@ -977,8 +731,7 @@ vec_mul128x128_PWR8 (vui128_t, vui128_t);
 extern __VEC_U_256
 vec_mul128x128_PWR9 (vui128_t, vui128_t);
 
-static
-__VEC_U_256
+static __VEC_U_256
 (*resolve_vec_mul128x128 (void))(vui128_t, vui128_t)
 {
 #ifdef  __BUILTIN_CPU_SUPPORTS__
@@ -1013,87 +766,21 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  * function symbol branch (via the PLT) directly to appropriate
  * platform specific implementation.
  *
- * \note The platform specific implementations we use here may be the
- * same platform specific object code we created for static linkage.
+ * \note The operation vec_mul128x128() has multiple implementations
+ * and names.
+ * It has a static inline implementation vec_mul128x128_inline().
+ * This uses the static inline vec_muludq() from _vec_int128_ppc.h but
+ * returns the 256-bit result as a single struct __VEC_U_256.
+ * It has a number (currently 2 or 3) of target qualified extern
+ * declarations and static implementations for static linkage.
+ * And it has a unqualified extern declaration and IFUNC attributed
+ * symbol associated with its resolver for dynamic linkage.
  *
- *
- * \subsection i512_libary_issues_0_0_2 Building Multi-platform library binaries
- * To complete the packaging of a multiple platform implementation we
- * need create static archive libraries and dynamically linked
- * <I>Shared Object</I> libraries.
- *
- * \note Here, platform means a specific hardware generation
- * (power7, power8, power9) within a hardware family. For IBM systems
- * this identifies a specific combination of Instruction Set
- * Architecture and processor design (micro-architecture).
- *
- *
- * \subsubsection i512_libary_issues_0_0_2_0 Building Static Archives
- * We use the <B>ar</B> command to create static archive libraries.
- * This utility collects any number of (relocatable) object files in
- * to a single archive file.
- * This utility also builds and includes an index of the symbols defined
- * in included object files.
- * As long as the function symbols are unique there is no problem
- * including multiple platform implementation in a single archive.
- *
- * When we use the <B>ld</B> (linker) command to link a program, application
- * provided object files are copied and relocated into to the program image.
- * Symbol references are resolved (bound) to symbols defined
- * within the collection of relocated objects.
- * For any remaining unresolved symbols, the linker will search the
- * symbol index of any provided archives. Matching objects are copied
- * from the archive into the program image, and relocated.
- * The linker then attempts to resolve any remaining unresolved symbol
- * references. This process continues until all the symbols are
- * resolved or all the archives are searched.
- *
- * If the application is statically linking to the PVECLIB archives
- * and using the __VEC_PWR_IMP() macro to qualify application references,
- * The linker matches and extracts only the appropriate platform specific
- * objects for inclusion in the application.
- *
- * \note Once an application is compiled and statically linked with
- * this method, it is bound to that specific platform implementation.
- * Upgrading to an improved implementation required relinking the
- * application. To change the platform target implementation,
- * the application must be recompiled (-mcpu=) and relinked
- * to PVECLIB.
- *
- *
- * \subsubsection i512_libary_issues_0_0_2_1 Building Dynamic Shared Objects
- * Linking to Shared Objects (AKA Dynamically linked libraries) is
- * more flexible than static linking.
- * Shared Objects are separate executable files where search and
- * selection of the specific shared object files to use
- * are delayed until the application is loaded for execution.
- * Similarly, binding of dynamic symbol references to actual data or
- * function addressed is delayed until application execution.
- * This allows programs and libraries to be developed and upgraded
- * independently.
- *
- * This separation of binaries and late binding enables Multi-platform
- * support within a single library package or even a single library.
- * Using the <B>STT_GNU_IFUNC</B> mechanism we can create a single
- * shared object library that contains multiple platform specific
- * implementations and custom <B>IFUNC</B> resolvers for each API
- * function (\ref i512_libary_issues_0_0_1_2).
- *
- * When linking the <B>libpvec</B> shared object file we need to
- * include:
- * - The object files containing platform specific implementations for
- * all supported platforms.
- * - The object files containing the <I>resolver function</I>
- * implementations and <I>indirect function</I> symbols
- * (__attribute__ ((ifunc ("resolver-function"))).
- * - Any additional object files containing platform independent
- * functions and data constants.
- *
- * Applications compiled to use these functions and linked to this
- * shared object will execute on any of the supported POWER platforms.
- * As the application starts up, the dynamic linker will bind these
- * function calls (with help from the resolver functions) to the
- * appropriate platform specific implementation.
+ * \todo Currently the dynamic resolvers and <I>IFUNC</I> symbols for
+ * vec_int512_runtime.c are contained within vec_runtime_DYN.c.
+ * As the list of runtime operations expands to other element
+ * sizes/types, vec_runtime_DYN.c should be refactored into multiple
+ * files.
  *
  */
 
@@ -1685,7 +1372,7 @@ static inline __VEC_U_640
 vec_add512cu (__VEC_U_512 a, __VEC_U_512 b)
 {
   __VEC_U_640 result;
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp;
 
   result.vx0 = vec_addcq (&mc, a.vx0, b.vx0);
   result.vx1 = vec_addeq (&mp, a.vx1, b.vx1, mc);
@@ -1779,7 +1466,7 @@ static inline __VEC_U_512
 vec_add512um (__VEC_U_512 a, __VEC_U_512 b)
 {
   __VEC_U_512 result;
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp;
 
   result.vx0 = vec_addcq (&mc, a.vx0, b.vx0);
   result.vx1 = vec_addeq (&mp, a.vx1, b.vx1, mc);
@@ -1910,7 +1597,7 @@ static inline __VEC_U_512
 vec_mul256x256_inline (__VEC_U_256 m1, __VEC_U_256 m2)
 {
   __VEC_U_512 result;
-  vui128_t mc, mp, mq, mqhl;
+  vui128_t mp, mq;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1.vx0, m2.vx0);
 
@@ -2296,6 +1983,33 @@ vec_mul256x256 (__VEC_U_256 m1, __VEC_U_256 m2);
  */
 extern __VEC_U_640
 vec_mul512x128 (__VEC_U_512 m1, vui128_t m2);
+
+/** \brief Vector 512x128-bit Multiply-Add Unsigned Integer.
+ *
+ *  Compute the 640 bit sum of the product of the 512 bit value m1
+ *  and 128-bit value m2 plus the 512-bit value a2.
+ *  The sum is returned as single 640-bit integer in a
+ *  homogeneous aggregate structure.
+ *
+ *  \note The advantage of this form is that the final 640 bit sum can
+ *  not overflow and carries between stages are eliminated.
+ *  Also applying the addend early (1st multiply stage) reduces the
+ *  live ranges for registers passing partial products for larger
+ *  multiple precision multiplies.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |224-232| 1/cycle  |
+ *  |power9   |132-135| 1/cycle  |
+ *
+ *  @param m1 vector representation of a unsigned 512-bit integer.
+ *  @param m2 vector representation of a unsigned 128-bit integer.
+ *  @param a2 vector representation of a unsigned 512-bit integer.
+ *  @return homogeneous aggregate representation of the unsigned
+ *  640-bit sum of (m1 * m2) + a2.
+ */
+extern __VEC_U_640
+vec_madd512x128a512 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
 
 /** \brief Vector 512x512-bit Unsigned Integer Multiply.
  *

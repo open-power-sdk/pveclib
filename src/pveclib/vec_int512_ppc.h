@@ -590,7 +590,7 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  *  position independent code (i.e. compiled with -fpic or -fPIC).
  *  - DSOs supporting operations optimized for multiple compile
  *  (-mcpu=) targets need to export matching
- *  <a href="https://sourceware.org/glibc/wiki/GNU_IFUNC"> IFUNC</a>
+ *  <a href="https://sourceware.org/glibc/wiki/GNU_IFUNC">IFUNC</a>
  *  symbols and resolver stubs.
  *
  * For the first requirement we can collect the runtime implementations
@@ -667,6 +667,8 @@ __VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l)
  * VSX enabled targets -mcpu=[power8|power9]. POWER7 is not
  * supported for powerpc64le and the vec_runtime_PWR7.c source
  * files are conditionally nulled out for powerpc64le targets.
+ * As new POWER processors are released, additional targets will be
+ * added.
  *
  * \subsection i512_libary_issues_0_0_1_1 Static linkage to platform specific functions
  * For static linkage the application is compiled for a specific
@@ -692,12 +694,13 @@ __VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l)
  * \subsection i512_libary_issues_0_0_1_2 Dynamic linkage to platform specific functions
  *
  * For applications binding to dynamic libraries, the target qualified
- * naming strategy,
- * also simplifies the implementation of IFUNC resolvers for the DSO
- * library (see \ref main_libary_issues_0_0_2).
+ * naming strategy also simplifies the implementation of IFUNC
+ * resolvers for the DSO library (see \ref main_libary_issues_0_0_2).
  * Here the target qualified names of the PIC implementations are
  * known to the corresponding resolver function but are not exported
- * from the DSO.
+ * from the DSO. Allowing the application to bind to the target
+ * qualified names would defeat the automatic selection of target
+ * optimized implementations.
  *
  * Applications using dynamic linkage will call the unqualified
  * function symbol.
@@ -768,11 +771,10 @@ __attribute__ ((ifunc ("resolve_vec_mul128x128")));
  * It has a static inline implementation vec_mul128x128_inline().
  * This uses the static inline vec_muludq() from _vec_int128_ppc.h but
  * returns the 256-bit result as a single struct __VEC_U_256.
- * It has a number (2 or 3) of target qualified extern declarations
- * and static implementations for static linkage.
+ * It has a number (currently 2 or 3) of target qualified extern
+ * declarations and static implementations for static linkage.
  * And it has a unqualified extern declaration and IFUNC attributed
  * symbol associated with its resolver for dynamic linkage.
- *
  *
  * \todo Currently the dynamic resolvers and <I>IFUNC</I> symbols for
  * vec_int512_runtime.c are contained within vec_runtime_DYN.c.
@@ -1370,7 +1372,7 @@ static inline __VEC_U_640
 vec_add512cu (__VEC_U_512 a, __VEC_U_512 b)
 {
   __VEC_U_640 result;
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp;
 
   result.vx0 = vec_addcq (&mc, a.vx0, b.vx0);
   result.vx1 = vec_addeq (&mp, a.vx1, b.vx1, mc);
@@ -1464,7 +1466,7 @@ static inline __VEC_U_512
 vec_add512um (__VEC_U_512 a, __VEC_U_512 b)
 {
   __VEC_U_512 result;
-  vui128_t mc, mp, mq;
+  vui128_t mc, mp;
 
   result.vx0 = vec_addcq (&mc, a.vx0, b.vx0);
   result.vx1 = vec_addeq (&mp, a.vx1, b.vx1, mc);
@@ -1595,7 +1597,7 @@ static inline __VEC_U_512
 vec_mul256x256_inline (__VEC_U_256 m1, __VEC_U_256 m2)
 {
   __VEC_U_512 result;
-  vui128_t mc, mp, mq, mqhl;
+  vui128_t mp, mq;
   vui128_t mphh, mphl, mplh, mpll;
   mpll = vec_muludq (&mplh, m1.vx0, m2.vx0);
 

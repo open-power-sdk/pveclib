@@ -20,7 +20,7 @@
       Created on: Mar 29, 2018
  */
 
-#include <pveclib/vec_int32_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 #ifdef _ARCH_PWR8
 #ifndef __clang__

@@ -280,8 +280,7 @@ void __attribute__((flatten))
 __VEC_PWR_IMP (test_mulu2048x512) (__VEC_U_512 p2560[5], __VEC_U_512 m1[4], __VEC_U_512 m2)
 {
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
-  __VEC_U_512 temp[4];
+  __VEC_U_512x1 sum0, sum1, sum2;
 
   subp0.x1024 = vec_mul512x512_inline (m1[0], m2);
   p2560[0] = subp0.x2.v0x512;
@@ -313,7 +312,7 @@ __VEC_PWR_IMP (test_mul1024x1024) (__VEC_U_2048 r2048, __VEC_U_1024 m1_1024, __V
   __VEC_U_2048x512 *p2048;
   __VEC_U_1024x512 *m1, *m2;
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum1, sum2, sum3, sumx;
   __VEC_U_512 temp[3];
 
   p2048 = (__VEC_U_2048x512 *) &r2048;
@@ -350,7 +349,7 @@ __VEC_PWR_IMP (test_mul1024x1024x) (__VEC_U_2048 *r2048, __VEC_U_1024 *m1_1024, 
 {
   __VEC_U_512 *p2048, *m1, *m2;
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum1, sum2, sum3, sumx;
   __VEC_U_512 temp[3];
 
   p2048 = (__VEC_U_512 *)r2048;
@@ -388,7 +387,7 @@ __VEC_PWR_IMP (test_mul1024x1024y) (__VEC_U_2048 *r2048, __VEC_U_1024 *m1_1024, 
   __VEC_U_2048x512 *p2048;
   __VEC_U_1024x512 *m1, *m2;
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum1, sum2, sum3, sumx;
   __VEC_U_512 temp[3];
 
   p2048 = (__VEC_U_2048x512 *)r2048;
@@ -423,15 +422,9 @@ __VEC_PWR_IMP (test_mul1024x1024y) (__VEC_U_2048 *r2048, __VEC_U_1024 *m1_1024, 
 void  __attribute__((flatten ))
 __VEC_PWR_IMP (test_mul1024x1024z) (__VEC_U_2048x512 p2048, __VEC_U_1024x512 m1, __VEC_U_1024x512 m2)
 {
-  //__VEC_U_2048x512 *p2048;
-  //__VEC_U_1024x512 *m1, *m2;
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum1, sum2, sum3, sumx;
   __VEC_U_512 temp[3];
-
-  //p2048 = (__VEC_U_2048x512 *)r2048;
-  //m1 = (__VEC_U_1024x512 *) m1_1024;
-  //m2 = (__VEC_U_1024x512 *) m2_1024;
 
   subp0.x1024 = vec_mul512x512_inline (m1.x2.v0x512, m2.x2.v0x512);
   p2048.x4.v0x512 = subp0.x2.v0x512;
@@ -462,7 +455,7 @@ void  __attribute__((flatten /*, target_clones("cpu=power9,default") */))
 __VEC_PWR_IMP (test_mulu2048x2048) (__VEC_U_512 p4096[8], __VEC_U_512 m1[4], __VEC_U_512 m2[4])
 {
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum0, sum1, sum2, sumx;
   __VEC_U_512 temp[4];
 
   subp0.x1024 = vec_mul512x512_inline (m1[0], m2[0]);
@@ -589,7 +582,7 @@ __VEC_PWR_IMP (test_mulu2048x2048z) (__VEC_U_4096 *r4096,
 {
   __VEC_U_512 *p4096, *m1, *m2;
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum0, sum1, sum2, sumx;
   __VEC_U_512 temp[4];
 
   p4096 = (__VEC_U_512 *)r4096;

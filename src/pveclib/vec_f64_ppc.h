@@ -24,7 +24,7 @@
 #define VEC_F64_PPC_H_
 
 #include <pveclib/vec_common_ppc.h>
-#include <pveclib/vec_int64_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 /*!
  * \file  vec_f64_ppc.h
  * \brief Header package containing a collection of 128-bit SIMD

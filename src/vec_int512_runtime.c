@@ -676,7 +676,9 @@ __VEC_PWR_IMP (vec_mul128_byMN) (vui128_t *p,
   vui128_t *np = m2;
   unsigned long mx = M;
   unsigned long nx = N;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   unsigned long px = M + N;
+#endif
   unsigned long i, j;
   vui128_t mpx0, mqx0, mpx1, mqx1;
 
@@ -746,7 +748,9 @@ __VEC_PWR_IMP (vec_mul512_byMN) (__VEC_U_512 *p,
   __VEC_U_512 *np = m2;
   unsigned long mx = M;
   unsigned long nx = N;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
   unsigned long px = M + N;
+#endif
   unsigned long i, j;
   __VEC_U_1024x512 mpx0, mpx1;
   __VEC_U_512x1 sum1;

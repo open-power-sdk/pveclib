@@ -4536,7 +4536,7 @@ vec_muludm (vui64_t vra, vui64_t vrb)
 static inline vui128_t
 vec_mulhuq (vui128_t a, vui128_t b)
 {
-  vui32_t t, tmq;
+  vui32_t t;
   /* compute the 256 bit product of two 128 bit values a, b.
    * The high 128 bits are accumulated in t and the low 128-bits
    * in tmq. The high 128-bits are the return value.
@@ -4544,10 +4544,10 @@ vec_mulhuq (vui128_t a, vui128_t b)
 #ifdef _ARCH_PWR9
   const vui64_t zero = { 0, 0 };
   vui64_t b_swap = vec_swapd ((vui64_t) b);
-  vui128_t tmh, tab, tba, tb0, tc1, tc2;
+  vui128_t tmh, tab, tba, tb0, tc1, tc2, tmq;
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
-  tmq = (vui32_t) vec_vmuloud ((vui64_t) a, (vui64_t) b);
+  tmq = vec_vmuloud ((vui64_t) a, (vui64_t) b);
   /* compute the 2 middle partial projects.  Can't directly use
    * vmsumudm here because the sum of partial products can overflow.  */
   tab = vec_vmuloud ((vui64_t) a, b_swap);
@@ -4559,7 +4559,7 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tc2 = vec_addcuq ((vui128_t) t, tmh);
   tc1 = (vui128_t) vec_vadduwm ((vui32_t) tc1, (vui32_t) tc2);
   /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
+  tmq = (vui128_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
   /* we can use multiply sum here because the high product plus the
    * high sum of middle partial products can't overflow.  */
   t   = (vui32_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
@@ -4569,7 +4569,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
 #else
 #ifdef _ARCH_PWR8
   vui32_t tsw;
-  vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
   /* We use Vector Multiply Even/Odd Unsigned Word to compute
@@ -4610,14 +4609,12 @@ vec_mulhuq (vui128_t a, vui128_t b)
   /* add the top 128 bits of even / odd partial products */
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #else // _ARCH_PWR7 or earlier and Big Endian only.  */
-
   /* We use Vector Multiply Even/Odd Unsigned Halfword to compute
    * the 128 x 16 partial (144-bit) product of vector a with a
    * halfword element of b. The (for each halfword of vector b)
    * 8 X 144-bit partial products are  summed to produce the full
    * 256-bit product. */
   vui16_t tsw;
-  vui16_t tc;
   vui16_t t_odd, t_even;
   vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -4625,9 +4622,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   t_even = (vui16_t) vec_vmuleuh ((vui16_t) a, tsw);
   t_odd = (vui16_t) vec_vmulouh ((vui16_t) a, tsw);
 
-  /* Rotate the low 16-bits (right) into tmq. This is actually
-   * implemented as 112-bit (14-byte) shift left. */
-//  tmq = (vui32_t) vec_sld (t_odd, z, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the high 128 bits of even / odd partial products */
@@ -4636,8 +4630,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 6);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4646,8 +4638,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 5);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4656,8 +4646,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 4);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4666,8 +4654,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 3);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4676,8 +4662,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 2);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4686,8 +4670,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 1);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4696,8 +4678,6 @@ vec_mulhuq (vui128_t a, vui128_t b)
   tsw = vec_splat ((vui16_t) b, 0);
   t_even = (vui16_t)vec_vmaddeuh((vui16_t) a, tsw, (vui16_t) t);
   t_odd = (vui16_t)vec_vmaddouh((vui16_t) a, tsw, (vui16_t) t);
-  /* rotate right the low 16-bits into tmq */
-//  tmq = (vui32_t)vec_sld (t_odd, (vui16_t)tmq, 14);
   /* shift the low 128 bits of partial product right 16-bits */
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
@@ -4799,7 +4779,6 @@ vec_mulluq (vui128_t a, vui128_t b)
    * 8 X 144-bit partial products are  summed to produce the full
    * 256-bit product. */
   vui16_t tsw;
-  vui16_t tc;
   vui16_t t_odd, t_even;
   vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -4941,7 +4920,6 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 #else
 #ifdef _ARCH_PWR8
   vui32_t tsw;
-  vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
   /* We use the Vector Multiple Even/Odd Unsigned Word to compute
@@ -5012,7 +4990,6 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
    * 8 X 144-bit partial products are  summed to produce the full
    * 256-bit product. */
   vui16_t tsw;
-  vui16_t tc;
   vui16_t t_odd, t_even;
   vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -5128,9 +5105,8 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
 static inline vui128_t
 vec_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
 {
-  vui128_t ph, pl, cl;
+  vui128_t ph, pl;
 #ifdef _ARCH_PWR9
-  const vui64_t zero = { 0, 0 };
   vui64_t a_swap = vec_swapd ((vui64_t) a);
   vui128_t thq, tlq, tx;
   vui128_t t0l, tc1, tcl;
@@ -5163,7 +5139,6 @@ vec_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
 #if _ARCH_PWR8
   vui32_t t, tmq;
   vui32_t tsw;
-  vui32_t tc;
   vui32_t t_odd, t_even;
   vui32_t z = { 0, 0, 0, 0 };
   /* We use Vector Multiple Even/Odd Unsigned Word to compute
@@ -5241,7 +5216,6 @@ vec_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
    * 256-bit product. */
   vui32_t t, tmq;
   vui16_t tsw;
-  vui16_t tc;
   vui16_t t_odd, t_even;
   vui16_t z = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -5359,8 +5333,9 @@ vec_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
 static inline vui128_t
 vec_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c1, vui128_t c2)
 {
-  vui128_t ph, pl, cl, cs;
+  vui128_t ph, pl, cs;
 #ifdef _ARCH_PWR9
+  vui128_t cl;
   // P9 has 3 cycles vadduqm so sum C1/C2 early
   cl = vec_addcuq (c1, c2);
   cs = vec_adduqm (c1, c2);
@@ -5370,7 +5345,7 @@ vec_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c1, vui128_t c2)
   *mulu = vec_adduqm (ph, cl);
 #else
 #ifdef _ARCH_PWR8
-  vui128_t cl2;
+  vui128_t cl, cl2;
   // P8 has vadduqm but slower, so sum C1/C2 early
   cl = vec_addcuq (c1, c2);
   cs = vec_adduqm (c1, c2);
@@ -6787,8 +6762,8 @@ vec_vmadd2oud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
 static inline vui128_t
 vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c)
 {
-  const vui64_t zero = { 0, 0 };
 #ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   return vec_msumudm(a, b_eud, c);
 #else
@@ -6823,8 +6798,8 @@ vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c)
 static inline vui128_t
 vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c)
 {
-  const vui64_t zero = { 0, 0 };
 #ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
   vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t) b);
   return vec_msumudm(a, b_oud, (vui128_t) c);
 #else

@@ -50,7 +50,7 @@ int
 timed_mul1024x1024by8 (void)
 {
   __VEC_U_2048x512 k1, k2;
-  __VEC_U_1024x512 m1, m2;
+  __VEC_U_1024x512 m1;
   int rc = 0;
 
 #ifdef __DEBUG_PRINT__
@@ -92,8 +92,7 @@ int
 timed_mul2048x2048by8 (void)
 {
   __VEC_U_4096x512 k1, k2;
-  __VEC_U_2048x512 m1, m2;
-  __VEC_U_512 i, j;
+  __VEC_U_2048x512 m1;
 
   int rc = 0;
 
@@ -145,8 +144,7 @@ int
 timed_mul2048x2048_MN (void)
 {
   __VEC_U_4096x512 k1, k2;
-  __VEC_U_2048x512 m1, m2;
-  __VEC_U_512 i, j;
+  __VEC_U_2048x512 m1;
   __VEC_U_512 *kp1, *kp2, *ip, *jp1, *jp2;
 
   int rc = 0;
@@ -221,8 +219,7 @@ int
 timed_mul4096x4096_MN (void)
 {
   __VEC_U_512 k1[16], k2[16];
-  __VEC_U_4096x512 m1, m2;
-  __VEC_U_512 i, j;
+  __VEC_U_4096x512 m1;
   __VEC_U_512 *kp1, *kp2, *ip, *jp1, *jp2;
 
   int rc = 0;
@@ -305,7 +302,6 @@ timed_mul1024x1024 (void)
 {
   __VEC_U_2048x512 k, e;
   __VEC_U_1024x512 m1, m2;
-  __VEC_U_512 i, j;
   int rc = 0;
 
 #ifdef __DEBUG_PRINT__
@@ -571,7 +567,6 @@ timed_mul2048x2048 (void)
 {
   __VEC_U_4096x512 k, e;
   __VEC_U_2048x512 m1, m2;
-  __VEC_U_512 i, j;
 
   int rc = 0;
 
@@ -984,7 +979,7 @@ timed_mul512x512by8 (void)
 int
 timed_mul512x512 (void)
 {
-  __VEC_U_1024 k, e;
+  __VEC_U_1024 k;
   __VEC_U_1024x512 kp, ep;
   __VEC_U_512 i, j;
   int rc = 0;

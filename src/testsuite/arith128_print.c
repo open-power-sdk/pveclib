@@ -611,15 +611,18 @@ print_v2b64c (char *prefix, vb64_t val)
 #endif
 }
 
+typedef unsigned long long int ullint_t;
+typedef long long int llint_t;
+
 void
 print_v2b64x (char *prefix, vb64_t boolval)
 {
   vui64_t val = (vui64_t)boolval;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %016llx,%016llx\n", prefix, val[1], val[0]);
+  printf ("%s %016llx,%016llx\n", prefix, (ullint_t)val[1], (ullint_t)val[0]);
 #else
-  printf ("%s %016llx,%016llx\n", prefix, val[0], val[1]);
+  printf ("%s %016llx,%016llx\n", prefix, (ullint_t)val[0], (ullint_t)val[1]);
 #endif
 }
 
@@ -629,9 +632,9 @@ print_v2int64 (char *prefix, vui64_t val128)
   vui64_t val = (vui64_t) val128;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %lld,%lld\n", prefix, val[1], val[0]);
+  printf ("%s %lld,%lld\n", prefix, (llint_t)val[1], (llint_t)val[0]);
 #else
-  printf ("%s %lld,%lld\n", prefix, val[0], val[1]);
+  printf ("%s %lld,%lld\n", prefix, (llint_t)val[0], (llint_t)val[1]);
 #endif
 }
 
@@ -641,9 +644,9 @@ print_v2xint64 (char *prefix, vui64_t val128)
   vui64_t val = (vui64_t) val128;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  printf ("%s %016llx,%016llx\n", prefix, val[1], val[0]);
+  printf ("%s %016llx,%016llx\n", prefix, (ullint_t)val[1], (ullint_t)val[0]);
 #else
-  printf ("%s %016llx,%016llx\n", prefix, val[0], val[1]);
+  printf ("%s %016llx,%016llx\n", prefix, (ullint_t)val[0], (ullint_t)val[1]);
 #endif
 }
 

@@ -496,14 +496,14 @@ timed_cfmaxdouble_10e32 (void)
 int
 timed_ctmaxdouble_10e32 (void)
 {
+  int rc = 0;
+#ifndef PVECLIB_DISABLE_F128MATH
   // Compiler __DBL_MAX__ "1.79769313486231570814527423731704e+308"
   // 53 digit precision equivalent of __DBL_MAX__
   char buf[64] = "1.7976931348623157081452742373170435679807056752584499e+308";
   char *res;
   double d = 0;
-  int rc = 0;
 
-#ifndef PVECLIB_DISABLE_F128MATH
   d = strtod (buf, &res);
 
   if (d != __DBL_MAX__)

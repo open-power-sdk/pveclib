@@ -127,7 +127,15 @@ endif
 	$(PVECCOMPILE) -fpic $(PVECLIB_DEFAULT_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_common.c
 endif
 
-EXTRA_DIST =
+EXTRA_DIST = \
+  vec_runtime_PWR7.c \
+  vec_runtime_PWR8.c \
+  vec_runtime_PWR9.c \
+  vec_runtime_common.c \
+  vec_int512_runtime.c
+
+distclean-local:
+	rm $(DEPDIR)/*.Plo
 
 # This rule is necessary because pvec_test needs to statically link
 # .libs/libpvecstatic.a and if make is executed in parallel (-jN) the 

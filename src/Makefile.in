@@ -658,7 +658,9 @@ PVECCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS)
 
-EXTRA_DIST = $(pveclib_la_INCLUDES)
+EXTRA_DIST = vec_runtime_PWR7.c vec_runtime_PWR8.c vec_runtime_PWR9.c \
+	vec_runtime_common.c vec_int512_runtime.c \
+	$(pveclib_la_INCLUDES)
 
 # libpvec definitions.
 # libpvec_la already includes vec_runtime_DYN.c compiled compiled -fpic
@@ -1642,7 +1644,7 @@ distclean: distclean-am
 	-rm -rf ./$(DEPDIR) testsuite/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+	distclean-local distclean-tags
 
 dvi: dvi-am
 
@@ -1710,14 +1712,14 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-pveclibincludeHEADERS
 	clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
 	clean-libtool clean-noinstLTLIBRARIES cscopelist-am ctags \
 	ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-libLTLIBRARIES install-man install-pdf \
-	install-pdf-am install-ps install-ps-am \
-	install-pveclibincludeHEADERS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	distclean-libtool distclean-local distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-pveclibincludeHEADERS install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck tags tags-am uninstall uninstall-am \
@@ -1774,6 +1776,9 @@ vec_dynrt_common.lo: vec_runtime_common.c $(pveclibinclude_HEADERS)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_common.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_DEFAULT_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_common.c
+
+distclean-local:
+	rm $(DEPDIR)/*.Plo
 
 # This rule is necessary because pvec_test needs to statically link
 # .libs/libpvecstatic.a and if make is executed in parallel (-jN) the 

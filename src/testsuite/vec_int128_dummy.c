@@ -1178,6 +1178,8 @@ example_print_vint128 (vi128_t value)
   t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
   tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
   t_mid = (vui64_t) vec_subuqm (val128, tmp);
+
+  // Work-around for GCC PR 96139
 #ifdef __clang__
   printf ("%c%07llu%016llu%016llu", sign, t_high[VEC_DW_L],
 	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);

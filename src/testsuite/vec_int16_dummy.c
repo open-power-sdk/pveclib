@@ -144,7 +144,8 @@ __test_mrgeh2mrgoh (vui16_t a, vui16_t b, vui16_t c, vui16_t d)
 // Divide vector integer by constant divisor
 // Using multiplicative inverse
 static vui16_t
-__test_mulinvuh (vui16_t n, const unsigned short M, const unsigned short a,
+__test_mulinvuh (vui16_t n, const unsigned short M,
+		 const unsigned short a,
 		 const unsigned short s)
 {
   vui16_t result, q;
@@ -153,8 +154,7 @@ __test_mulinvuh (vui16_t n, const unsigned short M, const unsigned short a,
   q = vec_mulhuh (n, magic);
   if (a)
     {
-      const vui16_t vec_ones =
-	{ 1, 1, 1, 1, 1, 1, 1, 1 };
+      const vui16_t vec_ones = { 1, 1, 1, 1, 1, 1, 1, 1 };
       vui16_t n_1 = vec_sub (n, vec_ones);
       q = vec_avg (q, n_1);
       if (s > 1)

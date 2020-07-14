@@ -647,7 +647,7 @@ test_mul256x256 (void)
 int
 test_mul512x128_MN (void)
 {
-  __VEC_U_640 k, e;
+  __VEC_U_640 k;
   __VEC_U_512x1 ke, ep;
   __VEC_U_512 i;
   vui128_t *kp, *ip, *jp;
@@ -754,7 +754,7 @@ test_mul512x128_MN (void)
 int
 test_mul512x128 (void)
 {
-  __VEC_U_640 k, e;
+  __VEC_U_640 k;
   __VEC_U_512x1 kp, ep;
   __VEC_U_512 i;
   vui128_t j;
@@ -874,7 +874,7 @@ test_mul512x128 (void)
 int
 test_madd512x128 (void)
 {
-  __VEC_U_640 k, e;
+  __VEC_U_640 k;
   __VEC_U_512x1 kp, ep;
   __VEC_U_512 i, m;
   vui128_t j, n;
@@ -1062,7 +1062,7 @@ test_madd512x128 (void)
 int
 test_mul512x512_MN (void)
 {
-  __VEC_U_1024 k, e;
+  __VEC_U_1024 k;
   __VEC_U_1024x512 ke, ep;
   __VEC_U_512 i, j;
   vui128_t *kp, *ip, *jp;
@@ -1210,7 +1210,7 @@ test_mul512x512_MN (void)
 int
 test_mul512x512 (void)
 {
-  __VEC_U_1024 k, e;
+  __VEC_U_1024 k;
   __VEC_U_1024x512 kp, ep;
   __VEC_U_512 i, j;
   int rc = 0;
@@ -1468,7 +1468,6 @@ test_mul1024x1024 (void)
 {
   __VEC_U_2048x512 k, e;
   __VEC_U_1024x512 m1, m2;
-  __VEC_U_512 i, j;
 
   int rc = 0;
 
@@ -1724,7 +1723,6 @@ test_mul2048x2048_MN (void)
   __VEC_U_512 k1[16];
   __VEC_U_4096x512 k, e;
   __VEC_U_2048x512 m1, m2;
-  __VEC_U_512 i, j;
   __VEC_U_512 *kp, *ip, *jp;
   int rc = 0;
 
@@ -2318,7 +2316,6 @@ test_mul2048x2048 (void)
 {
   __VEC_U_4096x512 k, e;
   __VEC_U_2048x512 m1, m2;
-  __VEC_U_512 i, j;
 
   int rc = 0;
 

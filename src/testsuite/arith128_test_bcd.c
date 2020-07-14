@@ -513,7 +513,7 @@ db_vec_cbcdaddcsq (vBCD_t *c, vBCD_t a, vBCD_t b)
     }
 #else
   vBCD_t sign_ab;
-  _Decimal128 d_a, d_b, d_s, d_t, d_m;
+  _Decimal128 d_a, d_b, d_s, d_t;
   vui32_t mz = CONST_VINT128_W(0, 0, 0, 0x0000000d);
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
@@ -531,6 +531,7 @@ db_vec_cbcdaddcsq (vBCD_t *c, vBCD_t a, vBCD_t b)
   if (!vec_all_eq(sign_ab, sum_ab) && !vec_all_eq(_BCD_CONST_ZERO, sum_ab))
     {
 #if 0
+      _Decimal128 d_m;
       // Optimization for P7 but failed test. need to come back to this
       const _Decimal128 ten31 = 10000000000000000000000000000000.0DL;
       t = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, sum_ab);
@@ -593,7 +594,7 @@ db_vec_cbcdaddecsq (vBCD_t *co, vBCD_t a, vBCD_t b, vBCD_t ci)
 #else
   const vui32_t mz = CONST_VINT128_W(0, 0, 0, 0x0000000d);
   vBCD_t sign_abc;
-  _Decimal128 d_a, d_b, d_c, d_s, d_t, d_m;
+  _Decimal128 d_a, d_b, d_c, d_s, d_t;
   d_a = vec_BCD2DFP (a);
   d_b = vec_BCD2DFP (b);
   d_c = vec_BCD2DFP (ci);
@@ -612,6 +613,7 @@ db_vec_cbcdaddecsq (vBCD_t *co, vBCD_t a, vBCD_t b, vBCD_t ci)
   if (!vec_all_eq(sign_abc, sum_abc))
     {
 #if 0
+      _Decimal128 d_m;
       // Optimization for P7 but failed test. need to come back to this
       const _Decimal128 ten31 = 10000000000000000000000000000000.0DL;
       c = vec_bcdcpsgn (_BCD_CONST_PLUS_ONE, sum_abc);
@@ -8352,7 +8354,7 @@ test_longbcdct_10e32 (void)
 	  { (__int128) 10000000000000000UL * (__int128) 10000000000000000UL };
 #endif
   vui128_t ix[8], jx[8];
-  vBCD_t el, er;
+  vBCD_t er;
   vBCD_t rm, bcd[10];
   long int cnt;
   int rc = 0;

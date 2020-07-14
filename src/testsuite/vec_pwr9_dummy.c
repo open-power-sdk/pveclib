@@ -250,9 +250,8 @@ __test_muludq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
    * address of the 1st parm. The low 128-bits are the return
    * value.
    */
-  const vui64_t zero = { 0, 0 };
   vui64_t a_swap = vec_swapd ((vui64_t) a);
-  vui128_t tmh, tab, tba, tb0, tc1, tc2;
+  vui128_t tab, tba, tc1;
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
   tmq = (vui32_t) vec_vmuloud ((vui64_t)a, (vui64_t)b);
@@ -407,8 +406,8 @@ __test_mulhluq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
 vui128_t
 __test_mulhuq2_PWR9 (vui128_t a, vui128_t b)
 {
-  vui128_t mq, r;
-  r = vec_muludq (&mq, a, b);
+  vui128_t mq;
+  vec_muludq (&mq, a, b);
   return mq;
 }
 
@@ -1505,7 +1504,7 @@ __test_remudq_10e32_PWR9  (vui128_t a, vui128_t b)
 }
 
 void
-example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
+example_qw_convert_decimal_PWR9 (uint64_t *ten_16, vui128_t value)
 {
   /* Magic numbers for multiplicative inverse to divide by 10**32
    are 211857340822306639531405861550393824741, corrective add,
@@ -1526,6 +1525,7 @@ example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
 							 10000000000000000UL);
 
   vui128_t tmpq, tmpr, tmpc, tmp;
+  __VEC_U_128 tmp_16;
 
   // First divide/modulo by 10**32 to separate the top 7 digits from
   // the lower 32 digits
@@ -1542,7 +1542,8 @@ example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
   tmpr = vec_subuqm (value, tmp);
 
   // return top 16 digits
-  ten_16[0] = (vui64_t) tmpq[VEC_DW_L];
+  tmp_16.vx1 = tmpq;
+  ten_16[0] = tmp_16.ulong.lower;
 
   // Next divide/modulo the remaining 32 digits by 10**16.
   // This separates the middle and low 16 digits into doublewords.
@@ -1556,9 +1557,11 @@ example_qw_convert_decimal_PWR9 (vui64_t *ten_16, vui128_t value)
   tmpr = vec_subuqm (value, tmp);
 
   // return middle 16 digits
-  ten_16[1] = (vui64_t) tmpq[VEC_DW_L];
+  tmp_16.vx1 = tmpq;
+  ten_16[1] = tmp_16.ulong.lower;
   // return low 16 digits
-  ten_16[2] = (vui64_t) tmpr[VEC_DW_L];
+  tmp_16.vx1 = tmpr;
+  ten_16[2] = tmp_16.ulong.lower;
 }
 
 vui128_t
@@ -1744,7 +1747,6 @@ __VEC_U_1024  __attribute__((flatten ))
 __test_madd512x512a512_PWR9 (__VEC_U_512 m1, __VEC_U_512 m2, __VEC_U_512 a1)
 {
   __VEC_U_1024 result;
-  vui128_t mc, mp, mq;
 #ifndef __clang__
 // Clang does not support register variables.
   register vui128_t t0 asm("vs10");
@@ -1839,7 +1841,7 @@ test_vec_mul1024x1024_PWR9 (__VEC_U_2048* r2048,
 #endif
 {
   __VEC_U_1024x512 subp0, subp1, subp2, subp3;
-  __VEC_U_512x1 sum0, sum1, sum2, sum3, sumx;
+  __VEC_U_512x1 sum1, sum2, sum3, sumx;
   __VEC_U_512 temp[3];
 #if 0
   __VEC_U_1024x512 * restrict pm1 = (__VEC_U_1024x512 *) m1_1024;

@@ -906,8 +906,8 @@ __test_mulhuq (vui128_t a, vui128_t b)
 vui128_t
 __test_mulhuq2 (vui128_t a, vui128_t b)
 {
-  vui128_t mq, r;
-  r = vec_muludq (&mq, a, b);
+  vui128_t mq;
+  vec_muludq (&mq, a, b);
   return mq;
 }
 
@@ -1017,7 +1017,9 @@ test_mul128_MN (vui128_t *p, vui128_t *m1, vui128_t *m2,
   vui128_t *np = m2;
   unsigned long mx = M;
   unsigned long nx = N;
-  unsigned long px = M+N;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  unsigned long px = M + N;
+#endif
   unsigned long i, j;
   vui128_t mpx0, mqx0, mpx1, mqx1;
 
@@ -1065,7 +1067,7 @@ test_mul128_MN (vui128_t *p, vui128_t *m1, vui128_t *m2,
 }
 
 void
-example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
+example_qw_convert_decimal (uint64_t *ten_16, vui128_t value)
 {
   /* Magic numbers for multiplicative inverse to divide by 10**32
    are 211857340822306639531405861550393824741, corrective add,
@@ -1086,6 +1088,7 @@ example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
 							 10000000000000000UL);
 
   vui128_t tmpq, tmpr, tmpc, tmp;
+  __VEC_U_128 tmp_16;
 
   // First divide/modulo by 10**32 to separate the top 7 digits from
   // the lower 32 digits
@@ -1102,7 +1105,8 @@ example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
   tmpr = vec_subuqm (value, tmp);
 
   // return top 16 digits
-  ten_16[0] = (vui64_t) tmpq[VEC_DW_L];
+  tmp_16.vx1 = tmpq;
+  ten_16[0] = tmp_16.ulong.lower;
 
   // Next divide/modulo the remaining 32 digits by 10**16.
   // This separates the middle and low 16 digits into doublewords.
@@ -1116,9 +1120,11 @@ example_qw_convert_decimal (vui64_t *ten_16, vui128_t value)
   tmpr = vec_subuqm (value, tmp);
 
   // return middle 16 digits
-  ten_16[1] = (vui64_t) tmpq[VEC_DW_L];
+  tmp_16.vx1 = tmpq;
+  ten_16[1] = tmp_16.ulong.lower;
   // return low 16 digits
-  ten_16[2] = (vui64_t) tmpr[VEC_DW_L];
+  tmp_16.vx1 = tmpr;
+  ten_16[2] = tmp_16.ulong.lower;
 }
 
 
@@ -1172,9 +1178,15 @@ example_print_vint128 (vi128_t value)
   t_high = (vui64_t) vec_srqi (tmpq, shift_ten16);
   tmp = vec_vmuloud (t_high, (vui64_t) mul_ten16);
   t_mid = (vui64_t) vec_subuqm (val128, tmp);
- 
+
+  // Work-around for GCC PR 96139
+#ifdef __clang__
   printf ("%c%07llu%016llu%016llu", sign, t_high[VEC_DW_L],
 	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
+#else
+  printf ("%c%07lu%016lu%016lu", sign, t_high[VEC_DW_L],
+	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
+#endif
 }
 
 void

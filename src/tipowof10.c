@@ -92,6 +92,8 @@ const vui128_t vtipowof10[] = { (vui128_t) (__int128 ) 1ll, /* 10**0 */
 #endif
   (vui128_t) (__int128 ) 0L };/* 10**308 */
 
+extern const unsigned __int128 __attribute__ ((alias ("vtipowof10"))) *tipowof10;
+
 const vui128_t vtifrexpof10[] =
 { (vui128_t) (__int128 ) 4503599627370496ll, /* 10**0 */
   (vui128_t) (__int128 ) 5629499534213120ll, /* 10**1 */
@@ -156,6 +158,8 @@ const vui128_t vtifrexpof10[] =
   (vui128_t) (__int128 ) 381469726562500ll * (__int128 ) 1000000000000000000ll, /* 10**38 */
 #endif
   (vui128_t) (__int128 ) 0L };/* 10**308 */
+
+extern const unsigned __int128 __attribute__ ((alias ("vtifrexpof10"))) *tifrexpof10;
 
 const long tiexpof10[] = {
     -52L, /* 10**0 */

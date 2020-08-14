@@ -394,6 +394,13 @@ example_convert_timebase (vui32_t *tb, vui32_t *timespec, int n)
 ///@cond INTERNAL
 static inline vui64_t vec_muleuw (vui32_t a, vui32_t b);
 static inline vui64_t vec_mulouw (vui32_t a, vui32_t b);
+#ifndef vec_popcntw
+static inline vui32_t vec_popcntw (vui32_t vra);
+#else
+/* Work around for GCC PR85830.  */
+#undef vec_popcntw
+#define vec_popcntw __builtin_vec_vpopcntw
+#endif
 static inline vi32_t vec_srawi (vi32_t vra, const unsigned int shb);
 static inline vui64_t vec_vmuleuw (vui32_t a, vui32_t b);
 static inline vui64_t vec_vmulouw (vui32_t a, vui32_t b);
@@ -532,6 +539,58 @@ vec_clzw (vui32_t vra)
   nt = vec_sub (n, x);
   n = vec_sel (nt, n, m);
   r = n;
+#endif
+  return ((vui32_t) r);
+}
+
+/** \brief Vector Count Trailing Zeros word.
+ *
+ *  Count the number of trailing '0' bits (0-32) within each word
+ *  element of a 128-bit vector.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later use the Vector Count Trailing
+ *  Zeros Word instruction <B>vctzw</B>. Otherwise use a sequence of
+ *  pre ISA 3.0 VMX instructions.
+ *  SIMDized count Trailing zeros inspired by:
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 5 Counting Bits, Section 5-4.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as 4 x 32-bit integer (words)
+ *  elements.
+ *  @return 128-bit vector with the Trailng Zeros count for each word
+ *  element.
+ */
+static inline vui32_t
+vec_ctzw (vui32_t vra)
+{
+  vui32_t r;
+#ifdef _ARCH_PWR9
+#if defined (vec_cnttz) || defined (__clang__)
+  r = vec_cnttz (vra);
+#else
+  __asm__(
+      "vctzw %0,%1;"
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#endif
+#else
+// For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
+// and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
+// the hardware vpopcntw instruction. _ARCH_PWR7 and earlier use the
+// PVECLIB vec_popcntw implementation which runs ~20-28 instructions.
+  const vui32_t ones = { 1, 1, 1, 1 };
+  vui32_t tzmask;
+  // tzmask = (!vra & (vra - 1))
+  tzmask = vec_andc (vec_sub (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  r = vec_popcntw (tzmask);
 #endif
   return ((vui32_t) r);
 }

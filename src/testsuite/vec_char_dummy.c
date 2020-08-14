@@ -5,12 +5,64 @@
         Author: sjmunroe
   */
 
-
 #include <stdint.h>
 
 //#define __DEBUG_PRINT__
 
 #include <pveclib/vec_char_ppc.h>
+
+vui8_t
+test_ctzb_v1 (vui8_t vra)
+{
+  const vui8_t ones = vec_splat_u8 (1);
+  const vui8_t c8s = vec_splat_u8 (8);
+  vui8_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_sub (vra, ones), vra);
+  // return = 8 - vec_clz (!vra & (vra - 1))
+  return vec_sub (c8s, vec_clzb (term));
+}
+
+vui8_t
+test_ctzb_v2 (vui8_t vra)
+{
+  const vui8_t ones = vec_splat_u8 (1);
+  vui8_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_sub (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return vec_popcntb (term);
+}
+
+vui8_t
+test_ctzb_v3 (vui8_t vra)
+{
+  const vui8_t zeros = vec_splat_u8 (0);
+  const vui8_t c8s = vec_splat_u8 (8);
+  vui8_t term;
+  // term = (vra | -vra))
+  term = vec_or (vra, vec_sub (zeros, vra));
+  // return = 8 - vec_poptcnt (vra & -vra)
+  return vec_sub (c8s, vec_popcntb (term));
+}
+
+vui8_t
+test_ctzb (vui8_t vra)
+{
+  return vec_ctzb (vra);
+}
+
+vui8_t
+test_clzb (vui8_t vra)
+{
+  return vec_clzb (vra);
+}
+
+vui8_t
+test_popcntb (vui8_t vra)
+{
+  return vec_popcntb (vra);
+}
 
 #if __GNUC__ >= 7
 /* Generic vec_mul not supported for vector char until GCC 7.  */

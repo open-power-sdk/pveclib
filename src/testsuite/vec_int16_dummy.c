@@ -23,6 +23,59 @@
 #include <pveclib/vec_int16_ppc.h>
 
 vui16_t
+test_ctzh_v1 (vui16_t vra)
+{
+  const vui16_t ones = vec_splat_u16 (1);
+  const vui16_t c16s = vec_splats ((unsigned short)16);
+  vui16_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_sub (vra, ones), vra);
+  // return = 16 - vec_clz (!vra & (vra - 1))
+  return vec_sub (c16s, vec_clzh (term));
+}
+
+vui16_t
+test_ctzh_v2 (vui16_t vra)
+{
+  const vui16_t ones = vec_splat_u16 (1);
+  vui16_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_sub (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return vec_popcnth (term);
+}
+
+vui16_t
+test_ctzh_v3 (vui16_t vra)
+{
+  const vui16_t zeros = vec_splat_u16 (0);
+  const vui16_t c16s = vec_splats ((unsigned short)16);
+  vui16_t term;
+  // term = (vra | -vra))
+  term = vec_or (vra, vec_sub (zeros, vra));
+  // return = 16 - vec_poptcnt (vra & -vra)
+  return vec_sub (c16s, vec_popcnth (term));
+}
+
+vui16_t
+test_ctzh (vui16_t vra)
+{
+  return vec_ctzh (vra);
+}
+
+vui16_t
+test_clzh (vui16_t vra)
+{
+  return vec_clzh (vra);
+}
+
+vui16_t
+test_popcnth (vui16_t vra)
+{
+  return vec_popcnth (vra);
+}
+
+vui16_t
 __test_absduh (vui16_t a, vui16_t b)
 {
   return vec_absduh (a, b);

@@ -571,9 +571,7 @@ vec_ctzw (vui32_t vra)
 {
   vui32_t r;
 #ifdef _ARCH_PWR9
-#if defined (vec_cnttz)
-  r = vec_cnttz (vra);
-#elif defined (__clang__)
+#if defined (vec_cnttz) || defined (__clang__)
   r = vec_cnttz (vra);
 #else
   __asm__(

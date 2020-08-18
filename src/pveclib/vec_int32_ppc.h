@@ -1616,4 +1616,122 @@ vec_vmulouw (vui32_t vra, vui32_t vrb)
   return (res);
 }
 
+/** \brief Vector Sum-across Half Signed Word Saturate.
+ *
+ * Sum across adjacent signed words within doublewords from <I>vra</I>
+ * and word addends from <I>vrb</I>.
+ * This is effectively the vec_sum2s built-in operation (vsum2sws
+ * instruction) without the endian sensitive modifications
+ * mandated by the ABI.
+ *
+ * This is useful for computing the final doubleword counts for
+ * operations like population count and count leading/trailing zeros.
+ * These results are often used as inputs to shift operations that
+ * require shift counts in bits 58:63 of the doubleword element
+ * (word elements 1 and 3).
+ *
+ * For vec_sum2s and little endian the ABI mandates that the addend
+ * words from vrb be from little endian word elements 1 and 3
+ * (vector element 0 and 2) be used for the sum. The ABI also mandates
+ * that saturated word sum results are are in little endian
+ * elements 1 and 3 (vector element 0 and 2). This requires a 3
+ * instruction dependent sequence to precondition vrb and and rotate
+ * the vsum2sws result to match little endian element numbering.
+ * This adds 4 (6 for POWER9) cycles latency.
+ *
+ * This also leaves the sums in bits 26:31 of the doubleword element
+ * and out of position for doubleword shift/rotate. This in turn
+ * requires an additional corrective shift/rotate before using the
+ * sums. Or use this operation instead of vec_sum2s.
+ *
+ * \note This implementation is NOT endian sensitive and the function
+ * is stable across BE/LE implementations.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   |   7   | 2/cycle  |
+ * |power9   |   7   | 2/cycle  |
+ *
+ * @param vra Vector signed int as adjcent words within doublewords.
+ * @param vrb Vector signed int where odd words are summed
+ * with adjacent words from vra.
+ * @return Vector signed int with even words set to 0
+ * and odd words containing the word sums within doublewords.
+ */
+static inline vi32_t
+vec_vsum2sw (vi32_t vra, vi32_t vrb)
+{
+  vi32_t res;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  res = vec_sum2s (vra, vrb);
+#else
+  __asm__(
+      "vsum2sws %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+  return ((vi32_t) res);
+}
+
+/** \brief Vector Sum-across Signed Word Saturate.
+ *
+ * Sum across the 4 signed words from <I>vra</I>
+ * and word element 3 from <I>vrb</I>.
+ * This is effectively the vec_sums built-in operation (vsumsws
+ * instruction) without the endian sensitive modifications
+ * mandated by the ABI.
+ *
+ * This is useful for computing the final quadword counts for
+ * operations like population count and count leading/trailing zeros.
+ * These results are often used as inputs to shift operations that
+ * require shift counts in bits 121:127 of the quadword
+ * (word element 3).
+ *
+ * For vec_sums and little endian the ABI mandates that the addend
+ * word from vrb be from little endian word elements 3
+ * (vector element 0) be used for the sum. The ABI also mandates
+ * that saturated word sum results are are in little endian
+ * elements 3 (vector element 0). This requires a 3
+ * instruction dependent sequence to precondition vrb and and rotate
+ * the vsumsws result to match little endian element numbering.
+ * This adds 4 (6 for POWER9) cycles latency.
+ *
+ * This also leaves the sums in bits 25:31 of the quadword
+ * and out of position for quadword shift/rotate. This in turn
+ * requires an additional corrective shift/rotate before using the
+ * sums. Or use this operation instead of vec_sums.
+ *
+ * \note This implementation is NOT endian sensitive and the function
+ * is stable across BE/LE implementations.
+ *
+ * |processor|Latency|Throughput|
+ * |--------:|:-----:|:---------|
+ * |power8   |   7   | 2/cycle  |
+ * |power9   |   7   | 2/cycle  |
+ *
+ * @param vra Vector signed int as words within quadword.
+ * @param vrb Vector signed int where word element 3 is summed
+ * with words from vra.
+ * @return Vector signed int with words 0-2 set to 0
+ * and word element 3 containing the word sums.
+ */
+static inline vi32_t
+vec_vsumsw (vi32_t vra, vi32_t vrb)
+{
+  vi32_t res;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  res = vec_sums (vra, vrb);
+#else
+  __asm__(
+      "vsumsws %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+  return ((vi32_t) res);
+}
+
 #endif /* VEC_INT32_PPC_H_ */

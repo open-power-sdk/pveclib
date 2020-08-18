@@ -22,12 +22,37 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+
+vi32_t
+test_vec_sum2s (vi32_t vra, vi32_t vrb)
+{
+  return vec_sum2s (vra, vrb);
+}
+
+vi32_t
+test_vec_vsum2sw (vi32_t vra, vi32_t vrb)
+{
+  return vec_vsum2sw (vra, vrb);
+}
+
+vi32_t
+test_vec_sums (vi32_t vra, vi32_t vrb)
+{
+  return vec_sums (vra, vrb);
+}
+
+vi32_t
+test_vec_vsumsw (vi32_t vra, vi32_t vrb)
+{
+  return vec_vsumsw (vra, vrb);
+}
+
 vui32_t
 test_ctz_v1 (vui32_t vra)
 {
   const vui32_t ones = { 1, 1, 1, 1 };
   const vui32_t c32s = { 32, 32, 32, 32 };
-  vui32_t result, term;
+  vui32_t term;
   // term = (!vra & (vra - 1))
   term = vec_andc (vec_sub (vra, ones), vra);
   // return = 32 - vec_clz (!vra & (vra - 1))
@@ -38,7 +63,7 @@ vui32_t
 test_ctz_v2 (vui32_t vra)
 {
   const vui32_t ones = { 1, 1, 1, 1 };
-  vui32_t result, term;
+  vui32_t term;
   // term = (!vra & (vra - 1))
   term = vec_andc (vec_sub (vra, ones), vra);
   // return = vec_popcnt (!vra & (vra - 1))
@@ -50,7 +75,7 @@ test_ctz_v3 (vui32_t vra)
 {
   const vui32_t zeros = { 0, 0, 0, 0 };
   const vui32_t c32s = { 32, 32, 32, 32 };
-  vui32_t result, term;
+  vui32_t term;
   // term = (vra | -vra))
   term = vec_or (vra, vec_sub (zeros, vra));
   // return = 32 - vec_poptcnt (vra & -vra)

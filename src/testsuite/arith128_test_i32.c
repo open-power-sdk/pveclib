@@ -419,6 +419,108 @@ test_ctzw (void)
   return (rc);
 }
 
+int
+test_sumsw (void)
+{
+  vi32_t i, j, e, k;
+  int rc = 0;
+
+  printf ("\ntest_sumsw Vector Sum-across Signed Word Saturate\n");
+
+  i = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  j = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = vec_vsumsw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums(0, 0) ", k);
+#endif
+  rc += check_vuint128x ("vec_sumsw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(0, 1, 1, 3);
+  j = (vi32_t)CONST_VINT32_W(0, 0, 0, 5);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 10);
+  k = vec_vsumsw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([0,1,1,3}, 0) ", k);
+#endif
+  rc += check_vuint128x ("vec_sumsw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(0, 64, 0, 64);
+  j = (vi32_t)CONST_VINT32_W(0, 0, 0, -128);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = vec_vsumsw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([0,64,0,64}, -128) ", k);
+#endif
+  rc += check_vuint128x ("vec_sumsw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(-32, -32, -32, -16);
+  j = (vi32_t)CONST_VINT32_W(0, 0, 0, 128);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 16);
+  k = vec_vsumsw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([-32,-32,-32,-16}, 128) ", k);
+#endif
+  rc += check_vuint128x ("vec_sumsw:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_sum2sw (void)
+{
+  vi32_t i, j, e, k;
+  int rc = 0;
+
+  printf ("\ntest_sum2sw Vector Sum-across Signed Word Saturate\n");
+
+  i = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  j = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = vec_vsum2sw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums(0, 0) ", k);
+#endif
+  rc += check_vuint128x ("vec_sum2sw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(0, 1, 1, 3);
+  j = (vi32_t)CONST_VINT32_W(0, 7, 0, 5);
+  e = (vi32_t)CONST_VINT32_W(0, 8, 0, 9);
+  k = vec_vsum2sw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([0,1,1,3}, {7,5}) ", k);
+#endif
+  rc += check_vuint128x ("vec_sum2sw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(32, 32, 32, 32);
+  j = (vi32_t)CONST_VINT32_W(0, -64, 0, -64);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = vec_vsum2sw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([32,32,32,32}, {-64,-64) ", k);
+#endif
+  rc += check_vuint128x ("vec_sum2sw:", (vui128_t)k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(-32, -32, -32, -16);
+  j = (vi32_t)CONST_VINT32_W(0, 64, 0, 64);
+  e = (vi32_t)CONST_VINT32_W(0, 0, 0, 16);
+  k = vec_vsum2sw(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("sums([-32,-32,-32,-16}, {64.64}) ", k);
+#endif
+  rc += check_vuint128x ("vec_sum2sw:", (vui128_t)k, (vui128_t) e);
+
+  return (rc);
+}
+
 //#define __DEBUG_PRINT__ 1
 int
 test_mulhuw (void)
@@ -1229,6 +1331,8 @@ test_vec_i32 (void)
   rc += test_clzw ();
   rc += test_ctzw ();
   rc += test_popcntw();
+  rc += test_sumsw ();
+  rc += test_sum2sw ();
   rc += test_mulesw();
   rc += test_mulosw();
   rc += test_muleuw();

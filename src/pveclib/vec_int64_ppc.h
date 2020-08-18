@@ -868,6 +868,13 @@ static inline vb64_t vec_cmpneud (vui64_t a, vui64_t b);
 static inline vui64_t vec_maxud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_minud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
+#ifndef vec_popcntd
+static inline vui64_t vec_popcntd (vui64_t vra);
+#else
+/* Work around for GCC PR85830.  */
+#undef vec_popcntd
+#define vec_popcntd __builtin_vec_vpopcntd
+#endif
 static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
 static inline vui64_t vec_xxspltd (vui64_t vra, const int ctl);
 ///@endcond
@@ -962,7 +969,7 @@ vec_clzd (vui64_t vra)
 #if defined (vec_vclzd)
   r = vec_vclzd (vra);
 #elif defined (__clang__)
-  r = (vui32_t) vec_cntlz (vra);
+  r = vec_cntlz (vra);
 #else
   __asm__(
       "vclzd %0,%1;"
@@ -983,9 +990,61 @@ vec_clzd (vui64_t vra)
   nt = vec_or (x, y);
 
   n = vec_clzw (nt);
-  r = (vui64_t) vec_sum2s ((vi32_t) n, (vi32_t) z);
+  r = (vui64_t) vec_vsum2sw ((vi32_t) n, (vi32_t) z);
 #endif
   return (r);
+}
+
+/** \brief Vector Count Trailing Zeros Doubleword.
+ *
+ *  Count the number of trailing '0' bits (0-64) within each doubleword
+ *  element of a 128-bit vector.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later use the Vector Count Trailing
+ *  Zeros Doubleword instruction <B>vctzd</B>. Otherwise use a sequence of
+ *  pre ISA 3.0 VMX instructions leveraging the PVECLIB popcntd operation.
+ *  SIMDized count Trailing zeros inspired by:
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 5 Counting Bits, Section 5-4.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 8-10  |2/2 cycles|
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as 2 x 64-bit integer
+ *  (doublewords) elements.
+ *  @return 128-bit vector with the Trailng Zeros count for each
+ *  doubleword element.
+ */
+static inline vui64_t
+vec_ctzd (vui64_t vra)
+{
+  vui64_t r;
+#ifdef _ARCH_PWR9
+#if defined (vec_cnttz) || defined (__clang__)
+  r = vec_cnttz (vra);
+#else
+  __asm__(
+      "vctzd %0,%1;"
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#endif
+#else
+// For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
+// and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
+// the hardware vpopcntd instruction. _ARCH_PWR7 and earlier use the
+// PVECLIB vec_popcntd implementation which runs ~24-33 instructions.
+  const vui64_t ones = { -1, -1 };
+  vui64_t tzmask;
+  // tzmask = (!vra & (vra - 1))
+  tzmask = vec_andc (vec_addudm (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  r = vec_popcntd (tzmask);
+#endif
+  return ((vui64_t) r);
 }
 
 /** \brief Vector Compare Equal Signed Doubleword.
@@ -2676,7 +2735,7 @@ vec_popcntd (vui64_t vra)
   vui32_t z= { 0,0,0,0};
   vui32_t x;
   x = vec_popcntw ((vui32_t) vra);
-  r = (vui64_t) vec_sum2s ((vi32_t) x, (vi32_t) z);
+  r = (vui64_t) vec_vsum2sw ((vi32_t) x, (vi32_t) z);
 #endif
   return (r);
 }

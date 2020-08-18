@@ -23,6 +23,47 @@
 #include <pveclib/vec_int128_ppc.h>
 
 vui64_t
+test_ctzd_v1 (vui64_t vra)
+{
+  const vui64_t ones = { -1, -1 };
+  const vui64_t c64s = { 64, 64 };
+  vui64_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_addudm (vra, ones), vra);
+  // return = 64 - vec_clz (!vra & (vra - 1))
+  return (c64s - vec_clzd (term));
+}
+
+vui64_t
+test_ctzd_v2 (vui64_t vra)
+{
+  const vui64_t ones = { -1, -1 };
+  vui64_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_addudm (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return (vec_popcntd (term));
+}
+
+vui64_t
+test_ctzd_v3 (vui64_t vra)
+{
+  const vui64_t zeros = { 0, 0 };
+  const vui64_t c64s = { 64, 64 };
+  vui64_t term;
+  // term = (vra | -vra))
+  term = vec_or (vra, vec_subudm (zeros, vra));
+  // return = 64 - vec_poptcnt (vra & -vra)
+  return (c64s - vec_popcntd (term));
+}
+
+vui64_t
+test_vec_ctzd (vui64_t vra)
+{
+  return (vec_ctzd (vra));
+}
+
+vui64_t
 __test_vrld (vui64_t a, vui64_t b)
 {
   return vec_vrld (a, b);

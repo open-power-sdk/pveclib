@@ -2040,6 +2040,7 @@ static inline vui128_t vec_mulhuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_mulluq (vui128_t a, vui128_t b);
 static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
 static inline vui128_t vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b);
+static inline vui128_t vec_popcntq (vui128_t vra);
 static inline vb128_t vec_setb_cyq (vui128_t vcy);
 static inline vb128_t vec_setb_ncq (vui128_t vcy);
 static inline vb128_t vec_setb_sq (vi128_t vra);
@@ -2472,8 +2473,8 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 19-28 | 1/cycle  |
- *  |power9   | 25-36 | 1/cycle  |
+ *  |power8   |  8-10 | 1/cycle  |
+ *  |power9   | 10-12 | 1/cycle  |
  *
  *  @param vra a 128-bit vector treated a __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
@@ -2495,18 +2496,15 @@ vec_clzq (vui128_t vra)
    * After masking we sum across the left and right counts to
    * get the final 128-bit vector count (0-128).
    */
-  vui64_t vt1, vt2, vt3;
-  vui64_t vzero = { 0, 0 };
-  vui64_t v64 = { 64, 64 };
+  vui64_t vt1, vt2, vt3, h64, l64;
+  const vui64_t vzero = { 0, 0 };
 
   vt1 = vec_clzd ((vui64_t) vra);
-  vt2 = (vui64_t) vec_cmplt(vt1, v64);
-  vt3 = (vui64_t) vec_sld ((vui8_t) vzero, (vui8_t) vt2, 8);
-  result = vec_andc (vt1, vt3);
-  result = (vui64_t) vec_sums ((vi32_t) result, (vi32_t) vzero);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 4);
-#endif
+  vt2 = (vui64_t) vec_cmpequd((vui64_t) vra, vzero);
+  vt3 = vec_mrgahd ((vui128_t)vzero, (vui128_t)vt2);
+  h64 = vec_mrgahd ((vui128_t)vzero, (vui128_t)vt1);
+  l64 = vec_and (vt1, vt3);
+  result = vec_addudm (h64, l64);
 #else
   /* vector clz instructions were introduced in power8. For power7 and
    * earlier, use the pveclib vec_clzw implementation.  For a quadword
@@ -2530,6 +2528,34 @@ vec_clzq (vui128_t vra)
 #endif
 
   return ((vui128_t) result);
+}
+
+/** \brief Vector Count Trailing Zeros Quadword.
+ *
+ *  Count trailing zeros for a vector __int128 and return the count in a
+ *  vector suitable for use with vector shift (left|right) and vector
+ *  shift (left|right) by octet instructions.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-17 | 1/cycle  |
+ *  |power9   | 13-16 | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a __int128.
+ *  @return a 128-bit vector with bits 121:127 containing the count of
+ *  trailing zeros.
+ */
+static inline vui128_t
+vec_ctzq (vui128_t vra)
+{
+  const vui128_t ones = (vui128_t) vec_splat_s32(-1);
+  vui128_t tzmask;
+
+  // tzmask = (!vra & (vra - 1))
+  tzmask = (vui128_t) vec_andc ((vui64_t) vec_adduqm (vra, ones),
+				(vui64_t) vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return vec_popcntq (tzmask);
 }
 
 /** \brief Vector Compare Equal Signed Quadword.
@@ -5375,8 +5401,8 @@ vec_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c1, vui128_t c2)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 15    |2/2 cycles|
- *  |power9   | 16    | 2/cycle  |
+ *  |power8   |  9-11 | 2/cycle  |
+ *  |power9   |  9-12 | 2/cycle  |
  *
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the
@@ -5387,30 +5413,40 @@ vec_popcntq (vui128_t vra)
 {
   vui64_t result;
 
-#ifdef _ARCH_PWR8
+#ifdef _ARCH_PWR9
   /*
    * Use the Vector Population Count Doubleword instruction to get
    * the count for the left and right vector halves.  Then sum across
    * the left and right counts to get the final 128-bit vector count
    * (0-128).
    */
-  vui64_t vt1;
+  vui64_t vt1, h64, l64;
   const vui64_t vzero = { 0, 0 };
 
-  vt1 = vec_popcntd ((__vector unsigned long long) vra);
-  result = (vui64_t) vec_sums ((__vector int) vt1,
-                               (__vector int) vzero);
+  vt1 = vec_popcntd ((vui64_t)  vra);
+  h64 = vec_mrgahd ((vui128_t)vzero, (vui128_t)vt1);
+  l64 = vec_mrgald ((vui128_t)vzero, (vui128_t)vt1);
+  result = vec_addudm (h64, l64);
+#elif defined(_ARCH_PWR8)
+  /*
+   * Use the Vector Population Count Word instruction to get
+   * the count for each word.  Then sum across the words
+   * to get the final 128-bit vector count (0-128).
+   * For P8 popcntw is 2 cycles faster then popcntd but requires
+   * vsumsws (7 cycles) as the best option to sum across words.
+   */
+  vui32_t vt1;
+  const vui64_t vzero = { 0, 0 };
+
+  vt1 = vec_popcntw ((vui32_t) vra);
+  result = (vui64_t) vec_vsumsw ((vi32_t) vt1,
+                                 (vi32_t) vzero);
 #else
   //#warning Implememention pre power8
   vui32_t z= { 0,0,0,0};
   vui32_t x;
   x = vec_popcntw ((vui32_t)vra);
   result = (vui64_t) vec_sums ((vi32_t) x, (vi32_t) z);
-#endif
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  result = (vui64_t) vec_sld (
-      (vui8_t) result, (vui8_t) result, 4);
 #endif
   return ((vui128_t) result);
 }

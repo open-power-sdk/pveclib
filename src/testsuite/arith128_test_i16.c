@@ -87,6 +87,62 @@ test_clzh (void)
 }
 
 int
+test_ctzh (void)
+{
+  vui16_t i, e, j;
+  int rc = 0;
+
+  printf ("\ntest_ctzh Vector Count Trailing Zeros in halfwords\n");
+
+  i = (vui16_t )CONST_VINT16_H(0, 0, 0, 0, 0, 0, 0, 0);
+  e = (vui16_t )CONST_VINT16_H(16, 16, 16, 16, 16, 16, 16, 16);
+  j = vec_ctzh(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(0) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzh:", (vui128_t)j, (vui128_t) e);
+
+  i = (vui16_t )CONST_VINT16_H(0x8000, 0xc000, 0xe000, 0xf000, 0xf800, 0xfc00, 0xfe00, 0xff00);
+  e = (vui16_t )CONST_VINT16_H(15, 14, 13, 12, 11, 10, 9, 8);
+  j = vec_ctzh(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(0x8000, 0xc000, 0xe000, 0xf000, 0xf800, 0xfc00, 0xfe00, 0xff00) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzh:", (vui128_t)j, (vui128_t) e);
+
+  i = (vui16_t )CONST_VINT16_H(0, 1, 2, 4, 8, 16, 32, 64);
+  e = (vui16_t )CONST_VINT16_H(16, 0, 1, 2, 3, 4, 5, 6);
+  j = vec_ctzh(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(0, 1, 2, 4, 8, 16, 32, 64) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzh:", (vui128_t)j, (vui128_t) e);
+
+  i = (vui16_t )CONST_VINT16_H(128, 256, 256, 512, 1024, 2048, 4096, 8192);
+  e = (vui16_t )CONST_VINT16_H(7, 8, 8, 9, 10, 11, 12, 13);
+  j = vec_ctzh(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(128, 256, 256, 512, 1024, 2048, 4096, 8192) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzh:", (vui128_t)j, (vui128_t) e);
+
+  i = (vui16_t )CONST_VINT16_H(16384, 32768, 61440, 65280, 65520, 65535, 43690, 21845);
+  e = (vui16_t )CONST_VINT16_H(14, 15, 12, 8, 4, 0, 1, 0);
+  j = vec_ctzh(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(16384, 32768, 61440, 65280, 65520, 65535, 43690, 21845) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzh:", (vui128_t)j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
 test_popcnth (void)
 {
   vui16_t i, e;
@@ -526,6 +582,7 @@ test_vec_i16 (void)
 #if 1
   rc += test_revbh ();
   rc += test_clzh ();
+  rc += test_ctzh ();
   rc += test_popcnth();
   rc += test_mrgeoh();
   rc += test_mrgahlh();

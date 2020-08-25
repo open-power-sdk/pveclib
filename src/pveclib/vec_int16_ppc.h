@@ -482,6 +482,13 @@ __test_div10000 (vui16_t n)
  */
 
 ///@cond INTERNAL
+#ifndef vec_popcnth
+static inline vui16_t vec_popcnth (vui16_t vra);
+#else
+/* Work around for GCC PR85830.  */
+#undef vec_popcnth
+#define vec_popcnth __builtin_vec_vpopcnth
+#endif
 static inline vui16_t vec_vmrgeh (vui16_t vra, vui16_t vrb);
 static inline vui16_t vec_vmrgoh (vui16_t vra, vui16_t vrb);
 ///@endcond
@@ -525,7 +532,7 @@ vec_absduh (vui16_t vra, vui16_t vrb)
   return (result);
 }
 
-/** \brief Count Leading Zeros for a vector unsigned short (halfword)
+/** \brief Vector Count Leading Zeros Halfword for unsigned short
  *  elements.
  *
  *  Count the number of leading '0' bits (0-16) within each halfword
@@ -544,9 +551,9 @@ vec_absduh (vui16_t vra, vui16_t vrb)
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
- *  @param vra 128-bit vector treated as 8 x 16-bit integer (halfword)
- *  elements.
- *  @return 128-bit vector with the Leading Zeros count for each
+ *  @param vra 128-bit vector treated as 8 x 16-bit unsigned integer
+ *  (halfword) elements.
+ *  @return 128-bit vector with the leading zeros count for each
  *  halfword element.
  */
 static inline vui16_t
@@ -613,6 +620,59 @@ vec_clzh (vui16_t vra)
 #endif
 
   return (r);
+}
+
+/** \brief Vector Count Trailing Zeros Halfword for unsigned short
+ *  elements.
+ *
+ *  Count the number of trailing '0' bits (0-16) within each halfword
+ *  element of a 128-bit vector.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later use the Vector Count Trailing
+ *  Zeros Halfword instruction <B>vctzh</B>. Otherwise use a sequence of
+ *  pre ISA 3.0 VMX instructions.
+ *  SIMDized count trailing zeros inspired by:
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 5 Counting Bits, Section 5-4.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as 8 x 16-bit unsigned short
+ *  integer (halfwords) elements.
+ *  @return 128-bit vector with the trailing zeros count for each
+ *  halfword element.
+ */
+static inline vui16_t
+vec_ctzh (vui16_t vra)
+{
+  vui16_t r;
+#ifdef _ARCH_PWR9
+#if defined (vec_cnttz) || defined (__clang__)
+  r = vec_cnttz (vra);
+#else
+  __asm__(
+      "vctzh %0,%1;"
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#endif
+#else
+// For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
+// and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
+// the hardware vpopcnth instruction. _ARCH_PWR7 and earlier use the
+// PVECLIB vec_popcnth implementation which runs ~20-26 instructions.
+  const vui16_t ones = vec_splat_u16 (1);
+  vui16_t tzmask;
+  // tzmask = (!vra & (vra - 1))
+  tzmask = vec_andc (vec_sub (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  r = vec_popcnth (tzmask);
+#endif
+  return ((vui16_t) r);
 }
 
 /** \brief Vector Merge Algebraic High Halfword operation.

@@ -137,6 +137,13 @@
  */
 
 ///@cond INTERNAL
+#ifndef vec_popcntb
+static inline vui8_t vec_popcntb (vui8_t vra);
+#else
+/* Work around for GCC PR85830.  */
+#undef vec_popcntb
+#define vec_popcntb __builtin_vec_vpopcntb
+#endif
 static inline vui8_t vec_vmrgeb (vui8_t vra, vui8_t vrb);
 static inline vui8_t vec_vmrgob (vui8_t vra, vui8_t vrb);
 ///@endcond
@@ -179,14 +186,14 @@ vec_absdub (vui8_t vra, vui8_t vrb)
   return (result);
 }
 
-/** \brief Count leading zeros for a vector unsigned char (byte)
+/** \brief Vector Count Leading Zeros Byte for a unsigned char (byte)
  *  elements.
  *
  *  Count the number of leading '0' bits (0-7) within each byte
  *  element of a 128-bit vector.
  *
  *  For POWER8 (PowerISA 2.07B) or later use the Vector Count Leading
- *  Zeros byte instruction <B>vclzb</B>. Otherwise use sequence of pre
+ *  Zeros Byte instruction <B>vclzb</B>. Otherwise use sequence of pre
  *  2.07 VMX instructions.
  *  SIMDized count leading zeros inspired by:
  *
@@ -198,9 +205,9 @@ vec_absdub (vui8_t vra, vui8_t vrb)
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
- *  @param vra 128-bit vector treated as 16 x 8-bit integer (byte)
- *  elements.
- *  @return 128-bit vector with the Leading Zeros count for each
+ *  @param vra 128-bit vector treated as 16 x 8-bit unsigned integer
+ *  (byte) elements.
+ *  @return 128-bit vector with the leading zeros count for each
  *  byte element.
  */
 static inline vui8_t
@@ -260,6 +267,71 @@ vec_clzb (vui8_t vra)
 #endif
 
   return (r);
+}
+
+/** \brief Vector Count Trailing Zeros Byte for a unsigned char (byte)
+ *  elements.
+ *
+ *  Count the number of trailing '0' bits (0-8) within each byte
+ *  element of a 128-bit vector.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later use the Vector Count Trailing
+ *  Zeros Byte instruction <B>vctzb</B>. Otherwise use a sequence of
+ *  pre ISA 3.0 VMX instructions.
+ *  SIMDized count trailing zeros inspired by:
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 5 Counting Bits, Section 5-4.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vra 128-bit vector treated as 16 x 8-bit unsigned char
+ *  (byte) elements.
+ *  @return 128-bit vector with the trailing zeros count for each
+ *  byte element.
+ */
+static inline vui8_t
+vec_ctzb (vui8_t vra)
+{
+  vui8_t r;
+#ifdef _ARCH_PWR9
+#if defined (vec_cnttz) || defined (__clang__)
+  r = vec_cnttz (vra);
+#else
+  __asm__(
+      "vctzb %0,%1;"
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+// For _ARCH_PWR8. Generate 1's for the trailing zeros
+// and 0's otherwise. Then count (popcnt) the 1's.
+// _ARCH_PWR8 uses the hardware vpopcntb instruction.
+  const vui8_t ones = vec_splat_u8 (1);
+  vui8_t tzmask;
+  // tzmask = (!vra & (vra - 1))
+  tzmask = vec_andc (vec_sub (vra, ones), vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  r = vec_popcntb (tzmask);
+#else
+  // For _ARCH_PWR7 and earlier (without hardware clz or popcnt).
+  // Generate 1's for the trailing zeros and 0's otherwise.
+  // Then count leading 0's using the PVECLIB vec_clzb implementation
+  // which minimizes the number of constant loads (vs popcntb).
+  // Finally subtract this count from 8.
+  const vui8_t ones = vec_splat_u8 (1);
+  const vui8_t c8s = vec_splat_u8 (8);
+  vui8_t term;
+  // term = (!vra & (vra - 1))
+  term = vec_andc (vec_sub (vra, ones), vra);
+  // return = 8 - vec_clz (!vra & (vra - 1))
+  return vec_sub (c8s, vec_clzb (term));
+#endif
+  return ((vui8_t) r);
 }
 
 /** \brief Vector isalpha.

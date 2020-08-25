@@ -246,6 +246,27 @@ test_clzb (void)
 }
 
 int
+test_ctzb (void)
+{
+  vui32_t i, e;
+  vui8_t j;
+  int rc = 0;
+
+  printf ("\ntest_ctzb Vector Count Trailing Zeros in bytes\n");
+
+  i = (vui32_t )CONST_VINT32_W(0x00010204, 0x08102040, 0x80882211, 0xf0ffaa55);
+  e = (vui32_t )CONST_VINT32_W(0x08000102, 0x03040506, 0x07030100, 0x04000100);
+  j = vec_ctzb((vui8_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("ctz(0x00010204, 0x08102040, 0x80882211, 0xf0ffaa55) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzb:", (vui128_t)j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
 test_popcntb (void)
 {
   vui8_t i, e;
@@ -620,6 +641,7 @@ test_vec_char (void)
   printf ("\n%s\n", __FUNCTION__);
 #if 1
   rc += test_clzb ();
+  rc += test_ctzb ();
   rc += test_popcntb ();
   rc += test_vec_ischar ();
   rc += test_mrgeob ();

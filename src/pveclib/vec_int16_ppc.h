@@ -532,7 +532,7 @@ vec_absduh (vui16_t vra, vui16_t vrb)
   return (result);
 }
 
-/** \brief Count Leading Zeros for a vector unsigned short (halfword)
+/** \brief Vector Count Leading Zeros Halfword for unsigned short
  *  elements.
  *
  *  Count the number of leading '0' bits (0-16) within each halfword
@@ -551,9 +551,9 @@ vec_absduh (vui16_t vra, vui16_t vrb)
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
- *  @param vra 128-bit vector treated as 8 x 16-bit integer (halfword)
- *  elements.
- *  @return 128-bit vector with the Leading Zeros count for each
+ *  @param vra 128-bit vector treated as 8 x 16-bit unsigned integer
+ *  (halfword) elements.
+ *  @return 128-bit vector with the leading zeros count for each
  *  halfword element.
  */
 static inline vui16_t
@@ -622,7 +622,8 @@ vec_clzh (vui16_t vra)
   return (r);
 }
 
-/** \brief Vector Count Trailing Zeros Halfword.
+/** \brief Vector Count Trailing Zeros Halfword for unsigned short
+ *  elements.
  *
  *  Count the number of trailing '0' bits (0-16) within each halfword
  *  element of a 128-bit vector.
@@ -630,7 +631,7 @@ vec_clzh (vui16_t vra)
  *  For POWER9 (PowerISA 3.0B) or later use the Vector Count Trailing
  *  Zeros Halfword instruction <B>vctzh</B>. Otherwise use a sequence of
  *  pre ISA 3.0 VMX instructions.
- *  SIMDized count Trailing zeros inspired by:
+ *  SIMDized count trailing zeros inspired by:
  *
  *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
  *  Addison Wesley, 2013. Chapter 5 Counting Bits, Section 5-4.
@@ -640,9 +641,9 @@ vec_clzh (vui16_t vra)
  *  |power8   |  6-8  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
- *  @param vra 128-bit vector treated as 8 x 16-bit short integer
- *  (halfwords) elements.
- *  @return 128-bit vector with the Trailng Zeros count for each
+ *  @param vra 128-bit vector treated as 8 x 16-bit unsigned short
+ *  integer (halfwords) elements.
+ *  @return 128-bit vector with the trailing zeros count for each
  *  halfword element.
  */
 static inline vui16_t

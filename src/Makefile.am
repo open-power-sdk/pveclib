@@ -228,7 +228,7 @@ pveclib_test_SOURCES = \
 	testsuite/vec_perf_i128.h
 
 pveclib_test_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
-pveclib_test_LDADD = .libs/libpvecstatic.a .libs/libvecdummy.a
+pveclib_test_LDADD = libpvec.la libvecdummy.la
 	
 TESTS += vec_dummy
 

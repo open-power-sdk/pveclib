@@ -946,20 +946,25 @@ vec_addudm(vui64_t a, vui64_t b)
   return ((vui64_t) r);
 }
 
-/** \brief Count leading zeros for a vector unsigned long int.
+/** \brief Vector Count Leading Zeros Doubleword for unsigned
+ *  long long int elements.
  *
- *  Count leading zeros for a vector __int128 and return the count in a
- *  vector suitable for use with vector shift (left|right) and vector
- *  shift (left|right) by octet instructions.
+ *  Count the number of leading '0' bits (0-64) within each doubleword
+ *  element of a 128-bit vector.
+ *
+ *  For POWER8 (PowerISA 2.07B) or later use the Vector Count Leading
+ *  Zeros Doubleword instruction <B>vclzd</B>. Otherwise use sequence of
+ *  pre 2.07 VMX instructions.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
  *
- *  @param vra a 128-bit vector treated a __int128.
- *  @return a 128-bit vector with bits 121:127 containing the count of
- *  leading zeros.
+ *  @param vra a 128-bit vector treated as 2 x 64-bit unsigned
+ *  long long int (doubleword) elements.
+ *  @return 128-bit vector with the leading zeros count for each
+ *  doubleword element.
  */
 static inline vui64_t
 vec_clzd (vui64_t vra)
@@ -995,7 +1000,8 @@ vec_clzd (vui64_t vra)
   return (r);
 }
 
-/** \brief Vector Count Trailing Zeros Doubleword.
+/** \brief Vector Count Trailing Zeros Doubleword for unsigned
+ *  long long int elements.
  *
  *  Count the number of trailing '0' bits (0-64) within each doubleword
  *  element of a 128-bit vector.
@@ -1015,7 +1021,7 @@ vec_clzd (vui64_t vra)
  *
  *  @param vra 128-bit vector treated as 2 x 64-bit integer
  *  (doublewords) elements.
- *  @return 128-bit vector with the Trailng Zeros count for each
+ *  @return 128-bit vector with the trailng zeros count for each
  *  doubleword element.
  */
 static inline vui64_t

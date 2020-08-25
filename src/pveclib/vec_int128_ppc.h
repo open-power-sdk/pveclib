@@ -2465,7 +2465,8 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
   return ((vui128_t) t);
 }
 
-/** \brief Vector Count Leading Zeros Quadword.
+/** \brief Vector Count Leading Zeros Quadword for unsigned
+ *  __int128 elements.
  *
  *  Count leading zeros for a vector __int128 and return the count in a
  *  vector suitable for use with vector shift (left|right) and vector
@@ -2476,7 +2477,7 @@ vec_addeq (vui128_t *cout, vui128_t a, vui128_t b, vui128_t ci)
  *  |power8   |  8-10 | 1/cycle  |
  *  |power9   | 10-12 | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  leading zeros.
  */
@@ -2530,7 +2531,8 @@ vec_clzq (vui128_t vra)
   return ((vui128_t) result);
 }
 
-/** \brief Vector Count Trailing Zeros Quadword.
+/** \brief Vector Count Trailing Zeros Quadword for unsigned
+ *  __int128 elements.
  *
  *  Count trailing zeros for a vector __int128 and return the count in a
  *  vector suitable for use with vector shift (left|right) and vector
@@ -2541,7 +2543,7 @@ vec_clzq (vui128_t vra)
  *  |power8   | 15-17 | 1/cycle  |
  *  |power9   | 13-16 | 1/cycle  |
  *
- *  @param vra a 128-bit vector treated as a __int128.
+ *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  trailing zeros.
  */
@@ -5394,10 +5396,11 @@ vec_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c1, vui128_t c2)
   return (pl);
 }
 
-/** \brief Vector Population Count Quadword.
+/** \brief Vector Population Count Quadword for unsigned
+ *  __int128 elements.
  *
- *  Count the number of '1' bits within a vector __int128 and return
- *  the count (0-128) in a vector __int128.
+ *  Count the number of '1' bits within a vector unsigned __int128
+ *  and return the count (0-128) in a vector unsigned __int128.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|

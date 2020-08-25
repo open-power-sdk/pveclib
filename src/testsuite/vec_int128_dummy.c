@@ -27,6 +27,91 @@
 #include <testsuite/arith128_print.h>
 
 vui128_t
+test_ctzq_v1 (vui128_t vra)
+{
+  const vui128_t ones = (vui128_t) vec_splat_s32 (-1);
+  const vui128_t c128s = CONST_VUINT128_QxD ( 0, 128 );
+  vui128_t term;
+  // term = (!vra & (vra - 1))
+  term = (vui128_t)vec_andc ((vui64_t)vec_adduqm (vra, ones), (vui64_t)vra);
+  // return = 128 - vec_clz (!vra & (vra - 1))
+  return vec_subuqm (c128s, vec_clzq (term));
+}
+
+// This Looks like the overall winner with the shortest
+// instruction sequence and the smallest latency across P8/P9.
+vui128_t
+test_ctzq_v2 (vui128_t vra)
+{
+  const vui128_t ones = (vui128_t) vec_splat_s32 (-1);
+  vui128_t term;
+  // term = (!vra & (vra - 1))
+  term = (vui128_t)vec_andc ((vui64_t)vec_adduqm (vra, ones), (vui64_t)vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return (vec_popcntq (term));
+}
+
+vui128_t
+test_ctzq_v3 (vui128_t vra)
+{
+  const vui128_t zeros = (vui128_t) vec_splat_s32 (0);
+  const vui128_t c128s = CONST_VUINT128_QxD ( 0, 128 );
+  vui128_t term;
+  // term = (vra | -vra))
+  term = (vui128_t)vec_or ((vui64_t)vra, (vui64_t)vec_subuqm (zeros, vra));
+  // return = 128 - vec_poptcnt (vra & -vra)
+  return vec_subuqm (c128s, vec_popcntq (term));
+}
+
+vui128_t
+test_ctzq_v4 (vui128_t vra)
+{
+  vui64_t result;
+  vui64_t vt1, vt2, vt3;
+  const vui128_t vones = (vui128_t) vec_splat_s32 (-1);
+  const vui128_t vzero = (vui128_t) vec_splat_s32 (0);
+  vui64_t v64 = { 64, 64 };
+
+  vt1 = vec_ctzd ((vui64_t) vra);
+  vt2 = (vui64_t) vec_cmpequd(vt1, v64);
+  vt3 = (vui64_t) vec_sld ((vui8_t) vt2, (vui8_t) vones, 8);
+  result = vec_and (vt1, vt3);
+  result = (vui64_t) vec_vsumsw ((vi32_t) result, (vi32_t) vzero);
+  return ((vui128_t) result);
+}
+
+#ifdef _ARCH_PWR8
+vui128_t
+test_ctzq_v5 (vui128_t vra)
+{
+  vui64_t result;
+  const vui128_t vones = (vui128_t) vec_splat_s32 (-1);
+  const vui128_t vzero = (vui128_t) vec_splat_s32 (0);
+  vui64_t gt64, gt64sl64, rt64, h64, l64;
+
+  // precondition high dword to return ctz()=0 if low dword != 0
+  gt64 = (vui64_t) vec_cmpequd((vui64_t) vra, (vui64_t) vzero);
+  gt64sl64 = (vui64_t)vec_sld ((vui8_t)gt64, (vui8_t)vones, 8);
+  gt64sl64 = vec_orc ((vui64_t) vra, gt64sl64);
+  // CTZ high/low halves and sum across dwords
+  rt64 = vec_ctzd ((vui64_t) gt64sl64);
+  // The following alternative to vsumsms requires more instructions
+  // (3 vs 1) but executes with less latency (4-5 vs 7)
+  h64 = vec_mrgahd (vzero, (vui128_t)rt64);
+  l64 = vec_mrgald (vzero, (vui128_t)rt64);
+  result = vec_addudm (h64, l64);
+
+  return ((vui128_t) result);
+}
+#endif
+
+vui128_t
+test_vec_ctzq (vui128_t vra)
+{
+  return vec_ctzq (vra);
+}
+
+vui128_t
 __test_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   return vec_msumudm ( a, b, c);

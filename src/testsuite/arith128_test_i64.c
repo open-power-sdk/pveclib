@@ -1547,6 +1547,136 @@ test_clzd (void)
   return (rc);
 }
 
+//#undef __DEBUG_PRINT__
+int
+test_ctzd (void)
+{
+  vui64_t i, e;
+  vui64_t j;
+  int rc = 0;
+
+  printf ("\ntest_ctzd Vector Count Leading Zeros in Doublewords\n");
+
+  i = (vui64_t) CONST_VINT64_DW (0, 0);
+  e = (vui64_t) CONST_VINT64_DW (64, 64);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(0, 0) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (-1, -1);
+  e = (vui64_t) CONST_VINT64_DW (0, 0);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(-1, -1) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (0, -1);
+  e = (vui64_t) CONST_VINT64_DW (64, 0);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(0, -1) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (-1, 0);
+  e = (vui64_t) CONST_VINT64_DW (0, 64);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(-1, 0) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (1, 8589934596);
+  e = (vui64_t) CONST_VINT64_DW (0, 2);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(1, 8589934596) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (34359738384, 137438953536);
+  e = (vui64_t) CONST_VINT64_DW (4, 6);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(34359738384, 137438953536) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (549755814144, 2199023256576);
+  e = (vui64_t) CONST_VINT64_DW (8, 10);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(549755814144, 2199023256576) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (8796093026304, 35184372105216);
+  e = (vui64_t) CONST_VINT64_DW (12, 14);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(8796093026304, 35184372105216) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (140737488420864, 562949953683456);
+  e = (vui64_t) CONST_VINT64_DW (16, 18);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(140737488420864, 562949953683456) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (2251799814733824, 9007199258935296);
+  e = (vui64_t) CONST_VINT64_DW (20, 22);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(2251799814733824, 9007199258935296) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (36028797035741184, 144115188142964736);
+  e = (vui64_t) CONST_VINT64_DW (24, 26);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(36028797035741184, 144115188142964736) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (576460752571858944, 2305843010287435776);
+  e = (vui64_t) CONST_VINT64_DW (28, 30);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(576460752571858944, 2305843010287435776) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  i = (vui64_t) CONST_VINT64_DW (4611686020574871552UL, 18446744069414584320UL);
+  e = (vui64_t) CONST_VINT64_DW (31, 32);
+  j = vec_ctzd((vui64_t)i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(4611686020574871552, 18446744069414584320) ", j);
+#endif
+  rc += check_vuint128x ("vec_ctzd:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_muleud (void)
 {
@@ -11841,6 +11971,7 @@ test_vec_i64 (void)
   rc += test_splatd ();
   rc += test_revbd ();
   rc += test_clzd ();
+  rc += test_ctzd ();
   rc += test_popcntd ();
   rc += test_vrld ();
   rc += test_vsld ();

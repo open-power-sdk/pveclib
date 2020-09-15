@@ -22,6 +22,195 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+unsigned __int128
+test_unpack_dw (vui64_t vra)
+{
+  __VEC_U_128 t;
+  t.vx2 = vra;
+  return (t.i128);
+}
+
+void
+test_vstxsdx (vui64_t data, unsigned long long int *array, unsigned long offset)
+{
+  vec_vstxsdx (data, offset, array);
+}
+
+void
+test_vstxsdx_c0 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 0, array);
+}
+
+void
+test_vstxsdx_c1 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 8, array);
+}
+
+void
+test_vstxsdx_c2 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 32760, array);
+}
+
+void
+test_vstxsdx_c3 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 32758, array);
+}
+
+void
+test_vstxsdx_c4 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 32768, array);
+}
+
+void
+test_stvsud_v1 (vui64_t xs, unsigned long long int *array,
+		unsigned long offset0, unsigned long offset1)
+{
+  vui64_t rese1;
+
+  rese1 = vec_xxspltd (xs, 1);
+  vec_vstxsdx (xs, offset0, array);
+  vec_vstxsdx (rese1, offset1, array);
+}
+
+void
+test_stvsud_v2 (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese1;
+
+  rese1 = vec_xxspltd (data, 1);
+  vec_vstxsdx (data, vra[VEC_DW_H], array);
+  vec_vstxsdx (rese1, vra[VEC_DW_L], array);
+}
+
+void
+test_stvsud_v3 (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese1, offset;
+
+  offset = vec_sldi (vra, 3);
+  rese1 = vec_xxspltd (data, 1);
+  vec_vstxsdx (data, offset[VEC_DW_H], array);
+  vec_vstxsdx (rese1, offset[VEC_DW_L], array);
+}
+
+void
+test_stvsudo (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vec_stvsudo (data, array, vra);
+}
+
+void
+test_stvsudx (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vec_stvsudx (data, array, vra);
+}
+
+void
+test_stvsudsx (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vec_stvsudsx (data, array, vra, 4);
+}
+
+vui64_t
+test_vslxsdx (unsigned long long int *array, unsigned long offset)
+{
+  return vec_vlxsdx (offset, array);
+}
+
+vui64_t
+test_vslxsdx_c0 (unsigned long long int *array)
+{
+  return vec_vlxsdx (0, array);
+}
+
+vui64_t
+test_vslxsdx_c1 (unsigned long long int *array)
+{
+  return vec_vlxsdx (8, array);
+}
+
+vui64_t
+test_vslxsdx_c2 (unsigned long long int *array)
+{
+  return vec_vlxsdx (32768, array);
+}
+
+vui64_t
+test_lvgud_v1 (unsigned long long int *array, unsigned long offset0, unsigned long offset1)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlxsdx (offset0, array);
+  rese1 = vec_vlxsdx (offset1, array);
+  return vec_permdi (rese0, rese1, 0);
+}
+
+vui64_t
+test_lvgud_v2 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlxsdx (vra[VEC_DW_H], array);
+  rese1 = vec_vlxsdx (vra[VEC_DW_L], array);
+  return vec_xxpermdi (rese0, rese1, 0);
+}
+
+vui64_t
+test_lvgud_v3 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1, offset;
+#if 0
+  // This always loads the {3, 3} const vector from rodata.
+  offset = vec_sldi (vra, 3);
+#else
+  {
+    // This also loads the {3, 3} const vector from rodata.
+    vui32_t lshift = vec_splats((unsigned)3);
+    offset = vec_vsld (vra, (vui64_t) lshift);
+  }
+#endif
+  rese0 = vec_vlxsdx (offset[VEC_DW_H], array);
+  rese1 = vec_vlxsdx (offset[VEC_DW_L], array);
+  return vec_xxpermdi (rese0, rese1, 0);
+}
+
+#if (__GNUC__ > 7)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+vui64_t
+test_lvgud_v4 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1;
+  __VEC_U_128 t;
+  t.vx2 = vra;
+
+  rese0 = vec_xl (t.ulong.lower, array);
+  rese1 = vec_xl (t.ulong.upper, array);
+  return  vec_permdi (rese0, rese1, 0);
+}
+#endif
+
+vui64_t
+test_vec_lvgudo (unsigned long long int *array, vui64_t vra)
+{
+  return vec_lvgudo (array, vra);
+}
+
+vui64_t
+test_vec_lvgudx (unsigned long long int *array, vui64_t vra)
+{
+  return vec_lvgudx (array, vra);
+}
+
+vui64_t
+test_vec_lvgudsx (unsigned long long int *array, vui64_t vra)
+{
+  return vec_lvgudsx (array, vra, 4);
+}
+
 vui64_t
 test_ctzd_v1 (vui64_t vra)
 {

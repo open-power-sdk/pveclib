@@ -865,6 +865,7 @@ static inline vb64_t vec_cmpequd (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgeud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgtud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpneud (vui64_t a, vui64_t b);
+static inline vui64_t vec_sldi (vui64_t vra, const unsigned int shb);
 static inline vui64_t vec_maxud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_minud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
@@ -876,6 +877,10 @@ static inline vui64_t vec_popcntd (vui64_t vra);
 #define vec_popcntd __builtin_vec_vpopcntd
 #endif
 static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
+static inline vui64_t
+vec_vlxsdx (const unsigned long long a, const unsigned long long *b);
+static inline void
+vec_vstxsdx (vui64_t xs, const unsigned long long ra, unsigned long long *rb);
 static inline vui64_t vec_xxspltd (vui64_t vra, const int ctl);
 ///@endcond
 
@@ -2175,6 +2180,96 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
   return (result);
 }
 
+/** \brief Vector Load with gather unsigned doubleword from offsets.
+ *
+ *  For each doubleword element [i] of vra, load the doubleword
+ *  element at *array+vra[i]. Merge those doubleword elements and
+ *  return the resulting vector.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   11  | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword offsets.
+ *  @return vector containing dwords *array+vra[0] and *array+vra[1].
+ */
+static inline
+vui64_t
+vec_lvgudo (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlxsdx (vra[VEC_DW_H], array);
+  rese1 = vec_vlxsdx (vra[VEC_DW_L], array);
+  return  vec_permdi (rese0, rese1, 0);
+}
+
+/** \brief Vector Load with gather unsigned doubleword scaled indexed.
+ *
+ *  For each doubleword element [i] of vra, load the doubleword
+ *  element array[vra[i] * (1 << scale)]. Merge those doubleword
+ *  elements and return the resulting vector. Indexes are converted to
+ *  offsets from *array by shifting each doubleword left (3+scale) bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword indexes.
+ *  @param scale Factor effectually multiplying the indexes by
+ *  2<sup>scale</sup>.
+ *  @return vector containing dwords array[vra[0]*(1<<scale)]
+ *  and array[vra[1]*(1<<scale)].
+ */
+static inline vui64_t
+vec_lvgudsx (unsigned long long int *array, vui64_t vra,
+	     const unsigned char scale)
+{
+  vui64_t offset;
+
+  offset = vec_sldi (vra, (3 + scale));
+  return vec_lvgudo (array, offset);
+}
+
+/** \brief Vector Load with gather unsigned doubleword indexed.
+ *
+ *  For each doubleword element [i] of vra, load the doubleword
+ *  element array[vra[i]]. Merge those doubleword elements and
+ *  return the resulting vector. The indexes are converted to offsets
+ *  from *array by shifting each doubleword left 3-bits (*8).
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword indexes.
+ *  @return vector containing dwords array[vra[0]] and array[vra[1]].
+ */
+static inline
+vui64_t
+vec_lvgudx (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t offset;
+
+  offset = vec_sldi (vra, 3);
+  return vec_lvgudo (array, offset);
+}
+
 /** \brief Vector Maximum Signed Doubleword.
  *
  *  For each doubleword element [0|1] of vra and vrb compare as
@@ -2886,7 +2981,7 @@ vec_sldi (vui64_t vra, const unsigned int shb)
       result = vec_vsld (vra, lshift);
     }
   else
-    { /* shifts greater then 31 bits return zeros.  */
+    { /* shifts greater then 63 bits return zeros.  */
       result = vec_xor ((vui64_t) vra, (vui64_t) vra);
     }
 
@@ -3087,6 +3182,94 @@ vec_sradi (vi64_t vra, const unsigned int shb)
     }
 
   return (vi64_t) result;
+}
+
+/** \brief Vector Store with Scatter Unsigned Doubleword from Offsets.
+ *
+ *  For each doubleword element [i] of vra, Store the doubleword
+ *  element xs[i] at *array+vra[i].
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   8   | 1/cycle  |
+ *
+ *  @param xs Vector of doubleword elements to store.
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword offsets.
+ */
+static inline void
+vec_stvsudo (vui64_t xs, unsigned long long int *array,
+	    vui64_t vra)
+{
+  vui64_t xs1;
+
+  xs1 = vec_xxspltd (xs, 1);
+  vec_vstxsdx (xs, vra[VEC_DW_H], array);
+  vec_vstxsdx (xs1, vra[VEC_DW_L], array);
+}
+
+/** \brief Vector Store with Scatter Unsigned Doubleword Scaled Index.
+ *
+ *  For each doubleword element [i] of vra, store the doubleword
+ *  element xs[i] at array[vra[i] * (1 << scale)]. Indexes are
+ *  converted to offsets from *array by shifting each doubleword of vra
+ *  left (3+scale) bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector of doubleword elements to store.
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword indexes.
+ *  @param scale Factor effectually multiplying the indexes by
+ *  2<sup>scale</sup>.
+ */
+static inline void
+vec_stvsudsx (vui64_t xs, unsigned long long int *array,
+	    vui64_t vra, const unsigned char scale)
+{
+  vui64_t offset;
+
+  offset = vec_sldi (vra, (3 + scale));
+  vec_stvsudo (xs, array, offset);
+}
+
+/** \brief Vector Store with Scatter Unsigned Doubleword Indexed.
+ *
+ *  For each doubleword element [i] of vra, store the doubleword
+ *  element xs[i] at array[vra[i]]. Indexes are converted to offsets
+ *  from *array by shifting each doubleword of vra
+ *  left (3+scale) bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector of doubleword elements to store.
+ *  @param array Pointer to array of unsigned doublewords.
+ *  @param vra Vector of doubleword indexes.
+ */
+static inline void
+vec_stvsudx (vui64_t xs, unsigned long long int *array,
+	    vui64_t vra)
+{
+  vui64_t offset;
+
+  offset = vec_sldi (vra, 3);
+  vec_stvsudo (xs, array, offset);
 }
 
 /** \brief Vector Subtract Unsigned Doubleword Modulo.
@@ -3582,6 +3765,136 @@ vec_xxspltd (vui64_t vra, const int ctl)
     }
 
   return (result);
+}
+
+/** \brief Vector Load Scalar doubleword indexed.
+ *
+ *  This operation is an alternate form of vector load element, with
+ *  the added simplification that data is always left justified in the
+ *  vector. This simplifies merging elements for gather operations.
+ *
+ *  \note This is instruction was introduced in PowerISA 2.06 (POWER7).
+ *  For POWER8/9 there are additional optimizations by effectively
+ *  converting small constant index values into displacements. For
+ *  POWER8 a specific pattern of addi/lsxdx instruction is <I>fused</I>
+ *  into a single load displacement internal operation. For POWER9 we can
+ *  use the lxsd (DS-form) instruction directly.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   5   | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param ra const doubleword index (displacement).
+ *  @param rb const doubleword pointer to an array of doublewords.
+ *  @return The data (ra + rb) is loaded into vector doubleword
+ *  element 0. Element 1 is undefined.
+ */
+static inline vui64_t
+vec_vlxsdx (const unsigned long long ra, const unsigned long long *rb)
+{
+  vui64_t xt;
+
+  if (__builtin_constant_p (ra) && (ra < 32760) && ((ra & 3) == 0))
+    {
+#if defined (_ARCH_PWR9)
+      __asm__(
+	  "lxsd %0,%1(%2);"
+	  : "=v" (xt)
+	  : "K" (ra), "r" (rb)
+	  : );
+#else
+      if (ra == 0)
+	{
+	  __asm__(
+	      "lxsdx %x0,0,%1;"
+	      : "=wa" (xt)
+	      : "r" (rb)
+	      : );
+	}
+      else
+	{
+	  __asm__(
+	      "addi 0,0,%1;"
+	      "lxsdx %x0,%2,0;"
+	      : "=wa" (xt)
+	      : "K" (ra), "r" (rb)
+	      : "r0");
+	}
+#endif
+    }
+  else
+    {
+      __asm__(
+	  "lxsdx %x0,%1,%2;"
+	  : "=wa" (xt)
+	  : "b" (ra), "r" (rb)
+	  : );
+    }
+  return xt;
+}
+
+/** \brief Vector Store Scalar doubleword indexed.
+ *
+ *  This operation is an alternate form of vector store element, with
+ *  the added simplification that data is always left justified in the
+ *  vector. This simplifies scatter operations.
+ *
+ *  \note This is instruction was introduced in PowerISA 2.06 (POWER7).
+ *  For POWER8/9 there are additional optimizations by effectively
+ *  converting small constant index values into displacements. For
+ *  POWER8 a specific pattern of addi/stsxdx instruction is <I>fused</I>
+ *  into a single load displacement internal operation. For POWER9 we can
+ *  use the stxsd (DS-form) instruction directly.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   5   | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param xs vector doubleword element 0 to be stored.
+ *  @param ra const doubleword index (displacement).
+ *  @param rb const doubleword pointer to an array of doublewords.
+ */
+static inline void
+vec_vstxsdx (vui64_t xs, const unsigned long long ra, unsigned long long *rb)
+{
+  if (__builtin_constant_p (ra) && (ra <= 32760) && ((ra & 3) == 0))
+    {
+#if defined (_ARCH_PWR9)
+      __asm__(
+	  "stxsd %0,%1(%2);"
+	  :
+	  : "v" (xs), "K" (ra), "r" (rb)
+	  : );
+#else
+      if (ra == 0)
+	{
+	  __asm__(
+	      "stxsdx %x1,0,%0;"
+	      :
+	      : "r" (rb), "wa" (xs)
+	      : );
+	}
+      else
+	{
+	  __asm__(
+	      "addi 0,0,%1;"
+	      "stxsdx %x0,%2,0;"
+	      :
+	      : "wa" (xs), "K" (ra), "r" (rb)
+	      : "r0");
+	}
+#endif
+    }
+  else
+    {
+      __asm__(
+	  "stxsdx %x0,%1,%2;"
+	  :
+	  : "wa" (xs), "b" (ra), "r" (rb)
+	  : );
+    }
 }
 
 /** \brief Vector Multiply-Add Even Unsigned Words.

@@ -2196,7 +2196,8 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
  *
  *  @param array Pointer to array of unsigned doublewords.
  *  @param vra Vector of doubleword offsets.
- *  @return vector containing dwords *array+vra[0] and *array+vra[1].
+ *  @return vector doubleword containing elements loaded from
+ *  *array+vra[0] and *array+vra[1].
  */
 static inline
 vui64_t
@@ -3799,36 +3800,53 @@ vec_vlxsdx (const unsigned long long ra, const unsigned long long *rb)
     {
 #if defined (_ARCH_PWR9)
       __asm__(
-	  "lxsd %0,%1(%2);"
+	  "lxsd%X1 %0,%1;"
 	  : "=v" (xt)
-	  : "K" (ra), "r" (rb)
+	  : "m" (*((char *)rb + ra))
 	  : );
 #else
       if (ra == 0)
 	{
 	  __asm__(
-	      "lxsdx %x0,0,%1;"
+	      "lxsdx %x0,%y1;"
 	      : "=wa" (xt)
-	      : "r" (rb)
+	      : "Z" (*rb)
 	      : );
-	}
-      else
-	{
+	} else {
+	  // Would be better if li and lxsdx shared a single asm block
+	  // (enforcing consecutive instructions).
+	  // This enables instruction fusion for P8.
+	  unsigned long long rt;
+#if 0     // Expected this combination of constraints to work. But the
+	  // compiler does not recognize the early clobber of rt and
+	  // generates bad code.
 	  __asm__(
-	      "addi 0,0,%1;"
-	      "lxsdx %x0,%2,0;"
+	      "li %0,%2;"
+	      "lxsdx %x1,%y3;"
+	      : "=&r" (rt), "=wa" (xt)
+	      : "I" (ra), "Z" (*((char *)rb+rt))
+	      : );
+#else
+	  // This generates operationally correct code, but the compiler
+	  // may rearrange code and break the fusion pattern.
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "lxsdx %x0,%y1;"
 	      : "=wa" (xt)
-	      : "K" (ra), "r" (rb)
-	      : "r0");
+	      : "Z" (*((char *)rb+rt))
+	      : );
+#endif
 	}
 #endif
-    }
-  else
-    {
+    } else {
       __asm__(
-	  "lxsdx %x0,%1,%2;"
+	  "lxsdx %x0,%y1;"
 	  : "=wa" (xt)
-	  : "b" (ra), "r" (rb)
+	  : "Z" (*((char *)rb+ra))
 	  : );
     }
   return xt;
@@ -3849,8 +3867,8 @@ vec_vlxsdx (const unsigned long long ra, const unsigned long long *rb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   5   | 2/cycle  |
- *  |power9   |   5   | 2/cycle  |
+ *  |power8   | 0 - 2 | 2/cycle  |
+ *  |power9   | 0 - 2 | 4/cycle  |
  *
  *  @param xs vector doubleword element 0 to be stored.
  *  @param ra const doubleword index (displacement).
@@ -3863,36 +3881,37 @@ vec_vstxsdx (vui64_t xs, const unsigned long long ra, unsigned long long *rb)
     {
 #if defined (_ARCH_PWR9)
       __asm__(
-	  "stxsd %0,%1(%2);"
-	  :
-	  : "v" (xs), "K" (ra), "r" (rb)
+	  "stxsd%X0 %1,%0;"
+	  : "=m" (*((char *)rb + ra))
+	  : "v" (xs)
 	  : );
 #else
       if (ra == 0)
 	{
 	  __asm__(
-	      "stxsdx %x1,0,%0;"
-	      :
-	      : "r" (rb), "wa" (xs)
+	      "stxsdx %x1,%y0;"
+	      : "=Z" (*rb)
+	      : "wa" (xs)
+	      : );
+	} else {
+	  unsigned long long rt;
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "K" (ra)
+	      : );
+	  __asm__(
+	      "stxsdx %x1,%y0;"
+	      : "=Z" (*((char *)rb+rt))
+	      : "wa" (xs)
 	      : );
 	}
-      else
-	{
-	  __asm__(
-	      "addi 0,0,%1;"
-	      "stxsdx %x0,%2,0;"
-	      :
-	      : "wa" (xs), "K" (ra), "r" (rb)
-	      : "r0");
-	}
 #endif
-    }
-  else
-    {
+    } else {
       __asm__(
-	  "stxsdx %x0,%1,%2;"
-	  :
-	  : "wa" (xs), "b" (ra), "r" (rb)
+	  "stxsdx %x1,%y0;"
+	  : "=Z" (*((char *)rb+ra))
+	  : "wa" (xs)
 	  : );
     }
 }

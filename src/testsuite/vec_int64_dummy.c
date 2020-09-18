@@ -67,6 +67,16 @@ test_vstxsdx_c4 (vui64_t data, unsigned long long int *array)
 }
 
 void
+test_vstxsdx_c5 (vui64_t data, unsigned long long int *array)
+{
+  vui64_t data1;
+
+  data1 = vec_xxspltd (data, 1);
+  vec_vstxsdx (data, 16, array);
+  vec_vstxsdx (data1, 48, array);
+}
+
+void
 test_stvsud_v1 (vui64_t xs, unsigned long long int *array,
 		unsigned long offset0, unsigned long offset1)
 {
@@ -138,6 +148,16 @@ vui64_t
 test_vslxsdx_c2 (unsigned long long int *array)
 {
   return vec_vlxsdx (32768, array);
+}
+
+vui64_t
+test_vslxsdx_c3 (unsigned long long int *array)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlxsdx (8, array);
+  rese1 = vec_vlxsdx (40, array);
+  return vec_permdi (rese0, rese1, 0);
 }
 
 vui64_t

@@ -82,6 +82,18 @@ test_vec_lvgudsx_PWR9 (unsigned long long int *array, vui64_t vra)
 }
 
 void
+test_vstxsdx_c0_PWR9 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 0, array);
+}
+
+void
+test_vstxsdx_c1_PWR9 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstxsdx (data, 8, array);
+}
+
+void
 test_stvsudo_PWR9 (vui64_t data, unsigned long long int *array, vui64_t vra)
 {
   vec_stvsudo (data, array, vra);

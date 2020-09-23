@@ -46,7 +46,7 @@ test_vslxsdx_PWR9 (unsigned long long int *array, unsigned long offset)
 }
 
 vui64_t
-test_vslxsdx_c0 (unsigned long long int *array)
+test_vslxsdx_c0_PWR9 (unsigned long long int *array)
 {
   return vec_vlxsdx (0, array);
 }

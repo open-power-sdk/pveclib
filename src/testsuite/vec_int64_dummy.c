@@ -214,6 +214,16 @@ test_lvgud_v4 (unsigned long long int *array, vui64_t vra)
 #endif
 
 vui64_t
+test_lvgud_v5 (unsigned long long int *array, vui64_t vra)
+{
+  unsigned char *arr = (unsigned char *)array;
+
+  vui64_t r = { *(unsigned long long int *)(&arr[vra[VEC_DW_H]]),
+                *(unsigned long long int *)(&arr[vra[VEC_DW_L]]) };
+  return r;
+}
+
+vui64_t
 test_vec_lvgudo (unsigned long long int *array, vui64_t vra)
 {
   return vec_lvgudo (array, vra);

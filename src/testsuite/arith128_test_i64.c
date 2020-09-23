@@ -994,6 +994,7 @@ test_lvgudx (void)
 
   rc += check_vuint128x ("vec_lxsdx 5:", (vui128_t) j, (vui128_t) e);
 
+  // This test depends on the merge of scalars from lxsdx 4/5
   e =  (vui64_t) { 1, 15 };
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   j = vec_permdi (j1, j0, 0);
@@ -1003,6 +1004,7 @@ test_lvgudx (void)
 
   rc += check_vuint128x ("vec_lxsdx2 :", (vui128_t) j, (vui128_t) e);
 
+  // This test replecates the results of the last 3 tests in single op.
   e =  (vui64_t) { 1, 15 };
   j = vec_lvgudo (test_ui64, i1);
 

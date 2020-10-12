@@ -26,4 +26,26 @@
 extern int
 test_vec_f64 (void);
 
+#define MN 64
+
+extern double matrix_f64 [64][64];
+
+extern void
+test_f64_Imatrix_init (double * array);
+
+extern int
+test_f64_Imatrix_check (double * array);
+
+extern void
+test_f64_matrix_transpose (double * tm, double * m);
+
+extern void
+test_f64_matrix_gather_transpose (double * tm, double * m);
+
+extern void
+test_f64_matrix_gatherx2_transpose (double * tm, double * m);
+
+extern void
+test_f64_matrix_gatherx4_transpose (double * tm, double * m);
+
 #endif /* TESTSUITE_ARITH128_TEST_F64_H_ */

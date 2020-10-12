@@ -34,6 +34,155 @@
 
 #include <pveclib/vec_f64_ppc.h>
 
+void
+test_stvsfso (vf64_t data, double *array, const long long offset0,
+		     const long long offset1)
+{
+  vec_vsstfdso (data, array, offset0, offset1);
+}
+
+void
+test_stvsfso_032 (vf64_t data, double *array)
+{
+  vec_vsstfdso (data, array, 0, 32);
+}
+
+void
+test_stvsfdo (vf64_t data, double *array, vi64_t vra)
+{
+  vec_vsstfddo (data, array, vra);
+}
+
+void
+test_stvsfdx (vf64_t data, double *array, vi64_t vra)
+{
+  vec_vsstfddx (data, array, vra);
+}
+
+void
+test_stvsfdsx (vf64_t data, double *array, vi64_t vra)
+{
+  vec_vsstfddsx (data, array, vra, 4);
+}
+
+void
+test_vstfdux (vf64_t data, double *array, signed long offset)
+{
+  vec_vstsfdux (data, offset, array);
+}
+
+void
+test_vstfdux_c0 (vf64_t data, double *array)
+{
+  vec_vstsfdux (data, 0, array);
+}
+
+void
+test_vstfdux_c1 (vf64_t data, double *array)
+{
+  vec_vstsfdux (data, 8, array);
+}
+
+void
+test_vstfdux_c2 (vf64_t data, double *array)
+{
+  vec_vstsfdux (data, 32760, array);
+}
+
+void
+test_vstfdux_c3 (vf64_t data, double *array)
+{
+  vec_vstsfdux (data, 32768, array);
+}
+
+void
+test_vstfdux_c5 (vf64_t data, double *array)
+{
+  vec_vstsfdux (data, -32768, array);
+}
+
+void
+test_vstfdux_c4 (vf64_t data, double *array)
+{
+  vf64_t data1;
+
+  data1 = (vf64_t) vec_xxspltd ((vui64_t) data, 1);
+  vec_vstsfdux (data, 16, array);
+  vec_vstsfdux (data1, 48, array);
+}
+
+
+vf64_t
+test_vlfdux (double *array, unsigned long long offset)
+{
+  return vec_vlsfdux (offset, array);
+}
+
+vf64_t
+test_vldfdux_c0 (double *array)
+{
+  return vec_vlsfdux (0, array);
+}
+
+vf64_t
+test_vldfdux_c1 (double *array)
+{
+  return vec_vlsfdux (8, array);
+}
+
+vf64_t
+test_vlfsdux_c2 (double *array)
+{
+  return vec_vlsfdux (32768, array);
+}
+
+vf64_t
+test_vlfsdux_c4 (double *array)
+{
+  return vec_vlsfdux (-32768, array);
+}
+
+vf64_t
+test_vldfdux_c3 (double *array)
+{
+  vf64_t rese0, rese1;
+
+  rese0 = vec_vlsfdux (8, array);
+  rese1 = vec_vlsfdux (40, array);
+  return (vf64_t) vec_permdi ((vui64_t) rese0, (vui64_t) rese1, 0);
+}
+
+vf64_t
+test_vec_lvgfso (double *array, const long long offset0,
+		     const long long offset1)
+{
+  return vec_vglfdso (array, offset0, offset1);
+}
+
+vf64_t
+test_vec_lvgfso_032 (double *array)
+{
+  return vec_vglfdso (array, 0, 32);
+}
+
+vf64_t
+test_vec_lvgfdo (double *array, vi64_t vra)
+{
+  return vec_vglfddo (array, vra);
+}
+
+vf64_t
+test_vec_lvgfdx (double *array, vi64_t vra)
+{
+  return vec_vglfddx (array, vra);
+}
+
+vf64_t
+test_vec_lvgfdsx (double *array, vi64_t vra)
+{
+  return vec_vglfddsx (array, vra, 4);
+}
+
 int
 test512_all_f64_nan (vf64_t val0, vf64_t val1, vf64_t val2, vf64_t val3)
 {

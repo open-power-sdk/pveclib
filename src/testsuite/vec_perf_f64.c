@@ -31,6 +31,7 @@
 
 #include <testsuite/arith128_print.h>
 #include <testsuite/vec_perf_f64.h>
+#include <testsuite/arith128_test_f64.h>
 
 #define N 10
 static const vf64_t data0 = { __DBL_MAX__, __DBL_MIN__ };
@@ -85,4 +86,48 @@ int timed_fpclassify_f64 (void)
     }
 #endif
    return 0;
+}
+
+int
+timed_scalar_f64_transpose ()
+{
+  double tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f64_matrix_transpose (&tmatrix[0][0], &matrix_f64[0][0]);
+
+  return rc;
+}
+
+int
+timed_gather_f64_transpose ()
+{
+  double tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f64_matrix_gather_transpose (&tmatrix[0][0], &matrix_f64[0][0]);
+
+  return rc;
+}
+
+int
+timed_gatherx2_f64_transpose ()
+{
+  double tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f64_matrix_gatherx2_transpose (&tmatrix[0][0], &matrix_f64[0][0]);
+
+  return rc;
+}
+
+int
+timed_gatherx4_f64_transpose ()
+{
+  double tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f64_matrix_gatherx4_transpose (&tmatrix[0][0], &matrix_f64[0][0]);
+
+  return rc;
 }

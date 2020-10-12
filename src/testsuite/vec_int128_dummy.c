@@ -26,6 +26,33 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+
+unsigned __int128
+test_xfer_vui128t_2_uint128 (vui128_t vra)
+{
+  return vec_xfer_vui128t_2_uint128 (vra);
+}
+
+unsigned long long
+test_xfer_vui128t_2_LL (vui128_t vra)
+{
+  unsigned __int128 gprp = vec_xfer_vui128t_2_uint128 (vra);
+  return ext_uint128_low (gprp);
+}
+
+vui128_t
+test_xfer_uint128_2_vui128t (unsigned __int128 gprp)
+{
+  return vec_xfer_uint128_2_vui128t (gprp);
+}
+
+vui128_t
+test_xfer_LL_2_vui128t (unsigned long long high, unsigned long long low)
+{
+  unsigned __int128 gprp = ins_long_2_uint128 (high, low);
+  return vec_xfer_uint128_2_vui128t (gprp);
+}
+
 vui128_t
 test_ctzq_v1 (vui128_t vra)
 {

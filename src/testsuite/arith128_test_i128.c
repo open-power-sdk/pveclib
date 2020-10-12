@@ -10052,12 +10052,61 @@ test_longdiv_e32 (void)
 }
 
 int
+test_xfer_int128 (void)
+{
+  unsigned __int128 i, e;
+  vui128_t vi;
+  vui128_t ve;
+  unsigned long long high, low;
+
+  int rc = 0;
+  printf ("\ntest xfer __int128\n");
+
+  vi = (vui128_t) { 10000000000000000UL };
+  e  = (unsigned __int128) 10000000000000000UL;
+
+  i  = vec_xfer_vui128t_2_uint128 (vi);
+  rc += check_int128 ("xfer to int128 1", i , e);
+
+  vi = (vui128_t) { (__int128) 10000000000000000UL
+                  * (__int128) 10000000000000000UL };
+  e  = (unsigned __int128) 10000000000000000UL
+      * (unsigned __int128) 10000000000000000UL;
+
+  i  = vec_xfer_vui128t_2_uint128 (vi);
+  rc += check_int128 ("xfer to int128 2", i , e);
+
+  low = ext_uint128_low (i);
+  high = ext_uint128_high (i);
+
+  rc = check_uint64 ("ext_uint128_low", low, 9632337040368467968UL);
+  rc = check_uint64 ("ext_uint128_high", high, 5421010862427UL);
+
+  i  = (unsigned __int128) 10000000000000000UL;
+  ve = (vui128_t) { 10000000000000000UL };
+
+  vi = vec_xfer_uint128_2_vui128t (i);
+  rc += check_vuint128x ("xfer from int128 1", vi , ve);
+
+  i  = (unsigned __int128) 10000000000000000UL
+      * (unsigned __int128) 10000000000000000UL;
+  ve = (vui128_t) { (__int128) 10000000000000000UL
+                  * (__int128) 10000000000000000UL };
+
+  vi = vec_xfer_uint128_2_vui128t (i);
+  rc += check_vuint128x ("xfer from int128 1", vi , ve);
+
+  return (rc);
+}
+
+int
 test_vec_i128 (void)
 {
   int rc = 0;
 
   printf ("\n%s\n", __FUNCTION__);
 #if 1
+  rc += test_xfer_int128 ();
   rc += test_revbq ();
   rc += test_clzq ();
   rc += test_ctzq ();

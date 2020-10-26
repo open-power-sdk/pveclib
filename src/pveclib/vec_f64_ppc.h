@@ -1208,10 +1208,10 @@ vec_vglfddo (double *array, vi64_t vra)
   rese1 = vec_vlsfdux (vra[VEC_DW_L], array);
 #else
   // Need to explicitly manage the VR/GPR xfer for PWR7
-  unsigned __int128 gprp = vec_xfer_vui128t_2_uint128 ((vui128_t) vra);
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
 
-  rese0 = vec_vlsfdux (ext_uint128_high(gprp), array);
-  rese1 = vec_vlsfdux (ext_uint128_low(gprp), array);
+  rese0 = vec_vlsfdux (scalar_extract_uint64_from_high_uint128(gprp), array);
+  rese1 = vec_vlsfdux (scalar_extract_uint64_from_low_uint128(gprp), array);
 #endif
   return (vf64_t) vec_permdi ((vui64_t) rese0, (vui64_t) rese1, 0);
 }
@@ -1339,9 +1339,9 @@ vec_vsstfddo (vf64_t xs, double *array,
   vec_vstsfdux (xs1, vra[VEC_DW_L], array);
 #else
   // Need to explicitly manage the VR/GPR xfer for PWR7
-  unsigned __int128 gprp = vec_xfer_vui128t_2_uint128 ((vui128_t) vra);
-  vec_vstsfdux (xs, ext_uint128_high(gprp), array);
-  vec_vstsfdux (xs1, ext_uint128_low(gprp), array);
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  vec_vstsfdux (xs, scalar_extract_uint64_from_high_uint128(gprp), array);
+  vec_vstsfdux (xs1, scalar_extract_uint64_from_low_uint128(gprp), array);
 #endif
 }
 
@@ -1457,7 +1457,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
       __asm__(
 	  "lxsd%X1 %0,%1;"
 	  : "=v" (xt)
-	  : "m" (*((char *)rb + ra))
+	  : "m" (*(double*)((char *)rb + ra))
 	  : );
 #else
       if (ra == 0)
@@ -1477,7 +1477,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
 	      "li %0,%2;"
 	      "lxsdx %x1,%3,%0;"
 	      : "=&r" (rt), "=wa" (xt)
-	      : "I" (ra), "b" (rb), "m" (*((char *)rb+rt))
+	      : "I" (ra), "b" (rb), "m" (*(double*)((char *)rb+rt))
 	      : );
 #else // _ARCH_PWR7
 	  // This generates operationally the same code, but the
@@ -1490,7 +1490,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
 	  __asm__(
 	      "lxsdx %x0,%y1;"
 	      : "=wa" (xt)
-	      : "Z" (*((char *)rb+rt))
+	      : "Z" (*(double*)((char *)rb+rt))
 	      : );
 #endif
 	}
@@ -1548,7 +1548,7 @@ vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb)
 #if defined (_ARCH_PWR9)
       __asm__(
 	  "stxsd%X0 %1,%0;"
-	  : "=m" (*((char *)rb + ra))
+	  : "=m" (*(double*)((char *)rb + ra))
 	  : "v" (xs)
 	  : );
 #else
@@ -1568,7 +1568,7 @@ vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb)
 	      : );
 	  __asm__(
 	      "stxsdx %x1,%y0;"
-	      : "=Z" (*((char *)rb+rt))
+	      : "=Z" (*(double*)((char *)rb+rt))
 	      : "wa" (xs)
 	      : );
 	}
@@ -1576,7 +1576,7 @@ vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb)
     } else {
       __asm__(
 	  "stxsdx %x1,%y0;"
-	  : "=Z" (*((char *)rb+ra))
+	  : "=Z" (*(double*)((char *)rb+ra))
 	  : "wa" (xs)
 	  : );
     }

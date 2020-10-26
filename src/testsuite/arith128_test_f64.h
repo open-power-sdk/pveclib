@@ -28,7 +28,7 @@ test_vec_f64 (void);
 
 #define MN 64
 
-extern double matrix_f64 [64][64];
+extern double matrix_f64 [MN][MN];
 
 extern void
 test_f64_Imatrix_init (double * array);

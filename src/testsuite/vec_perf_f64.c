@@ -77,7 +77,7 @@ int timed_is_f64 (void)
 int timed_fpclassify_f64 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
-  vb64_t accum = {0,0};
+  vui64_t accum = {0,0};
   int i;
 
   for (i=0; i<N; i++)

@@ -2060,6 +2060,7 @@ static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
 static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
 ///@endcond
 
+
 /** \brief Vector Absolute Difference Unsigned Quadword.
  *
  *  Compute the absolute difference of the quadwords.

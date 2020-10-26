@@ -25,5 +25,9 @@
 
 extern int timed_is_f64 (void);
 extern int timed_fpclassify_f64 (void);
+extern int timed_scalar_f64_transpose ();
+extern int timed_gather_f64_transpose ();
+extern int timed_gatherx2_f64_transpose ();
+extern int timed_gatherx4_f64_transpose ();
 
 #endif /* TESTSUITE_VEC_PERF_F64_H_ */

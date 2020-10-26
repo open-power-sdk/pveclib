@@ -200,6 +200,13 @@ test_vec_cosf64 (vf64_t value)
  * \ref perf_data
  */
 
+///@cond INTERNAL
+static inline vf64_t
+vec_vlsfdux (const signed long long ra, const double *rb);
+static inline void
+vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb);
+///@endcond
+
 /** \brief Vector double absolute value.
  *
  *  |processor|Latency|Throughput|
@@ -1134,6 +1141,445 @@ vec_unpack_longdouble (long double lval)
   t.ldbl128 = lval;
   return (t.vf2);
 #endif
+#endif
+}
+
+/** \brief Vector Gather-Load Float Double from scalar Offsets.
+ *
+ *  For each scalar offset[0|1], load the float double element at
+ *  *(char*)array+offset[0|1]. Merge those float double elements
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   11  | 1/cycle  |
+ *
+ *  @param array Pointer to array of doubles.
+ *  @param offset0 Scalar (64-bit) byte offsets from &array.
+ *  @param offset1 Scalar (64-bit) byte offsets from &array.
+ *  @return vector double containing elements loaded from
+ *  *(char*)array+offset0 and *(char*)array+offset1.
+ */
+static inline vf64_t
+vec_vglfdso (double *array, const long long offset0,
+	     const long long offset1)
+{
+  vf64_t re0, re1, result;
+
+  re0 = vec_vlsfdux (offset0, array);
+  re1 = vec_vlsfdux (offset1, array);
+  /* Need to handle endian as the vec_vlsfdux result is always left
+   * justified in VR, while element [0] may be left ot right. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = (vf64_t) vec_permdi ((vui64_t) re1, (vui64_t) re0, 0);
+#else
+  result = (vf64_t) vec_permdi ((vui64_t) re0, (vui64_t) re1, 0);
+#endif
+  return result;
+}
+
+/** \brief Vector Gather-Load Float Double from Doubleword Offsets.
+ *
+ *  For each doubleword element [i] of vra, load the float double
+ *  element at *(char*)array+vra[i]. Merge those float double elements
+ *  and return the resulting vector.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   11  | 1/cycle  |
+ *
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword (64-bit) byte offsets from &array.
+ *  @return vector double containing elements loaded from
+ *  *(char*)array+vra[0] and *(char*)array+vra[1].
+ */
+static inline vf64_t
+vec_vglfddo (double *array, vi64_t vra)
+{
+  vf64_t rese0, rese1;
+
+#ifdef _ARCH_PWR8
+  rese0 = vec_vlsfdux (vra[VEC_DW_H], array);
+  rese1 = vec_vlsfdux (vra[VEC_DW_L], array);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+
+  rese0 = vec_vlsfdux (scalar_extract_uint64_from_high_uint128(gprp), array);
+  rese1 = vec_vlsfdux (scalar_extract_uint64_from_low_uint128(gprp), array);
+#endif
+  return (vf64_t) vec_permdi ((vui64_t) rese0, (vui64_t) rese1, 0);
+}
+
+/** \brief Vector Gather-Load Float Double from Doubleword Scaled Indexes.
+ *
+ *  For each doubleword element [i] of vra, load the float double
+ *  element *array[vra[i] * (1 << scale)]. Merge those float double
+ *  elements and return the resulting vector. Indexes are converted to
+ *  offsets from *array by shifting each doubleword left (3+scale) bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword indexes.
+ *  @param scale 8-bit integer. Indexes are multiplied by
+ *  2<sup>scale</sup>.
+ *  @return Vector double containing array[vra[0]*(1<<scale)]
+ *  and array[vra[1]*(1<<scale)].
+ */
+static inline vf64_t
+vec_vglfddsx (double *array, vi64_t vra,
+	     const unsigned char scale)
+{
+  vi64_t offset;
+
+  offset = (vi64_t) vec_sldi ((vui64_t) vra, (3 + scale));
+  return vec_vglfddo (array, offset);
+}
+
+/** \brief Vector Gather-Load Float Double from Doubleword indexes.
+ *
+ *  For each doubleword element [i] of vra, load the double
+ *  element array[vra[i]]. Merge those float double elements and
+ *  return the resulting vector. The indexes are converted to offsets
+ *  from *array by shifting each doubleword index left 3-bits (*8).
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword indexes.
+ *  @return vector double containing {array[vra[0]], array[vra[1]]}.
+ */
+static inline vf64_t
+vec_vglfddx (double *array, vi64_t vra)
+{
+  vi64_t offset;
+
+  offset = (vi64_t) vec_sldi ((vui64_t) vra, 3);
+  return vec_vglfddo (array, offset);
+}
+
+/** \brief Vector Scatter-Store Float Double to Scalar Offsets.
+ *
+ *  For each doubleword element [i] of vra, Store the double
+ *  element xs[i] at *(char*)array+offset[0|1].
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   8   | 1/cycle  |
+ *
+ *  @param xs Vector double elements to scatter store.
+ *  @param array Pointer to array of doubles.
+ *  @param offset0 Scalar (64-bit) byte offset from &array.
+ *  @param offset1 Scalar (64-bit) byte offset from &array.
+ */
+static inline void
+vec_vsstfdso (vf64_t xs, double *array,
+	      const long long offset0, const long long offset1)
+{
+  vf64_t xs1;
+
+  xs1 = (vf64_t) vec_xxspltd ((vui64_t) xs, 1);
+  /* Need to handle endian as vec_vstsfdux always left side of
+   * the VR, while the element [0] may in the left or right. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  vec_vstsfdux (xs, offset1, array);
+  vec_vstsfdux (xs1, offset0, array);
+#else
+  vec_vstsfdux (xs, offset0, array);
+  vec_vstsfdux (xs1, offset1, array);
+#endif
+}
+
+/** \brief Vector Scatter-Store Float Double to Doubleword Offsets.
+ *
+ *  For each doubleword element [i] of vra, Store the double
+ *  element xs[i] at *(char*)array+vra[i].
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   8   | 1/cycle  |
+ *
+ *  @param xs Vector double elements to scatter store.
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword (64-bit) byte offsets from &array.
+ */
+static inline void
+vec_vsstfddo (vf64_t xs, double *array,
+	    vi64_t vra)
+{
+  vf64_t xs1 = (vf64_t) vec_xxspltd ((vui64_t) xs, 1);
+#ifdef _ARCH_PWR8
+  vec_vstsfdux (xs, vra[VEC_DW_H], array);
+  vec_vstsfdux (xs1, vra[VEC_DW_L], array);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  vec_vstsfdux (xs, scalar_extract_uint64_from_high_uint128(gprp), array);
+  vec_vstsfdux (xs1, scalar_extract_uint64_from_low_uint128(gprp), array);
+#endif
+}
+
+/** \brief Vector Scatter-Store Float Double to Doubleword Scaled Index.
+ *
+ *  For each doubleword element [i] of vra, store the double
+ *  element xs[i] at array[vra[i] * (1 << scale)]. Indexes are
+ *  converted to offsets from *array by shifting each doubleword of vra
+ *  left (3+scale) bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector double elements to store.
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword indexes.
+ *  @param scale Factor effectually multiplying the indexes by
+ *  2<sup>scale</sup>.
+ */
+static inline void
+vec_vsstfddsx (vf64_t xs, double *array,
+	    vi64_t vra, const unsigned char scale)
+{
+  vi64_t offset;
+
+  offset = (vi64_t) vec_sldi ((vui64_t) vra, (3 + scale));
+  vec_vsstfddo (xs, array, offset);
+}
+
+/** \brief Vector Scatter-Store Float Double to Doubleword Indexes.
+ *
+ *  For each doubleword element [i] of vra, store the double
+ *  element xs[i] at array[vra[i]]. Indexes are converted to offsets
+ *  from *array by shifting each doubleword of vra
+ *  left 3 bits.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword indexes are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector double elements to store.
+ *  @param array Pointer to array of doubles.
+ *  @param vra Vector of doubleword indexes.
+ */
+static inline void
+vec_vsstfddx (vf64_t xs, double *array, vi64_t vra)
+{
+  vi64_t offset;
+
+  offset = (vi64_t) vec_sldi ((vui64_t) vra, 3);
+  vec_vsstfddo (xs, array, offset);
+}
+
+/** \brief Vector Scalar Load Float Double Signed Doubleword Indexed.
+ *
+ *  Load the left most doubleword of vector <B>xt</B> as a scalar
+ *  double from the effective address formed by <B>rb+ra</B>. The
+ *  operand <B>rb</B> is a pointer to an array of doubles.
+ *  The operand <B>ra</B> is a doubleword integer byte offset
+ *  from <B>rb</B>. The result <B>xt</B> is returned as a vf64_t
+ *  vector. For best performance <B>rb</B> and <B>ra</B>
+ *  should be doubleword aligned (integer multiple of 8).
+ *
+ *  \note the right most doubleword of vector <B>xt</B> is left
+ *  <I>undefined</I> by this operation.
+ *
+ *  This operation is an alternate form of Vector Load Element
+ *  (vec_lde), with the added simplification that data is always left
+ *  justified in the vector. This simplifies merging elements for
+ *  gather operations.
+ *
+ *  \note This is instruction was introduced in PowerISA 2.06 (POWER7).
+ *  For POWER8/9 there are additional optimizations by effectively
+ *  converting small constant index values into displacements. For
+ *  POWER8 a specific pattern of addi/lsxdx instruction is <I>fused</I>
+ *  into a single load displacement internal operation. For POWER9 we can
+ *  use the lxsd (DS-form) instruction directly.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   5   | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param ra const doubleword index (offset/displacement).
+ *  @param rb const doubleword pointer to an array of doubles.
+ *  @return The data stored at (ra + rb) is loaded into vector
+ *  doubleword element 0. Element 1 is undefined.
+ */
+static inline vf64_t
+vec_vlsfdux (const signed long long ra, const double *rb)
+{
+  vf64_t xt;
+
+#if defined (__clang__)
+  __VEC_U_128 t;
+  unsigned long long *p = (unsigned long long *)((char *)rb + ra);
+  t.ulong.upper = *p;
+  xt = t.vx1;
+#else
+  if (__builtin_constant_p (ra) && (ra < 32760) && (ra >= -32768)
+      && ((ra & 3) == 0))
+    {
+#if defined (_ARCH_PWR9)
+      __asm__(
+	  "lxsd%X1 %0,%1;"
+	  : "=v" (xt)
+	  : "m" (*(double*)((char *)rb + ra))
+	  : );
+#else
+      if (ra == 0)
+	{
+	  __asm__(
+	      "lxsdx %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*rb)
+	      : );
+	} else {
+	  unsigned long long rt;
+#if defined (_ARCH_PWR8)
+	  // For P8 better if li and lxsdx shared a single asm block
+	  // (enforcing consecutive instructions).
+	  // This enables instruction fusion for P8.
+	  __asm__(
+	      "li %0,%2;"
+	      "lxsdx %x1,%3,%0;"
+	      : "=&r" (rt), "=wa" (xt)
+	      : "I" (ra), "b" (rb), "m" (*(double*)((char *)rb+rt))
+	      : );
+#else // _ARCH_PWR7
+	  // This generates operationally the same code, but the
+	  // compiler may rearrange/schedule the code.
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "lxsdx %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*(double*)((char *)rb+rt))
+	      : );
+#endif
+	}
+#endif
+    } else {
+      __asm__(
+	  "lxsdx %x0,%y1;"
+	  : "=wa" (xt)
+	  : "Z" (*(double*)((char *)rb+ra))
+	  : );
+    }
+#endif
+  return xt;
+}
+
+/** \brief Vector Store Scalar Float Double Signed Doubleword Indexed.
+ *
+ *  Stores the left most doubleword of vector <B>xs</B> as a scalar
+ *  double float at the effective address formed by <B>rb+ra</B>. The
+ *  operand <B>rb</B> is a pointer to an array of doubles.
+ *  The operand <B>ra</B> is a doubleword integer byte offset
+ *  from <B>rb</B>. For best performance <B>rb</B> and <B>ra</B>
+ *  should be doubleword aligned (integer multiple of 8).
+ *
+ *  This operation is an alternate form of vector store element, with
+ *  the added simplification that data is always left justified in the
+ *  vector. This simplifies scatter operations.
+ *
+ *  \note This is instruction was introduced in PowerISA 2.06 (POWER7).
+ *  For POWER9 there are additional optimizations by effectively
+ *  converting small constant index values into displacements. For
+ *  POWER9 we can use the stxsd (DS-form) instruction directly.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 0 - 2 | 2/cycle  |
+ *  |power9   | 0 - 2 | 4/cycle  |
+ *
+ *  @param xs vector doubleword element 0 to be stored.
+ *  @param ra const doubleword index (offset/displacement).
+ *  @param rb const doubleword pointer to an array of doubles.
+ */
+static inline void
+vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb)
+{
+#if defined (__clang__)
+  __VEC_U_128 t;
+  unsigned long long *p = (unsigned long long *)((char *)rb + ra);
+  t.vx1 = xs;
+  *p = t.ulong.upper;
+#else
+  if (__builtin_constant_p (ra) && (ra <= 32760) && (ra >= -32768)
+      && ((ra & 3) == 0))
+    {
+#if defined (_ARCH_PWR9)
+      __asm__(
+	  "stxsd%X0 %1,%0;"
+	  : "=m" (*(double*)((char *)rb + ra))
+	  : "v" (xs)
+	  : );
+#else
+      if (ra == 0)
+	{
+	  __asm__(
+	      "stxsdx %x1,%y0;"
+	      : "=Z" (*rb)
+	      : "wa" (xs)
+	      : );
+	} else {
+	  unsigned long long rt;
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "stxsdx %x1,%y0;"
+	      : "=Z" (*(double*)((char *)rb+rt))
+	      : "wa" (xs)
+	      : );
+	}
+#endif
+    } else {
+      __asm__(
+	  "stxsdx %x1,%y0;"
+	  : "=Z" (*(double*)((char *)rb+ra))
+	  : "wa" (xs)
+	  : );
+    }
 #endif
 }
 

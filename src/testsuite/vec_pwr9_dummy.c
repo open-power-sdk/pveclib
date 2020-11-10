@@ -39,6 +39,78 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui64_t
+test_vslsudux_PWR9 (unsigned long long int *array, unsigned long offset)
+{
+  return vec_vlsidx (offset, array);
+}
+
+vui64_t
+test_vslsudux_c0_PWR9 (unsigned long long int *array)
+{
+  return vec_vlsidx (0, array);
+}
+
+vui64_t
+test_vslsudux_c1_PWR9 (unsigned long long int *array)
+{
+  return vec_vlsidx (8, array);
+}
+
+vui64_t
+test_vslsudux_c6_PWR9 (unsigned long long int *array)
+{
+  return vec_vlsidx (6, array);
+}
+
+vui64_t
+test_vec_lvgudo_PWR9 (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddo (array, vra);
+}
+
+vui64_t
+test_vec_lvgudx_PWR9 (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddx (array, vra);
+}
+
+vui64_t
+test_vec_lvgudsx_PWR9 (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddsx (array, vra, 4);
+}
+
+void
+test_vstsudux_c0_PWR9 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 0, array);
+}
+
+void
+test_vstsudux_c1_PWR9 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 8, array);
+}
+
+void
+test_stvsudo_PWR9 (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddo (data, array, vra);
+}
+
+void
+test_stvsudx_PWR9 (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddx (data, array, vra);
+}
+
+void
+test_stvsudsx_PWR9 (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddsx (data, array, vra, 4);
+}
+
 vui8_t
 __test_absdub_PWR9 (vui8_t __A, vui8_t __B)
 {

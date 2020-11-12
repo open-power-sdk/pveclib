@@ -202,9 +202,9 @@ test_vec_cosf64 (vf64_t value)
 
 ///@cond INTERNAL
 static inline vf64_t
-vec_vlsfdux (const signed long long ra, const double *rb);
+vec_vlxsfdx (const signed long long ra, const double *rb);
 static inline void
-vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb);
+vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb);
 ///@endcond
 
 /** \brief Vector double absolute value.
@@ -1167,9 +1167,9 @@ vec_vglfdso (double *array, const long long offset0,
 {
   vf64_t re0, re1, result;
 
-  re0 = vec_vlsfdux (offset0, array);
-  re1 = vec_vlsfdux (offset1, array);
-  /* Need to handle endian as the vec_vlsfdux result is always left
+  re0 = vec_vlxsfdx (offset0, array);
+  re1 = vec_vlxsfdx (offset1, array);
+  /* Need to handle endian as the vec_vlxsfdx result is always left
    * justified in VR, while element [0] may be left ot right. */
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = (vf64_t) vec_permdi ((vui64_t) re1, (vui64_t) re0, 0);
@@ -1204,14 +1204,14 @@ vec_vglfddo (double *array, vi64_t vra)
   vf64_t rese0, rese1;
 
 #ifdef _ARCH_PWR8
-  rese0 = vec_vlsfdux (vra[VEC_DW_H], array);
-  rese1 = vec_vlsfdux (vra[VEC_DW_L], array);
+  rese0 = vec_vlxsfdx (vra[VEC_DW_H], array);
+  rese1 = vec_vlxsfdx (vra[VEC_DW_L], array);
 #else
   // Need to explicitly manage the VR/GPR xfer for PWR7
   unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
 
-  rese0 = vec_vlsfdux (scalar_extract_uint64_from_high_uint128(gprp), array);
-  rese1 = vec_vlsfdux (scalar_extract_uint64_from_low_uint128(gprp), array);
+  rese0 = vec_vlxsfdx (scalar_extract_uint64_from_high_uint128(gprp), array);
+  rese1 = vec_vlxsfdx (scalar_extract_uint64_from_low_uint128(gprp), array);
 #endif
   return (vf64_t) vec_permdi ((vui64_t) rese0, (vui64_t) rese1, 0);
 }
@@ -1301,14 +1301,14 @@ vec_vsstfdso (vf64_t xs, double *array,
   vf64_t xs1;
 
   xs1 = (vf64_t) vec_xxspltd ((vui64_t) xs, 1);
-  /* Need to handle endian as vec_vstsfdux always left side of
+  /* Need to handle endian as vec_vstxsfdx always left side of
    * the VR, while the element [0] may in the left or right. */
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-  vec_vstsfdux (xs, offset1, array);
-  vec_vstsfdux (xs1, offset0, array);
+  vec_vstxsfdx (xs, offset1, array);
+  vec_vstxsfdx (xs1, offset0, array);
 #else
-  vec_vstsfdux (xs, offset0, array);
-  vec_vstsfdux (xs1, offset1, array);
+  vec_vstxsfdx (xs, offset0, array);
+  vec_vstxsfdx (xs1, offset1, array);
 #endif
 }
 
@@ -1335,13 +1335,13 @@ vec_vsstfddo (vf64_t xs, double *array,
 {
   vf64_t xs1 = (vf64_t) vec_xxspltd ((vui64_t) xs, 1);
 #ifdef _ARCH_PWR8
-  vec_vstsfdux (xs, vra[VEC_DW_H], array);
-  vec_vstsfdux (xs1, vra[VEC_DW_L], array);
+  vec_vstxsfdx (xs, vra[VEC_DW_H], array);
+  vec_vstxsfdx (xs1, vra[VEC_DW_L], array);
 #else
   // Need to explicitly manage the VR/GPR xfer for PWR7
   unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
-  vec_vstsfdux (xs, scalar_extract_uint64_from_high_uint128(gprp), array);
-  vec_vstsfdux (xs1, scalar_extract_uint64_from_low_uint128(gprp), array);
+  vec_vstxsfdx (xs, scalar_extract_uint64_from_high_uint128(gprp), array);
+  vec_vstxsfdx (xs1, scalar_extract_uint64_from_low_uint128(gprp), array);
 #endif
 }
 
@@ -1404,7 +1404,7 @@ vec_vsstfddx (vf64_t xs, double *array, vi64_t vra)
   vec_vsstfddo (xs, array, offset);
 }
 
-/** \brief Vector Scalar Load Float Double Signed Doubleword Indexed.
+/** \brief Vector Load Scalar Float Double Indexed.
  *
  *  Load the left most doubleword of vector <B>xt</B> as a scalar
  *  double from the effective address formed by <B>rb+ra</B>. The
@@ -1440,7 +1440,7 @@ vec_vsstfddx (vf64_t xs, double *array, vi64_t vra)
  *  doubleword element 0. Element 1 is undefined.
  */
 static inline vf64_t
-vec_vlsfdux (const signed long long ra, const double *rb)
+vec_vlxsfdx (const signed long long ra, const double *rb)
 {
   vf64_t xt;
 
@@ -1477,7 +1477,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
 	      "li %0,%2;"
 	      "lxsdx %x1,%3,%0;"
 	      : "=&r" (rt), "=wa" (xt)
-	      : "I" (ra), "b" (rb), "m" (*(double*)((char *)rb+rt))
+	      : "I" (ra), "b" (rb), "m" (*(double*)((char *)rb+ra))
 	      : );
 #else // _ARCH_PWR7
 	  // This generates operationally the same code, but the
@@ -1506,7 +1506,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
   return xt;
 }
 
-/** \brief Vector Store Scalar Float Double Signed Doubleword Indexed.
+/** \brief Vector Store Scalar Float Double Indexed.
  *
  *  Stores the left most doubleword of vector <B>xs</B> as a scalar
  *  double float at the effective address formed by <B>rb+ra</B>. The
@@ -1534,7 +1534,7 @@ vec_vlsfdux (const signed long long ra, const double *rb)
  *  @param rb const doubleword pointer to an array of doubles.
  */
 static inline void
-vec_vstsfdux (vf64_t xs, const signed long long ra, double *rb)
+vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
 {
 #if defined (__clang__)
   __VEC_U_128 t;

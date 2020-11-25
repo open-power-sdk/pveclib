@@ -3095,13 +3095,13 @@ vec_srdi (vui64_t vra, const unsigned int shb)
 	sr_a = ((vui8_t) vra);
 	if (shb > 7)
 	  {
-	    /* Vector Shift Left By Octet by bits 121-124 of lshift.  */
+	    /* Vector Shift Right By Octet by bits 121-124 of rshift.  */
 	    sr_m = vec_sro (sr_m, rshift);
 	    sr_a = vec_sro ((vui8_t) vra, rshift);
 	  }
 	if ((shb & 7) != 0)
 	  {
-	    /* Vector Shift Left by bits 125-127 of lshift.  */
+	    /* Vector Shift Right by bits 125-127 of rshift.  */
 	    sr_m = vec_srl (sr_m, rshift);
 	    sr_a = vec_srl (sr_a, rshift);
 	  }

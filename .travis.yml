@@ -1,0 +1,64 @@
+language: c
+
+matrix:
+  include:
+    - name: "linux-ppc64le-gcc-8"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: gcc-8
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="gcc-8"
+    - name: "linux-ppc64le-gcc-9"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: gcc-9
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="gcc-9"
+    - name: "linux-ppc64le-at14.0"
+      os: linux
+      dist: bionic
+      arch: ppc64le
+      compiler: /opt/at14.0/bin/gcc
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="advance-toolchain-at14.0-devel"
+    - name: "linux-ppc64le-clang-8"
+      os: linux
+      dist: bionic
+      arch: ppc64le
+      compiler: clang-8
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="clang-8"
+    - name: "linux-ppc64le-clang-9"
+      os: linux
+      dist: bionic
+      arch: ppc64le
+      compiler: clang-9
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="clang-9"
+    - name: "linux-ppc64le-clang-10"
+      os: linux
+      dist: bionic
+      arch: ppc64le
+      compiler: clang-10
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="clang-10"
+
+before_install:
+  - sudo add-apt-repository universe
+  - sudo apt-get update
+  - sudo apt-get -y install ${PKG_CC} doxygen graphviz
+
+script:
+  - mkdir $(pwd)/install
+  - ./configure $CONFIGURE_OPTS --prefix=$(pwd)/install
+  - make -j $(nproc)
+  - make -j $(nproc) check
+  - make install

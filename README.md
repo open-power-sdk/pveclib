@@ -1,5 +1,7 @@
 # pveclib
 
+[![Build Status](https://travis-ci.org/open-power-sdk/pveclib.svg?branch=master)](https://travis-ci.org/open-power-sdk/pveclib)
+
 ## Power Vector Library
 
 Header files that contain useful functions leveraging the PowerISA

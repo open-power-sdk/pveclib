@@ -292,18 +292,6 @@ test_veclfgux_v1 (float *array, vui32_t idx)
   return res;
 }
 
-vf32_t
-test_veclfgux_v2 (float *array, vui32_t idx)
-{
-  __VEC_U_128 vidx, vflt;
-  vidx.vx4 = idx;
-  vflt.vf4[0] = array[vidx.uint.ix0];
-  vflt.vf4[1] = array[vidx.uint.ix1];
-  vflt.vf4[2] = array[vidx.uint.ix2];
-  vflt.vf4[3] = array[vidx.uint.ix3];
-  return vflt.vf4;
-}
-
 #if defined __GNUC__ && (__GNUC__ > 7) && defined(_ARCH_PWR8)
 vf32_t
 test_veclfgux_v3 (float *array, vui32_t idx)

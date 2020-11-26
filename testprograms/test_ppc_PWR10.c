@@ -1,5 +1,5 @@
 #define GNUC_VERSION (__GNUC__*1000 + __GNUC_MAJOR__*10)
-#if (GNUC_VERSION >= 14010) || defined(__clang__)
+#if (GNUC_VERSION >= 10010) || defined(__clang__)
 # pragma GCC diagnostic ignored "-Wdeprecated"
 #endif
 

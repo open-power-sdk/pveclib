@@ -39,85 +39,85 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 vui128_t
-__test_muloud_PWR9 (vui64_t a, vui64_t b)
+__test_muloud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_muloud (a, b);
 }
 
 vui128_t
-__test_muleud_PWR9 (vui64_t a, vui64_t b)
+__test_muleud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_muleud (a, b);
 }
 
 vui64_t
-__test_mulhud_PWR9 (vui64_t a, vui64_t b)
+__test_mulhud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_mulhud (a, b);
 }
 
 vui64_t
-__test_muludm_PWR9 (vui64_t a, vui64_t b)
+__test_muludm_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_muludm (a, b);
 }
 
 vui128_t
-__test_vmuloud_PWR9 (vui64_t a, vui64_t b)
+__test_vmuloud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_vmuloud (a, b);
 }
 
 vui128_t
-__test_vmuleud_PWR9 (vui64_t a, vui64_t b)
+__test_vmuleud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_vmuleud (a, b);
 }
 
 vui128_t
-__test_vmsumoud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
+__test_vmsumoud_PWR10 (vui64_t a, vui64_t b, vui128_t c)
 {
   return vec_vmsumoud (a, b, c);
 }
 
 vui128_t
-__test_vmsumeud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
+__test_vmsumeud_PWR10 (vui64_t a, vui64_t b, vui128_t c)
 {
   return vec_vmsumeud (a, b, c);
 }
 
 vui128_t
-__test_vmaddoud_PWR9 (vui64_t a, vui64_t b, vui64_t c)
+__test_vmaddoud_PWR10 (vui64_t a, vui64_t b, vui64_t c)
 {
   return vec_vmaddoud (a, b, c);
 }
 
 vui128_t
-__test_vmaddeud_PWR9 (vui64_t a, vui64_t b, vui64_t c)
+__test_vmaddeud_PWR10 (vui64_t a, vui64_t b, vui64_t c)
 {
   return vec_vmaddeud (a, b, c);
 }
 
 vui128_t
-__test_vmadd2oud_PWR9 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+__test_vmadd2oud_PWR10 (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
 {
   return vec_vmadd2oud (a, b, c, d);
 }
 
 vui128_t
-__test_mulhuq_PWR9 (vui128_t a, vui128_t b)
+__test_mulhuq_PWR10 (vui128_t a, vui128_t b)
 {
   return vec_mulhuq (a, b);
 }
 
 vui128_t
-__test_mulluq_PWR9 (vui128_t a, vui128_t b)
+__test_mulluq_PWR10 (vui128_t a, vui128_t b)
 {
   return vec_mulluq (a, b);
 }
 
 vui128_t
-__test_muludq_PWR9 (vui128_t *mulh, vui128_t a, vui128_t b)
+__test_muludq_PWR10 (vui128_t *mulh, vui128_t a, vui128_t b)
 {
   return vec_muludq (mulh, a, b);
 }

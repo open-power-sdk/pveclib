@@ -26,4 +26,26 @@
 extern int
 test_vec_f32 (void);
 
+#define MN 64
+
+extern float matrix_f32 [MN][MN];
+
+extern void
+test_f32_Imatrix_init (float * array);
+
+extern int
+test_f32_Imatrix_check (float * array);
+
+extern void
+test_f32_matrix_transpose (float * tm, float * m);
+
+extern void
+test_f32_matrix_gather_transpose (float * tm, float * m);
+
+extern void
+test_f32_matrix_gatherx2_transpose (float * tm, float * m);
+
+extern void
+test_f32_matrix_gatherx4_transpose (float * tm, float * m);
+
 #endif /* TESTSUITE_ARITH128_TEST_F32_H_ */

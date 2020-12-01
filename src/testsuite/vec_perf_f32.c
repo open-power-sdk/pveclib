@@ -37,6 +37,7 @@
 
 #include <testsuite/arith128_print.h>
 #include <testsuite/vec_perf_f32.h>
+#include <testsuite/arith128_test_f32.h>
 
 #define N 10
 static const vf32_t data0 =
@@ -87,3 +88,49 @@ int timed_fpclassify_f32 (void)
 #endif
    return 0;
 }
+
+int
+timed_scalar_f32_transpose ()
+{
+  float tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f32_matrix_transpose (&tmatrix[0][0], &matrix_f32[0][0]);
+
+  return rc;
+}
+
+int
+timed_gather_f32_transpose ()
+{
+  float tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f32_matrix_gather_transpose (&tmatrix[0][0], &matrix_f32[0][0]);
+
+  return rc;
+}
+
+int
+timed_gatherx2_f32_transpose ()
+{
+  float tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f32_matrix_gatherx2_transpose (&tmatrix[0][0], &matrix_f32[0][0]);
+
+  return rc;
+}
+
+#if 1
+int
+timed_gatherx4_f32_transpose ()
+{
+  float tmatrix[MN][MN] __attribute__ ((aligned (128)));
+  int rc = 0;
+
+  test_f32_matrix_gatherx4_transpose (&tmatrix[0][0], &matrix_f32[0][0]);
+
+  return rc;
+}
+#endif

@@ -33,6 +33,292 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
 
+#if (__GNUC__ > 7) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+vf32_t
+test_vec_pack_dpsp (vf64_t a, vf64_t b)
+{
+  return vec_pack (a,b);
+}
+#endif
+
+void
+test_vec_vsst4fsso (vf32_t xs, float *array,
+		   const long long offset0, const long long offset1,
+		   const long long offset2, const long long offset3)
+{
+  vec_vsst4fsso (xs, array, offset0, offset1, offset2, offset3);
+}
+
+void
+test_vec_vsstfswwo (vf32_t xs, float *array,
+		   vi32_t vra)
+{
+  vec_vsst4fswo (xs, array, vra);
+}
+
+void
+test_vec_vsst4fswsx (vf32_t xs, float *array,
+		   vi32_t vra)
+{
+  vec_vsst4fswsx (xs, array, vra, 4);
+}
+
+void
+test_vec_vsst4fswx (vf32_t xs, float *array,
+		   vi32_t vra)
+{
+  vec_vsst4fswx (xs, array, vra);
+}
+
+vf32_t
+test_vec_vgl4fswsx (float *array, vi32_t vra)
+{
+  return vec_vgl4fswsx (array, vra, 4);
+}
+
+vf32_t
+test_vec_vgl4fswx (float *array, vi32_t vra)
+{
+  return vec_vgl4fswx (array, vra);
+}
+
+vf32_t
+test_vec_vgl4fswo (float *array, vi32_t vra)
+{
+  return vec_vgl4fswo (array, vra);
+}
+
+vf32_t
+test_vec_vgl4fsso (float *array, const long long offset0,
+	     const long long offset1, const long long offset2,
+	     const long long offset3)
+{
+  return vec_vgl4fsso (array, offset0, offset1, offset2, offset3);
+}
+
+void
+test_vec_vsstfsdsx (vf64_t xs, float *array, vi64_t vra)
+{
+  vec_vsstfsdsx (xs, array, vra, 4);
+}
+
+void
+test_vec_vsstfsdx (vf64_t xs, float *array, vi64_t vra)
+{
+  vec_vsstfsdx (xs, array, vra);
+}
+
+void
+test_vec_vsstfsdo (vf64_t xs, float *array, vi64_t vra)
+{
+  vec_vsstfsdo (xs, array, vra);
+}
+
+void
+test_vec_vsstfsso (vf64_t xs, float *array,
+	      const long long offset0, const long long offset1)
+{
+  vec_vsstfsso (xs, array, offset0, offset1);
+}
+
+void
+test_vec_vsstfsso_032 (vf64_t xs, float *array)
+{
+  vec_vsstfsso (xs, array, 0, 32);
+}
+
+vf64_t
+test_vec_vglfsdsx (float *array, vi64_t vra)
+{
+  return vec_vglfsdsx (array, vra, 4);
+}
+
+vf64_t
+test_vec_vglfsdx (float *array, vi64_t vra)
+{
+  return vec_vglfsdx (array, vra);
+}
+
+vf64_t
+test_vec_vglfsdo (float *array, vi64_t vra)
+{
+  return vec_vglfsdo (array, vra);
+}
+
+vf64_t
+test_vec_vglfsso (float *array, const long long offset0,
+		     const long long offset1)
+{
+  return vec_vglfsso (array, offset0, offset1);
+}
+
+vf64_t
+test_vec_vglfsso_032 (float *array)
+{
+  return vec_vglfsso (array, 0, 32);
+}
+
+vf64_t
+test_vec_vlxsspx (const signed long long ra, const float *rb)
+{
+  return vec_vlxsspx (ra, rb);
+}
+
+vf64_t
+test_vec_vlxsspx_c0 (const float *rb)
+{
+  return vec_vlxsspx (0, rb);
+}
+
+vf64_t
+test_vec_vlxsspx_c1 (const float *rb)
+{
+  return vec_vlxsspx (8, rb);
+}
+
+vf64_t
+test_vec_vlxsspx_c2 (const float *rb)
+{
+  return vec_vlxsspx (32760, rb);
+}
+
+vf64_t
+test_vec_vlxsspx_c3 (const float *rb)
+{
+  return vec_vlxsspx (32768, rb);
+}
+
+vf64_t
+test_vec_vlxsspx_c4 (const float *rb)
+{
+  return vec_vlxsspx (-32768, rb);
+}
+
+vf64_t
+test_vlxsspx_v0 (const signed long long ra, const float *rb)
+{
+  vf64_t xt;
+  __VEC_U_128 t;
+
+  float *p = (float *)((char *)rb + ra);
+  t.vf2[0] = t.vf2[1] = *p;
+  xt = t.vf2;
+  return xt;
+}
+
+void
+test_vstxsspx (vf64_t data, float *array, signed long offset)
+{
+  vec_vstxsspx (data, offset, array);
+}
+
+void
+test_vstxsspx_c0 (vf64_t data, float *array)
+{
+  vec_vstxsspx (data, 0, array);
+}
+
+void
+test_vstxsspx_c1 (vf64_t data, float *array)
+{
+  vec_vstxsspx (data, 8, array);
+}
+
+void
+test_vstxsspx_c2 (vf64_t data, float *array)
+{
+  vec_vstxsspx (data, 32760, array);
+}
+
+void
+test_vstxsspx_c3 (vf64_t data, float *array)
+{
+  vec_vstxsspx (data, 32768, array);
+}
+
+void
+test_vstxsspx_c4 (vf64_t data, float *array)
+{
+  vec_vstxsspx (data, -32768, array);
+}
+
+void
+test_vstxsspx_v1 (vf64_t data, float *array, signed long offset)
+{
+  __VEC_U_128 t;
+  float *p = (float *)((char *)array + offset);
+  t.vf2 = data;
+  *p = t.vf2[0];
+}
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+vf32_t
+test_vlxsspx_v1 (float *array, unsigned long offset)
+{
+  vf32_t res, rese;
+  vui8_t resp;
+
+  rese = vec_lvewx (offset, array);
+  resp = vec_lvsr (offset, array);
+  res = vec_perm (rese, rese, resp);
+  return res;
+}
+
+vf32_t
+test_vglssfso_v2 (float *array, unsigned long offset0, unsigned long offset1)
+{
+  vf32_t res, rese0, rese1;
+  vui8_t resp0, resp1;
+
+  rese0 = vec_lvewx (offset0, array);
+  rese1 = vec_lvewx (offset1, array);
+  resp0 = vec_lvsl (offset0, array);
+  resp1 = vec_lvsl (offset1, array);
+  rese0 = vec_perm (rese0, rese0, resp0);
+  rese1 = vec_perm (rese1, rese1, resp1);
+  res = vec_mergeh (rese0, rese1);
+  return res;
+}
+#endif
+
+vf32_t
+test_veclfgux_v1 (float *array, vui32_t idx)
+{
+  vf32_t res;
+  res[0] = array[idx[0]];
+  res[1] = array[idx[1]];
+  res[2] = array[idx[2]];
+  res[3] = array[idx[3]];
+  return res;
+}
+
+#if defined __GNUC__ && (__GNUC__ > 7) && defined(_ARCH_PWR8)
+vf32_t
+test_veclfgux_v3 (float *array, vui32_t idx)
+{
+  __VEC_U_128 vidx0, vidx1, vflt0, vflt1;
+  vui64_t idxh, idxl;
+  const vui32_t vzero = { 0, 0, 0, 0 };
+  const vui64_t vsl2 = { 2, 2 };
+  vf32_t res0, res1, res;
+  idxh = (vui64_t) vec_mergeh (vzero, idx);
+  idxl = (vui64_t) vec_mergel (vzero, idx);
+  idxh = vec_sl (idxh, vsl2);
+  idxl = vec_sl (idxl, vsl2);
+
+  vidx0.vx2 = idxh;
+  vidx1.vx2 = idxl;
+  vflt0.vf2[0] = array[vidx0.ulong.lower];
+  vflt0.vf2[1] = array[vidx0.ulong.upper];
+  vflt1.vf2[0] = array[vidx1.ulong.lower];
+  vflt1.vf2[1] = array[vidx1.ulong.upper];
+  res0 = vec_floate (vflt0.vf2);
+  res1 = vec_floato (vflt1.vf2);
+  res  = vec_mergee (res0, res1);
+  return res;
+}
+#endif
+
 vf32_t
 test_vec_f32_abs (vf32_t value)
 {

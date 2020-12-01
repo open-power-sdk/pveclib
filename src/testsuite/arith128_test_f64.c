@@ -2473,36 +2473,36 @@ test_lvgdfdx (void)
   printf ("\ntest_Vector Gather-Load Float Double from Doubleword Offsets\n");
 
   e =  (vf64_t) CONST_VINT64_DW ( 0.0, -1.0 );
-  j0 = vec_vlsfdux (0, test_f64);
+  j0 = vec_vlxsfdx (0, test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 1:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 1:", j, e);
 
   e =  (vf64_t) CONST_VINT64_DW ( 1.0, -1.0 );
-  j0 = vec_vlsfdux (8, test_f64);
+  j0 = vec_vlxsfdx (8, test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 2:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 2:", j, e);
 
   e =  (vf64_t) CONST_VINT64_DW ( 15.0, -1.0 );
-  j0 = vec_vlsfdux (120, test_f64);
+  j0 = vec_vlxsfdx (120, test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 3:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 3:", j, e);
 
   i1 = (vi64_t) { 8, 120 };
   e =  (vf64_t) CONST_VINT64_DW ( 1.0, -1.0 );
-  j0 = vec_vlsfdux (i1[0], test_f64);
+  j0 = vec_vlxsfdx (i1[0], test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 4:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 4:", j, e);
 
   i1 = (vi64_t) { 8, 120 };
   e =  (vf64_t) CONST_VINT64_DW ( 15.0, -1.0 );
-  j1 = vec_vlsfdux (i1[1], test_f64);
+  j1 = vec_vlxsfdx (i1[1], test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j1, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 5:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 5:", j, e);
 
   // This test depends on the merge of scalars from lsfdux 4/5
   e =  (vf64_t) { 1.0, 15.0 };
@@ -2512,7 +2512,7 @@ test_lvgdfdx (void)
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) j1, 0);
 #endif
 
-  rc += check_v2f64 ("vec_vlsfdux2 :", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx2 :", j, e);
 
   // This test replicates the results of the last 2 tests in single op.
   e =  (vf64_t) { 1.0, 15.0 };
@@ -2529,16 +2529,16 @@ test_lvgdfdx (void)
   i2 = (vi64_t) { 1, 15 };
   i1 = (vi64_t) vec_sldi ((vui64_t) i2, 3);
   e =  (vf64_t) CONST_VINT64_DW ( 1.0, -1.0 );
-  j0 = vec_vlsfdux (i1[0], test_f64);
+  j0 = vec_vlxsfdx (i1[0], test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 6:", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 6:", j, e);
 
   e =  (vf64_t) CONST_VINT64_DW ( 15.0, -1.0 );
-  j1 = vec_vlsfdux (i1[1], test_f64);
+  j1 = vec_vlxsfdx (i1[1], test_f64);
   j = (vf64_t) vec_permdi ((vui64_t) j1, (vui64_t) e, 1);
 
-  rc += check_v2f64 ("vec_vlsfdux 7:",  j, e);
+  rc += check_v2f64 ("vec_vlxsfdx 7:",  j, e);
 
   e =  (vf64_t) { 1.0, 15.0 };
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
@@ -2547,7 +2547,7 @@ test_lvgdfdx (void)
   j = (vf64_t) vec_permdi ((vui64_t) j0, (vui64_t) j1, 0);
 #endif
 
-  rc += check_v2f64 ("vec_vlsfdux2 :", j, e);
+  rc += check_v2f64 ("vec_vlxsfdx2 :", j, e);
 
   i1 = (vi64_t) { 1, 2 };
   e =  (vf64_t) { 1.0, 2.0 };
@@ -2581,8 +2581,8 @@ static double test_stf64[16];
 int
 test_stvgdfdx (void)
 {
-  vi64_t i1, i2;
-  vf64_t j, j0, j1, j2, e, *mem;
+  vi64_t i2;
+  vf64_t j, j1, j2, e, *mem;
   int rc = 0;
   int i;
 
@@ -2595,8 +2595,8 @@ test_stvgdfdx (void)
 
   j1 = (vf64_t) CONST_VINT64_DW ( 16.0, 1616.0 );
   j2 = (vf64_t) CONST_VINT64_DW ( 31.0, 3131.0 );
-  vec_vstsfdux (j1, 0, test_stf64);
-  vec_vstsfdux (j2, 120, test_stf64);
+  vec_vstxsfdx (j1, 0, test_stf64);
+  vec_vstxsfdx (j2, 120, test_stf64);
 
   j = mem [0];
   e = (vf64_t) { 16.0, 1.0 };
@@ -2757,7 +2757,6 @@ test_f64_matrix_transpose (double * tm, double * m)
 {
   long i, j, k, l;
   long rows, columns;
-  int rc = 0;
 
   rows = columns = MN;
 
@@ -2776,14 +2775,10 @@ void
 //__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gather_transpose (double * tm, double * m)
 {
-  vf64_t xt;
-  vi64_t vra =
-    { 0, MN * 8 };
-  vui64_t stride =
-    { MN * 8 * 2, MN * 8 * 2 };
-  long i, j, k, l;
+  vi64_t vra = { 0, MN * 8 };
+  vui64_t stride = { MN * 8 * 2, MN * 8 * 2 };
+  long i, j;
   long rows, columns;
-  int rc = 0;
 
   rows = columns = MN;
 
@@ -2804,14 +2799,12 @@ void
 //__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gatherx2_transpose (double * tm, double * m)
 {
-  vf64_t xt;
   vi64_t vra =
     { 0, MN * 8 };
   vui64_t stride =
     { MN * 8 * 2, MN * 8 * 2 };
-  long i, j, k, l;
+  long i, j;
   long rows, columns;
-  int rc = 0;
 
   rows = columns = MN;
 
@@ -2839,14 +2832,12 @@ void
 //__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gatherx4_transpose (double * tm, double * m)
 {
-  vf64_t xt;
   vi64_t vra =
     { 0, MN * 8 };
   vui64_t stride =
     { MN * 8 * 2, MN * 8 * 2 };
-  long i, j, k, l;
+  long i, j;
   long rows, columns;
-  int rc = 0;
 
   rows = columns = MN;
 

@@ -68,37 +68,37 @@ test_stvsfdsx (vf64_t data, double *array, vi64_t vra)
 void
 test_vstfdux (vf64_t data, double *array, signed long offset)
 {
-  vec_vstsfdux (data, offset, array);
+  vec_vstxsfdx (data, offset, array);
 }
 
 void
 test_vstfdux_c0 (vf64_t data, double *array)
 {
-  vec_vstsfdux (data, 0, array);
+  vec_vstxsfdx (data, 0, array);
 }
 
 void
 test_vstfdux_c1 (vf64_t data, double *array)
 {
-  vec_vstsfdux (data, 8, array);
+  vec_vstxsfdx (data, 8, array);
 }
 
 void
 test_vstfdux_c2 (vf64_t data, double *array)
 {
-  vec_vstsfdux (data, 32760, array);
+  vec_vstxsfdx (data, 32760, array);
 }
 
 void
 test_vstfdux_c3 (vf64_t data, double *array)
 {
-  vec_vstsfdux (data, 32768, array);
+  vec_vstxsfdx (data, 32768, array);
 }
 
 void
 test_vstfdux_c5 (vf64_t data, double *array)
 {
-  vec_vstsfdux (data, -32768, array);
+  vec_vstxsfdx (data, -32768, array);
 }
 
 void
@@ -107,39 +107,39 @@ test_vstfdux_c4 (vf64_t data, double *array)
   vf64_t data1;
 
   data1 = (vf64_t) vec_xxspltd ((vui64_t) data, 1);
-  vec_vstsfdux (data, 16, array);
-  vec_vstsfdux (data1, 48, array);
+  vec_vstxsfdx (data, 16, array);
+  vec_vstxsfdx (data1, 48, array);
 }
 
 
 vf64_t
 test_vlfdux (double *array, unsigned long long offset)
 {
-  return vec_vlsfdux (offset, array);
+  return vec_vlxsfdx (offset, array);
 }
 
 vf64_t
 test_vldfdux_c0 (double *array)
 {
-  return vec_vlsfdux (0, array);
+  return vec_vlxsfdx (0, array);
 }
 
 vf64_t
 test_vldfdux_c1 (double *array)
 {
-  return vec_vlsfdux (8, array);
+  return vec_vlxsfdx (8, array);
 }
 
 vf64_t
 test_vlfsdux_c2 (double *array)
 {
-  return vec_vlsfdux (32768, array);
+  return vec_vlxsfdx (32768, array);
 }
 
 vf64_t
 test_vlfsdux_c4 (double *array)
 {
-  return vec_vlsfdux (-32768, array);
+  return vec_vlxsfdx (-32768, array);
 }
 
 vf64_t
@@ -147,8 +147,8 @@ test_vldfdux_c3 (double *array)
 {
   vf64_t rese0, rese1;
 
-  rese0 = vec_vlsfdux (8, array);
-  rese1 = vec_vlsfdux (40, array);
+  rese0 = vec_vlxsfdx (8, array);
+  rese1 = vec_vlxsfdx (40, array);
   return (vf64_t) vec_permdi ((vui64_t) rese0, (vui64_t) rese1, 0);
 }
 

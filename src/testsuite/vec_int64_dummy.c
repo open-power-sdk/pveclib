@@ -22,6 +22,408 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+
+// Shift Left Double immediate for P7
+vui64_t
+test_slli_3 (vui64_t a)
+{
+  vui8_t sl_a, sl_m;
+  vui8_t lshift;
+  const vui8_t m1 = (vui8_t) vec_splat_s8(-1);
+
+  // use vec_slqi/vec_rlqi for general shift!
+  lshift = (vui8_t) vec_splat_s8(3);
+  sl_a = vec_sll ((vui8_t) a, lshift);
+  sl_m = vec_sll ((vui8_t) m1, lshift);
+  sl_m = vec_xxpermdi (sl_m, sl_m, 2);
+  return (vui64_t) vec_and (sl_a, sl_m);
+}
+
+unsigned __int128
+test_unpack_dw (vui64_t vra)
+{
+  __VEC_U_128 t;
+  unsigned __int128 result;
+  t.vx2 = vra;
+  result = t.ui128;
+  return (result);
+}
+
+unsigned __int128
+test_unpack_dw_2 (vui64_t vra)
+{
+  __VEC_U_128 t;
+  t.ulong.upper = vec_extract (vra, 0);
+  t.ulong.lower = vec_extract (vra, 1);
+  return (t.ui128);
+}
+
+#if !(defined(__clang__) && __clang_major__ < 8)
+unsigned __int128
+test_unpack_dw_3 (vui64_t vra)
+{
+  __VEC_U_128 t;
+  t.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) vra, 0);
+  t.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) vra, 1);
+  return (t.ui128);
+}
+#endif
+
+#if !defined(__clang__)
+unsigned __int128
+test_unpack_dw_4 (vui64_t vra)
+{
+  union
+  {
+    unsigned __int128 ui128;
+    vui64_t vx2;
+    struct
+    {
+  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      uint64_t lower;
+      uint64_t upper;
+  #else
+      uint64_t upper;
+      uint64_t lower;
+  #endif
+    } ulong;
+  } t;
+
+  unsigned __int128 result;
+#ifdef  _ARCH_PWR8
+  t.vx2 = vra;
+  result = t.ui128;
+#else
+  vui64_t vra_l = vec_xxpermdi (vra, vra, 2);;
+
+#ifdef  _ARCH_PWR7
+  __asm__(
+      "stxsdx %x2,%y0;"
+      "stxsdx %x3,%y1;"
+      "ori  2,2,0;"
+      : "=Z" (t.ulong.lower),
+	"=Z" (t.ulong.upper)
+      : "wa" (vra_l), "wa" (vra)
+      : );
+#else //_ARCH_PWR6/970
+  /* Just have to go through storage and let the hardware deal with
+   * load/store ordering. */
+  t.vx1 = vra;
+#endif
+  result = t.ui128;
+#endif
+  return (result);
+}
+#endif
+
+void
+test_vstsudux (vui64_t data, unsigned long long int *array, unsigned long offset)
+{
+  vec_vstsidx (data, offset, array);
+}
+
+void
+test_vstsudux_c0 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 0, array);
+}
+
+void
+test_vstsudux_c1 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 8, array);
+}
+
+void
+test_vstsudux_c2 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 32760, array);
+}
+
+void
+test_vstsudux_c3 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 32758, array);
+}
+
+void
+test_vstsudux_c4 (vui64_t data, unsigned long long int *array)
+{
+  vec_vstsidx (data, 32768, array);
+}
+
+void
+test_vstsudux_c5 (vui64_t data, unsigned long long int *array)
+{
+  vui64_t data1;
+
+  data1 = vec_xxspltd (data, 1);
+  vec_vstsidx (data, 16, array);
+  vec_vstsidx (data1, 48, array);
+}
+
+void
+test_stvsud_v1 (vui64_t xs, unsigned long long int *array,
+		unsigned long offset0, unsigned long offset1)
+{
+  vui64_t rese1;
+
+  rese1 = vec_xxspltd (xs, 1);
+  vec_vstsidx (xs, offset0, array);
+  vec_vstsidx (rese1, offset1, array);
+}
+
+void
+test_stvsud_v2 (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese1;
+
+  rese1 = vec_xxspltd (data, 1);
+  vec_vstsidx (data, vra[VEC_DW_H], array);
+  vec_vstsidx (rese1, vra[VEC_DW_L], array);
+}
+
+void
+test_stvsud_v3 (vui64_t data, unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese1, offset;
+
+  offset = vec_sldi (vra, 3);
+  rese1 = vec_xxspltd (data, 1);
+  vec_vstsidx (data, offset[VEC_DW_H], array);
+  vec_vstsidx (rese1, offset[VEC_DW_L], array);
+}
+
+void
+test_stvsudo (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddo (data, array, vra);
+}
+
+void
+test_stvsudx (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddx (data, array, vra);
+}
+
+void
+test_stvsudsx (vui64_t data, unsigned long long int *array, vi64_t vra)
+{
+  vec_vsstuddsx (data, array, vra, 4);
+}
+
+vui64_t
+test_vslsudux (unsigned long long int *array, unsigned long offset)
+{
+  return vec_vlsidx (offset, array);
+}
+
+vui64_t
+test_vslsudux_c0 (unsigned long long int *array)
+{
+  return vec_vlsidx (0, array);
+}
+
+vui64_t
+test_vslsudux_c1 (unsigned long long int *array)
+{
+  return vec_vlsidx (8, array);
+}
+
+vui64_t
+test_vslsudux_c2 (unsigned long long int *array)
+{
+  return vec_vlsidx (32768, array);
+}
+
+vui64_t
+test_vslsudux_c3 (unsigned long long int *array)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlsidx (8, array);
+  rese1 = vec_vlsidx (40, array);
+  return vec_permdi (rese0, rese1, 0);
+}
+
+vui64_t
+test_lvgud_v1 (unsigned long long int *array, unsigned long offset0, unsigned long offset1)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlsidx (offset0, array);
+  rese1 = vec_vlsidx (offset1, array);
+  return vec_permdi (rese0, rese1, 0);
+}
+
+vui64_t
+test_lvgud_v2 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1;
+
+  rese0 = vec_vlsidx (vra[VEC_DW_H], array);
+  rese1 = vec_vlsidx (vra[VEC_DW_L], array);
+  return vec_xxpermdi (rese0, rese1, 0);
+}
+
+vui64_t
+test_lvgud_v3 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1, offset;
+#if 0
+  // This always loads the {3, 3} const vector from rodata.
+  offset = vec_sldi (vra, 3);
+#else
+  {
+    // This also loads the {3, 3} const vector from rodata.
+    vui32_t lshift = vec_splats((unsigned)3);
+    offset = vec_vsld (vra, (vui64_t) lshift);
+  }
+#endif
+  rese0 = vec_vlsidx (offset[VEC_DW_H], array);
+  rese1 = vec_vlsidx (offset[VEC_DW_L], array);
+  return vec_xxpermdi (rese0, rese1, 0);
+}
+
+#if (__GNUC__ > 7)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+vui64_t
+test_lvgud_v4 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t rese0, rese1;
+  __VEC_U_128 t;
+  t.vx2 = vra;
+
+  rese0 = vec_xl (t.ulong.lower, array);
+  rese1 = vec_xl (t.ulong.upper, array);
+  return  vec_permdi (rese0, rese1, 0);
+}
+#endif
+
+vui64_t
+test_lvgud_v5 (unsigned long long int *array, vui64_t vra)
+{
+  unsigned char *arr = (unsigned char *)array;
+
+  vui64_t r = { *(unsigned long long int *)(&arr[vra[VEC_DW_H]]),
+                *(unsigned long long int *)(&arr[vra[VEC_DW_L]]) };
+  return r;
+}
+
+#if !(defined(__clang__) && __clang_major__ < 8)
+vui64_t
+test_lvgud_v5b (unsigned long long int *array, vui64_t vra)
+{
+  unsigned char *arr = (unsigned char *)array;
+  unsigned long long r0, r1;
+
+  r0 = __builtin_unpack_vector_int128 ((vi128_t) vra, 0);
+  r1 = __builtin_unpack_vector_int128 ((vi128_t) vra, 1);
+
+  vui64_t r = { *(unsigned long long int *)(&arr[r0]),
+                *(unsigned long long int *)(&arr[r1]) };
+  return r;
+}
+#endif
+
+vui64_t
+test_lvgud_v6 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t r = { array[vra[VEC_DW_H]],
+                array[vra[VEC_DW_L]] };
+  return r;
+}
+
+#if !(defined(__clang__) && __clang_major__ < 8)
+vui64_t
+test_lvgud_v6b (unsigned long long int *array, vui64_t vra)
+{
+  unsigned long long r0, r1;
+
+  r0 = __builtin_unpack_vector_int128 ((vi128_t) vra, 0);
+  r1 = __builtin_unpack_vector_int128 ((vi128_t) vra, 1);
+  vui64_t r = { array[r0], array[r1] };
+  return r;
+}
+#endif
+
+#if !defined(__clang__)
+vui64_t
+test_lvgud_v6c (unsigned long long int *array, vui64_t vra)
+{
+  union
+  {
+    unsigned __int128 ui128;
+    vui64_t vx2;
+    struct
+    {
+  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      uint64_t lower;
+      uint64_t upper;
+  #else
+      uint64_t upper;
+      uint64_t lower;
+  #endif
+    } ulong;
+  } t;
+  vui64_t vra_l = vec_xxpermdi (vra, vra, 2);
+  unsigned long long r0, r1;
+
+  __asm__(
+      "stfd %2,%0;"
+      "stfd %3,%1;"
+      "ori  2,2,0;"
+      : "=m" (t.ulong.lower),
+	"=m" (t.ulong.upper)
+      : "d" (vra_l), "d" (vra)
+      : );
+
+  r0 = t.ulong.upper;
+  r1 = t.ulong.lower;
+  vui64_t r = { array[r0], array[r1] };
+  return r;
+}
+#endif
+
+vui64_t
+test_lvgud_v7 (unsigned long long int *array, vui64_t vra)
+{
+  vui64_t r = { array[(vra[VEC_DW_H] * 1 << 4)],
+                array[(vra[VEC_DW_L] * 1 << 4)] };
+  return r;
+}
+
+#if !(defined(__clang__) && __clang_major__ < 8)
+vui64_t
+test_lvgud_v7b (unsigned long long int *array, vui64_t vra)
+{
+  unsigned long long r0, r1;
+
+  r0 = __builtin_unpack_vector_int128 ((vi128_t) vra, 0);
+  r1 = __builtin_unpack_vector_int128 ((vi128_t) vra, 1);
+  vui64_t r = { array[(r0 * 1 << 4)],
+                array[(r1 * 1 << 4)] };
+  return r;
+}
+#endif
+
+vui64_t
+test_vec_lvgudo (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddo (array, vra);
+}
+
+vui64_t
+test_vec_lvgudx (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddx (array, vra);
+}
+
+vui64_t
+test_vec_lvgudsx (unsigned long long int *array, vi64_t vra)
+{
+  return vec_vgluddsx (array, vra, 4);
+}
+
 vui64_t
 test_ctzd_v1 (vui64_t vra)
 {

@@ -10065,7 +10065,7 @@ test_xfer_int128 (void)
   vi = (vui128_t) { 10000000000000000UL };
   e  = (unsigned __int128) 10000000000000000UL;
 
-  i  = vec_xfer_vui128t_2_uint128 (vi);
+  i  = vec_transfer_vui128t_to_uint128 (vi);
   rc += check_int128 ("xfer to int128 1", i , e);
 
   vi = (vui128_t) { (__int128) 10000000000000000UL
@@ -10073,11 +10073,11 @@ test_xfer_int128 (void)
   e  = (unsigned __int128) 10000000000000000UL
       * (unsigned __int128) 10000000000000000UL;
 
-  i  = vec_xfer_vui128t_2_uint128 (vi);
+  i  = vec_transfer_vui128t_to_uint128 (vi);
   rc += check_int128 ("xfer to int128 2", i , e);
 
-  low = ext_uint128_low (i);
-  high = ext_uint128_high (i);
+  low = scalar_extract_uint64_from_low_uint128 (i);
+  high = scalar_extract_uint64_from_high_uint128 (i);
 
   rc = check_uint64 ("ext_uint128_low", low, 9632337040368467968UL);
   rc = check_uint64 ("ext_uint128_high", high, 5421010862427UL);
@@ -10085,7 +10085,7 @@ test_xfer_int128 (void)
   i  = (unsigned __int128) 10000000000000000UL;
   ve = (vui128_t) { 10000000000000000UL };
 
-  vi = vec_xfer_uint128_2_vui128t (i);
+  vi = vec_transfer_uint128_to_vui128t (i);
   rc += check_vuint128x ("xfer from int128 1", vi , ve);
 
   i  = (unsigned __int128) 10000000000000000UL
@@ -10093,7 +10093,7 @@ test_xfer_int128 (void)
   ve = (vui128_t) { (__int128) 10000000000000000UL
                   * (__int128) 10000000000000000UL };
 
-  vi = vec_xfer_uint128_2_vui128t (i);
+  vi = vec_transfer_uint128_to_vui128t (i);
   rc += check_vuint128x ("xfer from int128 1", vi , ve);
 
   return (rc);

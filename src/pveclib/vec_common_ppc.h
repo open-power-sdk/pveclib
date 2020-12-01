@@ -426,11 +426,12 @@ vec_transfer_vui128t_to_uint128 (vui128_t vra)
   t.vx1 = vra;
   result = t.ui128;
 #else
+#ifdef  _ARCH_PWR7
   /* PWR7 and earlier must transfer through storage.  This requires
    * care as we want to avoid load-hit-store flushes in the pipeline.
    * First split the vector into a pair of dword FPRs (vra_u, vra_l). */
   vui64_t vra_u = (vui64_t) vra;
-  vui64_t vra_l = (vui64_t) vec_sld ((vui32_t) vra, (vui32_t) vra, 8);
+  vui64_t vra_l = vec_xxpermdi ((vui64_t) vra, (vui64_t) vra, 2);
   /* Store this pair as adjacent dwords, followed by a group ending
    * nop. This prevents the hardware from dispatching the stores in the
    * same cycle as the following loads (a guaranteed pipeline flush).
@@ -438,13 +439,18 @@ vec_transfer_vui128t_to_uint128 (vui128_t vra)
    * increase the possibility of store forwarding from the store queue.
    */
   __asm__(
-      "stfd %2,%0;"
-      "stfd %3,%1;"
+      "stxsdx %x2,%y0;"
+      "stxsdx %x3,%y1;"
       "ori  2,2,0;"
-      : "=m" (t.ulong.lower),
-	"=m" (t.ulong.upper)
-      : "d" (vra_l), "d" (vra_u)
+      : "=Z" (t.ulong.lower),
+	"=Z" (t.ulong.upper)
+      : "wa" (vra_l), "wa" (vra_u)
       : );
+#else //_ARCH_PWR6/970
+  /* Just have to go through storage and let the hardware deal with
+   * load/store ordering. */
+  t.vx1 = vra;
+#endif
   // Load the dwords into a pair of GPRs for the __int128 result.
   result = t.ui128;
 #endif

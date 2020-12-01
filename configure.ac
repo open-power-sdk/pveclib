@@ -45,6 +45,7 @@ POWER6_CFLAGS="-mcpu=power6 -maltivec"
 POWER7_CFLAGS="-mcpu=power7"
 POWER8_CFLAGS="-mcpu=power8"
 POWER9_CFLAGS="-mcpu=power9 -mfloat128"
+POWER10_CFLAGS="-mcpu=power10"
 
 ##### Compiler default includes ALTIVEC #####
 AC_SUBST([PVECLIB_DEFAULT_CFLAG], [""])
@@ -267,6 +268,22 @@ AC_LINK_IFELSE(
 
 if test "$retval" != "0"; then
 	AC_SUBST([POWER9_CFLAGS],[""])
+fi
+
+##### Power10 #####
+
+CFLAGS="$POWER10_CFLAGS"
+AC_MSG_CHECKING([if $CNAME supports $CFLAGS (Power10)])
+AC_LINK_IFELSE(
+	[AC_LANG_SOURCE([`cat $srcdir/testprograms/test_ppc_PWR10.c`])],
+	[AC_MSG_RESULT([yes])]
+		AC_SUBST([PVECLIB_POWER10_CFLAGS], [$POWER10_CFLAGS]),
+	[AC_MSG_RESULT([no])]
+		AC_DEFINE([PVECLIB_DISABLE_POWER10], [1], [Disable POWER10])
+)
+
+if test "$retval" != "0"; then
+	AC_SUBST([POWER10_CFLAGS],[""])
 fi
 
 

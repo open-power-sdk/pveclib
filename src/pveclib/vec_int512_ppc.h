@@ -615,6 +615,9 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
  * qualifying suffix to each runtime function implementation.
  * Here we use the __VEC_PWR_IMP() as function name wrapper macro.
  * \code
+#ifdef _ARCH_PWR10
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR10
+#else
 #ifdef _ARCH_PWR9
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
 #else
@@ -622,6 +625,7 @@ const __VEC_U_512  vec512_ten128th = CONST_VINT512_Q
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
 #else
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
+#endif
 #endif
 #endif
  * \endcode
@@ -1341,6 +1345,9 @@ typedef union
 #endif
 
 /*! \brief Macro to add platform suffix for static calls. */
+#ifdef _ARCH_PWR10
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR10
+#else
 #ifdef _ARCH_PWR9
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
 #else
@@ -1348,6 +1355,7 @@ typedef union
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
 #else
 #define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
+#endif
 #endif
 #endif
 

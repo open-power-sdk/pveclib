@@ -28,6 +28,7 @@ EXTRA_DIST = $(DX_CONFIG) doc/pveclibmaindox.h \
   testprograms/test_ppc_PWR7.c \
   testprograms/test_ppc_PWR8.c \
   testprograms/test_ppc_PWR9.c \
+  testprograms/test_ppc_PWR10.c \
   testprograms/test_ppc_VMX.c \
   testprograms/test_ppc_VSX.c
 

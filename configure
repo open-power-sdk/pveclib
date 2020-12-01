@@ -683,6 +683,8 @@ DX_ENV
 DX_DOCDIR
 DX_CONFIG
 DX_PROJECT
+POWER10_CFLAGS
+PVECLIB_POWER10_CFLAGS
 POWER9_CFLAGS
 PVECLIB_POWER9_CFLAGS
 POWER8_CFLAGS
@@ -12817,6 +12819,7 @@ POWER6_CFLAGS="-mcpu=power6 -maltivec"
 POWER7_CFLAGS="-mcpu=power7"
 POWER8_CFLAGS="-mcpu=power8"
 POWER9_CFLAGS="-mcpu=power9 -mfloat128"
+POWER10_CFLAGS="-mcpu=power10"
 
 ##### Compiler default includes ALTIVEC #####
 PVECLIB_DEFAULT_CFLAG=""
@@ -13245,6 +13248,36 @@ rm -f core conftest.err conftest.$ac_objext \
 
 if test "$retval" != "0"; then
 	POWER9_CFLAGS=""
+
+fi
+
+##### Power10 #####
+
+CFLAGS="$POWER10_CFLAGS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CNAME supports $CFLAGS (Power10)" >&5
+$as_echo_n "checking if $CNAME supports $CFLAGS (Power10)... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+`cat $srcdir/testprograms/test_ppc_PWR10.c`
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		PVECLIB_POWER10_CFLAGS=$POWER10_CFLAGS
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+$as_echo "#define PVECLIB_DISABLE_POWER10 1" >>confdefs.h
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+if test "$retval" != "0"; then
+	POWER10_CFLAGS=""
 
 fi
 

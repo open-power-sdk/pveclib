@@ -76,11 +76,21 @@
 #endif
 #else // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #ifdef  __BUILTIN_CPU_SUPPORTS__
+#ifdef PVECLIB_DISABLE_POWER10
 #define VEC_DYN_RESOLVER(FNAME) \
   if (__builtin_cpu_is ("power9")) \
     return FNAME ## _PWR9; \
   else \
     return FNAME ## _PWR8;
+#else
+#define VEC_DYN_RESOLVER(FNAME) \
+  if (__builtin_cpu_is ("power10")) \
+    return FNAME ## _PWR10; \
+  else if (__builtin_cpu_is ("power9")) \
+    return FNAME ## _PWR9; \
+  else \
+    return FNAME ## _PWR8;
+#endif
 #else
 #define VEC_DYN_RESOLVER(FNAME) \
    return FNAME ## _PWR8;
@@ -186,6 +196,42 @@ vec_mul128_byMN_PWR9 (vui128_t *p,
 
 extern void
 vec_mul512_byMN_PWR9 (__VEC_U_512 *p,
+                  __VEC_U_512 *m1, __VEC_U_512 *m2,
+		  unsigned long M, unsigned long N);
+#endif
+
+#ifndef PVECLIB_DISABLE_POWER10
+/* Older distros running Big Endian are unlikely to support PWR9.
+ * So declare PWR9 externs only for LE.  */
+
+extern __VEC_U_256
+vec_mul128x128_PWR10 (vui128_t, vui128_t);
+
+extern __VEC_U_640
+vec_mul512x128_PWR10 (__VEC_U_512, vui128_t);
+
+extern __VEC_U_512
+vec_mul256x256_PWR10 (__VEC_U_256, __VEC_U_256);
+
+extern __VEC_U_640
+vec_madd512x128a512_PWR10 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
+
+extern __VEC_U_1024
+vec_mul512x512_PWR10 (__VEC_U_512, __VEC_U_512);
+
+extern void
+vec_mul1024x1024_PWR10 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
+
+extern void
+vec_mul2048x2048_PWR10 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
+
+extern void
+vec_mul128_byMN_PWR10 (vui128_t *p,
+		  vui128_t *m1, vui128_t *m2,
+		  unsigned long M, unsigned long N);
+
+extern void
+vec_mul512_byMN_PWR10 (__VEC_U_512 *p,
                   __VEC_U_512 *m1, __VEC_U_512 *m2,
 		  unsigned long M, unsigned long N);
 #endif

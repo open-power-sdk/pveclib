@@ -392,6 +392,28 @@ example_convert_timebase (vui32_t *tb, vui32_t *timespec, int n)
  */
 
 ///@cond INTERNAL
+#ifdef _ARCH_PWR8
+/*
+ * Vector Shift Left Doubleword was added to PowerISA 2.07 (PWR8).
+ * Operations vec_vsld and vec_sldi are define in vec_int64_ppc.h
+ * but using those here would create a circular dependency.
+ * So need the equivalent of the altivec.h specific vec_vsld.
+ * Currently GCC defines both vec_vsld and vec_sl for type long long.
+ * But older GCC versions may not and are more likely to support only
+ * vec_vsld. Clang seems to only support the generic vec_sl for the
+ * long long type and does not define the macro vec_vsld.
+ *
+ * The following allows vec_int32_ppc.h to use __pvec_vsld as a work
+ * around for clang and possible future versions of GCC that drop
+ * support for altivec specific built-ins.
+ */
+#ifdef vec_vsld
+#define __pvec_vsld vec_vsld
+#else
+#define __pvec_vsld vec_sl
+#endif
+#endif
+
 static inline vui64_t vec_muleuw (vui32_t a, vui32_t b);
 static inline vui64_t vec_mulouw (vui32_t a, vui32_t b);
 #ifndef vec_popcntw
@@ -402,8 +424,17 @@ static inline vui32_t vec_popcntw (vui32_t vra);
 #define vec_popcntw __builtin_vec_vpopcntw
 #endif
 static inline vi32_t vec_srawi (vi32_t vra, const unsigned int shb);
+static inline vui64_t
+vec_vlxsiwzx (const signed long long ra, const unsigned int *rb);
+static inline vi64_t
+vec_vlxsiwax (const signed long long ra, const signed int *rb);
 static inline vui64_t vec_vmuleuw (vui32_t a, vui32_t b);
 static inline vui64_t vec_vmulouw (vui32_t a, vui32_t b);
+static inline void
+vec_vsstwso (vui64_t xs, unsigned int *array,
+	      const long long offset0, const long long offset1);
+static inline void
+vec_vstxsiwx (vui32_t xs, const signed long long ra, unsigned int *rb);
 ///@endcond
 
 /** \brief Vector Absolute Difference Unsigned Word.
@@ -1363,6 +1394,736 @@ vec_srwi (vui32_t vra, const unsigned int shb)
   return (vui32_t) result;
 }
 
+/** \brief Vector Gather-Load 4 Words from scalar Offsets.
+ *
+ *  For each scalar offset[0,1,2,3], load the word
+ *  from the effective address formed by
+ *  *(char*)array+offset[0-3]. Merge resulting word
+ *  elements [0,1,2,3] and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  10   | 1/cycle  |
+ *  |power9   |  11   | 1/cycle  |
+ *
+ *  @param array Pointer to array of integer words.
+ *  @param offset0 Scalar (64-bit) byte offset from &array.
+ *  @param offset1 Scalar (64-bit) byte offset from &array.
+ *  @param offset2 Scalar (64-bit) byte offset from &array.
+ *  @param offset3 Scalar (64-bit) byte offset from &array.
+ *  @return vector word containing word elements [0-3] loaded from
+ *  *(char*)array+offset[0-3].
+ */
+static inline vui32_t
+vec_vgl4wso (unsigned int *array, const long long offset0,
+	     const long long offset1, const long long offset2,
+	     const long long offset3)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR8
+  vui64_t re0, re1, re2, re3;
+  re0 = vec_vlxsiwzx (offset0, array);
+  re1 = vec_vlxsiwzx (offset1, array);
+  re2 = vec_vlxsiwzx (offset2, array);
+  re3 = vec_vlxsiwzx (offset3, array);
+  /* Need to handle endian as the vec_vlxsiwzx result is always left
+   * justified in VR, while element [0] may be left or right. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  /* Can't use vec_mergeo here as GCC 7 (AT11) and earlier don't
+   * support doubleword vec_merge. */
+  re0 = vec_xxpermdi (re0, re2, 3);
+  re1 = vec_xxpermdi (re1, re3, 3);
+  result = vec_mergee ((vui32_t) re0, (vui32_t) re1);
+#else
+  re0 = vec_xxpermdi (re0, re2, 0);
+  re1 = vec_xxpermdi (re1, re3, 0);
+  result = vec_mergeo ((vui32_t) re0, (vui32_t) re1);
+#endif
+#else //  _ARCH_PWR7
+  vui32_t xte0, xte1, xte2, xte3;
+  vui8_t perm0, perm1, perm2, perm3;
+
+  perm0 = vec_lvsl (offset0, array);
+  xte0 = vec_lde (offset0, array);
+  xte0 = vec_perm (xte0, xte0, perm0);
+
+  perm1 = vec_lvsl (offset1, array);
+  xte1 = vec_lde (offset1, array);
+  xte1 = vec_perm (xte1, xte1, perm1);
+
+  perm2 = vec_lvsl (offset2, array);
+  xte2 = vec_lde (offset2, array);
+  xte2 = vec_perm (xte2, xte2, perm2);
+
+  perm3 = vec_lvsl (offset3, array);
+  xte3 = vec_lde (offset3, array);
+  xte3 = vec_perm (xte3, xte3, perm3);
+
+  xte0 = vec_mergeh (xte0, xte2);
+  xte1 = vec_mergeh (xte1, xte3);
+  result = vec_mergeh (xte0, xte1);
+#endif
+  return result;
+}
+
+/** \brief Vector Gather-Load 4 Words from Vector Word Offsets.
+ *
+ *  For each signed word element [i] of vra, load the word
+ *  element at *(char*)array+vra[i]. Merge those word elements
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  14   | 1/cycle  |
+ *  |power9   |  15   | 1/cycle  |
+ *
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) byte offsets from &array.
+ *  @return vector word containing word elements [0-3], each loaded
+ *  from *(char*)array+vra[0-3].
+ */
+static inline
+vui32_t
+vec_vgl4wwo (unsigned int *array, vi32_t vra)
+{
+  vui32_t r;
+
+#ifdef _ARCH_PWR8
+#if 1
+  vi64_t off01, off23;
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  r = vec_vgl4wso (array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  r = vec_vgl4wso (array, vra[0], vra[1], vra[2], vra[3]);
+#endif
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed int off0, off1, off2, off3;
+
+  off0 = scalar_extract_uint64_from_high_uint128(gprp) >> 32;
+  off1 = (int) scalar_extract_uint64_from_high_uint128(gprp);
+  off2 = scalar_extract_uint64_from_low_uint128(gprp) >> 32;
+  off3 = (int) scalar_extract_uint64_from_low_uint128(gprp);
+
+  r = vec_vgl4wso (array, off0, off1, off2, off3);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load 4 Words from Vector Word Scaled Indexes.
+ *
+ *  For each signed word element [i] of vra, load the word
+ *  element at array[vra[i] << scale]. Merge those word elements
+ *  and return the resulting vector.
+ *
+ *  \note Signed word indexes are expanded (unpacked) to doublewords
+ *  before shifting left 2+scale bits. This converts each index to an
+ *  64-bit offset for effective address calculation.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 16-25 | 1/cycle  |
+ *  |power9   | 18-27 | 1/cycle  |
+ *
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) indexes.
+ *  @param scale 8-bit integer. Indexes are multiplying by
+ *  2<sup>scale</sup>.
+ *  @return vector word containing word elements [0-3] each loaded from
+ *  array[vra[0-3] << scale].
+ */
+static inline
+vui32_t
+vec_vgl4wwsx (unsigned int *array, vi32_t vra,
+		     const unsigned char scale)
+{
+  vui32_t r;
+
+#ifdef _ARCH_PWR8
+  vi64_t off01, off23;
+  vi64_t lshift = vec_splats ((long long) (2+ scale));
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  off01 = (vi64_t) __pvec_vsld (off01, (vui64_t) lshift);
+  off23 = (vi64_t) __pvec_vsld (off23, (vui64_t) lshift);
+
+  r = vec_vgl4wso (array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed long long off0, off1, off2, off3;
+
+  off0 = (scalar_extract_uint64_from_high_uint128(gprp) >> 32) << (2+ scale);
+  off1 = ((int) scalar_extract_uint64_from_high_uint128(gprp)) << (2+ scale);
+  off2 = (scalar_extract_uint64_from_low_uint128(gprp) >> 32) << (2+ scale);
+  off3 = ((int) scalar_extract_uint64_from_low_uint128(gprp)) << (2+ scale);
+
+  r = vec_vgl4wso (array, off0, off1, off2, off3);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load 4 Words from Vector Word Indexes.
+ *
+ *  For word element [i] of vra, load the word
+ *  element at array[vra[i]]. Merge those word elements
+ *  and return the resulting vector.
+ *
+ *  \note Signed word indexes are expanded (unpacked) to doublewords
+ *  before shifting left 2 bits. This converts each index to an 64-bit
+ *  offset for effective address calculation.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 16-25 | 1/cycle  |
+ *  |power9   | 18-27 | 1/cycle  |
+ *
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) indexes.
+ *  @return vector word containing word elements [0-3], each loaded from
+ *  array[vra[0-3]].
+ */
+static inline
+vui32_t
+vec_vgl4wwx (unsigned int *array, vi32_t vra)
+{
+  vui32_t r;
+
+#ifdef _ARCH_PWR8
+  vi64_t off01, off23;
+  vi64_t lshift = vec_splats ((long long) (2));
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  off01 = (vi64_t) __pvec_vsld (off01, (vui64_t) lshift);
+  off23 = (vi64_t) __pvec_vsld (off23, (vui64_t) lshift);
+
+  r = vec_vgl4wso (array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed long long off0, off1, off2, off3;
+
+  off0 = (scalar_extract_uint64_from_high_uint128(gprp) >> 32) << 2;
+  off1 = ((int) scalar_extract_uint64_from_high_uint128(gprp)) << 2;
+  off2 = (scalar_extract_uint64_from_low_uint128(gprp) >> 32) << 2;
+  off3 = ((int) scalar_extract_uint64_from_low_uint128(gprp)) << 2;
+
+  r = vec_vgl4wso (array, off0, off1, off2, off3);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Signed Word from Scalar Offsets.
+ *
+ *  For each scalar offset[0|1], load the signed word
+ *  (sign extended) from the effective address formed by
+ *  *(char*)array+offset[0|1]. Merge resulting doubleword
+ *  elements and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   7   | 1/cycle  |
+ *  |power9   |   8   | 1/cycle  |
+ *
+ *  @param array Pointer to array of words.
+ *  @param offset0 Scalar (64-bit) byte offsets from &array.
+ *  @param offset1 Scalar (64-bit) byte offsets from &array.
+ *  @return vector doubleword elements [0,1] loaded from
+ *  sign extend words at *(char*)array+offset[0,1].
+ */
+static inline vi64_t
+vec_vglswso (signed int *array, const long long offset0,
+	     const long long offset1)
+{
+  vi64_t re0, re1, result;
+
+  re0 = vec_vlxsiwax (offset0, array);
+  re1 = vec_vlxsiwax (offset1, array);
+  /* Need to handle endian as the vec_vlxsiwzx result is always left
+   * justified in VR, while element [0] may be left or right. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  /* Can't use vec_mergeo here as GCC 7 (AT11) and earlier don't
+   * support doubleword vec_merge. */
+  result = vec_xxpermdi (re0, re1, 3);
+#else
+#ifdef _ARCH_PWR7
+  result = vec_xxpermdi (re0, re1, 0);
+#else
+  re0 = (vi64_t) vec_sld (re0, re0, 8);
+  result = (vi64_t) vec_sld (re0, re1, 8);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Gather-Load Signed Words from Vector Doubleword Offsets.
+ *
+ *  For each doubleword element [i] of vra, load the sign extended word
+ *  element at *(char*)array+vra[i]. Merge doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   11  | 1/cycle  |
+ *
+ *  @param array Pointer to array of signed words.
+ *  @param vra Vector of doubleword (64-bit) byte offsets from &array.
+ *  @return vector doubleword elements [0,1] loaded from sign extended
+ *  words at *(char*)array+vra[0,1].
+ */
+static inline
+vi64_t
+vec_vglswdo (signed int *array, vi64_t vra)
+{
+  vi64_t r;
+
+#ifdef _ARCH_PWR8
+  r = vec_vglswso (array, vra[0], vra[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+
+  r = vec_vglswso (array, scalar_extract_uint64_from_high_uint128(gprp),
+		   scalar_extract_uint64_from_low_uint128(gprp));
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Signed Words from Vector Doubleword Scaled Indexes.
+ *
+ *  For each doubleword element [i] of vra, load the sign extended word
+ *  element at array[vra[i] << scale)]. Merge doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of signed words.
+ *  @param vra Vector of doubleword indexes from &array.
+ *  @param scale 8-bit integer. Indexes are multiplying by
+ *  2<sup>scale</sup>.
+ *  @return vector doubleword elements [0,1] loaded from the sign
+ *  extended words at array[vra[0,1]<<scale].
+ */
+static inline
+vi64_t
+vec_vglswdsx (signed int *array, vi64_t vra,
+		     const unsigned char scale)
+{
+  vi64_t r;
+
+#ifdef _ARCH_PWR8
+  vi64_t lshift = vec_splats ((long long) (2 + scale));
+  vi64_t offset;
+
+  offset = (vi64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  r = vec_vglswso (array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << (2 + scale);
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << (2 + scale);
+
+  r = vec_vglswso (array, offset0, offset1);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Signed Words from Vector Doubleword Indexes.
+ *
+ *  For each doubleword element [i] of vra, load the sign extended word
+ *  element at array[vra[i]]. Merge doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  \note As effective address calculation is modulo 64-bits, signed or
+ *  unsigned doubleword offsets are equivalent.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of signed words.
+ *  @param vra Vector of doubleword indexes from &array.
+ *  @return vector doubleword elements [0,1] loaded from sign extended
+ *  words at array[vra[0,1]].
+ */
+static inline
+vi64_t
+vec_vglswdx (signed int *array, vi64_t vra)
+{
+  vi64_t r;
+
+#ifdef _ARCH_PWR8
+  vi64_t lshift = vec_splats ((long long) 2);
+  vi64_t offset;
+
+  offset = (vi64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  r = vec_vglswso (array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << 2;
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << 2;
+
+  r = vec_vglswso (array, offset0, offset1);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Unsigned Word from Scalar Offsets.
+ *
+ *  For each scalar offset[0,1], load the unsigned word
+ *  (zero extended) from the effective address formed by
+ *  *(char*)array+offset[0,1] Merge resulting doubleword [0,1]
+ *  elements and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   7   | 1/cycle  |
+ *  |power9   |   8   | 1/cycle  |
+ *
+ *  @param array Pointer to array of words.
+ *  @param offset0 Scalar (64-bit) byte offsets from &array.
+ *  @param offset1 Scalar (64-bit) byte offsets from &array.
+ *  @return vector doubleword elements [0,1] loaded from zero extened
+ *  words at *(char*)array+offset[0,1].
+ */
+static inline vui64_t
+vec_vgluwso (unsigned int *array, const long long offset0,
+	     const long long offset1)
+{
+  vui64_t re0, re1, result;
+
+  re0 = vec_vlxsiwzx (offset0, array);
+  re1 = vec_vlxsiwzx (offset1, array);
+  /* Need to handle endian as the vec_vlxsiwzx result is always left
+   * justified in VR, while element [0] may be left or right. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  /* Can't use vec_mergeo here as GCC 7 (AT11) and earlier don't
+   * support doubleword vec_merge. */
+  result = vec_xxpermdi (re0, re1, 3);
+#else
+#ifdef _ARCH_PWR7
+  result = vec_xxpermdi (re0, re1, 0);
+#else
+  re0 = (vui64_t) vec_sld (re0, re0, 8);
+  result = (vui64_t) vec_sld (re0, re1, 8);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Gather-Load Unsigned Words from Vector Doubleword Offsets.
+ *
+ *  For each doubleword element [0,1] of vra, load the zero extended word
+ *  element at *(char*)array+vra[0,1]. Merge those doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   12  | 1/cycle  |
+ *  |power9   |   11  | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned words.
+ *  @param vra Vector of doubleword (64-bit) byte offsets from &array.
+ *  @return vector doubleword elements [0,1] loaded from zero extended words
+ *  at *(char*)array+vra[0,1].
+ */
+static inline
+vui64_t
+vec_vgluwdo (unsigned int *array, vi64_t vra)
+{
+  vui64_t r;
+
+#ifdef _ARCH_PWR8
+  r = vec_vgluwso (array, vra[0], vra[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+
+  r = vec_vgluwso (array, scalar_extract_uint64_from_high_uint128(gprp),
+		   scalar_extract_uint64_from_low_uint128(gprp));
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Unsigned Words from Vector Doubleword Scaled Indexes.
+ *
+ *  For each doubleword element [0,1] of vra, load the zero extended word
+ *  element at array[vra[0,1] << scale)]. Merge doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned words.
+ *  @param vra Vector of doubleword indexes from &array.
+ *  @param scale 8-bit integer. Indexes are multiplying by
+ *  2<sup>scale</sup>.
+ *  @return vector doubleword elements [0,1] loaded from zero extended
+ *  words at array[vra[0,1]<<scale].
+ */
+static inline
+vui64_t
+vec_vgluwdsx (unsigned int *array, vi64_t vra,
+		     const unsigned char scale)
+{
+  vui64_t r;
+
+#ifdef _ARCH_PWR8
+  vui64_t lshift = vec_splats ((unsigned long long) (2 + scale));
+  vui64_t offset;
+
+  offset = (vui64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  r = vec_vgluwso (array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << (2 + scale);
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << (2 + scale);
+
+  r = vec_vgluwso (array, offset0, offset1);
+#endif
+  return  r;
+}
+
+/** \brief Vector Gather-Load Unsigned Words from Vector Doubleword Indexes.
+ *
+ *  For each doubleword element [0,1] of vra, load the zero extended word
+ *  element at array[vra[0,1]]. Merge those doubleword elements [0,1]
+ *  and return the resulting vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 14-23 | 1/cycle  |
+ *  |power9   | 13-22 | 1/cycle  |
+ *
+ *  @param array Pointer to array of unsigned words.
+ *  @param vra Vector of doubleword indexes from &array.
+ *  @return Vector doubleword [0,1] loaded from zero extended words at
+ *  array[vra[0,1]].
+ */
+static inline
+vui64_t
+vec_vgluwdx (unsigned int *array, vi64_t vra)
+{
+  vui64_t r;
+
+#ifdef _ARCH_PWR8
+  vui64_t lshift = vec_splats ((unsigned long long) 2);
+  vui64_t offset;
+
+  offset = (vui64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  r = vec_vgluwso (array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << 2;
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << 2;
+
+  r = vec_vgluwso (array, offset0, offset1);
+#endif
+  return  r;
+}
+
+/** \brief Vector Load Scalar Integer Word Algebraic Indexed.
+ *
+ *  Load the left most doubleword of vector <B>xt</B> as a scalar
+ *  sign extended word from the effective address formed
+ *  by <B>rb+ra</B>.
+ *  The operand <B>rb</B> is a pointer to an array of words.
+ *  The operand <B>ra</B> is a doubleword integer byte offset
+ *  from <B>rb</B>. The result <B>xt</B> is returned as a vi64_t
+ *  vector. For best performance <B>rb</B> and <B>ra</B>
+ *  should be word aligned (integer multiple of 4).
+ *
+ *  \note The right most doubleword of vector <B>xt</B> is left
+ *  <I>undefined</I> by this operation.
+ *
+ *  This operation is an alternate form of Vector Load Element
+ *  (vec_lde), with the added simplification that data is always left
+ *  justified in the vector. Another advantage for Power8 and later,
+ *  the lxsiwax instruction combines load with sign extend word and
+ *  can load directly into any of the 64 VSRs.
+ *  Both simplify merging elements for gather operations.
+ *
+ *  \note The lxsiwax instruction was introduced in PowerISA 2.07
+ *  (POWER8). Power7 and earlier will use lvewx.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   5   | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param ra const doubleword index (offset/displacement).
+ *  @param rb const word pointer to an array of integers.
+ *  @return The word stored at (ra + rb) is sign extended and loaded
+ *  into vector doubleword element 0. Element 1 is undefined.
+ */
+static inline vi64_t
+vec_vlxsiwax (const signed long long ra, const signed int *rb)
+{
+  vi64_t xt;
+
+#if (defined(__clang__) && __clang_major__ < 8)
+  __VEC_U_128 t;
+
+  signed int *p = (signed int *)((char *)rb + ra);
+  t.ulong.upper = *p;
+  xt = t.vx2;
+#elif _ARCH_PWR8
+  if (__builtin_constant_p (ra) && (ra <= 32760) && (ra >= -32768))
+    {
+      if (ra == 0)
+	{
+	  __asm__(
+	      "lxsiwax %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*rb)
+	      : );
+	} else {
+	  unsigned long long rt;
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "lxsiwax %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*(signed int *)((char *)rb+rt))
+	      : );
+	}
+    } else {
+      __asm__(
+	  "lxsiwax %x0,%y1;"
+	  : "=wa" (xt)
+	  : "Z" (*(signed int *)((char *)rb+ra))
+	  : );
+    }
+#else // _ARCH_PWR7
+  vui32_t const shb = { 31, 0, 0 ,0 };
+  vi32_t xte;
+  vui8_t perm;
+
+  perm = vec_lvsl (ra, rb);
+  xte = vec_lde (ra, rb);
+  perm = (vui8_t) vec_mergeh ((vui32_t) perm, (vui32_t) perm);
+  xte = vec_perm (xte, xte, perm);
+  xt = (vi64_t) vec_sra (xte, shb);
+#endif
+  return xt;
+}
+
+/** \brief Vector Load Scalar Integer Word and Zero Indexed.
+ *
+ *  Load the left most doubleword of vector <B>xt</B> as a scalar
+ *  unsigned word (zero extended to doubleword) from the effective
+ *  address formed by <B>rb+ra</B>.
+ *  The operand <B>rb</B> is a pointer to an array of words.
+ *  The operand <B>ra</B> is a doubleword integer byte offset
+ *  from <B>rb</B>. The result <B>xt</B> is returned as a vui64_t
+ *  vector. For best performance <B>rb</B> and <B>ra</B>
+ *  should be word aligned (integer multiple of 4).
+ *
+ *  \note the right most doubleword of vector <B>xt</B> is left
+ *  <I>undefined</I> by this operation.
+ *
+ *  This operation is an alternate form of Vector Load Element
+ *  (vec_lde), with the added simplification that data is always left
+ *  justified in the vector. Another advantage for Power8 and later,
+ *  the lxsiwzx instruction combines load with zero extend word and
+ *  can load directly into any of the 64 VSRs.
+ *  Both simplify merging elements for gather operations.
+ *
+ *  \note
+ *
+ *  \note The lxsiwzx instruction was introduced in PowerISA 2.07
+ *  (POWER8). Power7 and earlier will use lvewx.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   5   | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param ra const doubleword index (offset/displacement).
+ *  @param rb const word pointer to an array of integers.
+ *  @return The word stored at (ra + rb) is zero extended and loaded
+ *  into vector doubleword element 0. Element 1 is undefined.
+ */
+static inline vui64_t
+vec_vlxsiwzx (const signed long long ra, const unsigned int *rb)
+{
+  vui64_t xt;
+
+#if (defined(__clang__) && __clang_major__ < 8)
+  __VEC_U_128 t;
+
+  unsigned int *p = (unsigned int *)((char *)rb + ra);
+  t.ulong.upper = *p;
+  xt = t.vx2;
+#elif _ARCH_PWR8
+  if (__builtin_constant_p (ra) && (ra <= 32760) && (ra >= -32768))
+    {
+      if (ra == 0)
+	{
+	  __asm__(
+	      "lxsiwzx %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*rb)
+	      : );
+	} else {
+	  unsigned long long rt;
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "lxsiwzx %x0,%y1;"
+	      : "=wa" (xt)
+	      : "Z" (*(signed int *)((char *)rb+rt))
+	      : );
+	}
+    } else {
+      __asm__(
+	  "lxsiwzx %x0,%y1;"
+	  : "=wa" (xt)
+	  : "Z" (*(signed int *)((char *)rb+ra))
+	  : );
+    }
+#else // _ARCH_PWR7
+  const vui32_t zero = {0,0,0,0};
+  vui32_t xte;
+  vui8_t perm;
+
+  perm = vec_lvsl (ra, rb);
+  xte = vec_lde (ra, rb);
+  xte = vec_perm (xte, xte, perm);
+  xt = (vui64_t) vec_sld (zero, xte, 12);
+#endif
+  return xt;
+}
+
 /** \brief \copybrief vec_int64_ppc.h::vec_vmadd2euw()
  *
  * \note this implementation exists in
@@ -1616,6 +2377,396 @@ vec_vmulouw (vui32_t vra, vui32_t vrb)
   return (res);
 }
 
+/** \brief Vector Scatter-Store 4 words to Scalar Offsets.
+ *
+ *  For each word element [i] of xs, store the
+ *  element xs[i] at *(char*)array+offset[i].
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   6   | 1/cycle  |
+ *  |power9   |   4   | 2/cycle  |
+ *
+ *  @param xs Vector integer word elements to scatter store.
+ *  @param array Pointer to array of integer words.
+ *  @param offset0 Scalar (64-bit) byte offset from &array.
+ *  @param offset1 Scalar (64-bit) byte offset from &array.
+ *  @param offset2 Scalar (64-bit) byte offset from &array.
+ *  @param offset3 Scalar (64-bit) byte offset from &array.
+ */
+static inline void
+vec_vsst4wso (vui32_t xs, unsigned int *array,
+	      const long long offset0, const long long offset1,
+	      const long long offset2, const long long offset3)
+{
+  vui32_t xs0, xs1, xs2, xs3;
+
+  xs0 = vec_splat (xs, 0);
+  xs1 = vec_splat (xs, 1);
+  xs2 = vec_splat (xs, 2);
+  xs3 = vec_splat (xs, 3);
+  vec_ste (xs0, offset0, array);
+  vec_ste (xs1, offset1, array);
+  vec_ste (xs2, offset2, array);
+  vec_ste (xs3, offset3, array);
+}
+
+/** \brief Vector Scatter-Store 4 words to Vector Word Offsets.
+ *
+ *  For each word element [i] of xs, store the
+ *  element xs[i] at *(char*)array+vra[i].
+ *
+ *  \note Signed word offsets are expanded (unpacked) to doublewords
+ *  before transfer to GRPs for effective address calculation.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  10   | 1/cycle  |
+ *  |power9   |  12   | 2/cycle  |
+ *
+ *  @param xs Vector integer word elements to scatter store.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) byte offsets from &array.
+ */
+static inline void
+vec_vsst4wwo (vui32_t xs, unsigned int *array,
+	      vi32_t vra)
+{
+#ifdef _ARCH_PWR8
+  vi64_t off01, off23;
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  vec_vsst4wso (xs, array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed int off0, off1, off2, off3;
+
+  off0 = scalar_extract_uint64_from_high_uint128(gprp) >> 32;
+  off1 = (int) scalar_extract_uint64_from_high_uint128(gprp);
+  off2 = scalar_extract_uint64_from_low_uint128(gprp) >> 32;
+  off3 = (int) scalar_extract_uint64_from_low_uint128(gprp);
+
+  vec_vsst4wso (xs, array, off0, off1, off2, off3);
+#endif
+}
+
+/** \brief Vector Scatter-Store 4 words to Vector Word Indexes.
+ *
+ *  For each word element [i] of xs, store the
+ *  element xs[i] at *(char*)array[vra[i]<<scale].
+ *
+ *  \note Signed word indexes are expanded (unpacked) to doublewords
+ *  before shifting left (2+scale) bits before transfer to GRPs for
+ *  effective address calculation. This converts each index to an
+ *  64-bit offset.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 12-21 | 1/cycle  |
+ *  |power9   | 15-24 | 2/cycle  |
+ *
+ *  @param xs Vector integer word elements to scatter store.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) indexes from array.
+ *  @param scale 8-bit integer. Indexes are multiplying by
+ *  2<sup>scale</sup>.
+ */
+static inline void
+vec_vsst4wwsx (vui32_t xs, unsigned int *array,
+	      vi32_t vra, const unsigned char scale)
+{
+#ifdef _ARCH_PWR8
+  vi64_t off01, off23;
+  vui64_t lshift = vec_splats ((unsigned long long) (2 + scale));
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  off01 = (vi64_t) __pvec_vsld (off01, (vui64_t) lshift);
+  off23 = (vi64_t) __pvec_vsld (off23, (vui64_t) lshift);
+
+  vec_vsst4wso (xs, array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed int off0, off1, off2, off3;
+
+  off0 = (scalar_extract_uint64_from_high_uint128(gprp) >> 32) << (2 + scale);
+  off1 = ((int) scalar_extract_uint64_from_high_uint128(gprp)) << (2 + scale);
+  off2 = (scalar_extract_uint64_from_low_uint128(gprp) >> 32) << (2 + scale);
+  off3 = ((int) scalar_extract_uint64_from_low_uint128(gprp)) << (2 + scale);
+
+  vec_vsst4wso (xs, array, off0, off1, off2, off3);
+#endif
+}
+
+/** \brief Vector Scatter-Store 4 words to Vector Word Indexes.
+ *
+ *  For each word element [i] of xs, store the
+ *  element xs[i] at *(char*)array[vra[i]].
+ *
+ *  \note Signed word indexes are expanded (unpacked) to doublewords
+ *  before shifting left 2 bits. This converts each index to an
+ *  64-bit offset for effective address calculation.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 12-21 | 1/cycle  |
+ *  |power9   | 15-24 | 2/cycle  |
+ *
+ *  @param xs Vector doubleword elements to scatter store.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of signed word (32-bit) indexes from array.
+ */
+static inline void
+vec_vsst4wwx (vui32_t xs, unsigned int *array,
+	      vi32_t vra)
+{
+#ifdef _ARCH_PWR8
+  vi64_t off01, off23;
+  vui64_t lshift = vec_splats ((unsigned long long) 2);
+
+  off01 = vec_vupkhsw (vra);
+  off23 = vec_vupklsw (vra);
+
+  off01 = (vi64_t) __pvec_vsld (off01, (vui64_t) lshift);
+  off23 = (vi64_t) __pvec_vsld (off23, (vui64_t) lshift);
+
+  vec_vsst4wso (xs, array, off01[0], off01[1], off23[0], off23[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  signed int off0, off1, off2, off3;
+
+  off0 = (scalar_extract_uint64_from_high_uint128(gprp) >> 32) << 2;
+  off1 = ((int) scalar_extract_uint64_from_high_uint128(gprp)) << 2;
+  off2 = (scalar_extract_uint64_from_low_uint128(gprp) >> 32) << 2;
+  off3 = ((int) scalar_extract_uint64_from_low_uint128(gprp)) << 2;
+
+  vec_vsst4wso (xs, array, off0, off1, off2, off3);
+#endif
+}
+
+/** \brief Vector Scatter-Store Words to Vector Doubleword Offsets
+ *
+ *  For each doubleword element [i] of vra, Store the low order word
+ *  element xs[i+1] at *(char*)array+offset[0|1].
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   8   | 1/cycle  |
+ *  |power9   |   9   | 2/cycle  |
+ *
+ *  @param xs Vector doubleword elements to scatter store
+ *  low order words of each doubleword.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of doubleword (64-bit) byte offsets from &array.
+ */
+static inline void
+vec_vsstwdo (vui64_t xs, unsigned int *array, vi64_t vra)
+{
+#ifdef _ARCH_PWR8
+  vec_vsstwso (xs, array, vra[0], vra[1]);
+#else
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+
+  vec_vsstwso (xs, array,
+		scalar_extract_uint64_from_high_uint128(gprp),
+		scalar_extract_uint64_from_low_uint128(gprp));
+#endif
+}
+
+/** \brief Vector Scatter-Store Words to Vector Doubleword Scaled Indexes.
+ *
+ *  For each doubleword element [i] of vra, Store the low order word
+ *  element xs[i+1] at array[vra[i]<<scale].
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-19 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector doubleword elements to scatter store
+ *  low order words of each doubleword.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of doubleword (64-bit) indexes from &array.
+ *  @param scale 8-bit integer. Indexes are multiplying by
+ *  2<sup>scale</sup>.
+ */
+static inline void
+vec_vsstwdsx (vui64_t xs, unsigned int *array, vi64_t vra,
+	      const unsigned char scale)
+{
+#ifdef _ARCH_PWR8
+  vui64_t lshift = vec_splats ((unsigned long long) (2 + scale));
+  vui64_t offset;
+
+  offset = (vui64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  vec_vsstwso (xs, array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << (2 + scale);
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << (2 + scale);
+
+  vec_vsstwso (xs, array, offset0, offset1);
+#endif
+}
+
+/** \brief Vector Scatter-Store Words to Vector Doubleword Indexes.
+ *
+ *  For each doubleword element [i] of vra, Store the low order word
+ *  element xs[i+1] at array[vra[i]].
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-19 | 1/cycle  |
+ *  |power9   | 10-19 | 1/cycle  |
+ *
+ *  @param xs Vector doubleword elements to scatter store
+ *  low order words of each doubleword.
+ *  @param array Pointer to array of integer words.
+ *  @param vra Vector of doubleword (64-bit) indexes from &array.
+ */
+static inline void
+vec_vsstwdx (vui64_t xs, unsigned int *array, vi64_t vra)
+{
+#ifdef _ARCH_PWR8
+  vui64_t lshift = vec_splats ((unsigned long long) 2);
+  vui64_t offset;
+
+  offset = (vui64_t) __pvec_vsld (vra, (vui64_t) lshift);
+  vec_vsstwso (xs, array, offset[0], offset[1]);
+#else
+  long long offset0, offset1;
+  // Need to explicitly manage the VR/GPR xfer for PWR7
+  unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);
+  offset0 = scalar_extract_uint64_from_high_uint128(gprp) << 2;
+  offset1 = scalar_extract_uint64_from_low_uint128(gprp) << 2;
+
+  vec_vsstwso (xs, array, offset0, offset1);
+#endif
+}
+
+/** \brief Vector Scatter-Store Words to Scalar Offsets.
+ *
+ *  For each doubleword element [i] of vra, Store the low order word
+ *  element xs[i+1] at *(char*)array+offset[0|1].
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   3   | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param xs Vector doubleword elements to scatter store
+ *  low order words of each doubleword.
+ *  @param array Pointer to array of integer words.
+ *  @param offset0 Scalar (64-bit) byte offset from &array.
+ *  @param offset1 Scalar (64-bit) byte offset from &array.
+ */
+static inline void
+vec_vsstwso (vui64_t xs, unsigned int *array,
+	      const long long offset0, const long long offset1)
+{
+  vui32_t xs0, xs1;
+
+  xs0 = (vui32_t) xs;
+  // xs1 = vec_xxswapd (xs);
+#ifdef _ARCH_PWR7
+  xs1 = (vui32_t) vec_xxpermdi (xs, xs, 2);
+#else
+  xs1 = vec_sld (xs0, xs0, 8);
+#endif
+  /* Need to handle endian as vec_vstsxiwx always stores the right word
+   * from the left doubleword of the VSR, while word element [1] may in
+   * the left or right doubleword. */
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  vec_vstxsiwx (xs0, offset1, array);
+  vec_vstxsiwx (xs1, offset0, array);
+#else
+  vec_vstxsiwx (xs0, offset0, array);
+  vec_vstxsiwx (xs1, offset1, array);
+#endif
+}
+
+/** \brief Vector Store Scalar Integer Word Indexed.
+ *
+ *  Stores word element 1 of vector <B>xs</B> as a scalar
+ *  word at the effective address formed by <B>rb+ra</B>. The
+ *  operand <B>rb</B> is a pointer to an array of integer words.
+ *  The operand <B>ra</B> is a doubleword integer byte offset
+ *  from <B>rb</B>. For best performance <B>rb</B> and <B>ra</B>
+ *  should be word aligned (integer multiple of 4).
+ *
+ *  This operation is an alternate form of vector store element
+ *  (vec_ste), with the added simplification that data is always left
+ *  justified in the vector. Another advantage for Power8 and later,
+ *  the stxsiwx instruction can load directly into any of the 64 VSRs.
+ *  Both simplify scatter operations.
+ *
+ *  \note The stxsiwx instruction was introduced in PowerISA 2.07
+ *  (POWER8). Power7 and earlier will use stvewx.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 0 - 2 | 2/cycle  |
+ *  |power9   | 0 - 2 | 4/cycle  |
+ *
+ *  @param xs vector doubleword element 0 to be stored.
+ *  @param ra const doubleword index (offset/displacement).
+ *  @param rb const doubleword pointer to an array of doubles.
+ */
+static inline void
+vec_vstxsiwx (vui32_t xs, const signed long long ra, unsigned int *rb)
+{
+#if (defined(__clang__) && __clang_major__ < 8)
+  __VEC_U_128 t;
+  unsigned int *p = (unsigned int *)((char *)rb + ra);
+  t.vx4 = xs;
+  *p = t.ulong.upper;
+#elif _ARCH_PWR8
+  if (__builtin_constant_p (ra) &&  (ra <= 32760) && (ra >= -32768))
+    {
+      if (ra == 0)
+	{
+	  __asm__(
+	      "stxsiwx %x1,%y0;"
+	      : "=Z" (*rb)
+	      : "wa" (xs)
+	      : );
+	} else {
+	  unsigned long long rt;
+	  __asm__(
+	      "li %0,%1;"
+	      : "=r" (rt)
+	      : "I" (ra)
+	      : );
+	  __asm__(
+	      "stxsiwx %x1,%y0;"
+	      : "=Z" (*(unsigned int *)((char *)rb+rt))
+	      : "wa" (xs)
+	      : );
+	}
+    } else {
+      __asm__(
+	  "stxsiwx %x1,%y0;"
+	  : "=Z" (*(unsigned int *)((char *)rb+ra))
+	  : "wa" (xs)
+	  : );
+    }
+#else //_ARCH_PWR8
+  // Splat word element 1 to all elements
+  vui32_t xss = vec_splat (xs, 1);
+  // store a word element at the EA (ra+rb)
+  vec_ste (xss, ra, rb);
+#endif
+}
+
 /** \brief Vector Sum-across Half Signed Word Saturate.
  *
  * Sum across adjacent signed words within doublewords from <I>vra</I>
@@ -1732,6 +2883,166 @@ vec_vsumsw (vi32_t vra, vi32_t vrb)
       : );
 #endif
   return ((vi32_t) res);
+}
+
+/** \brief Vector Unpack High Signed Word.
+ *
+ *  From the word source in vra.
+ *  For each integer word [i] from 0 to 1,
+ *  sign extend to 64-bit and place in
+ *  doubleword element [i] of the result vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *
+ *  \note This operation is the equivalent of the generic vec_unpackh
+ *  for type vector signed int. However vec_unpackh (for this type)
+ *  is not available for _ARCH_PWR7 and earlier versions of GCC.
+ *  This PVECLIB operation is available to both.
+ *  \note Use vec_vupkhsw naming but only
+ *  if the compiler does not define it in <altivec.h>.
+ *
+ *  @param vra a 128-bit vector treated as 4 x signed integers.
+ *  @return 128-bit vector treated as 2 x signed long long integers.
+ */
+#ifndef vec_vupkhsw
+// May be defined as inline function for clang
+// But only for _ARCH_PWR8 or higher.
+#if !defined(__clang__) || !defined(_ARCH_PWR8)
+static inline vi64_t
+vec_vupkhsw (vi32_t vra)
+{
+  vi64_t r;
+#ifdef _ARCH_PWR8
+  __asm__(
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      "vupklsw %0,%1;\n"
+#else
+      "vupkhsw %0,%1;\n"
+#endif
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#else
+  vui32_t const shb = { 31, 0, 31 ,0 };
+  vi32_t xra;
+
+  xra = vec_mergeh (vra, vra);
+  r = (vi64_t) vec_sra (xra, shb);
+#endif
+  return (r);
+}
+#endif
+#endif
+
+/** \brief Vector Unpack High Unsigned Word.
+ *
+ *  From the word source in vra.
+ *  For each integer word [i] from 0 to 1,
+ *  zero extend to 64-bit and place in
+ *  doubleword element [i] of the result vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  2-4  | 2/cycle  |
+ *
+ *  \note vec_vupkhuw does not exist in <altivec.h> nor as an
+ *  instruction is the PowerISA. But it is easy to construct using
+ *  vec_mergeh and a zero vector.
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @return 128-bit vector treated as 2 x unsigned long long integers.
+ */
+static inline vui64_t
+vec_vupkhuw (vui32_t vra)
+{
+  vui32_t const zero = { 0, 0, 0 ,0 };
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return (vui64_t) vec_mergeh (vra, zero);
+#else
+  return (vui64_t) vec_mergeh (zero, vra);
+#endif
+}
+
+/** \brief Vector Unpack Low Signed Word.
+ *
+ *  From the word source in vra.
+ *  For each integer word [i+2] from 0 to 1 (words 2 and 3),
+ *  sign extend to 64-bit and place in
+ *  doubleword element [i] of the result vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *
+ *  \note Use vec_vupkhsw naming but only
+ *  if the compiler does not define it in <altivec.h>.
+ *
+ *  @param vra a 128-bit vector treated as 4 x signed integers.
+ *  @return 128-bit vector treated as 2 x signed long long integers.
+ */
+#ifndef vec_vupklsw
+// May be defined as inline function for clang
+// But only for _ARCH_PWR8 or higher.
+#if !defined(__clang__) || !defined(_ARCH_PWR8)
+static inline vi64_t
+vec_vupklsw (vi32_t vra)
+{
+  vi64_t r;
+#ifdef _ARCH_PWR8
+  __asm__(
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      "vupkhsw %0,%1;\n"
+#else
+      "vupklsw %0,%1;\n"
+#endif
+      : "=v" (r)
+      : "v" (vra)
+      : );
+#else
+  vui32_t const shb = { 31, 0, 31 ,0 };
+  vi32_t xra;
+
+  xra = vec_mergel (vra, vra);
+  r = (vi64_t) vec_sra (xra, shb);
+#endif
+  return (r);
+}
+#endif
+#endif
+
+/** \brief Vector Unpack Low Unsigned Word.
+ *
+ *  From the word source in vra.
+ *  For each integer word [i+2] from 0 to 1 (words 2 and 3),
+ *  zero extend to 64-bit and place in
+ *  doubleword element [i] of the result vector.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  2-4  | 2/cycle  |
+ *
+ *  \note vec_vupkluw does not exist in <altivec.h> nor as an
+ *  instruction is the PowerISA. But it is easy to construct using
+ *  vec_mergeh and a zero vector.
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @return 128-bit vector treated as 2 x unsigned long long integers.
+ */
+static inline vui64_t
+vec_vupkluw (vui32_t vra)
+{
+  vui32_t const zero = { 0, 0, 0 ,0 };
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return (vui64_t) vec_mergel (vra, zero);
+#else
+  return (vui64_t) vec_mergel (zero, vra);
+#endif
 }
 
 #endif /* VEC_INT32_PPC_H_ */

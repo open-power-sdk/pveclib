@@ -1320,6 +1320,379 @@ test_muluwm (void)
   return (rc);
 }
 
+static unsigned int test_ui32[] =
+    {
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+	0, -1, -2, -3, -4, -5, -6, -7,
+	-8, -9, -10, -11, -12, -13, -14, -15
+    };
+
+int
+test_lvguwx (void)
+{
+  vi32_t i1;
+  vui32_t e;
+  vui32_t j, j0, j1;
+  vi64_t id1, id2;
+  vui64_t ed;
+  vui64_t jd, jd0, jd1;
+  int rc = 0;
+
+  printf ("\ntest_Vector Gather-Load Word\n");
+
+  e =  (vui32_t) CONST_VINT32_W ( 0, 0, -2, -3);
+  jd0 = vec_vlxsiwzx (0, test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) jd0, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwx 1:", (vui128_t) j, (vui128_t) e);
+
+  e =  (vui32_t) CONST_VINT32_W ( 0, 1, -2, -3 );
+  jd0 = vec_vlxsiwzx (4, test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) jd0, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwx 2:", (vui128_t) j, (vui128_t) e);
+
+  e =  (vui32_t) CONST_VINT32_W ( 0, 15, -2, -3 );
+  jd0 = vec_vlxsiwzx (60, test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) jd0, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwx 3:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi32_t) { 4, 60, 8, 56 };
+  e =  (vui32_t) CONST_VINT32_W ( 0, 1, -2, -3 );
+  jd0 = vec_vlxsiwzx (i1[0], test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) jd0, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwx 4:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi32_t) { 4, 60, 8, 56 };
+  e =  (vui32_t) CONST_VINT32_W ( 0, 15, -2, -3 );
+  jd1 = vec_vlxsiwzx (i1[1], test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) jd1, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwx 5:", (vui128_t) j, (vui128_t) e);
+
+  // This test depends on the merge of scalars from lxsiwzx 4/5
+
+  ed =  (vui64_t) { 1, 15 };
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  jd = vec_permdi ((vui64_t) jd1, (vui64_t) jd0, 0);
+#else
+  jd = vec_permdi ((vui64_t) jd0, (vui64_t) jd1, 0);
+#endif
+  rc += check_vuint128x ("vec_vlxsiwx2 :", (vui128_t) jd, (vui128_t) ed);
+
+  // This test replicates the results of the last 3 tests in single op.
+  ed =  (vui64_t) { 1, 15 };
+  jd = vec_vgluwso (test_ui32, 4, 60);
+
+  rc += check_vuint128x ("vec_vgluwso :", (vui128_t) jd, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector offsets.
+  id1 = (vi64_t)  {  4, 60 };
+  jd = vec_vgluwdo (test_ui32, id1);
+
+  rc += check_vuint128x ("vec_vgluwdo :", (vui128_t) jd, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector indexes.
+  id1 = (vi64_t)  {  1, 15 };
+  jd = vec_vgluwdx (test_ui32, id1);
+
+  rc += check_vuint128x ("vec_vgluwdx :", (vui128_t) jd, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector
+  // scaled indexes.
+  id1 = (vi64_t)  { 1, 3 };
+  ed =  (vui64_t) { 4, 12 };
+  jd = vec_vgluwdsx (test_ui32, id1, 2);
+
+  rc += check_vuint128x ("vec_vgluwdx :", (vui128_t) jd, (vui128_t) ed);
+
+  i1 = (vi32_t) { 8, 72, 16, 80 };
+  e =  (vui32_t) CONST_VINT32_W ( 0, 2, -2, -3 );
+  j0 = (vui32_t) vec_vlxsiwax (i1[0], (signed int *) test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) j0, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwax 0:", (vui128_t) j, (vui128_t) e);
+
+  i1 = (vi32_t) { 8, 72, 16, 80 };
+  e =  (vui32_t) CONST_VINT32_W ( -1, -2, -1, -2 );
+  j1 = (vui32_t) vec_vlxsiwax (i1[1], (signed int *) test_ui32);
+  j = (vui32_t) vec_permdi ((vui64_t) j1, (vui64_t)e, 1);
+
+  rc += check_vuint128x ("vec_vlxsiwax 1:", (vui128_t) j, (vui128_t) e);
+
+  // This test depends on the merge of scalars from lxsiwax 0/1
+
+  ed =  (vui64_t) { 2, -2 };
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  jd = vec_permdi ((vui64_t) j1, (vui64_t) j0, 0);
+#else
+  jd = vec_permdi ((vui64_t) j0, (vui64_t) j1, 0);
+#endif
+  rc += check_vuint128x ("vec_vlxsiwax2 :", (vui128_t) jd, (vui128_t) ed);
+
+  // This test replicates the results of the last 3 tests in single op.
+  ed =  (vui64_t) { 2, -2 };
+  id2 = vec_vglswso ((int *)test_ui32, 8, 72);
+
+  rc += check_vuint128x ("vec_vglswso :", (vui128_t) id2, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector offsets.
+  ed =  (vui64_t) { 2, -2 };
+  id1 = (vi64_t)  {  8, 72 };
+  id2 = vec_vglswdo ((int *)test_ui32, id1);
+
+  rc += check_vuint128x ("vec_vglswdo :", (vui128_t) id2, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector indexes.
+  ed =  (vui64_t) { 2, -2 };
+  id1 = (vi64_t)  {  2, 18 };
+  id2 = vec_vglswdx ((int *)test_ui32, id1);
+
+  rc += check_vuint128x ("vec_vglswdx :", (vui128_t) id2, (vui128_t) ed);
+
+  // This test replicates the results of the last tests with vector
+  // scaled indexes.
+  ed =  (vui64_t) { 2, -2 };
+  id1 = (vi64_t)  {  1, 9 };
+  id2 = vec_vglswdsx ((int *)test_ui32, id1, 1);
+
+  rc += check_vuint128x ("vec_vglswdsx :", (vui128_t) id2, (vui128_t) ed);
+
+  // This test replicates the results of the last 3 tests in single op.
+  e =  (vui32_t) {  1, 15, 2, -2 };
+  j = vec_vgl4wso (test_ui32, 4, 60, 8, 72);
+
+  rc += check_vuint128x ("vec_vgl4wso :", (vui128_t) j, (vui128_t) e);
+
+  // This test replicates the results of the last 3 tests in single op.
+  i1 = (vi32_t) { 4, 60, 8, 72 };
+  e =  (vui32_t) { 1, 15, 2, -2 };
+  j = vec_vgl4wwo (test_ui32, i1);
+
+  rc += check_vuint128x ("vec_vgl4wwo :", (vui128_t) j, (vui128_t) e);
+
+  // This test replicates the results of the last tests with indexed op.
+  i1 = (vi32_t) { 1, 15, 2, 18 };
+  e =  (vui32_t) { 1, 15, 2, -2 };
+  j = vec_vgl4wwx (test_ui32, i1);
+
+  rc += check_vuint128x ("vec_vgl4wwx :", (vui128_t) j, (vui128_t) e);
+
+  // This test replicates the results of the last tests with scaled indexed op.
+  i1 = (vi32_t) { 1, 15, 2, 9 };
+  e =  (vui32_t) { 2, -14, 4, -2 };
+  j = vec_vgl4wwsx (test_ui32, i1, 1);
+
+  rc += check_vuint128x ("vec_vgl4wwsx :", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+static unsigned int test_stui32[16];
+
+int
+test_stvguwx (void)
+{
+  vi32_t i1, i2;
+  vui32_t e, *mem;
+  vui32_t j, j1, j2;
+  vui64_t jd;
+  vi64_t id1;
+  int rc = 0;
+  int i;
+
+  mem = (vui32_t *)& test_stui32;
+
+  for (i=0; i<16; i++)
+    test_stui32[i] = test_ui32[i];
+
+  printf ("\ntest_Vector Scatter-Store Word\n");
+#if 1
+
+  j1 = (vui32_t) CONST_VINT32_W ( 0, 16, 1616, -1616 );
+  j2 = (vui32_t) CONST_VINT32_W ( 0, 31, 3131, -3131 );
+  vec_vstxsiwx (j1, 0, test_stui32);
+  vec_vstxsiwx (j2, 60, test_stui32);
+
+  j = mem [0];
+  e = (vui32_t) { 16, 1, 2, 3 };
+
+  rc += check_vuint128x ("vec_stsudux 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 14, 31 };
+
+  rc += check_vuint128x ("vec_stsudux 2:", (vui128_t) j, (vui128_t) e);
+
+  jd = (vui64_t) { 1616, 3131 };
+  vec_vsstwso (jd, test_stui32, 0, 60);
+
+  j = mem [0];
+  e = (vui32_t) { 1616, 1, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsstwso 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 14, 3131 };
+
+  rc += check_vuint128x ("vec_vsstwso 2:", (vui128_t) j, (vui128_t) e);
+
+  jd = (vui64_t) { 1617, 3132 };
+  id1 = (vi64_t) { 0, 60 };
+  vec_vsstwdo (jd, test_stui32, id1);
+
+  j = mem [0];
+  e = (vui32_t) { 1617, 1, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsstwdo 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 14, 3132 };
+
+  rc += check_vuint128x ("vec_vsstwdo 2:", (vui128_t) j, (vui128_t) e);
+
+  jd = (vui64_t) { 1618, 3133 };
+  id1 = (vi64_t) { 0, 15 };
+  vec_vsstwdx (jd, test_stui32, id1);
+
+  j = mem [0];
+  e = (vui32_t) { 1618, 1, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsstwdx 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 14, 3133 };
+
+  rc += check_vuint128x ("vec_vsstwdx 2:", (vui128_t) j, (vui128_t) e);
+
+  jd = (vui64_t) { 1619, 3134 };
+  id1 = (vi64_t) { 0, 15 };
+  vec_vsstwdsx (jd, test_stui32, id1, 0);
+
+  j = mem [0];
+  e = (vui32_t) { 1619, 1, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsstwdsx 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 14, 3134 };
+
+  rc += check_vuint128x ("vec_vsstwdsx 2:", (vui128_t) j, (vui128_t) e);
+
+
+  j1 = (vui32_t) { 16, 31, 17, 30 };
+  vec_vsst4wso (j1, test_stui32, 0, 60, 4, 56);
+
+  j = mem [0];
+  e = (vui32_t) { 16, 17, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsst4wso 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 30, 31 };
+
+  rc += check_vuint128x ("vec_vsst4wso 2:", (vui128_t) j, (vui128_t) e);
+
+
+  j1 = (vui32_t) { 160, 310, 170, 300 };
+  i1 = (vi32_t) { 0, 60, 4, 56 };
+  vec_vsst4wwo (j1, test_stui32, i1);
+
+  j = mem [0];
+  e = (vui32_t) { 160, 170, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsst4wwo 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 300, 310 };
+
+  rc += check_vuint128x ("vec_vsst4wwo 2:", (vui128_t) j, (vui128_t) e);
+#endif
+
+  j1 = (vui32_t) { 16, 31, 17, 30 };
+  i2 = (vi32_t) { 0, 15, 1, 14 };
+  vec_vsst4wwx (j1, test_stui32, i2);
+
+  j = mem [0];
+  e = (vui32_t) { 16, 17, 2, 3 };
+
+  rc += check_vuint128x ("vec_vsst4wwx 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 12, 13, 30, 31 };
+
+  rc += check_vuint128x ("vec_vsst4wwx 2:", (vui128_t) j, (vui128_t) e);
+
+  j1 = (vui32_t) { 0, 7, 1, 6 };
+  i2 = (vi32_t) { 0, 7, 1, 6 };
+  vec_vsst4wwsx (j1, test_stui32, i2, 1);
+
+  j = mem [0];
+  e = (vui32_t) { 0, 17, 1, 3 };
+
+  rc += check_vuint128x ("vec_vsst4wwsx 1:", (vui128_t) j, (vui128_t) e);
+
+  j = mem [3];
+  e = (vui32_t) { 6, 13, 7, 31 };
+
+  rc += check_vuint128x ("vec_vsst4wwsx 2:", (vui128_t) j, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_unpkxw (void)
+{
+  vi32_t ii;
+  vui32_t i;
+  vui64_t e, k;
+  int rc = 0;
+
+  printf ("\ntest_unpk[h|l]w Unpack High/Low Words\n");
+
+  i = (vui32_t) { 10, -1, 2, -3 };
+  e = (vui64_t) { 10, 0xffffffff };
+  k = (vui64_t) vec_vupkhuw ((vui32_t) i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_vupkhuw i=", (vui128_t)i);
+  print_vint128x ("            k=", k);
+#endif
+  rc += check_vuint128x ("vec_vupkhuw 1:", (vui128_t) k, (vui128_t) e);
+
+  e = (vui64_t) { 2, 0xfffffffd };
+  k = (vui64_t) vec_vupkluw ((vui32_t) i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_vupkluw i=", (vui128_t)i);
+  print_vint128x ("            k=", k);
+#endif
+  rc += check_vuint128x ("vec_vupkluw 1:", (vui128_t) k, (vui128_t) e);
+
+  ii = (vi32_t) { -10, 1, 2, -3 };
+  e = (vui64_t) { -10, 1 };
+  k = (vui64_t) vec_vupkhsw ((vi32_t) ii);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_vupkhsw i=", (vui128_t)ii);
+  print_vint128x ("            k=", k);
+#endif
+  rc += check_vuint128x ("vec_vupkhsw 1:", (vui128_t) k, (vui128_t) e);
+
+  e = (vui64_t) { 2, -3 };
+  k = (vui64_t) vec_vupklsw ((vi32_t) ii);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_vupklsw i=", (vui128_t)ii);
+  print_vint128x ("            k=", k);
+#endif
+  rc += check_vuint128x ("vec_vupkluw 1:", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i32 (void)
 {
@@ -1341,6 +1714,9 @@ test_vec_i32 (void)
   rc += test_mrgahlw();
   rc += test_mrgeow();
   rc += test_mulhuw();
+  rc += test_unpkxw ();
+  rc += test_lvguwx ();
+  rc += test_stvguwx ();
 
   return (rc);
 }

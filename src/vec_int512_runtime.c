@@ -130,8 +130,12 @@ __VEC_PWR_IMP (vec_mul256x256) (__VEC_U_256 m1, __VEC_U_256 m2)
 #endif
 }
 
-__VEC_U_640
-__VEC_PWR_IMP (vec_mul512x128) (__VEC_U_512 m1, vui128_t m2)
+/* The core implementation of vec_mul512x128 with platform specific tuning.
+ * This static version can be in-lined (via __attribute__((flatten)))
+ * for the extern implementation for the library and as needed internal to
+ * the implementations of wider quadword integer multiples */
+static __VEC_U_640
+__VEC_PWR_IMP (vec_mul512x128_static) (__VEC_U_512 m1, vui128_t m2)
 {
 #ifdef _ARCH_PWR9
   __VEC_U_640 result;
@@ -178,6 +182,16 @@ __VEC_PWR_IMP (vec_mul512x128) (__VEC_U_512 m1, vui128_t m2)
 #endif
 }
 
+__VEC_U_640 __attribute__((flatten))
+__VEC_PWR_IMP (vec_mul512x128) (__VEC_U_512 m1, vui128_t m2)
+{
+#ifdef _ARCH_PWR8
+  return __VEC_PWR_IMP (vec_mul512x128_static) (m1, m2);
+#else
+  return vec_mul512x128_inline (m1, m2);
+#endif
+}
+
 __VEC_U_640
 __VEC_PWR_IMP (vec_madd512x128a128) (__VEC_U_512 m1, vui128_t m2,
                                      vui128_t a1)
@@ -185,8 +199,8 @@ __VEC_PWR_IMP (vec_madd512x128a128) (__VEC_U_512 m1, vui128_t m2,
   return vec_madd512x128a128_inline (m1, m2, a1);
 }
 
-__VEC_U_640
-__VEC_PWR_IMP (vec_madd512x128a512) (__VEC_U_512 m1, vui128_t m2,
+static __VEC_U_640
+__VEC_PWR_IMP (vec_madd512x128a512_static) (__VEC_U_512 m1, vui128_t m2,
                                      __VEC_U_512 a2)
 {
 #ifdef _ARCH_PWR9
@@ -233,6 +247,17 @@ __VEC_PWR_IMP (vec_madd512x128a512) (__VEC_U_512 m1, vui128_t m2,
 #endif
 }
 
+__VEC_U_640  __attribute__((flatten))
+__VEC_PWR_IMP (vec_madd512x128a512) (__VEC_U_512 m1, vui128_t m2,
+                                     __VEC_U_512 a2)
+{
+#ifdef _ARCH_PWR8
+  return __VEC_PWR_IMP (vec_madd512x128a512_static) (m1, m2, a2);
+#else
+  return vec_madd512x128a512_inline (m1, m2, a2);
+#endif
+}
+
 __VEC_U_640
 __VEC_PWR_IMP (vec_madd512x128a128a512) (__VEC_U_512 m1, vui128_t m2,
                                          vui128_t a1, __VEC_U_512 a2)
@@ -240,8 +265,8 @@ __VEC_PWR_IMP (vec_madd512x128a128a512) (__VEC_U_512 m1, vui128_t m2,
   return vec_madd512x128a128a512_inline (m1, m2, a1, a2);
 }
 
-__VEC_U_1024 __attribute__((flatten))
-__VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
+static __VEC_U_1024 __attribute__((flatten))
+__VEC_PWR_IMP (vec_mul512x512_static) (__VEC_U_512 m1, __VEC_U_512 m2)
 {
 #ifdef _ARCH_PWR8
   __VEC_U_1024 result;
@@ -249,11 +274,11 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   vui128_t mp, mq;
   __VEC_U_640 mp3, mp2, mp1, mp0;
 
-  mp0 = __VEC_PWR_IMP (vec_mul512x128) (m1, m2.vx0);
+  mp0 = __VEC_PWR_IMP (vec_mul512x128_static) (m1, m2.vx0);
   result.vx0 = mp0.vx0;
   COMPILE_FENCE10;
 
-  mp1 = __VEC_PWR_IMP (vec_mul512x128) (m1, m2.vx1);
+  mp1 = __VEC_PWR_IMP (vec_mul512x128_static) (m1, m2.vx1);
   result.vx1 = vec_addcq (&mq, mp1.vx0, mp0.vx1);
   result.vx2 = vec_addeq (&mp, mp1.vx1, mp0.vx2, mq);
   result.vx3 = vec_addeq (&mq, mp1.vx2, mp0.vx3, mp);
@@ -262,7 +287,7 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   COMPILE_FENCE11;
 
 
-  mp2 = __VEC_PWR_IMP (vec_mul512x128) (m1, m2.vx2);
+  mp2 = __VEC_PWR_IMP (vec_mul512x128_static) (m1, m2.vx2);
   result.vx2 = vec_addcq (&mq, mp2.vx0, result.vx2);
   result.vx3 = vec_addeq (&mp, mp2.vx1, result.vx3, mq);
   result.vx4 = vec_addeq (&mq, mp2.vx2, result.vx4, mp);
@@ -270,7 +295,7 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
   result.vx6 = vec_addeq (&result.vx7, mp2.vx4, result.vx6, mp);
   COMPILE_FENCE12;
 
-  mp3 = __VEC_PWR_IMP (vec_mul512x128) (m1, m2.vx3);
+  mp3 = __VEC_PWR_IMP (vec_mul512x128_static) (m1, m2.vx3);
   result.vx3 = vec_addcq (&mq, mp3.vx0, result.vx3);
   result.vx4 = vec_addeq (&mp, mp3.vx1, result.vx4, mq);
   result.vx5 = vec_addeq (&mq, mp3.vx2, result.vx5, mp);
@@ -279,16 +304,16 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
 #else
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
-  mp0.x640 = __VEC_PWR_IMP(vec_mul512x128) (m1, m2.vx0);
+  mp0.x640 = __VEC_PWR_IMP(vec_mul512x128_static) (m1, m2.vx0);
   result.vx0 = mp0.x3.v1x128;
   COMPILE_FENCE10;
-  mp1.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx1, mp0.x3.v0x512);
+  mp1.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx1, mp0.x3.v0x512);
   result.vx1 = mp1.x3.v1x128;
   COMPILE_FENCE11;
-  mp2.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx2, mp1.x3.v0x512);
+  mp2.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx2, mp1.x3.v0x512);
   result.vx2 = mp2.x3.v1x128;
   COMPILE_FENCE12;
-  mp3.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx3, mp2.x3.v0x512);
+  mp3.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx3, mp2.x3.v0x512);
   result.vx3 = mp3.x3.v1x128;
   result.vx4 = mp3.x3.v0x512.vx0;
   result.vx5 = mp3.x3.v0x512.vx1;
@@ -302,29 +327,50 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
 }
 
 __VEC_U_1024 __attribute__((flatten))
-__VEC_PWR_IMP (vec_madd512x512a512) (__VEC_U_512 m1, __VEC_U_512 m2,
+__VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
+{
+#ifdef _ARCH_PWR8
+  return __VEC_PWR_IMP(vec_mul512x512_static) (m1, m2);
+#else
+  return vec_mul512x512_inline (m1, m2);
+#endif
+}
+
+static __VEC_U_1024 __attribute__((flatten))
+__VEC_PWR_IMP (vec_madd512x512a512_static) (__VEC_U_512 m1, __VEC_U_512 m2,
                                      __VEC_U_512 a1)
 {
 #ifdef _ARCH_PWR8
   __VEC_U_1024 result;
   __VEC_U_512x1 mp3, mp2, mp1, mp0;
 
-  mp0.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx0, a1);
+  mp0.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx0, a1);
   result.vx0 = mp0.x3.v1x128;
   COMPILE_FENCE14;
-  mp1.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx1, mp0.x3.v0x512);
+  mp1.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx1, mp0.x3.v0x512);
   result.vx1 = mp1.x3.v1x128;
   COMPILE_FENCE15;
-  mp2.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx2, mp1.x3.v0x512);
+  mp2.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx2, mp1.x3.v0x512);
   result.vx2 = mp2.x3.v1x128;
   COMPILE_FENCE16;
-  mp3.x640 = __VEC_PWR_IMP(vec_madd512x128a512) (m1, m2.vx3, mp2.x3.v0x512);
+  mp3.x640 = __VEC_PWR_IMP(vec_madd512x128a512_static) (m1, m2.vx3, mp2.x3.v0x512);
   result.vx3 = mp3.x3.v1x128;
   result.vx4 = mp3.x3.v0x512.vx0;
   result.vx5 = mp3.x3.v0x512.vx1;
   result.vx6 = mp3.x3.v0x512.vx2;
   result.vx7 = mp3.x3.v0x512.vx3;
   return result;
+#else
+  return vec_madd512x512a512_inline (m1, m2, a1);
+#endif
+}
+
+__VEC_U_1024 __attribute__((flatten))
+__VEC_PWR_IMP (vec_madd512x512a512) (__VEC_U_512 m1, __VEC_U_512 m2,
+                                     __VEC_U_512 a1)
+{
+#ifdef _ARCH_PWR8
+  return __VEC_PWR_IMP (vec_madd512x512a512_static) (m1, m2, a1);
 #else
   return vec_madd512x512a512_inline (m1, m2, a1);
 #endif
@@ -373,17 +419,17 @@ __VEC_PWR_IMP (vec_mul1024x1024) (__VEC_U_2048* r2048,
   m1 = (__VEC_U_512 *) m1_1024;
   m2 = (__VEC_U_512 *) m2_1024;
 
-  subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX2(0)], m2[__NDX2(0)]);
+  subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX2(0)], m2[__NDX2(0)]);
   p2048[__NDX4(0)] = subp0.x2.v0x512;
 
   COMPILE_FENCE20;
-  subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX2(1)], m2[__NDX2(0)]);
+  subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX2(1)], m2[__NDX2(0)]);
   sum1.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
   temp[0] = sum1.x2.v0x512;
   temp[1] = vec_add512ze (subp1.x2.v1x512, sum1.x2.v1x128);
 
   COMPILE_FENCE21;
-  subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX2(0)], m2[__NDX2(1)]);
+  subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX2(0)], m2[__NDX2(1)]);
   sum2.x640 = vec_add512cu (temp[0], subp2.x2.v0x512);
   temp[2] = sum2.x2.v0x512;
   p2048[__NDX4(1)] = temp[2];
@@ -391,7 +437,7 @@ __VEC_PWR_IMP (vec_mul1024x1024) (__VEC_U_2048* r2048,
   temp[1] = sumx.x2.v0x512;
 
   COMPILE_FENCE22;
-  subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX2(1)], m2[__NDX2(1)]);
+  subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX2(1)], m2[__NDX2(1)]);
   sum3.x640 = vec_add512cu (sumx.x2.v0x512, subp3.x2.v0x512);
   p2048[__NDX4(2)] = sum3.x2.v0x512;
   p2048[__NDX4(3)] = vec_add512ze2 (subp3.x2.v1x512,
@@ -405,22 +451,22 @@ __VEC_PWR_IMP (vec_mul1024x1024) (__VEC_U_2048* r2048,
   m1 = (__VEC_U_512 *) m1_1024;
   m2 = (__VEC_U_512 *) m2_1024;
 
-  subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX2(0)], m2[__NDX2(0)]);
+  subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX2(0)], m2[__NDX2(0)]);
   p2048[__NDX4(0)] = subp0.x2.v0x512;
 
   COMPILE_FENCE20;
-  subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX2(1)], m2[__NDX2(0)],
+  subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX2(1)], m2[__NDX2(0)],
 					    subp0.x2.v1x512);
 
   COMPILE_FENCE21;
-  subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX2(0)], m2[__NDX2(1)],
+  subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX2(0)], m2[__NDX2(1)],
 					    subp1.x2.v0x512);
   p2048[__NDX4(1)] = subp2.x2.v0x512;
 
   sumx.x640 = vec_add512cu (subp1.x2.v1x512, subp2.x2.v1x512);
 
   COMPILE_FENCE22;
-  subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX2(1)], m2[__NDX2(1)],
+  subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX2(1)], m2[__NDX2(1)],
 					    sumx.x2.v0x512);
   p2048[__NDX4(2)] = subp3.x2.v0x512;
   p2048[__NDX4(3)] = vec_add512ze (subp3.x2.v1x512, sumx.x2.v1x128);
@@ -452,45 +498,45 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
     m1 = (__VEC_U_512 *) m1_2048;
     m2 = (__VEC_U_512 *) m2_2048;
 
-    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(0)], m2[__NDX4(0)]);
+    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(0)], m2[__NDX4(0)]);
     p4096[__NDX8(0)] = subp0.x2.v0x512;
 
     COMPILE_FENCE20;
-    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(1)], m2[__NDX4(0)]);
+    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(1)], m2[__NDX4(0)]);
     sum1.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
     temp[0] = sum1.x2.v0x512;
 
     COMPILE_FENCE20;
-    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(2)], m2[__NDX4(0)]);
+    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(2)], m2[__NDX4(0)]);
     sum2.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sum1.x2.v1x128);
     temp[1] = sum2.x2.v0x512;
 
     COMPILE_FENCE21;
-    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(3)], m2[__NDX4(0)]);
+    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(3)], m2[__NDX4(0)]);
     sum3.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sum2.x2.v1x128);
 
     temp[2] = sum3.x2.v0x512;
     temp[3] = vec_add512ze (subp3.x2.v1x512, sum3.x2.v1x128);
 
     COMPILE_FENCE22;
-    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(0)], m2[__NDX4(1)]);
+    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(0)], m2[__NDX4(1)]);
     sum0.x640 = vec_add512cu (subp0.x2.v0x512, temp[0]);
     p4096[__NDX8(1)] = sum0.x2.v0x512;
 
     COMPILE_FENCE23;
-    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(1)], m2[__NDX4(1)]);
+    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(1)], m2[__NDX4(1)]);
     sum1.x640 = vec_add512ecu (subp1.x2.v0x512, subp0.x2.v1x512, sum0.x2.v1x128);
     sumx.x640 = vec_add512cu (sum1.x2.v0x512, temp[1]);
     temp[0] = sumx.x2.v0x512;
 
     COMPILE_FENCE24;
-    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(2)], m2[__NDX4(1)]);
+    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(2)], m2[__NDX4(1)]);
     sum2.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sum1.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum2.x2.v0x512, temp[2], sumx.x2.v1x128);
     temp[1] = sumx.x2.v0x512;
 
     COMPILE_FENCE25;
-    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(3)], m2[__NDX4(1)]);
+    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(3)], m2[__NDX4(1)]);
     sum3.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sum2.x2.v1x128);
     subp3.x2.v1x512 = vec_add512ze (subp3.x2.v1x512, sum3.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum3.x2.v0x512, temp[3], sumx.x2.v1x128);
@@ -499,24 +545,24 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
     temp[3] = vec_add512ze (subp3.x2.v1x512, sumx.x2.v1x128);
 
     COMPILE_FENCE26;
-    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(0)], m2[__NDX4(2)]);
+    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(0)], m2[__NDX4(2)]);
     sum0.x640 = vec_add512cu (subp0.x2.v0x512, temp[0]);
     p4096[__NDX8(2)] = sum0.x2.v0x512;
 
     COMPILE_FENCE27;
-    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(1)], m2[__NDX4(2)]);
+    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(1)], m2[__NDX4(2)]);
     sum1.x640 = vec_add512ecu (subp1.x2.v0x512, subp0.x2.v1x512, sum0.x2.v1x128);
     sumx.x640 = vec_add512cu (sum1.x2.v0x512, temp[1]);
     temp[0] = sumx.x2.v0x512;
 
     COMPILE_FENCE28;
-    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(2)], m2[__NDX4(2)]);
+    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(2)], m2[__NDX4(2)]);
     sum2.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sum1.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum2.x2.v0x512, temp[2], sumx.x2.v1x128);
     temp[1] = sumx.x2.v0x512;
 
     COMPILE_FENCE20;
-    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(3)], m2[__NDX4(2)]);
+    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(3)], m2[__NDX4(2)]);
     sum3.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sum2.x2.v1x128);
     subp3.x2.v1x512 = vec_add512ze (subp3.x2.v1x512, sum3.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum3.x2.v0x512, temp[3], sumx.x2.v1x128);
@@ -524,24 +570,24 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
     temp[3] = vec_add512ze (subp3.x2.v1x512, sumx.x2.v1x128);
 
     COMPILE_FENCE21;
-    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(0)], m2[__NDX4(3)]);
+    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(0)], m2[__NDX4(3)]);
     sum0.x640 = vec_add512cu (subp0.x2.v0x512, temp[0]);
     p4096[__NDX8(3)] = sum0.x2.v0x512;
 
     COMPILE_FENCE22;
-    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(1)], m2[__NDX4(3)]);
+    subp1.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(1)], m2[__NDX4(3)]);
     sum1.x640 = vec_add512ecu (subp1.x2.v0x512, subp0.x2.v1x512, sum0.x2.v1x128);
     sumx.x640 = vec_add512cu (sum1.x2.v0x512, temp[1]);
     p4096[__NDX8(4)] = sumx.x2.v0x512;
 
     COMPILE_FENCE23;
-    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(2)], m2[__NDX4(3)]);
+    subp2.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(2)], m2[__NDX4(3)]);
     sum2.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sum1.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum2.x2.v0x512, temp[2], sumx.x2.v1x128);
     p4096[__NDX8(5)] = sumx.x2.v0x512;
 
     COMPILE_FENCE24;
-    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(3)], m2[__NDX4(3)]);
+    subp3.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(3)], m2[__NDX4(3)]);
     sum3.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sum2.x2.v1x128);
     subp3.x2.v1x512 = vec_add512ze (subp3.x2.v1x512, sum3.x2.v1x128);
     sumx.x640 = vec_add512ecu (sum3.x2.v0x512, temp[3], sumx.x2.v1x128);
@@ -559,68 +605,68 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
     m1 = (__VEC_U_512 *) m1_2048;
     m2 = (__VEC_U_512 *) m2_2048;
 
-    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (m1[__NDX4(0)], m2[__NDX4(0)]);
+    subp0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (m1[__NDX4(0)], m2[__NDX4(0)]);
     p4096[__NDX8(0)] = subp0.x2.v0x512;
 
     COMPILE_FENCE20;
-    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(1)], m2[__NDX4(0)],
+    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(1)], m2[__NDX4(0)],
 					      subp0.x2.v1x512);
     temp[0] = subp1.x2.v0x512;
     COMPILE_FENCE20;
 
-    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(2)], m2[__NDX4(0)],
+    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(2)], m2[__NDX4(0)],
 					      subp1.x2.v1x512);
     temp[1] = subp2.x2.v0x512;
     COMPILE_FENCE21;
 
-    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(3)], m2[__NDX4(0)],
+    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(3)], m2[__NDX4(0)],
 					      subp2.x2.v1x512);
     temp[2] = subp3.x2.v0x512;
     temp[3] = subp3.x2.v1x512;
     COMPILE_FENCE22;
 
-    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(0)], m2[__NDX4(1)],
+    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(0)], m2[__NDX4(1)],
 					      temp[0]);
     p4096[__NDX8(1)] = subp0.x2.v0x512;
     COMPILE_FENCE23;
 
-    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(1)], m2[__NDX4(1)],
+    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(1)], m2[__NDX4(1)],
 					      temp[1]);
     sumx.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
     temp[0] = sumx.x2.v0x512;
     COMPILE_FENCE24;
 
-    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(2)], m2[__NDX4(1)],
+    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(2)], m2[__NDX4(1)],
 					      temp[2]);
     sumx.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sumx.x2.v1x128);
     temp[1] = sumx.x2.v0x512;
     COMPILE_FENCE25;
 
-    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(3)], m2[__NDX4(1)],
+    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(3)], m2[__NDX4(1)],
 					      temp[3]);
     sumx.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sumx.x2.v1x128);
     temp[2] = sumx.x2.v0x512;
     temp[3] = vec_add512ze (subp3.x2.v1x512, sumx.x2.v1x128);
     COMPILE_FENCE26;
 
-    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(0)], m2[__NDX4(2)],
+    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(0)], m2[__NDX4(2)],
 					      temp[0]);
     p4096[__NDX8(2)] = subp0.x2.v0x512;
     COMPILE_FENCE27;
 
-    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(1)], m2[__NDX4(2)],
+    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(1)], m2[__NDX4(2)],
 					      temp[1]);
     sumx.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
     temp[0] = sumx.x2.v0x512;
     COMPILE_FENCE20;
 
-    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(2)], m2[__NDX4(2)],
+    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(2)], m2[__NDX4(2)],
 					      temp[2]);
     sumx.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sumx.x2.v1x128);
     temp[1] = sumx.x2.v0x512;
     COMPILE_FENCE21;
 
-    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(3)], m2[__NDX4(2)],
+    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(3)], m2[__NDX4(2)],
 					      temp[3]);
     sumx.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sumx.x2.v1x128);
     temp[2] = sumx.x2.v0x512;
@@ -628,24 +674,24 @@ __VEC_PWR_IMP (vec_mul2048x2048) (__VEC_U_4096* r4096,
     temp[3] = vec_add512ze (subp3.x2.v1x512, sumx.x2.v1x128);
     COMPILE_FENCE22;
 
-    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(0)], m2[__NDX4(3)],
+    subp0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(0)], m2[__NDX4(3)],
 					      temp[0]);
     p4096[__NDX8(3)] = subp0.x2.v0x512;
     COMPILE_FENCE23;
 
-    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(1)], m2[__NDX4(3)],
+    subp1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(1)], m2[__NDX4(3)],
 					      temp[1]);
     sumx.x640 = vec_add512cu (subp1.x2.v0x512, subp0.x2.v1x512);
     p4096[__NDX8(4)] = sumx.x2.v0x512;
     COMPILE_FENCE24;
 
-    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(2)], m2[__NDX4(3)],
+    subp2.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(2)], m2[__NDX4(3)],
 					      temp[2]);
     sumx.x640 = vec_add512ecu (subp2.x2.v0x512, subp1.x2.v1x512, sumx.x2.v1x128);
     p4096[__NDX8(5)] = sumx.x2.v0x512;
     COMPILE_FENCE25;
 
-    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (m1[__NDX4(3)], m2[__NDX4(3)],
+    subp3.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (m1[__NDX4(3)], m2[__NDX4(3)],
 					      temp[3]);
     sumx.x640 = vec_add512ecu (subp3.x2.v0x512, subp2.x2.v1x512, sumx.x2.v1x128);
     p4096[__NDX8(6)] = sumx.x2.v0x512;
@@ -725,7 +771,7 @@ __VEC_PWR_IMP (vec_mul128_byMN) (vui128_t *p,
     }
   else
     {
-      /* If one of multipliers is sizeof() zero, treat it a multiply
+      /* If one of multipliers is sizeof() zero, treat it as a multiply
        * by zero, and if the other multiplier is not sizeof() zero, set
        * the product array to 0. */
       const vui128_t c_zero = (vui128_t) ((unsigned __int128) 0);
@@ -774,12 +820,12 @@ __VEC_PWR_IMP (vec_mul512_byMN) (__VEC_U_512 *p,
 
   if (nx > 0)
     {
-      mpx0.x1024 = __VEC_PWR_IMP(vec_mul512x512) (mp[__MDX(0)], np[__NDX(0)]);
+      mpx0.x1024 = __VEC_PWR_IMP(vec_mul512x512_static) (mp[__MDX(0)], np[__NDX(0)]);
       p[__PDX(0)] = mpx0.x2.v0x512;
       mqx0 = mpx0.x2.v1x512;
       for (i = 1; i < mx; i++)
 	{
-	  mpx1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (mp[__MDX(i)], np[__NDX(0)], mqx0);
+	  mpx1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (mp[__MDX(i)], np[__NDX(0)], mqx0);
 	  p[__PDX(i)] = mpx1.x2.v0x512;
 	  mqx0 = mpx1.x2.v1x512;
 	}
@@ -787,13 +833,13 @@ __VEC_PWR_IMP (vec_mul512_byMN) (__VEC_U_512 *p,
 
       for (j = 1; j < nx; j++)
 	{
-	  mpx0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (mp[__MDX(0)], np[__NDX(j)], p[__PDX(j)]);
+	  mpx0.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (mp[__MDX(0)], np[__NDX(j)], p[__PDX(j)]);
 	  p[__PDX(j)] = mpx0.x2.v0x512;
 	  mqx0 = mpx0.x2.v1x512;
 	  mcx0 = (vui128_t) ((unsigned __int128) 0);
 	  for (i = 1; i < mx; i++)
 	    {
-	      mpx1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512) (mp[__MDX(i)], np[__NDX(j)], mqx0);
+	      mpx1.x1024 = __VEC_PWR_IMP(vec_madd512x512a512_static) (mp[__MDX(i)], np[__NDX(j)], mqx0);
 
 	      sum1.x640 = vec_add512ecu (mpx1.x2.v0x512, p[__PDX(i + j)], mcx0);
 	      p[__PDX(i + j)] = sum1.x2.v0x512;
@@ -805,7 +851,7 @@ __VEC_PWR_IMP (vec_mul512_byMN) (__VEC_U_512 *p,
     }
   else
     {
-      /* If one of multipliers is sizeof() zero, treat it a multiply
+      /* If one of multipliers is sizeof() zero, treat it as a multiply
        * by zero, and if the other multiplier is not sizeof() zero, set
        * the product array to 0. */
       __VEC_U_512 p_zero;

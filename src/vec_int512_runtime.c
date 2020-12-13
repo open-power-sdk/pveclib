@@ -199,6 +199,11 @@ __VEC_PWR_IMP (vec_madd512x128a128) (__VEC_U_512 m1, vui128_t m2,
   return vec_madd512x128a128_inline (m1, m2, a1);
 }
 
+/* The core implementation of vec_madd512x128a512 with platform
+ * specific tuning.
+ * This static version can be in-lined (via __attribute__((flatten)))
+ * for the extern implementation for the library and as needed internal to
+ * the implementations of wider quadword integer multiples */
 static __VEC_U_640
 __VEC_PWR_IMP (vec_madd512x128a512_static) (__VEC_U_512 m1, vui128_t m2,
                                      __VEC_U_512 a2)
@@ -265,6 +270,10 @@ __VEC_PWR_IMP (vec_madd512x128a128a512) (__VEC_U_512 m1, vui128_t m2,
   return vec_madd512x128a128a512_inline (m1, m2, a1, a2);
 }
 
+/* The core implementation of vec_mul512x512 with platform specific tuning.
+ * This static version can be in-lined (via __attribute__((flatten)))
+ * for the extern implementation for the library and as needed internal to
+ * the implementations of wider quadword integer multiples */
 static __VEC_U_1024 __attribute__((flatten))
 __VEC_PWR_IMP (vec_mul512x512_static) (__VEC_U_512 m1, __VEC_U_512 m2)
 {
@@ -336,6 +345,11 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
 #endif
 }
 
+/* The core implementation of vec_madd512x512a512 with platform
+ * specific tuning.
+ * This static version can be in-lined (via __attribute__((flatten)))
+ * for the extern implementation for the library and as needed internal to
+ * the implementations of wider quadword integer multiples */
 static __VEC_U_1024 __attribute__((flatten))
 __VEC_PWR_IMP (vec_madd512x512a512_static) (__VEC_U_512 m1, __VEC_U_512 m2,
                                      __VEC_U_512 a1)

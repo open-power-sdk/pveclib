@@ -137,8 +137,8 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" \
 	"$(DESTDIR)$(pveclibincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
-libpvec_la_DEPENDENCIES = vec_dynrt_PWR9.lo vec_dynrt_PWR8.lo \
-	vec_dynrt_PWR7.lo vec_dynrt_PWR10.lo vec_dynrt_common.lo
+libpvec_la_DEPENDENCIES = vec_dynrt_PWR7.lo vec_dynrt_PWR8.lo \
+	vec_dynrt_PWR9.lo vec_dynrt_PWR10.lo vec_dynrt_common.lo
 am_libpvec_la_OBJECTS = libpvec_la-vec_runtime_DYN.lo
 libpvec_la_OBJECTS = $(am_libpvec_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -148,8 +148,8 @@ am__v_lt_1 =
 libpvec_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libpvec_la_CFLAGS) \
 	$(CFLAGS) $(libpvec_la_LDFLAGS) $(LDFLAGS) -o $@
-libpvecstatic_la_DEPENDENCIES = vec_staticrt_PWR9.lo \
-	vec_staticrt_PWR8.lo vec_staticrt_PWR7.lo \
+libpvecstatic_la_DEPENDENCIES = vec_staticrt_PWR7.lo \
+	vec_staticrt_PWR8.lo vec_staticrt_PWR9.lo \
 	vec_staticrt_PWR10.lo
 am_libpvecstatic_la_OBJECTS = libpvecstatic_la-tipowof10.lo \
 	libpvecstatic_la-decpowof2.lo
@@ -682,14 +682,14 @@ EXTRA_DIST = vec_runtime_PWR7.c vec_runtime_PWR8.c vec_runtime_PWR9.c \
 # for IFUNC resolvers.
 # Now adding the -fpic -mcpu= target built runtimes.
 libpvec_la_LDFLAGS = -version-info $(PVECLIB_SO_VERSION)
-libpvec_la_LIBADD = vec_dynrt_PWR9.lo vec_dynrt_PWR8.lo \
-	vec_dynrt_PWR7.lo vec_dynrt_PWR10.lo vec_dynrt_common.lo -lc
+libpvec_la_LIBADD = vec_dynrt_PWR7.lo vec_dynrt_PWR8.lo \
+	vec_dynrt_PWR9.lo vec_dynrt_PWR10.lo vec_dynrt_common.lo -lc
 
 # libpvecstatic definitions, compiled without -fpic
 # libpvecstatic_la already includes tipowof10.c decpowof2.c.
 # Now adding the name qualified -mcpu= target built runtimes.
-libpvecstatic_la_LIBADD = vec_staticrt_PWR9.lo vec_staticrt_PWR8.lo \
-	vec_staticrt_PWR7.lo vec_staticrt_PWR10.lo
+libpvecstatic_la_LIBADD = vec_staticrt_PWR7.lo vec_staticrt_PWR8.lo \
+	vec_staticrt_PWR9.lo vec_staticrt_PWR10.lo
 
 # pveclib definitions
 pveclibincludedir = $(includedir)/pveclib

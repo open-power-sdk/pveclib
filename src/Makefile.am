@@ -179,9 +179,9 @@ distclean-local:
 # for IFUNC resolvers.
 # Now adding the -fpic -mcpu= target built runtimes.
 libpvec_la_LDFLAGS = -version-info $(PVECLIB_SO_VERSION)
-libpvec_la_LIBADD = vec_dynrt_PWR9.lo
+libpvec_la_LIBADD = vec_dynrt_PWR7.lo
 libpvec_la_LIBADD += vec_dynrt_PWR8.lo
-libpvec_la_LIBADD += vec_dynrt_PWR7.lo
+libpvec_la_LIBADD += vec_dynrt_PWR9.lo
 libpvec_la_LIBADD += vec_dynrt_PWR10.lo
 libpvec_la_LIBADD += vec_dynrt_common.lo
 libpvec_la_LIBADD += -lc
@@ -189,9 +189,9 @@ libpvec_la_LIBADD += -lc
 # libpvecstatic definitions, compiled without -fpic
 # libpvecstatic_la already includes tipowof10.c decpowof2.c.
 # Now adding the name qualified -mcpu= target built runtimes.
-libpvecstatic_la_LIBADD = vec_staticrt_PWR9.lo
+libpvecstatic_la_LIBADD = vec_staticrt_PWR7.lo
 libpvecstatic_la_LIBADD += vec_staticrt_PWR8.lo
-libpvecstatic_la_LIBADD += vec_staticrt_PWR7.lo
+libpvecstatic_la_LIBADD += vec_staticrt_PWR9.lo
 libpvecstatic_la_LIBADD += vec_staticrt_PWR10.lo
 
 # pveclib definitions
@@ -269,7 +269,8 @@ vec_dummy_SOURCES = testsuite/vec_dummy_main.c
 
 vec_dummy_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
 
-vec_dummy_LDADD   = libpvecstatic.la libvecdummy.la libvecdummyPWR9.la
+vec_dummy_LDADD   = libpvecstatic.la libvecdummy.la 
+vec_dummy_LDADD   += libvecdummyPWR9.la
 vec_dummy_LDADD   += libvecdummyPWR10.la
 
 check_PROGRAMS = $(TESTS)

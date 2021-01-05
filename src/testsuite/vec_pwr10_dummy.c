@@ -39,6 +39,139 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 vui128_t
+__test_msumcud_PWR10 (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_msumcud ( a, b, c);
+}
+
+vui128_t
+__test_cmsumudm_PWR10 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
+{
+  *carry = vec_msumcud ( a, b, c);
+  return vec_msumudm ( a, b, c);
+}
+
+vui128_t
+test_vec_srdbi_PWR10  (vui128_t a, vui128_t b, const unsigned int  sh)
+{
+  return (vec_vsrdbi (a, b, sh));
+}
+
+vui128_t
+test_vec_srdbi_PWR10_0  (vui128_t a, vui128_t b)
+{
+  return (vec_vsrdbi (a, b, 0));
+}
+
+vui128_t
+test_vec_srdbi_PWR10_7  (vui128_t a, vui128_t b)
+{
+  return (vec_vsrdbi (a, b, 7));
+}
+
+vui128_t
+test_vec_sldbi_PWR10  (vui128_t a, vui128_t b, const unsigned int  sh)
+{
+  return (vec_vsldbi (a, b, sh));
+}
+
+vui128_t
+test_vec_sldbi_PWR10_0  (vui128_t a, vui128_t b)
+{
+  return (vec_vsldbi (a, b, 0));
+}
+
+vui128_t
+test_vec_sldbi_PWR10_7  (vui128_t a, vui128_t b)
+{
+  return (vec_vsldbi (a, b, 7));
+}
+
+vui128_t
+test_vec_sldbi_PWR10_8  (vui128_t a, vui128_t b)
+{
+  return (vec_vsldbi (a, b, 8));
+}
+
+vui128_t
+test_vec_rlqi_PWR10  (vui128_t a, const unsigned int  sh)
+{
+  return (vec_rlqi (a, sh));
+}
+
+vui128_t
+test_vec_rlqi_7_PWR10  (vui128_t a)
+{
+  return (vec_rlqi (a, 7));
+}
+
+vui128_t
+test_vec_rlqi_15_PWR10  (vui128_t a)
+{
+  return (vec_rlqi (a, 15));
+}
+
+vui128_t
+test_vec_slqi_PWR10  (vui128_t a, const unsigned int  sh)
+{
+  return (vec_slqi (a, sh));
+}
+
+vui128_t
+test_vec_slqi_7_PWR10  (vui128_t a)
+{
+  return (vec_slqi (a, 7));
+}
+
+vi128_t
+test_vec_sraqi_PWR10  (vi128_t a, const unsigned int  sh)
+{
+  return (vec_sraqi (a, sh));
+}
+
+vi128_t
+test_vec_sraqi_7_PWR10  (vi128_t a)
+{
+  return (vec_sraqi (a, 7));
+}
+
+vui128_t
+test_vec_srqi_PWR10  (vui128_t a, const unsigned int  sh)
+{
+  return (vec_srqi (a, sh));
+}
+
+vui128_t
+test_vec_srqi_7_PWR10  (vui128_t a)
+{
+  return (vec_srqi (a, 7));
+}
+
+vui128_t
+test_vec_rlq_PWR10  (vui128_t a, vui128_t sh)
+{
+  return (vec_rlq (a, sh));
+}
+
+vui128_t
+test_vec_slq_PWR10  (vui128_t a, vui128_t sh)
+{
+  return (vec_slq (a, sh));
+}
+
+vi128_t
+test_vec_sraq_PWR10  (vi128_t a, vui128_t sh)
+{
+  return (vec_sraq (a, sh));
+}
+
+vui128_t
+test_vec_srq_PWR10  (vui128_t a, vui128_t sh)
+{
+  return (vec_srq (a, sh));
+}
+
+vui128_t
 __test_muloud_PWR10 (vui64_t a, vui64_t b)
 {
   return vec_muloud (a, b);
@@ -120,5 +253,95 @@ vui128_t
 __test_muludq_PWR10 (vui128_t *mulh, vui128_t a, vui128_t b)
 {
   return vec_muludq (mulh, a, b);
+}
+
+vui128_t
+test_vec_rlqi_128_PWR10  (vui128_t a)
+{
+  return (vec_rlqi (a, 128));
+}
+
+vui128_t
+test_vec_slqi_128_PWR10  (vui128_t a)
+{
+  return (vec_slqi (a, 128));
+}
+
+vi128_t
+test_vec_sraqi_128_PWR10  (vi128_t a)
+{
+  return (vec_sraqi (a, 128));
+}
+
+vui128_t
+test_vec_srqi_128_PWR10  (vui128_t a)
+{
+  return (vec_srqi (a, 128));
+}
+
+vui128_t
+test_vec_rlqi_127_PWR10  (vui128_t a)
+{
+  return (vec_rlqi (a, 127));
+}
+
+vui128_t
+test_vec_slqi_127_PWR10  (vui128_t a)
+{
+  return (vec_slqi (a, 127));
+}
+
+vi128_t
+test_vec_sraqi_127_PWR10  (vi128_t a)
+{
+  return (vec_sraqi (a, 127));
+}
+
+vui128_t
+test_vec_srqi_127_PWR10  (vui128_t a)
+{
+  return (vec_srqi (a, 127));
+}
+
+vui128_t
+test_vec_slqi_15_PWR10  (vui128_t a)
+{
+  return (vec_slqi (a, 15));
+}
+
+vi128_t
+test_vec_sraqi_15_PWR10  (vi128_t a)
+{
+  return (vec_sraqi (a, 15));
+}
+
+vui128_t
+test_vec_srqi_15_PWR10  (vui128_t a)
+{
+  return (vec_srqi (a, 15));
+}
+
+vui128_t
+test_vec_rlqi_0_PWR10  (vui128_t a)
+{
+  return (vec_rlqi (a, 0));
+}
+
+vui128_t
+test_vec_slqi_0_PWR10  (vui128_t a)
+{
+  return (vec_slqi (a, 0));
+}
+
+vi128_t
+test_vec_sraqi_0_PWR10  (vi128_t a)
+{
+  return (vec_sraqi (a, 0));
+}
+
+vui128_t
+test_vec_srqi_0_PWR10  (vui128_t a)
+{
+  return (vec_srqi (a, 0));
 }
 #endif

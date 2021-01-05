@@ -2058,6 +2058,8 @@ static inline vui128_t vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
 static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
+static inline vui128_t vec_vsldbi (vui128_t vra, vui128_t vrb,
+				   const unsigned int shb);
 ///@endcond
 
 
@@ -4371,6 +4373,63 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   return ((vui128_t) t);
 }
 
+/** \brief Vector Multiply-Sum and Write Carry-out Unsigned Doubleword.
+ *
+ *  Compute the even and odd 128-bit products of doubleword 64-bit
+ *  element values from a, b.
+ *  Then compute the carry-out of the low order 128-bits of the sum of
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + c.
+ *  Only the high order 128 bits of the Multiply-Sum are returned and
+ *  the low order 128-bits of the sum is ignored/lost.
+ *  ResultS are in the range 0-2.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 30-32 | 1/cycle  |
+ *  |power9   | 5-7   | 2/cycle  |
+ *
+ *  @param a 128-bit __vector unsigned long int.
+ *  @param b 128-bit __vector unsigned long int.
+ *  @param c 128-bit __vector unsigned __int128.
+ *  @return The carry-out of the __vector unsigned multiply Sum.
+ */
+static inline vui128_t
+vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
+{
+  vui128_t res;
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 10)
+  __asm__(
+      "vmsumcud %0,%1,%2,%3;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b), "v" (c)
+      : );
+#else
+  vui128_t p_even, p_odd, p_sum1, p_cry1, p_cry2;
+  const vui64_t zero = { 0, 0 };
+  // Generate separate 128-bit even/odd products to isolate the carries
+  p_even = vec_muleud (a, b);
+  p_odd  = vec_muloud (a, b);
+  // Sum the products and generate the carry
+#ifdef _ARCH_PWR8
+  p_sum1 = vec_adduqm (p_even, p_odd);
+  p_cry1 = vec_addcuq (p_even, p_odd);
+#else
+  p_sum1 = vec_addcq (&p_cry1, p_even, p_odd);
+#endif
+  // Generate the carry from the sum (p_even + p_odd + c)
+  p_cry2 = vec_addcuq (p_sum1, c);
+  // Sum the two carries
+#ifdef _ARCH_PWR9
+  res    = vec_adduqm (p_cry2, p_cry1);
+#else
+  /* Results can be 0-2, So Add Word will do.  */
+  res    = (vui128_t) vec_add ((vui32_t) p_cry2, (vui32_t) p_cry1);
+#endif
+#endif
+  return (res);
+}
+
 /** \brief Vector Multiply-Sum Unsigned Doubleword Modulo.
  *
  *  compute the even and odd 128-bit products of doubleword 64-bit
@@ -4471,7 +4530,17 @@ vec_muleud (vui64_t a, vui64_t b)
 static inline vui64_t
 vec_mulhud (vui64_t vra, vui64_t vrb)
 {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+  __asm__(
+      "vmulhud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra), "v" (vrb)
+      : );
+  return res;
+#else
   return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
+#endif
 }
 
 /** \brief Vector Multiply Odd Unsigned Doublewords.
@@ -4519,19 +4588,26 @@ vec_muloud (vui64_t a, vui64_t b)
  *  |power9   | 11-16 | 1/cycle  |
  *
  *
- *  @param vra 128-bit vector unsigned long int.
- *  @param vrb 128-bit vector unsigned long int.
- *  @return vector unsigned long int of the low order 64-bits of the
+ *  @param vra 128-bit vector unsigned long long.
+ *  @param vrb 128-bit vector unsigned long long.
+ *  @return vector unsigned long long of the low order 64-bits of the
  *  unsigned 128-bit product of the doubleword elements from vra
  *  and vrb.
  */
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb)
 {
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+  __asm__(
+      "vmulld %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra), "v" (vrb)
+      : );
+  return res;
+#elif defined (_ARCH_PWR9)
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
-#else
-#ifdef _ARCH_PWR8
+#elif defined (_ARCH_PWR8)
   vui64_t s32 = { 32, 32 }; // shift / rotate amount.
   vui64_t z = { 0, 0 };
   vui64_t t2, t3, t4;
@@ -4544,7 +4620,6 @@ vec_muludm (vui64_t vra, vui64_t vrb)
   return (vui64_t) vec_addudm (t4, t2);
 #else
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
-#endif
 #endif
 }
 
@@ -5515,8 +5590,15 @@ vec_rlq (vui128_t vra, vui128_t vrb)
 {
   vui128_t result;
 
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vrlq %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#else
   result = vec_sldq (vra, vra, vrb);
-
+#endif
   return ((vui128_t) result);
 }
 
@@ -5539,13 +5621,30 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
 {
   vui8_t result;
 
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  if (__builtin_constant_p (shb) && (shb < 8))
+    {
+      /* When shifting by a constant less then 8, can use bit immediate
+       * vec_vsldbi (vra, vra, shb) as rotate left.  */
+      result = (vui8_t) vec_vsldbi (vra, vra, shb);
+    }
+  else
+    {
+      vui32_t lshift = vec_splats((unsigned int) shb);
+      __asm__(
+    	  "vrlq %0,%1,%2;\n"
+    	  : "=v" (result)
+    	  : "v" (vra), "v" (lshift)
+    	  : );
+    }
+#else
   if (__builtin_constant_p (shb) && ((shb % 8) == 0))
     {
       /* When shifting an multiple of 8 bits (octet), use Vector
        Shift Left Double By Octet Immediate.  This eliminates
        loading the shift const into a VR.  */
       if (shb > 0)
-	result = vec_sld ((vui8_t) vra, (vui8_t) vra, (shb / 8));
+	result = vec_sld ((vui8_t) vra, (vui8_t) vra, ((shb / 8) & 15));
       else
 	result = (vui8_t) vra;
     }
@@ -5553,6 +5652,7 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
     {
       result = (vui8_t) vec_sldqi (vra, vra, shb);
     }
+#endif
   return ((vui128_t) result);
 }
 
@@ -5753,15 +5853,23 @@ vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
 static inline vui128_t
 vec_slq (vui128_t vra, vui128_t vrb)
 {
-  vui8_t result, vshift_splat;
+  vui8_t result;
 
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vslq %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#else
+  vui8_t vshift_splat;
   /* For some reason, the vsl instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
   vshift_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
   result = vec_slo ((vui8_t) vra, (vui8_t) vrb);
   result = vec_sll (result, vshift_splat);
-
+#endif
   return ((vui128_t) result);
 }
 
@@ -5784,11 +5892,19 @@ vec_slq (vui128_t vra, vui128_t vrb)
 static inline vui128_t
 vec_slqi (vui128_t vra, const unsigned int shb)
 {
-  vui8_t lshift;
   vui8_t result;
 
   if (shb < 128)
     {
+      vui8_t lshift;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+      lshift = (vui8_t) vec_splats((unsigned int) shb);
+      __asm__(
+	  "vslq %0,%1,%2;\n"
+	  : "=v" (result)
+	  : "v" (vra), "v" (lshift)
+	  : );
+#else
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
 	  /* When shifting an multiple of 8 bits (octet), use Vector
@@ -5821,6 +5937,7 @@ vec_slqi (vui128_t vra, const unsigned int shb)
 	  /* Vector Shift Left by bits 125-127 of lshift.  */
 	  result = vec_sll (result, lshift);
 	}
+#endif
     }
   else
     { /* shifts greater then 127 bits return zeros.  */
@@ -5846,9 +5963,16 @@ vec_slqi (vui128_t vra, const unsigned int shb)
 static inline vi128_t
 vec_sraq (vi128_t vra, vui128_t vrb)
 {
-  vui8_t result, vsht;
+  vui8_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vsraq %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#else
+  vui8_t vsht;
   vui128_t vsgn;
-
   const vui8_t zero = vec_splat_u8 (0);
 
   /* For some reason the vsr instruction only works
@@ -5857,7 +5981,7 @@ vec_sraq (vi128_t vra, vui128_t vrb)
   vsgn = vec_setb_sq (vra);
   vsht = vec_sub (zero, (vui8_t) vrb);
   result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra, (vui128_t) vsht);
-
+#endif
   return ((vi128_t) result);
 }
 
@@ -5892,6 +6016,14 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 
   if (shb < 127)
     {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui32_t rshift = vec_splats((unsigned int) shb);
+  __asm__(
+	  "vsraq %0,%1,%2;\n"
+	  : "=v" (result)
+	  : "v" (vra), "v" (rshift)
+	  : );
+#else
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
 	  if (shb > 0)
@@ -5929,6 +6061,7 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	    }
 #endif
 	}
+#endif
     }
   else
     { /* shifts greater then 126 bits returns the sign bit.  */
@@ -5955,15 +6088,22 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 static inline vui128_t
 vec_srq (vui128_t vra, vui128_t vrb)
 {
-  vui8_t result, vsht_splat;
-
+  vui8_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vsrq %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#else
+  vui8_t vsht_splat;
   /* For some reason the vsr instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
   vsht_splat = vec_splat ((vui8_t) vrb, VEC_BYTE_L);
   result = vec_sro ((vui8_t) vra, (vui8_t) vrb);
   result = vec_srl (result, vsht_splat);
-
+#endif
   return ((vui128_t) result);
 }
 
@@ -5986,11 +6126,19 @@ vec_srq (vui128_t vra, vui128_t vrb)
 static inline vui128_t
 vec_srqi (vui128_t vra, const unsigned int shb)
 {
-  vui8_t lshift;
   vui8_t result;
 
   if (shb < 128)
     {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui32_t rshift = vec_splats((unsigned int) shb);
+  __asm__(
+	  "vsrq %0,%1,%2;\n"
+	  : "=v" (result)
+	  : "v" (vra), "v" (rshift)
+	  : );
+#else
+      vui8_t lshift;
       if (__builtin_constant_p (shb) && ((shb % 8)) == 0)
 	{
 	  /* When shifting an multiple of 8 bits (octet), use Vector
@@ -6028,6 +6176,7 @@ vec_srqi (vui128_t vra, const unsigned int shb)
 	  /* Vector Shift right based on the lower 3-bits of lshift.  */
 	  result = vec_srl (result, lshift);
 	}
+#endif
     }
   else
     { /* shifts greater then 127 bits return zeros.  */
@@ -6312,7 +6461,13 @@ vec_vmuleud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vmuleud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b)
+      : );
+#elif defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
   __asm__(
@@ -6320,8 +6475,7 @@ vec_vmuleud (vui64_t a, vui64_t b)
       : "=v" (res)
       : "v" (a), "v" (b_eud), "v" (zero)
       : );
-#else
-#ifdef _ARCH_PWR8
+#elif defined (_ARCH_PWR8)
   const vui64_t zero = { 0, 0 };
   vui64_t p0, p1, pp10, pp01;
   vui32_t m0, m1;
@@ -6441,7 +6595,6 @@ vec_vmuleud (vui64_t a, vui64_t b)
 
   res = (vui64_t)resw;
 #endif
-#endif
   return ((vui128_t) res);
 }
 
@@ -6554,7 +6707,13 @@ vec_vmuloud (vui64_t a, vui64_t b)
 {
   vui64_t res;
 
-#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vmuloud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b)
+      : );
+#elif defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
   __asm__(
@@ -6562,8 +6721,7 @@ vec_vmuloud (vui64_t a, vui64_t b)
       : "=v" (res)
       : "v" (a), "v" (b_oud), "v" (zero)
       : );
-#else
-#ifdef _ARCH_PWR8
+#elif defined (_ARCH_PWR8)
   const vui64_t zero = { 0, 0 };
   vui64_t p0, p1, pp10, pp01;
   vui32_t m0, m1;
@@ -6690,7 +6848,6 @@ vec_vmuloud (vui64_t a, vui64_t b)
   }
 
   res = (vui64_t)resw;
-#endif
 #endif
   return ((vui128_t) res);
 }
@@ -6847,5 +7004,135 @@ vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c)
   res = vec_vmuloud (a, b);
   return vec_adduqm (res, c);
 #endif
+}
+
+/** \brief Vector Shift Left Double Quadword by Bit Immediate.
+ *
+ *  Return a vector __int128 that is bits shb:shb+127
+ *  from the (256-bit) double quadword (vra || vrb).
+ *  The shift amount is constant immediate value in the range 0-7.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   8   | 1 cycle  |
+ *  |power9   |  11   | 1/cycle  |
+ *
+ *  @param vra upper 128-bits of the 256-bit double quadword vector.
+ *  @param vrb lower 128-bits of the 256-bit double quadword vector.
+ *  @param shb Shift amount in the range 0-7.
+ *  @return 128-bits from bits shb:shb+127.
+ */
+static inline vui128_t
+vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
+{
+  vui128_t result;
+
+  if (__builtin_constant_p (shb) && (shb < 8))
+    {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+      __asm__(
+	  "vsldbi %0,%1,%2,%3;\n"
+	  : "=v" (result)
+	  : "v" (vra), "v" (vrb), "K" (shb)
+	  : );
+#else
+      /* For Power7/8/9 the quadword shift left/right instructions
+       * only handle 128-bits.
+       * So shift vra and vrb separately then combine those into
+       * a single 128-bit result.
+       */
+      if (shb > 0)
+	{
+	  const vui8_t vshl = vec_splat_u8 (shb);
+	  const vui8_t vshr = vec_splat_u8 (8 - shb);
+	  const vui8_t zero = vec_splat_u8 (0);
+	  vui8_t lowbits, highbits;
+
+	  /* Left double shift by 1 octet 'zero' || vrb to isolate the
+	   * high order byte of vrb in to the low 8-bits. Then right
+	   * shift this (8-shb) bits. This provides (128-shb) bits of
+	   * leading '0's. */
+	  lowbits = vec_sld (zero, (vui8_t) vrb, 1);
+	  lowbits = vec_vsrb (lowbits, vshr);
+	  /* Left shift the quadword vra shifting in shb '0' bits.  */
+	  highbits = vec_sll ((vui8_t) vra, vshl);
+	  /* Combines left shifted bits from vra, vrb.  */
+	  result = (vui128_t) vec_or (highbits, lowbits);
+	}
+      else
+	result = vra;
+#endif
+    }
+  else
+    {
+      result = vec_sldqi (vra, vrb, (shb & 7));
+    }
+
+  return ((vui128_t) result);
+}
+
+/** \brief Vector Shift Right Double Quadword by Bit Immediate.
+ *
+ *  Return a vector __int128 that is bits 128-shb:255-shb
+ *  from the (256-bit) double quadword (vra || vrb).
+ *  The shift amount is constant immediate value in the range 0-7.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   8   | 1 cycle  |
+ *  |power9   |  11   | 1/cycle  |
+ *
+ *  @param vra upper 128-bits of the 256-bit double quadword vector.
+ *  @param vrb lower 128-bits of the 256-bit double quadword vector.
+ *  @param shb Shift amount in the range 0-7.
+ *  @return 128-bits from bits 128-shb:255-shb.
+ */
+static inline vui128_t
+vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
+{
+  vui128_t result;
+
+  if (__builtin_constant_p (shb) && (shb < 8))
+    {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+      __asm__(
+	  "vsrdbi %0,%1,%2,%3;\n"
+	  : "=v" (result)
+	  : "v" (vra), "v" (vrb), "K" (shb)
+	  : );
+#else
+      /* For Power7/8/9 the quadword shift left/right instructions
+       * only handle 128-bits.
+       * So shift vra and vrb separately then combine those into
+       * a single 128-bit result.
+       */
+      if (shb > 0)
+	{
+	  const vui8_t vshl = vec_splat_u8 (8 - shb);
+	  const vui8_t vshr = vec_splat_u8 (shb);
+	  const vui8_t zero = vec_splat_u8 (0);
+	  vui8_t lowbits, highbits;
+
+	  /* Left double shift by 15 octet vra || 'zero' to isolate the
+	   * low order byte of vra in to the high 8-bits. Then left
+	   * shift this (8-shb) bits. This provides (128-shb) bits of
+	   * trailing '0's. */
+	  highbits = vec_sld ((vui8_t) vra, zero, 15);
+	  highbits = vec_vslb (highbits, vshl);
+	  /* right shift the quadword vrb shifting in shb '0' bits.  */
+	  lowbits = vec_srl ((vui8_t) vrb, vshr);
+	  /* Combines right shifted bits from vra, vrb.  */
+	  result = (vui128_t) vec_or (highbits, lowbits);
+	}
+      else
+	result = vrb;
+#endif
+    }
+  else
+    {
+      result = vec_sldqi (vra, vrb, (128 - (shb & 7)));
+    }
+
+  return ((vui128_t) result);
 }
 #endif /* VEC_INT128_PPC_H_ */

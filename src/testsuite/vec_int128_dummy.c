@@ -26,6 +26,30 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+vui128_t
+__test_msumcud (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_msumcud ( a, b, c);
+}
+
+vui128_t
+__test_cmsumudm (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
+{
+  *carry = vec_msumcud ( a, b, c);
+  return vec_msumudm ( a, b, c);
+}
+
+vui128_t
+test_vec_sldbi_7  (vui128_t a, vui128_t b)
+{
+  return (vec_vsldbi (a, b, 7));
+}
+
+vui128_t
+test_vec_srdbi_7  (vui128_t a, vui128_t b)
+{
+  return (vec_vsrdbi (a, b, 7));
+}
 
 unsigned __int128
 test_xfer_vui128t_2_uint128 (vui128_t vra)

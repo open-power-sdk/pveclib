@@ -39,6 +39,35 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui128_t
+__test_msumcud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
+{
+  return vec_msumcud ( a, b, c);
+}
+
+vui128_t
+__test_cmsumudm_PWR9 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
+{
+  *carry = vec_msumcud ( a, b, c);
+  return vec_msumudm ( a, b, c);
+}
+
+#ifndef PVECLIB_DISABLE_F128MATH
+#if defined (_ARCH_PWR9) &&(__GNUC__ > 7)
+__float128
+test_scalar_add128_PWR9 (__float128 vra, __float128 vrb)
+{
+  return __builtin_addf128_round_to_odd (vra, vrb);
+}
+
+__float128
+test_scalar_mul128_PWR9 (__float128 vra, __float128 vrb)
+{
+  return __builtin_mulf128_round_to_odd (vra, vrb);
+}
+#endif
+#endif
+
 vui64_t
 test_vslsudux_PWR9 (unsigned long long int *array, unsigned long offset)
 {

@@ -7130,6 +7130,12 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
     }
   else
     {
+#if defined (__clang__) && (__clang_major__ < 6)
+      // A workaround for a constant propagation bug in clang-5
+      if (shb == 0)
+	result = vrb;
+      else
+#endif
       result = vec_sldqi (vra, vrb, (128 - (shb & 7)));
     }
 

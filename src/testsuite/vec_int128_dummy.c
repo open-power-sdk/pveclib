@@ -40,6 +40,18 @@ __test_cmsumudm (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 }
 
 vui128_t
+test_vec_sldbi_0  (vui128_t a, vui128_t b)
+{
+  return (vec_vsldbi (a, b, 0));
+}
+
+vui128_t
+test_vec_srdbi_0  (vui128_t a, vui128_t b)
+{
+  return (vec_vsrdbi (a, b, 0));
+}
+
+vui128_t
 test_vec_sldbi_7  (vui128_t a, vui128_t b)
 {
   return (vec_vsldbi (a, b, 7));

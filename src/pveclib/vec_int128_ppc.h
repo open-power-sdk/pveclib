@@ -4381,7 +4381,7 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
  *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
  *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + c.
  *  Only the high order 2 bits of the 130-bit Multiply-Sum are
- *  returned and the low order 128-bits of the sum is ignored/lost.
+ *  returned and the low order 128-bits of the sum are ignored/lost.
  *  Results are in the range 0-2.
  *
  *  |processor|Latency|Throughput|
@@ -7036,7 +7036,7 @@ vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  : "v" (vra), "v" (vrb), "K" (shb)
 	  : );
 #else
-      /* For Power7/8/9 the quadword shift left/right instructions
+      /* For Power7/8/9 the quadword bit shift left/right instructions
        * only handle 128-bits.
        * So shift vra and vrb separately then combine those into
        * a single 128-bit result.
@@ -7048,8 +7048,8 @@ vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  const vui8_t zero = vec_splat_u8 (0);
 	  vui8_t lowbits, highbits;
 
-	  /* Shift left double by 15 octet vra || 'zero' to isolate the
-	   * high order byte of vrb in to the low 8-bits. Then right
+	  /* Shift left double (vra || 'zero') by 15 octet  to isolate
+	   * the high order byte of vrb in to the low 8-bits. Then right
 	   * shift this (8-shb) bits. This provides (128-shb) bits of
 	   * leading '0's. */
 	  lowbits = vec_sld (zero, (vui8_t) vrb, 1);
@@ -7101,7 +7101,7 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  : "v" (vra), "v" (vrb), "K" (shb)
 	  : );
 #else
-      /* For Power7/8/9 the quadword shift left/right instructions
+      /* For Power7/8/9 the quadword bit shift left/right instructions
        * only handle 128-bits.
        * So shift vra and vrb separately then combine those into
        * a single 128-bit result.
@@ -7113,8 +7113,8 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  const vui8_t zero = vec_splat_u8 (0);
 	  vui8_t lowbits, highbits;
 
-	  /* Shift left double by 15 octet vra || 'zero' to isolate the
-	   * low order byte of vra in to the high 8-bits. Then left
+	  /* Shift left double (vra || 'zero') by 15 octet to isolate
+	   * the low order byte of vra in to the high 8-bits. Then left
 	   * shift this (8-shb) bits. This provides (128-shb) bits of
 	   * trailing '0's. */
 	  highbits = vec_sld ((vui8_t) vra, zero, 15);

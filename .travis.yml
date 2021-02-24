@@ -54,7 +54,7 @@ matrix:
 before_install:
   - sudo add-apt-repository universe
   - sudo apt-get update
-  - sudo travis_wait 30 apt-get -y install ${PKG_CC} doxygen graphviz
+  - travis_wait 60 sudo apt-get -y install ${PKG_CC} doxygen graphviz
 
 script:
   - mkdir $(pwd)/install

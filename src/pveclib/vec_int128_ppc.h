@@ -4373,26 +4373,26 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
   return ((vui128_t) t);
 }
 
-/** \brief Vector Multiply-Sum and Write Carry-out Unsigned Doubleword.
+/** \brief Vector Multiply-Sum and Write Carryout Unsigned Doubleword.
  *
  *  Compute the even and odd 128-bit products of doubleword 64-bit
  *  element values from a, b.
  *  Then compute the carry-out of the low order 128-bits of the sum of
  *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
  *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + c.
- *  Only the high order 128 bits of the Multiply-Sum are returned and
- *  the low order 128-bits of the sum is ignored/lost.
- *  ResultS are in the range 0-2.
+ *  Only the high order 2 bits of the 130-bit Multiply-Sum are
+ *  returned and the low order 128-bits of the sum is ignored/lost.
+ *  Results are in the range 0-2.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 30-32 | 1/cycle  |
  *  |power9   | 5-7   | 2/cycle  |
  *
- *  @param a 128-bit __vector unsigned long int.
- *  @param b 128-bit __vector unsigned long int.
+ *  @param a 128-bit __vector unsigned long long.
+ *  @param b 128-bit __vector unsigned long long.
  *  @param c 128-bit __vector unsigned __int128.
- *  @return The carry-out of the __vector unsigned multiply Sum.
+ *  @return The Carryout of the __vector unsigned Multiply-Sum.
  */
 static inline vui128_t
 vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
@@ -7048,7 +7048,7 @@ vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  const vui8_t zero = vec_splat_u8 (0);
 	  vui8_t lowbits, highbits;
 
-	  /* Left double shift by 1 octet 'zero' || vrb to isolate the
+	  /* Shift left double by 15 octet vra || 'zero' to isolate the
 	   * high order byte of vrb in to the low 8-bits. Then right
 	   * shift this (8-shb) bits. This provides (128-shb) bits of
 	   * leading '0's. */
@@ -7056,7 +7056,7 @@ vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  lowbits = vec_vsrb (lowbits, vshr);
 	  /* Left shift the quadword vra shifting in shb '0' bits.  */
 	  highbits = vec_sll ((vui8_t) vra, vshl);
-	  /* Combines left shifted bits from vra, vrb.  */
+	  /* Combine left shifted bits from vra, vrb.  */
 	  result = (vui128_t) vec_or (highbits, lowbits);
 	}
       else
@@ -7113,7 +7113,7 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  const vui8_t zero = vec_splat_u8 (0);
 	  vui8_t lowbits, highbits;
 
-	  /* Left double shift by 15 octet vra || 'zero' to isolate the
+	  /* Shift left double by 15 octet vra || 'zero' to isolate the
 	   * low order byte of vra in to the high 8-bits. Then left
 	   * shift this (8-shb) bits. This provides (128-shb) bits of
 	   * trailing '0's. */
@@ -7121,7 +7121,7 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 	  highbits = vec_vslb (highbits, vshl);
 	  /* right shift the quadword vrb shifting in shb '0' bits.  */
 	  lowbits = vec_srl ((vui8_t) vrb, vshr);
-	  /* Combines right shifted bits from vra, vrb.  */
+	  /* Combine right shifted bits from vra, vrb.  */
 	  result = (vui128_t) vec_or (highbits, lowbits);
 	}
       else
@@ -7133,7 +7133,7 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
 #if defined (__clang__) && (__clang_major__ < 6)
       // A workaround for a constant propagation bug in clang-5
       if (shb == 0)
-	result = vrb;
+        result = vrb;
       else
 #endif
       result = vec_sldqi (vra, vrb, (128 - (shb & 7)));

@@ -5558,6 +5558,39 @@ test_vsldqi (void)
 			   0xfffffffe);
   rc += check_vuint128 ("vec_sldq (  1):", (vui128_t) l, (vui128_t) e);
 
+  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 7);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" w ", (vui128_t) i);
+  print_vint128x (" x ", (vui128_t) j);
+  print_vint128x (" = ", l);
+#endif
+  e = (vui32_t)
+	    CONST_VINT32_W(__UINT32_MAX__, __UINT32_MAX__, __UINT32_MAX__,
+			   0xffffff80);
+  rc += check_vuint128x ("vec_sldq (  7):", (vui128_t) l, (vui128_t) e);
+
+  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 8);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" w ", (vui128_t) i);
+  print_vint128x (" x ", (vui128_t) j);
+  print_vint128x (" = ", l);
+#endif
+  e = (vui32_t)
+	    CONST_VINT32_W(__UINT32_MAX__, __UINT32_MAX__, __UINT32_MAX__,
+			   0xffffff00);
+  rc += check_vuint128x ("vec_sldq (  8):", (vui128_t) l, (vui128_t) e);
+
+  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 15);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" w ", (vui128_t) i);
+  print_vint128x (" x ", (vui128_t) j);
+  print_vint128x (" = ", l);
+#endif
+  e = (vui32_t)
+	    CONST_VINT32_W(__UINT32_MAX__, __UINT32_MAX__, __UINT32_MAX__,
+			   0xffff8000);
+  rc += check_vuint128x ("vec_sldq ( 15):", (vui128_t) l, (vui128_t) e);
+
   l = vec_sldqi ((vui128_t) i, (vui128_t) j, 127);
 #ifdef __DEBUG_PRINT__
   print_vint128x (" w ", (vui128_t) i);
@@ -5582,6 +5615,24 @@ test_vsldqi (void)
   e = (vui32_t) CONST_VINT32_W (0, 0, 0, 1);
   rc += check_vuint128 ("vec_sldqi (  1):", (vui128_t) l, (vui128_t) e);
 
+  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 8);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" w ", (vui128_t) i);
+  print_vint128x (" x ", (vui128_t) j);
+  print_vint128x (" = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0, 0, 0, 0xff);
+  rc += check_vuint128 ("vec_sldqi (  8):", (vui128_t) l, (vui128_t) e);
+
+  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 15);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" w ", (vui128_t) i);
+  print_vint128x (" x ", (vui128_t) j);
+  print_vint128x (" = ", l);
+#endif
+  e = (vui32_t) CONST_VINT32_W (0, 0, 0, 0x7fff);
+  rc += check_vuint128 ("vec_sldqi ( 15):", (vui128_t) l, (vui128_t) e);
+
   l = vec_sldqi ((vui128_t) i, (vui128_t) j, 127);
 #ifdef __DEBUG_PRINT__
   print_vint128x (" w ", (vui128_t) i);
@@ -5592,15 +5643,6 @@ test_vsldqi (void)
 	CONST_VINT32_W( 0x7fffffff, __UINT32_MAX__, __UINT32_MAX__,
 	    __UINT32_MAX__);
   rc += check_vuint128 ("vec_sldqi (127):", (vui128_t) l, (vui128_t) e);
-
-  l = vec_sldqi ((vui128_t) i, (vui128_t) j, 8);
-#ifdef __DEBUG_PRINT__
-  print_vint128x (" w ", (vui128_t) i);
-  print_vint128x (" x ", (vui128_t) j);
-  print_vint128x (" = ", l);
-#endif
-  e = (vui32_t) CONST_VINT32_W (0, 0, 0, 0xff);
-  rc += check_vuint128 ("vec_sldqi (  8):", (vui128_t) l, (vui128_t) e);
 
   l = vec_sldqi ((vui128_t) i, (vui128_t) j, 120);
 #ifdef __DEBUG_PRINT__

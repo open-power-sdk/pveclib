@@ -5591,6 +5591,8 @@ vec_rlq (vui128_t vra, vui128_t vrb)
   vui128_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  // vrlq takes the shift count from bits 57:63
+  vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
   __asm__(
       "vrlq %0,%1,%2;\n"
       : "=v" (result)
@@ -5815,22 +5817,42 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
 static inline vui128_t
 vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
 {
-  vui8_t result;
+  vui128_t result;
 
-  if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+  if (__builtin_constant_p(shb))
     {
-      /* When shifting an multiple of 8 bits (octet), use Vector
-       Shift Left Double By Octet Immediate.  This eliminates
-       loading the shift const into a VR.  */
-      if (shb > 0)
-	result = vec_sld ((vui8_t) vrw, (vui8_t) vrx, (shb / 8));
-      else
-	result = (vui8_t) vrw;
+      if ((shb % 8) == 0)
+	/* When shifting an multiple of 8 bits (octet), use Vector
+	 Shift Left Double By Octet Immediate.  This eliminates
+	 loading the shift const into a VR.  */
+	if (shb > 0)
+	  result = (vui128_t) vec_sld ((vui8_t) vrw, (vui8_t) vrx, (shb / 8));
+	else
+	  result = vrw;
+      else // Not just an immediate octet shift
+	if (shb < 8)
+	  // Special case for 0-7 shifts, use vec_vsldbi to exploit P10.
+	  result = vec_vsldbi (vrw, vrx, shb);
+	else
+	  {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+	    // Special case of P10.
+	    vui8_t h, l;
+	    // Shift left double quad (256-bits) by Octet
+            h = vec_sld ((vui8_t) vrw, (vui8_t) vrx, (shb / 8));
+            l = vec_sld ((vui8_t) vrx, (vui8_t) vrx, (shb / 8));
+            // Then Shift Left Double by Bit to complete the shift.
+  	    result = vec_vsldbi ((vui128_t) h, (vui128_t) l, (shb % 8));
+#else       // Load shb as vector and use general vec_sldq case.
+	    const vui8_t vrb = vec_splats ((unsigned char) shb);
+	    result = vec_sldq (vrw, vrx, (vui128_t) vrb);
+#endif
+	  }
     }
   else
     {
       const vui8_t vrb = vec_splats ((unsigned char) shb);
-      result = (vui8_t) vec_sldq (vrw, vrx, (vui128_t) vrb);
+      result = vec_sldq (vrw, vrx, (vui128_t) vrb);
     }
 
   return ((vui128_t) result);
@@ -5856,6 +5878,8 @@ vec_slq (vui128_t vra, vui128_t vrb)
   vui8_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  // vslq takes the shift count from bits 57:63
+  vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
   __asm__(
       "vslq %0,%1,%2;\n"
       : "=v" (result)
@@ -5965,6 +5989,8 @@ vec_sraq (vi128_t vra, vui128_t vrb)
 {
   vui8_t result;
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  // vsraq takes the shift count from bits 57:63
+  vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
   __asm__(
       "vsraq %0,%1,%2;\n"
       : "=v" (result)
@@ -6090,6 +6116,8 @@ vec_srq (vui128_t vra, vui128_t vrb)
 {
   vui8_t result;
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  // vsrq takes the shift count from bits 57:63
+  vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
   __asm__(
       "vsrq %0,%1,%2;\n"
       : "=v" (result)

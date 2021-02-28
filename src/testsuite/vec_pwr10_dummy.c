@@ -39,6 +39,36 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 vui128_t
+test_setb_sq_PWR10 (vi128_t vcy)
+{
+  return vec_setb_sq (vcy);
+}
+
+vui128_t
+test_vec_sldqi_7_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 7));
+}
+
+vui128_t
+test_vec_sldqi_15_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 15));
+}
+
+vui128_t
+test_vec_sldqi_16_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 16));
+}
+
+vui128_t
+test_vec_sldqi_127_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 127));
+}
+
+vui128_t
 __test_msumcud_PWR10 (vui64_t a, vui64_t b, vui128_t c)
 {
   return vec_msumcud ( a, b, c);

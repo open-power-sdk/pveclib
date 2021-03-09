@@ -5836,16 +5836,16 @@ vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
 	else
 	  {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-	    // Special case of P10.
-	    vui8_t h, l;
-	    // Shift left double quad (256-bits) by Octet
+            // Special case of P10.
+            vui8_t h, l;
+            // Shift left double quad (256-bits) by Octet
             h = vec_sld ((vui8_t) vrw, (vui8_t) vrx, (shb / 8));
             l = vec_sld ((vui8_t) vrx, (vui8_t) vrx, (shb / 8));
             // Then Shift Left Double by Bit to complete the shift.
-  	    result = vec_vsldbi ((vui128_t) h, (vui128_t) l, (shb % 8));
+            result = vec_vsldbi ((vui128_t) h, (vui128_t) l, (shb % 8));
 #else       // Load shb as vector and use general vec_sldq case.
-	    const vui8_t vrb = vec_splats ((unsigned char) shb);
-	    result = vec_sldq (vrw, vrx, (vui128_t) vrb);
+            const vui8_t vrb = vec_splats ((unsigned char) shb);
+            result = vec_sldq (vrw, vrx, (vui128_t) vrb);
 #endif
 	  }
     }

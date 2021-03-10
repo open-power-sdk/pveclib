@@ -891,6 +891,12 @@ test_vec_sldqi_0 (vui128_t a, vui128_t b)
 }
 
 vui128_t
+test_vec_sldqi_7 (vui128_t a, vui128_t b)
+{
+  return (vec_sldqi (a, b, 7));
+}
+
+vui128_t
 test_vec_sldqi_15 (vui128_t a, vui128_t b)
 {
   return (vec_sldqi (a, b, 15));

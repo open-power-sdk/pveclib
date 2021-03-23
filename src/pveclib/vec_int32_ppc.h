@@ -1253,6 +1253,41 @@ vec_revbw (vui32_t vra)
   return (result);
 }
 
+/*! \brief Vector Set Bool from Signed Word.
+ *
+ *  For each word, propagate the sign bit, to all 32-bits of that
+ *  word. The result is vector bool int reflecting the sign
+ *  bit of each 32-bit word.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra Vector signed int.
+ *  @return vector bool int reflecting the sign bits of each
+ *  word.
+ */
+
+static inline vb32_t
+vec_setb_sw (vi32_t vra)
+{
+  vb32_t result;
+
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vexpandwm %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+  // Compare signed word less than zero
+  const vi32_t zero = {0, 0, 0, 0};
+  result = vec_cmplt (vra, zero);
+#endif
+  return result;
+}
+
 /** \brief Vector Shift left Word Immediate.
  *
  *  Shift left each word element [0-3], 0-31 bits,

@@ -22,6 +22,11 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vb64_t
+test_vec_setb_sd (vi64_t vra)
+{
+  return vec_setb_sd (vra);
+}
 
 // Shift Left Double immediate for P7
 vui64_t

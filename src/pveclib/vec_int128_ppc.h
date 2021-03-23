@@ -5755,10 +5755,21 @@ vec_setb_ncq (vui128_t vcy)
 static inline vb128_t
 vec_setb_sq (vi128_t vra)
 {
+  vui128_t result;
+
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vexpandqm %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
   const vui8_t shift = vec_splat_u8 (7);
   vui8_t splat = vec_splat ((vui8_t) vra, VEC_BYTE_H);
 
-  return (vb128_t) vec_sra (splat, shift);
+  result = (vb128_t) vec_sra (splat, shift);
+#endif
+  return result;
 }
 
 /** \brief Vector Shift Left Double Quadword.

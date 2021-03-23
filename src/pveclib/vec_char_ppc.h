@@ -753,6 +753,41 @@ vec_popcntb (vui8_t vra)
 #define vec_popcntb __builtin_vec_vpopcntb
 #endif
 
+/*! \brief Vector Set Bool from Signed Byte.
+ *
+ *  For each byte, propagate the sign bit, to all 8-bits of that
+ *  byte. The result is vector bool char reflecting the sign
+ *  bit of each 8-bit byte.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra Vector signed char.
+ *  @return vector bool char reflecting the sign bit of each
+ *  byte.
+ */
+
+static inline vb8_t
+vec_setb_sb (vi8_t vra)
+{
+  vb8_t result;
+
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vexpandbm %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+  const vui8_t rshift =  vec_splat_u8( 7 );
+  // Vector Shift Right Algebraic Bytes 7-bits.
+  result = (vb8_t) vec_sra (vra, rshift);
+#endif
+  return result;
+}
+
 /** \brief Vector Shift left Byte Immediate.
  *
  *  Shift left each byte element [0-15], 0-7 bits,

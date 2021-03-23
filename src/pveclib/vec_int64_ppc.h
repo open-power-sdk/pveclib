@@ -2806,6 +2806,50 @@ static inline vui64_t vec_vsrd (vui64_t vra, vui64_t vrb);
 static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
 #endif
 
+/*! \brief Vector Set Bool from Signed Doubleword.
+ *
+ *  For each doubleword, propagate the sign bit, to all 64-bits of that
+ *  doubleword. The result is vector bool long long reflecting the sign
+ *  bit of each 64-bit doubleword.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra Vector signed long long.
+ *  @return vector bool long long reflecting the sign bits of each
+ *  doubleword.
+ */
+
+static inline vb64_t
+vec_setb_sd (vi64_t vra)
+{
+  vb64_t result;
+
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vexpanddm %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+#ifdef _ARCH_PWR8
+  // Compare signed doubleword less than zero
+  const vi64_t zero = {0, 0};
+  result = vec_cmpltsd (vra, zero);
+#else // ARCH_PWR7 or older, without compare signed doubleword
+  const vui8_t rshift =  vec_splat_u8( 7 );
+  const vui8_t sperm = { 0,0,0,0, 0,0,0,0, 8,8,8,8, 8,8,8,8 };
+  // Splat the high byte of each doubleword across.
+  vui8_t splat = vec_perm ((vui8_t) vra, (vui8_t) vra, sperm);
+  // Vector Shift Right Algebraic Bytes 7-bits.
+  result = (vb64_t) vec_sra (splat, rshift);
+#endif
+#endif
+  return result;
+}
+
 /** \brief Vector Rotate left Doubleword Immediate.
  *
  *  Rotate left each doubleword element [0-1], 0-63 bits,

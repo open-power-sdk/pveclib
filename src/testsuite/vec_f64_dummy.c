@@ -34,6 +34,12 @@
 
 #include <pveclib/vec_f64_ppc.h>
 
+vb64_t
+__test_setb_dp (vf64_t d)
+{
+  return vec_setb_dp (d);
+}
+
 void
 test_stvsfso (vf64_t data, double *array, const long long offset0,
 		     const long long offset1)

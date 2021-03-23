@@ -633,6 +633,45 @@ test_mulubm (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_setbb (void)
+{
+  vi8_t i;
+  vui8_t e, k;
+  int rc = 0;
+
+  printf ("\ntest_setbb Vector Set Bool Byte\n");
+
+  i = (vi8_t)CONST_VINT8_B(0xff, 0x7f, 0x3f, 0x1f,
+			   0x0f, 0x07, 0x03, 0x01,
+			   0x01, 0x02, 0x04, 0x08,
+			   0x10, 0x20, 0x40, 0x80);
+  k = (vui8_t) vec_setb_sb ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui8_t)CONST_VINT8_B( -1, 0, 0, 0, 0, 0, 0, 0,
+			      0, 0, 0, 0, 0, 0, 0,-1);
+  rc += check_vuint128x ("vec_setb_sh:", (vui128_t) k, (vui128_t) e);
+
+  i = (vi8_t)CONST_VINT8_B(-1, -1, -1, -1, -1, -1, -1, -1,
+			   -1, -1, -1, -1, -1, -1, -1, -1);
+  k = (vui8_t) vec_setb_sb ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui8_t)CONST_VINT8_B(-1, -1, -1, -1, -1, -1, -1, -1,
+			    -1, -1, -1, -1, -1, -1, -1, -1);
+  rc += check_vuint128x ("vec_setb_sb:", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_char (void)
 {
@@ -649,6 +688,7 @@ test_vec_char (void)
   rc += test_mulhub ();
   rc += test_mulhsb ();
   rc += test_mulubm ();
+  rc += test_setbb ();
 #endif
   return (rc);
 }

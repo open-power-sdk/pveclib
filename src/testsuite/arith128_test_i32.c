@@ -1693,6 +1693,49 @@ test_unpkxw (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_setbw (void)
+{
+  vi32_t i;
+  vui32_t e, k;
+  int rc = 0;
+
+  printf ("\ntest_setbw Vector Set Bool Word\n");
+
+  i = (vi32_t)CONST_VINT32_W(0x7fffffff, 0xff, 0xff000000, 0);
+  k = (vui32_t) vec_setb_sw ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W( 0, 0, -1, 0);
+  rc += check_vuint128x ("vec_setb_sw:", (vui128_t) k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(0x80000000, 0x7fffffff, 0, 1);
+  k = (vui32_t) vec_setb_sw ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W(-1, 0, 0, 0);
+  rc += check_vuint128x ("vec_setb_sw:", (vui128_t) k, (vui128_t) e);
+
+  i = (vi32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  k = (vui32_t) vec_setb_sw ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  rc += check_vuint128x ("vec_setb_sw:", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i32 (void)
 {
@@ -1717,6 +1760,7 @@ test_vec_i32 (void)
   rc += test_unpkxw ();
   rc += test_lvguwx ();
   rc += test_stvguwx ();
+  rc += test_setbw ();
 
   return (rc);
 }

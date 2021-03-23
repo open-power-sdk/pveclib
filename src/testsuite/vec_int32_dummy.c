@@ -22,6 +22,12 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vb32_t
+test_setb_sw (vi32_t vra)
+{
+  return vec_setb_sw (vra);
+}
+
 #if defined(_ARCH_PWR8)
 vi64_t
 test_vec_unpackh (vi32_t vra)

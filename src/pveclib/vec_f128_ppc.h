@@ -1120,6 +1120,13 @@ vec_iszerof128 (__binary128 f128)
  *  If the quadword's sign bit is '1' then return a vector bool
  *  __int128 that is all '1's. Otherwise return all '0's.
  *
+ *  The resulting mask can be used in vector masking and select
+ *  operations.
+ *
+ *  \note This operation will set the sign mask regardless of data
+ *  class. For POWER9 the Scalar Test Data Class instructions copy the
+ *  sign bit to CR bit 0 which distinguishes between +/- NaN.
+ *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
@@ -1132,11 +1139,20 @@ vec_iszerof128 (__binary128 f128)
 static inline vb128_t
 vec_setb_qp (__binary128 f128)
 {
+  vb128_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t vra = vec_xfer_bin128_2_vui128t (f128);
+  __asm__(
+      "vexpandqm %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
 #if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  result = (vb128_t) {(__int128) 0};
 
   if (scalar_test_neg (f128))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = (vb128_t) {(__int128)-1};
 
   return (vb128_t)result;
 #else
@@ -1144,8 +1160,10 @@ vec_setb_qp (__binary128 f128)
   vui8_t t128 = vec_xfer_bin128_2_vui8t (f128);
   vui8_t splat = vec_splat (t128, VEC_BYTE_H);
 
-  return (vb128_t) vec_sra (splat, shift);
+  result = (vb128_t) vec_sra (splat, shift);
 #endif
+#endif
+  return result;
 }
 
 /** \brief Return int boolean true if the __float128 value

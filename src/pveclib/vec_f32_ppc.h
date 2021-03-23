@@ -1090,6 +1090,34 @@ vec_iszerof32 (vf32_t vf32)
   return (result);
 }
 
+/*! \brief Vector Set Bool from Sign, Single Precision.
+ *
+ *  For each float, propagate the sign bit to all 32-bits of that
+ *  word. The result is vector bool int reflecting the sign
+ *  bit of each 32-bit float.
+ *
+ *  The resulting mask can be used in masking and select operations.
+ *
+ *  \note This operation will set the sign mask regardless of data
+ *  class. while the Vector Test Data Class will not distinguish
+ *  between +/- NaN.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-9   | 2/cycle  |
+ *  |power9   | 2-8   | 2/cycle  |
+ *
+ *  @param vra Vector float.
+ *  @return vector bool int reflecting the sign bits of each
+ *  float value.
+ */
+
+static inline vb32_t
+vec_setb_sp (vf32_t vra)
+{
+  return vec_setb_sw ((vi32_t) vra);
+}
+
 /** \brief Vector Gather-Load 4 Words from scalar Offsets.
  *
  *  For each scalar offset[0,1,2,3], load the word

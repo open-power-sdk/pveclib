@@ -12155,6 +12155,49 @@ test_cmpsd_any (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_setbd (void)
+{
+  vui32_t i, k;
+  vui32_t e;
+  int rc = 0;
+
+  printf ("\ntest_setbd Vector set bool doubleword\n");
+
+  i = (vui32_t)CONST_VINT32_W(0x7fffffff, 0xff, 0xff000000, 0);
+  k = (vui32_t) vec_setb_sd ((vi64_t) i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W(0, 0, -1, -1);
+  rc += check_vuint128x ("vec_setb_sd:", (vui128_t) k, (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(0x80000000, 0, 0, 1);
+  k = (vui32_t) vec_setb_sd ((vi64_t) i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W(-1, -1, 0, 0);
+  rc += check_vuint128x ("vec_setb_sd:", (vui128_t) k, (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  k = (vui32_t) vec_setb_sd ((vi64_t) i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  rc += check_vuint128x ("vec_setb_sd:", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i64 (void)
 {
@@ -12200,6 +12243,7 @@ test_vec_i64 (void)
   rc += test_vmaddoud ();
   rc += test_lvgudx ();
   rc += test_stvgudx ();
+  rc += test_setbd ();
 
   return (rc);
 }

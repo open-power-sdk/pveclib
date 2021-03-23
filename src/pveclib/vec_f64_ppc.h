@@ -1114,6 +1114,35 @@ vec_pack_longdouble (vf64_t lval)
 #endif
 }
 
+/*! \brief Vector Set Bool from Sign, Double Precision.
+ *
+ *  For each double, propagate the sign bit, to all 64-bits of that
+ *  doubleword. The result is vector bool long long reflecting the sign
+ *  bit of each 64-bit double.
+ *
+ *  The resulting mask can be used in vector masking and select
+ *  operations.
+ *
+ *  \note This operation will set the sign mask regardless of data
+ *  class, while the Vector Test Data Class instructions will not
+ *  distinguish between +/- NaN.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra Vector double.
+ *  @return vector bool long long reflecting the sign bits of each
+ *  double value.
+ */
+
+static inline vb64_t
+vec_setb_dp (vf64_t vra)
+{
+  return vec_setb_sd ((vi64_t) vra);
+}
+
 /** \brief Copy the pair of doubles from a IBM long double to a vector
  * double.
  *

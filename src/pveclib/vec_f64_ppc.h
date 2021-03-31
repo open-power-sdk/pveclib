@@ -1116,7 +1116,7 @@ vec_pack_longdouble (vf64_t lval)
 
 /*! \brief Vector Set Bool from Sign, Double Precision.
  *
- *  For each double, propagate the sign bit, to all 64-bits of that
+ *  For each double, propagate the sign bit to all 64-bits of that
  *  doubleword. The result is vector bool long long reflecting the sign
  *  bit of each 64-bit double.
  *

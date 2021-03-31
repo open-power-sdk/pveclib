@@ -5759,7 +5759,7 @@ vec_setb_sq (vi128_t vra)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   __asm__(
-      "vexpandqm %0,%1;\n"
+      "vexpandqm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );

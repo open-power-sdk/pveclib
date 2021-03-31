@@ -755,7 +755,7 @@ vec_popcntb (vui8_t vra)
 
 /*! \brief Vector Set Bool from Signed Byte.
  *
- *  For each byte, propagate the sign bit, to all 8-bits of that
+ *  For each byte, propagate the sign bit to all 8-bits of that
  *  byte. The result is vector bool char reflecting the sign
  *  bit of each 8-bit byte.
  *
@@ -776,7 +776,7 @@ vec_setb_sb (vi8_t vra)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   __asm__(
-      "vexpandbm %0,%1;\n"
+      "vexpandbm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );

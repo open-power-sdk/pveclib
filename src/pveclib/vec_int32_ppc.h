@@ -1255,7 +1255,7 @@ vec_revbw (vui32_t vra)
 
 /*! \brief Vector Set Bool from Signed Word.
  *
- *  For each word, propagate the sign bit, to all 32-bits of that
+ *  For each word, propagate the sign bit to all 32-bits of that
  *  word. The result is vector bool int reflecting the sign
  *  bit of each 32-bit word.
  *
@@ -1276,7 +1276,7 @@ vec_setb_sw (vi32_t vra)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   __asm__(
-      "vexpandwm %0,%1;\n"
+      "vexpandwm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );

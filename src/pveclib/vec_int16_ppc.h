@@ -993,7 +993,7 @@ vec_revbh (vui16_t vra)
 
 /*! \brief Vector Set Bool from Signed Halfword.
  *
- *  For each halfword, propagate the sign bit, to all 16-bits of that
+ *  For each halfword, propagate the sign bit to all 16-bits of that
  *  halfword. The result is vector bool short reflecting the sign
  *  bit of each 16-bit halfword.
  *
@@ -1014,7 +1014,7 @@ vec_setb_sh (vi16_t vra)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   __asm__(
-      "vexpandhm %0,%1;\n"
+      "vexpandhm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );

@@ -1099,7 +1099,7 @@ vec_iszerof32 (vf32_t vf32)
  *  The resulting mask can be used in masking and select operations.
  *
  *  \note This operation will set the sign mask regardless of data
- *  class. while the Vector Test Data Class will not distinguish
+ *  class, while the Vector Test Data Class will not distinguish
  *  between +/- NaN.
  *
  *  |processor|Latency|Throughput|

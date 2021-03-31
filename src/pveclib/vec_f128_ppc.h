@@ -1143,12 +1143,11 @@ vec_setb_qp (__binary128 f128)
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui128_t vra = vec_xfer_bin128_2_vui128t (f128);
   __asm__(
-      "vexpandqm %0,%1;\n"
+      "vexpandqm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );
-#else
-#if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC__ > 7)
+#elif defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC__ > 7)
   result = (vb128_t) {(__int128) 0};
 
   if (scalar_test_neg (f128))
@@ -1161,7 +1160,6 @@ vec_setb_qp (__binary128 f128)
   vui8_t splat = vec_splat (t128, VEC_BYTE_H);
 
   result = (vb128_t) vec_sra (splat, shift);
-#endif
 #endif
   return result;
 }

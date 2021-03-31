@@ -2808,7 +2808,7 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
 
 /*! \brief Vector Set Bool from Signed Doubleword.
  *
- *  For each doubleword, propagate the sign bit, to all 64-bits of that
+ *  For each doubleword, propagate the sign bit to all 64-bits of that
  *  doubleword. The result is vector bool long long reflecting the sign
  *  bit of each 64-bit doubleword.
  *
@@ -2833,8 +2833,7 @@ vec_setb_sd (vi64_t vra)
       : "=v" (result)
       : "v" (vra)
       : );
-#else
-#ifdef _ARCH_PWR8
+#elif defined (_ARCH_PWR8)
   // Compare signed doubleword less than zero
   const vi64_t zero = {0, 0};
   result = vec_cmpltsd (vra, zero);
@@ -2845,7 +2844,6 @@ vec_setb_sd (vi64_t vra)
   vui8_t splat = vec_perm ((vui8_t) vra, (vui8_t) vra, sperm);
   // Vector Shift Right Algebraic Bytes 7-bits.
   result = (vb64_t) vec_sra (splat, rshift);
-#endif
 #endif
   return result;
 }

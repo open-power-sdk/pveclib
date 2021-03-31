@@ -39,6 +39,36 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vb128_t
+test_setb_qp_PWR9 (__binary128 f128)
+{
+  return vec_setb_qp (f128);
+}
+
+vb8_t
+test_setb_sb_PWR9 (vi8_t vra)
+{
+  return vec_setb_sb (vra);
+}
+
+vb16_t
+test_setb_sh_PWR9 (vi16_t vra)
+{
+  return vec_setb_sh (vra);
+}
+
+vb32_t
+test_setb_sw_PWR9 (vi32_t vra)
+{
+  return vec_setb_sw (vra);
+}
+
+vb64_t
+test_setb_sd_PWR9 (vi64_t vra)
+{
+  return vec_setb_sd (vra);
+}
+
 vui128_t
 __test_msumcud_PWR9 (vui64_t a, vui64_t b, vui128_t c)
 {

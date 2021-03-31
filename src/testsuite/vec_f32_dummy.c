@@ -33,6 +33,12 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
 
+vb32_t
+__test_setb_sp (vf32_t f)
+{
+  return vec_setb_sp (f);
+}
+
 #if (__GNUC__ > 7) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 vf32_t
 test_vec_pack_dpsp (vf64_t a, vf64_t b)

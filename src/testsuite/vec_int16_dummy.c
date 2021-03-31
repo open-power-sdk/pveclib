@@ -22,6 +22,12 @@
 
 #include <pveclib/vec_int16_ppc.h>
 
+vb16_t
+test_setb_sh (vi16_t vra)
+{
+  return vec_setb_sh (vra);
+}
+
 vui16_t
 test_ctzh_v1 (vui16_t vra)
 {

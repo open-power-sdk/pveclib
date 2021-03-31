@@ -991,6 +991,41 @@ vec_revbh (vui16_t vra)
   return (result);
 }
 
+/*! \brief Vector Set Bool from Signed Halfword.
+ *
+ *  For each halfword, propagate the sign bit to all 16-bits of that
+ *  halfword. The result is vector bool short reflecting the sign
+ *  bit of each 16-bit halfword.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-4   | 2/cycle  |
+ *  |power9   | 2-5   | 2/cycle  |
+ *
+ *  @param vra Vector signed short.
+ *  @return vector bool short reflecting the sign bit of each
+ *  halfword.
+ */
+
+static inline vb16_t
+vec_setb_sh (vi16_t vra)
+{
+  vb16_t result;
+
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vexpandhm %0,%1"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+  const vui16_t rshift =  vec_splat_u16( 15 );
+  // Vector Shift Right Algebraic Halfwords 15-bits.
+  result = (vb16_t) vec_sra (vra, rshift);
+#endif
+  return result;
+}
+
 /** \brief Vector Shift left Halfword Immediate.
  *
  *  Shift left each halfword element [0-7], 0-15 bits,

@@ -40,6 +40,28 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
 
+#ifndef PVECLIB_DISABLE_F128MATH
+#ifdef __FLOAT128__
+__float128
+test_scalar_add128 (__float128 vra, __float128 vrb)
+{
+  return (vra + vrb);
+}
+
+__float128
+test_scalar_mul128 (__float128 vra, __float128 vrb)
+{
+  return (vra * vrb);
+}
+#endif
+#endif
+
+vb128_t
+test_setb_qp (__binary128 f128)
+{
+  return vec_setb_qp (f128);
+}
+
 __binary128
 test_vec_absf128 (__binary128 f128)
 {

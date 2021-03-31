@@ -11,6 +11,12 @@
 
 #include <pveclib/vec_char_ppc.h>
 
+vb8_t
+test_setb_sb (vi8_t vra)
+{
+  return vec_setb_sb (vra);
+}
+
 vui8_t
 test_ctzb_v1 (vui8_t vra)
 {

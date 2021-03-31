@@ -2457,6 +2457,140 @@ test_double_iszero (void)
 }
 //#undef __DEBUG_PRINT__
 
+int
+test_setb_dp (void)
+{
+  const vf64_t f64_zero = (vf64_t)
+      CONST_VINT128_DW(0x0000000000000000, 0x8000000000000000);
+
+  const vf64_t f64_one = (vf64_t)
+      CONST_VINT128_DW(0x3ff0000000000000, 0xbff0000000000000);
+
+  const vf64_t f64_max = (vf64_t)
+      CONST_VINT128_DW(0x7fefffffffffffff, 0xffefffffffffffff);
+
+  const vf64_t f64_min = (vf64_t)
+      CONST_VINT128_DW(0x0010000000000000, 0x8010000000000000);
+
+  const vf64_t f64_sub = (vf64_t)
+      CONST_VINT128_DW(0x000ffffffffffff, 0x800fffffffffffff);
+
+  const vf64_t f64_inf = (vf64_t)
+      CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
+
+  const vf64_t f64_nan = (vf64_t)
+      CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NNAN);
+
+  const vf64_t f64_snan = (vf64_t)
+      CONST_VINT128_DW(__DOUBLE_SNAN, __DOUBLE_NSNAN);
+
+  const vb64_t f64_FT = (vb64_t)
+      CONST_VINT128_DW(0x0000000000000000, 0xffffffffffffffff);
+
+  vf64_t x;
+  vb64_t test, expt;
+  long tests_count = 0;
+  int rc = 0;
+
+  printf ("\ntest_setb_dp f64 -> vector bool , ...\n");
+
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_zero;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 1", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_one;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 2", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_max;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 3", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_min;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 4", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_sub;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 5", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_inf;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 6", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_nan;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 7", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf64_t) f64_snan;
+#ifdef __DEBUG_PRINT__
+  print_v2f64 (" x=  ", x);
+  print_v2b64x(" t=  ", test);
+#endif
+  test = vec_setb_dp (x);
+  expt = f64_FT;
+  rc += check_v2b64x ("check vec_setb_dp 8", test, expt);
+#endif
+
+  /* accumulate the number of values tested, in case we are doing
+   * detail timing and want to compute function averages.  */
+  tcount += tests_count;
+  printf ("\ntest_setb_dp, tests=%ld fails=%d\n", tests_count, rc);
+
+  return (rc);
+}
+
 static double test_f64[] =
     {
 	0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
@@ -3018,6 +3152,8 @@ test_vec_f64 (void)
   rc += test_double_issubnormal ();
   rc += test_double_iszero ();
   rc += test_double_isfinite ();
+  rc += test_setb_dp ();
+
   rc += test_lvgdfdx ();
   rc += test_stvgdfdx ();
   rc += test_indentity_array ();

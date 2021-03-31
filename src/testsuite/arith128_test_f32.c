@@ -2406,6 +2406,87 @@ test_time_f32 (void)
 }
 
 int
+test_setb_sp (void)
+{
+  const vf32_t f32_zero_one = (vf32_t)
+      CONST_VINT32_W(0.0, -0.0, 1.0, -1.0);
+
+  const vf32_t f32_max_min = (vf32_t)
+      CONST_VINT128_W(0x7f000000, 0xff000000,
+                      0x00400000, 0x80400000);
+
+  const vf32_t f32_sub_inf = (vf32_t)
+      CONST_VINT128_W(0x007fffff, 0x807fffff,
+		       __FLOAT_INF, __FLOAT_NINF);
+
+  const vf32_t f32_nan_snan = (vf32_t)
+      CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NNAN,
+		       __FLOAT_SNAN, __FLOAT_NSNAN);
+
+  const vb32_t f32_FTFT = (vb32_t)
+      CONST_VINT128_W(0, -1, 0, -1);
+
+  vf32_t x;
+  vb32_t test, expt;
+  long tests_count = 0;
+  int rc = 0;
+
+  printf ("\ntest_setb_sp f32 -> vector bool , ...\n");
+
+#if 1
+  tests_count++;
+  x = (vf32_t) f32_zero_one;
+#ifdef __DEBUG_PRINT__
+  print_v4f32 (" x=  ", x);
+  print_v4b32x(" t=  ", test);
+#endif
+  test = vec_setb_sp (x);
+  expt = f32_FTFT;
+  rc += check_v4b32x ("check vec_setb_sp 1", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf32_t) f32_max_min;
+#ifdef __DEBUG_PRINT__
+  print_v4f32 (" x=  ", x);
+  print_v4b32x(" t=  ", test);
+#endif
+  test = vec_setb_sp (x);
+  expt = f32_FTFT;
+  rc += check_v4b32x ("check vec_setb_sp 2", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf32_t) f32_sub_inf;
+  test = vec_setb_sp (x);
+#ifdef __DEBUG_PRINT__
+  print_v4f32 (" x=  ", x);
+  print_v4b32x(" t=  ", test);
+#endif
+  expt = f32_FTFT;
+  rc += check_v4b32x ("check vec_setb_sp 3", test, expt);
+#endif
+#if 1
+  tests_count++;
+  x = (vf32_t) f32_nan_snan;
+  test = vec_setb_sp (x);
+#ifdef __DEBUG_PRINT__
+  print_v4f32 (" x=  ", x);
+  print_v4b32x(" t=  ", test);
+#endif
+  expt = f32_FTFT;
+  rc += check_v4b32x ("check vec_setb_sp 4", test, expt);
+#endif
+
+  /* accumulate the number of values tested, in case we are doing
+   * detail timing and want to compute function averages.  */
+  tcount += tests_count;
+  printf ("\ntest_setb_sp, tests=%ld fails=%d\n", tests_count, rc);
+
+  return (rc);
+}
+
+int
 test_vec_f32 (void)
 {
   int rc = 0;
@@ -2422,6 +2503,7 @@ test_vec_f32 (void)
   rc += test_float_issubnormal ();
   rc += test_float_iszero ();
   rc += test_float_isfinite ();
+  rc += test_setb_sp ();
   rc += test_lvgfsx ();
   rc += test_stvgfsx ();
   rc += test_f32_indentity_array ();

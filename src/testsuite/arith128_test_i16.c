@@ -573,6 +573,51 @@ test_vmadduh (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_setbh (void)
+{
+  vi16_t i;
+  vui16_t e, k;
+  int rc = 0;
+
+  printf ("\ntest_setbh Vector Set Bool Halfword\n");
+
+  i = (vi16_t)CONST_VINT16_H(0xffff, 0x7fff, 0x3fff, 0x1fff,
+			     0x0fff, 0x07ff, 0x03ff, 0x01ff);
+  k = (vui16_t) vec_setb_sh ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui16_t)CONST_VINT16_H( -1, 0, 0, 0, 0, 0, 0, 0);
+  rc += check_vuint128x ("vec_setb_sh:", (vui128_t) k, (vui128_t) e);
+
+  i = (vi16_t)CONST_VINT16_H(0x0100, 0x0200, 0x0400, 0x0800,
+			     0x1000, 0x2000, 0x4000, 0x8000);
+  k = (vui16_t) vec_setb_sh ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui16_t)CONST_VINT16_H(0, 0, 0, 0, 0, 0, 0, -1);
+  rc += check_vuint128x ("vec_setb_sh:", (vui128_t) k, (vui128_t) e);
+
+  i = (vi16_t)CONST_VINT16_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  k = (vui16_t) vec_setb_sh ( i );
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("vec_setb ", (vui128_t) i);
+  print_vint128x ("        =", (vui128_t) k);
+#endif
+  e = (vui16_t)CONST_VINT16_H(-1, -1, -1, -1, -1, -1, -1, -1);
+  rc += check_vuint128x ("vec_setb_sh:", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i16 (void)
 {
@@ -590,6 +635,7 @@ test_vec_i16 (void)
   rc += test_mulhsh();
   rc += test_muluhm();
   rc += test_vmadduh();
+  rc += test_setbh();
 #endif
   return (rc);
 }

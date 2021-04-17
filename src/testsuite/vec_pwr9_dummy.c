@@ -39,6 +39,54 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui32_t
+test_and_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)
+{
+  return vec_and_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_andc_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)
+{
+  return vec_andc_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_xfer_bin128_2_vui32t_PWR9 (__binary128 f128)
+{
+  return vec_xfer_bin128_2_vui32t (f128);
+}
+
+vui128_t
+test_xfer_bin128_2_vui128t_PWR9 (__binary128 f128)
+{
+  return vec_xfer_bin128_2_vui128t (f128);
+}
+
+__binary128
+test_xfer_vui32t_2_bin128_PWR9 (vui32_t f128)
+{
+  return vec_xfer_vui32t_2_bin128 (f128);
+}
+
+__binary128
+test_vec_xsiexpqp_PWR9 (vui128_t sig, vui64_t exp)
+{
+  return vec_xsiexpqp (sig, exp);
+}
+
+vui64_t
+test_vec_xsxexpqp_PWR9 (__binary128 f128)
+{
+  return vec_xsxexpqp (f128);
+}
+
+vui128_t
+test_vec_xsxsigqp_PWR9 (__binary128 f128)
+{
+  return vec_xsxsigqp (f128);
+}
+
 vb128_t
 test_setb_qp_PWR9 (__binary128 f128)
 {

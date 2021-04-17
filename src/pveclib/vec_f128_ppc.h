@@ -247,6 +247,142 @@ typedef union
        __binary128 vf1;
      } __VF_128;
 
+
+ /** \brief Transfer a quadword from a __binary128 scalar to a vector int
+  * and logical AND with a mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ANDed with mask as a 128-bit vector int.
+ */
+ static inline vui32_t
+ vec_and_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+ {
+   vui32_t result;
+ #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+      && !defined (_ARCH_PWR9)
+   // Work around for GCC PR 100085
+ #ifdef __VSX__
+   __asm__(
+       "xxland %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vand %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+ #else
+   __VF_128 vunion;
+
+   vunion.vf1 = f128;
+
+   result = (vec_and (vunion.vx4, mask));
+ #endif
+   return result;
+ }
+
+ /** \brief Transfer a quadword from a __binary128 scalar to a vector int
+  * and logical AND Compliment with mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ANDed with mask as a 128-bit vector int.
+ */
+ static inline vui32_t
+ vec_andc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+ {
+   vui32_t result;
+ #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+   // Work around for GCC PR 100085
+ #ifdef __VSX__
+   __asm__(
+       "xxlandc %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vandc %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+ #else
+   __VF_128 vunion;
+
+   vunion.vf1 = f128;
+
+   result = (vec_andc (vunion.vx4, mask));
+ #endif
+   return result;
+ }
+
+ /** \brief Transfer a quadword from a __binary128 scalar to a vector __int128
+  * and logical AND Compliment with mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned __int128
+ *  @return The original value ANDed with mask as a 128-bit vector int.
+ */
+ static inline vui128_t
+ vec_andc_bin128_2_vui128t (__binary128 f128, vui128_t mask)
+ {
+   vui128_t result;
+ #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+   // Work around for GCC PR 100085
+ #ifdef __VSX__
+   __asm__(
+       "xxlandc %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vandc %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+ #else
+   __VF_128 vunion;
+
+   vunion.vf1 = f128;
+   // vec_andc does not accept vector __int128 type
+   result = (vui128_t) vec_andc (vunion.vx4, (vui32_t) mask);
+ #endif
+   return result;
+ }
+
 /** \brief Transfer function from a __binary128 scalar to a vector char.
 *
 *  The compiler does not allow direct transfer (assignment or type
@@ -263,11 +399,31 @@ typedef union
 static inline vui8_t
 vec_xfer_bin128_2_vui8t (__binary128 f128)
 {
+  vui8_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+  // Work around for GCC PR 100085
+#ifdef __VSX__
+  __asm__(
+      "xxlor %x0,%x1,%x1"
+      : "=wa" (result)
+      : "wa" (f128)
+      : );
+#else
+  __asm__(
+      "vor %0,%1,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else
   __VF_128 vunion;
 
   vunion.vf1 = f128;
 
-  return (vunion.vx16);
+  result = (vunion.vx16);
+#endif
+  return result;
 }
 
 /** \brief Transfer function from a __binary128 scalar to a vector short int.
@@ -309,11 +465,31 @@ vec_xfer_bin128_2_vui16t (__binary128 f128)
 static inline vui32_t
 vec_xfer_bin128_2_vui32t (__binary128 f128)
 {
+  vui32_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+  // Work around for GCC PR 100085
+#ifdef __VSX__
+  __asm__(
+      "xxlor %x0,%x1,%x1"
+      : "=wa" (result)
+      : "wa" (f128)
+      : );
+#else
+  __asm__(
+      "vor %0,%1,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else
   __VF_128 vunion;
 
   vunion.vf1 = f128;
 
-  return (vunion.vx4);
+  result = (vunion.vx4);
+#endif
+  return result;
 }
 
 /** \brief Transfer function from a __binary128 scalar to a vector long long int.
@@ -355,11 +531,31 @@ vec_xfer_bin128_2_vui64t (__binary128 f128)
 static inline vui128_t
 vec_xfer_bin128_2_vui128t (__binary128 f128)
 {
+  vui128_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+  // Work around for GCC PR 100085
+#ifdef __VSX__
+  __asm__(
+      "xxlor %x0,%x1,%x1"
+      : "=wa" (result)
+      : "wa" (f128)
+      : );
+#else
+  __asm__(
+      "vor %0,%1,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else
   __VF_128 vunion;
 
   vunion.vf1 = f128;
 
-  return (vunion.vx1);
+  result = (vunion.vx1);
+#endif
+  return result;
 }
 
 /** \brief Transfer a vector unsigned char to __binary128 scalar.
@@ -502,8 +698,8 @@ vec_absf128 (__binary128 f128)
 #else
   vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  tmp = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (tmp, signmask);
+
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   result = vec_xfer_vui32t_2_bin128 (tmp);
 #endif
   return (result);
@@ -536,11 +732,10 @@ vec_all_isfinitef128 (__binary128 f128)
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return !scalar_test_data_class (f128, 0x70);
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_and (t128, expmask);
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
   return !vec_all_eq(tmp, expmask);
 #endif
 }
@@ -573,8 +768,7 @@ vec_all_isinff128 (__binary128 f128)
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
-  tmp = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (tmp, signmask);
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_all_eq(tmp, expmask);
 #endif
 }
@@ -604,13 +798,12 @@ vec_all_isnanf128 (__binary128 f128)
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x40);
 #else
-  vui32_t tmp, tmp2, t128;
+  vui32_t tmp, tmp2;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (t128, signmask);
-  tmp2 = vec_and (t128, expmask);
+  tmp  = vec_andc_bin128_2_vui32t (f128, signmask);
+  tmp2 = vec_and_bin128_2_vui32t (f128, expmask);
   return (vec_all_eq (tmp2, expmask) && vec_any_gt(tmp, expmask));
 #endif
 }
@@ -642,13 +835,11 @@ vec_all_isnormalf128 (__binary128 f128)
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return !scalar_test_data_class (f128, 0x7f);
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
   const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_and (t128, expmask);
-
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
   return !(vec_all_eq (tmp, expmask) || vec_all_eq(tmp, vec_zero));
 #endif
 }
@@ -680,9 +871,12 @@ vec_all_issubnormalf128 (__binary128 f128)
 #else
   const vui64_t minnorm = CONST_VINT128_DW(0x0001000000000000UL, 0UL);
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   vui128_t tmp1;
 
-  tmp1 = vec_xfer_bin128_2_vui128t (vec_absf128 (f128));
+  // Equivalent to vec_absf128 (f128)
+  tmp1 = (vui128_t) vec_andc_bin128_2_vui32t (f128, signmask);
+
   return vec_cmpuq_all_gt ((vui128_t) minnorm, tmp1)
       && !vec_cmpuq_all_eq (tmp1, (vui128_t) vec_zero);
 #endif
@@ -715,8 +909,10 @@ vec_all_iszerof128 (__binary128 f128)
 #else
   vui64_t tmp2;
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
 
-  tmp2 = vec_xfer_bin128_2_vui64t (vec_absf128 (f128));
+  // Equivalent to vec_absf128 (f128)
+  tmp2 = (vui64_t) vec_andc_bin128_2_vui32t (f128, signmask);
 #if _ARCH_PWR8
   return vec_all_eq(tmp2, vec_zero);
 #else
@@ -841,11 +1037,10 @@ vec_isfinitef128 (__binary128 f128)
   return (vb128_t)result;
 #else
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  vui32_t tmp, t128;
+  vui32_t tmp;
   vb128_t tmp2, tmp3;
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_and (t128, expmask);
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
   tmp2 = (vb128_t) vec_cmpeq (tmp, expmask);
   tmp3 = (vb128_t) vec_splat ((vui32_t) tmp2, VEC_W_H);
   return (vb128_t) vec_nor ((vui32_t) tmp3, (vui32_t) tmp3); // vec_not
@@ -892,7 +1087,7 @@ vec_isinf_signf128 (__binary128 f128)
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (t128, signmask);
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
 
   if (vec_all_eq(tmp, expmask))
     {
@@ -936,12 +1131,11 @@ vec_isinff128 (__binary128 f128)
 
   return (vb128_t)result;
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (t128, signmask);
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpequq ((vui128_t)tmp , (vui128_t)expmask);
 #endif
 }
@@ -979,12 +1173,11 @@ vec_isnanf128 (__binary128 f128)
 
   return (vb128_t)result;
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (t128, signmask);
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpgtuq ((vui128_t)tmp , (vui128_t)expmask);
 #endif
 }
@@ -1019,18 +1212,15 @@ vec_isnormalf128 (__binary128 f128)
 
   return (vb128_t)result;
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
   const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
   vb128_t result;
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_and (t128, expmask);
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
   result = (vb128_t) vec_nor (vec_cmpeq (tmp, expmask),
 			      vec_cmpeq (tmp, vec_zero));
-  result = (vb128_t) vec_splat ((vui32_t) result, VEC_W_H);
-
-  return (result);
+  return (vb128_t) vec_splat ((vui32_t) result, VEC_W_H);
 #endif
 }
 
@@ -1064,13 +1254,14 @@ vec_issubnormalf128 (__binary128 f128)
 
   return (vb128_t)result;
 #else
-  vui32_t tmp, tmpz, tmp2, t128;
+  vui32_t tmp, tmpz, tmp2;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
   const vui32_t minnorm = CONST_VINT128_W(0x00010000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_andc (t128, signmask);
+  // Equivalent to vec_absf128 (f128)
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
+
   tmp2 = (vui32_t) vec_cmpltuq ((vui128_t)tmp, (vui128_t)minnorm);
   tmpz = (vui32_t) vec_cmpequq ((vui128_t)tmp, (vui128_t)vec_zero);
   return (vb128_t) vec_andc (tmp2, tmpz);
@@ -1109,8 +1300,10 @@ vec_iszerof128 (__binary128 f128)
 #else
   vui128_t t128;
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui128t (vec_absf128(f128));
+  // Equivalent to vec_absf128 (f128)
+  t128 = (vui128_t) vec_andc_bin128_2_vui32t (f128, signmask);
   return  (vb128_t)vec_cmpequq (t128, (vui128_t)vec_zero);
 #endif
 }
@@ -1184,13 +1377,162 @@ vec_signbitf128 (__binary128 f128)
 #if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC > 7)
   return (scalar_test_neg (f128);
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
 
-  t128 = vec_xfer_bin128_2_vui32t (f128);
-  tmp = vec_and (t128, signmask);
+  tmp = vec_and_bin128_2_vui32t (f128, signmask);
   return vec_all_eq(tmp, signmask);
 #endif
+}
+
+/** \brief Scalar Insert Exponent Quad-Precision
+ *
+ *  Merge the sign (bit 0) and significand (bits 16:127) from sig
+ *  with the 15-bit exponent from exp (bits 49:63). The exponent is
+ *  moved to bits 1:15 of the final result.
+ *  The result is return as a Quad_precision floating point value.
+ *
+ *  \note This operation is equivalent to the POWER9 xsiexpqp
+ *  instruction and the built-in scalar_insert_exp. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2-11 | 2/cycle  |
+ *  |power9   |   2   | 4/cycle  |
+ *
+ *  @param sig Vector __int128 containing the Sign Bit and 112-bit significand.
+ *  @param exp Vector long long containing the 15-bit exponent.
+ *  @return a __binary128 value where the exponent bits (1:15) of sig
+ *  are replaced from bits 49:63 of exp.
+ *
+ */
+static inline __binary128
+vec_xsiexpqp (vui128_t sig, vui64_t exp)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  __asm__(
+      "xsiexpqp %0,%1,%2"
+      : "=v" (result)
+      : "v" (sig), "v" (exp)
+      : );
+
+#else
+  vui32_t tmp, t128;
+  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+
+  tmp = vec_sld ((vui32_t) exp, (vui32_t) exp, 6);
+  t128 =  vec_sel ((vui32_t) sig, tmp, expmask);
+  result = vec_xfer_vui32t_2_bin128 (t128);
+#endif
+  return result;
+}
+
+/** \brief Scalar Extract Exponent Quad-Precision
+ *
+ *  Extract the quad-precision exponent (bits 1:15) and right justify
+ *  it to (bits 49:63 of) doubleword 0 of the result vector.
+ *  The result is return as vector long long integer value.
+ *
+ *  \note This operation is equivalent to the POWER9 xsxexpqp
+ *  instruction and the built-in scalar_extract_exp. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-13 | 2/cycle  |
+ *  |power9   |   2   | 4/cycle  |
+ *
+ *  @param f128 __binary128 value.
+ *  @return _Vector long long containing the 15-bit exponent in doubleword 0
+ *
+ */
+static inline vui64_t
+vec_xsxexpqp (__binary128 f128)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+
+  vui128_t vrb = vec_xfer_bin128_2_vui128t (f128);
+  __asm__(
+      "xsxexpqp %0,%1"
+      : "=v" (result)
+      : "v" (vrb)
+      : );
+
+#else
+  vui32_t tmp;
+  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
+  result = (vui64_t) vec_sld (zero, tmp, 10);
+#endif
+  return result;
+}
+
+/** \brief Scalar Extract Significand Quad-Precision
+ *
+ *  Extract the quad-precision significand (bits 16:127) and
+ *  restore the implied (hidden) bit (bit 15) if the quad-precition
+ *  value is normal (not zero, subnormal, Infinity or NaN).
+ *  The result is return as vector __int128 integer value with
+ *  up to 113 bits of significance.
+ *
+ *  \note This operation is equivalent to the POWER9 xsxsigqp
+ *  instruction and the built-in scalar_extract_sig. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-19 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param f128 __binary128 value.
+ *  @return Vector __int128 containing the significand.
+ *
+ */
+static inline vui128_t
+vec_xsxsigqp (__binary128 f128)
+{
+  vui128_t result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+
+  vui128_t vrb = vec_xfer_bin128_2_vui128t (f128);
+  __asm__(
+      "xsxsigqp %0,%1"
+      : "=v" (result)
+      : "v" (vrb)
+      : );
+
+#else
+  vui32_t t128, tmp;
+  vui32_t normal;
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t sigmask = CONST_VINT128_W(0x0000ffff, -1, -1, -1);
+  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t hidden = CONST_VINT128_W(0x00010000, 0, 0, 0);
+
+  // Check if f128 is normal. Normal values need the hidden bit
+  // restored to the significand. We use a simpler sequence here as
+  // vec_isnormalf128 does more then we need.
+  tmp = vec_and_bin128_2_vui32t (f128, expmask);
+  normal = (vui32_t) vec_nor (vec_cmpeq (tmp, expmask),
+		              vec_cmpeq (tmp, zero));
+  t128 = vec_and_bin128_2_vui32t (f128, sigmask);
+  result = (vui128_t) vec_sel (t128, normal, hidden);
+#endif
+  return result;
 }
 
 #endif /* VEC_F128_PPC_H_ */

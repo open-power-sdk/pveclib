@@ -1612,4 +1612,156 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
 #endif
 }
 
+/** \brief Vector Insert Exponent Double-Precision
+ *
+ *  For each doubleword of <B>sig</B> and <B>exp</B>,
+ *  merge the sign (bit 0) and significand (bits 12:63) from <B>sig</B>
+ *  with the 11-bit exponent from <B>exp</B> (bits 53:63). The exponent
+ *  is merged into bits 1:11 of the final result.
+ *  The result is returned as a Vector Double-Precision floating point
+ *  value.
+ *
+ *  \note This operation is equivalent to the POWER9 xviexpdp
+ *  instruction and the built-in vec_insert_exp. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-15 | 2/cycle  |
+ *  |power9   |   2   | 4/cycle  |
+ *
+ *  @param sig Vector long long containing the Sign Bit and 52-bit significand.
+ *  @param exp Vector long long containing the 11-bit exponent.
+ *  @return a vf64_t value where the exponent bits (1:11) of sig
+ *  are replaced from bits 53:63 of exp.
+ *
+ */
+static inline vf64_t
+vec_xviexpdp (vui64_t sig, vui64_t exp)
+{
+  vf64_t result;
+#if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
+  __asm__(
+      "xviexpdp %x0,%x1,%x2"
+      : "=wa" (result)
+      : "wa" (sig), "wa" (exp)
+      : );
+
+#else
+  vui32_t tmp, t128;
+  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
+
+  tmp = (vui32_t) vec_slqi ((vui128_t) exp, 52);
+  result = (vf64_t) vec_sel ((vui32_t) sig, tmp, expmask);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Exponent Double-Precision
+ *
+ *  For each doubleword of <B>vrb</B>,
+ *  Extract the double-precision exponent (bits 1:11) and right justify
+ *  it to (bits 53:63 of) of the result vector doubleword.
+ *  The result is returned as vector long long integer value.
+ *
+ *  \note This operation is equivalent to the POWER9 xvxexpdp
+ *  instruction and the built-in vector_extract_exp. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-15 | 2/cycle  |
+ *  |power9   |   2   | 4/cycle  |
+ *
+ *  @param vrb vector double value.
+ *  @return _Vector long long containing 11-bit exponent right justified
+ *  in each doubleword
+ *
+ */
+static inline vui64_t
+vec_xvxexpdp (vf64_t vrb)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
+
+  __asm__(
+      "xvxexpdp %x0,%x1"
+      : "=wa" (result)
+      : "wa" (vrb)
+      : );
+
+#else
+  vui32_t tmp;
+  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+
+  tmp = vec_and ((vui32_t) vrb, expmask);
+  result = (vui64_t) vec_srqi ((vui128_t) tmp, 52);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Significand Double-Precision
+ *
+ *  For each doubleword of <B>vrb</B>,
+ *  Extract the double-precision significand (bits 12:63) and
+ *  restore the implied (hidden) bit (bit 11) if the double-precision
+ *  value is normal (not zero, subnormal, Infinity or NaN).
+ *  The result is return as vector long long integer value with
+ *  up to 53 bits of significance.
+ *
+ *  \note This operation is equivalent to the POWER9 xvxsigdp
+ *  instruction and the built-in vector_extract_sig. These require a
+ *  POWER9 enables compiler targeting -mcpu=power9 and are not
+ *  available for older compilers and POWER8 and earlier.
+ *  This operation provides this operation for all VSX enabled
+ *  platforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-17 | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vrb vector double value.
+ *  @return Vector unsigned long long containing the significand.
+ *
+ */
+static inline vui64_t
+vec_xvxsigdp (vf64_t vrb)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
+
+  __asm__(
+      "xvxsigdp %x0,%x1"
+      : "=wa" (result)
+      : "wa" (vrb)
+      : );
+
+#else
+  vui32_t t128, tmp;
+  vui32_t normal;
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t sigmask = CONST_VINT128_W(0x000fffff, -1, 0x000fffff, -1);
+  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
+  const vui32_t hidden = CONST_VINT128_W(0x00100000, 0, 0x00100000, 0);
+
+  // Check if vrb is normal. Normal values need the hidden bit
+  // restored to the significand. We use a simpler sequence here as
+  // vec_isnormalf64 does more then we need.
+  tmp = vec_and ((vui32_t) vrb, expmask);
+  normal = (vui32_t) vec_nor (vec_cmpeq (tmp, expmask),
+		              vec_cmpeq (tmp, zero));
+  t128 = vec_and ((vui32_t) vrb, sigmask);
+  result = (vui64_t) vec_sel (t128, normal, hidden);
+#endif
+  return result;
+}
+
 #endif /* VEC_F64_PPC_H_ */

@@ -31,6 +31,14 @@
 #include <testsuite/arith128_test_f64.h>
 #include <testsuite/vec_perf_f64.h>
 
+#define __DOUBLE_ZERO (0x0000000000000000UL)
+#define __DOUBLE_NZERO (0x8000000000000000UL)
+#define __DOUBLE_ONE (0x3ff0000000000000UL)
+#define __DOUBLE_NONE (0xbff0000000000000UL)
+#define __DOUBLE_MAX (0x7fefffffffffffffUL)
+#define __DOUBLE_NMAX (0xffefffffffffffffUL)
+#define __DOUBLE_SUB (0x0000000000000001UL)
+#define __DOUBLE_NSUB (0x8000000000000001UL)
 #define __DOUBLE_INF (0x7ff0000000000000UL)
 #define __DOUBLE_NINF (0xfff0000000000000UL)
 #define __DOUBLE_NAN (0x7ff0000000000001UL)
@@ -39,6 +47,7 @@
 #define __DOUBLE_NSNAN (0xfff8000000000001UL)
 #define __DOUBLE_TRUE (0xffffffffffffffffUL)
 #define __DOUBLE_NTRUE (0x0000000000000000UL)
+#define __DOUBLE_HIDDEN (0x0010000000000000UL)
 
 
 #ifdef __DEBUG_PRINT__
@@ -2801,6 +2810,140 @@ test_stvgdfdx (void)
   return (rc);
 }
 
+int
+test_extract_insert_f64 ()
+{
+  vf64_t x, xp, xpt;
+  vui64_t sig, sigt, sigs;
+  vui64_t exp, expt;
+  vui64_t signmask;
+  int rc = 0;
+
+  printf ("\ntest_extract_insert_f64 ...\n");
+
+  signmask = CONST_VINT128_DW ( __DOUBLE_ZERO, __DOUBLE_NZERO );
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_ZERO, __DOUBLE_NZERO );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0, 0);
+  rc += check_vuint128x ("check vec_xvxexpdp 1", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(0, 0);
+  rc += check_vuint128x ("check vec_xvxsigdp 1", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) signmask;
+  rc += check_v2f64 ("check vec_xviexpdp 1", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_ONE, __DOUBLE_NONE );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x3ff, 0x3ff);
+  rc += check_vuint128x ("check vec_xvxexpdp 2", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(__DOUBLE_HIDDEN, __DOUBLE_HIDDEN);
+  rc += check_vuint128x ("check vec_xvxsigdp 2", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_ONE, __DOUBLE_NONE );
+  rc += check_v2f64 ("check vec_xviexpdp 2", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_MAX, __DOUBLE_NMAX );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x7fe, 0x7fe);
+  rc += check_vuint128x ("check vec_xvxexpdp 3", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(0x1fffffffffffffUL, 0x1fffffffffffffUL);
+  rc += check_vuint128x ("check vec_xvxsigdp 3", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_MAX, __DOUBLE_NMAX );
+  rc += check_v2f64 ("check vec_xviexpdp 3", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_SUB, __DOUBLE_NSUB );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x000, 0x000);
+  rc += check_vuint128x ("check vec_xvxexpdp 4", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(1, 1);
+  rc += check_vuint128x ("check vec_xvxsigdp 4", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_SUB, __DOUBLE_NSUB );
+  rc += check_v2f64 ("check vec_xviexpdp 4", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_INF, __DOUBLE_NINF );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x7ff, 0x7ff);
+  rc += check_vuint128x ("check vec_xvxexpdp 5", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(0, 0);
+  rc += check_vuint128x ("check vec_xvxsigdp 5", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_INF, __DOUBLE_NINF );
+  rc += check_v2f64 ("check vec_xviexpdp 5", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_NAN, __DOUBLE_NNAN );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x7ff, 0x7ff);
+  rc += check_vuint128x ("check vec_xvxexpdp 6", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(1, 1);
+  rc += check_vuint128x ("check vec_xvxsigdp 6", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_NAN, __DOUBLE_NNAN );
+  rc += check_v2f64 ("check vec_xviexpdp 6", xp, xpt);
+
+  x = (vf64_t) CONST_VINT128_DW ( __DOUBLE_SNAN, __DOUBLE_NSNAN );
+#ifdef __DEBUG_PRINT__
+  print_v2f64x ("             x=", x);
+#endif
+  exp = vec_xvxexpdp (x);
+  expt =  (vui64_t) CONST_VINT128_DW(0x7ff, 0x7ff);
+  rc += check_vuint128x ("check vec_xvxexpdp 7", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigdp (x);
+  sigt =  (vui64_t) CONST_VINT128_DW(0x8000000000001UL, 0x8000000000001UL);
+  rc += check_vuint128x ("check vec_xvxsigdp 7", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpdp (sig, exp);
+  xpt = (vf64_t) CONST_VINT128_DW ( __DOUBLE_SNAN, __DOUBLE_NSNAN );
+  rc += check_v2f64 ("check vec_xviexpdp 7", xp, xpt);
+
+  return (rc);
+}
+
 double matrix_f64 [MN][MN] __attribute__ ((aligned (128)));
 
 void
@@ -3153,6 +3296,7 @@ test_vec_f64 (void)
   rc += test_double_iszero ();
   rc += test_double_isfinite ();
   rc += test_setb_dp ();
+  rc += test_extract_insert_f64 ();
 
   rc += test_lvgdfdx ();
   rc += test_stvgdfdx ();

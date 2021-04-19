@@ -34,6 +34,24 @@
 
 #include <pveclib/vec_f64_ppc.h>
 
+vf64_t
+test_vec_xviexpdp (vui64_t sig, vui64_t exp)
+{
+  return vec_xviexpdp (sig, exp);
+}
+
+vui64_t
+test_vec_xvxexpdp (vf64_t f64)
+{
+  return vec_xvxexpdp (f64);
+}
+
+vui64_t
+test_vec_xvxsigdp (vf64_t f64)
+{
+  return vec_xvxsigdp (f64);
+}
+
 vb64_t
 __test_setb_dp (vf64_t d)
 {

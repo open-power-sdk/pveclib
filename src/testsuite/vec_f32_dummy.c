@@ -33,6 +33,24 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
 
+vf32_t
+test_vec_xviexpsp (vui32_t sig, vui32_t exp)
+{
+  return vec_xviexpsp (sig, exp);
+}
+
+vui32_t
+test_vec_xvxexpsp (vf32_t f32)
+{
+  return vec_xvxexpsp (f32);
+}
+
+vui32_t
+test_vec_xvxsigsp (vf32_t f32)
+{
+  return vec_xvxsigsp (f32);
+}
+
 vb32_t
 __test_setb_sp (vf32_t f)
 {

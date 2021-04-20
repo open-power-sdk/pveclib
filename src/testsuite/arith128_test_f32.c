@@ -31,14 +31,23 @@
 #include <testsuite/arith128_test_f32.h>
 #include <testsuite/vec_perf_f32.h>
 
+#define __FLOAT_ZERO (0x00000000)
+#define __FLOAT_NZERO (0x80000000)
+#define __FLOAT_ONE (0x3f800000)
+#define __FLOAT_NONE (0xbf800000)
+#define __FLOAT_MAX (0x7f7fffff)
+#define __FLOAT_NMAX (0xff7fffff)
+#define __FLOAT_SUB (0x000000001)
+#define __FLOAT_NSUB (0x80000001U)
 #define __FLOAT_INF (0x7f800000)
-#define __FLOAT_NINF (0xff800000)
+#define __FLOAT_NINF (0xff800000U)
 #define __FLOAT_NAN (0x7f800001)
 #define __FLOAT_NNAN (0xff800001)
 #define __FLOAT_SNAN (0x7fC00001)
-#define __FLOAT_NSNAN (0xffC00001)
-#define __FLOAT_TRUE (0xffffffff)
+#define __FLOAT_NSNAN (0xffC00001U)
+#define __FLOAT_TRUE (0xffffffffU)
 #define __FLOAT_NTRUE (0x00000000)
+#define __FLOAT_HIDDEN (0x00800000)
 
 
 #ifdef __DEBUG_PRINT__
@@ -2064,6 +2073,81 @@ test_stvgfsx (void)
   return (rc);
 }
 
+int
+test_extract_insert_f32 ()
+{
+  vf32_t x, xp, xpt;
+  vui32_t sig, sigt, sigs;
+  vui32_t exp, expt;
+  vui32_t signmask;
+  int rc = 0;
+
+  printf ("\ntest_extract_insert_f32 ...\n");
+
+  signmask = CONST_VINT128_W ( __FLOAT_ZERO, __FLOAT_NZERO,
+			       __FLOAT_ZERO, __FLOAT_NZERO);
+  x = (vf32_t) CONST_VINT128_W ( __FLOAT_ZERO, __FLOAT_NZERO ,
+				 __FLOAT_ONE, __FLOAT_NONE );
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("             x=", x);
+#endif
+  exp = vec_xvxexpsp (x);
+  expt =  (vui32_t) CONST_VINT128_W(0, 0, 0x7f, 0x7f);
+  rc += check_vuint128x ("check vec_xvxexpsp 1", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigsp (x);
+  sigt =  (vui32_t) CONST_VINT128_W(0, 0, __FLOAT_HIDDEN, __FLOAT_HIDDEN);
+  rc += check_vuint128x ("check vec_xvxsigsp 1", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpsp (sig, exp);
+  xpt = (vf32_t) CONST_VINT128_W ( __FLOAT_ZERO, __FLOAT_NZERO ,
+				   __FLOAT_ONE, __FLOAT_NONE );
+  rc += check_v4f32 ("check vec_xviexpsp 1", xp, xpt);
+
+  x = (vf32_t) CONST_VINT128_W ( __FLOAT_MAX, __FLOAT_NMAX ,
+				 __FLOAT_SUB, __FLOAT_NSUB );
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("             x=", x);
+#endif
+  exp = vec_xvxexpsp (x);
+  expt =  (vui32_t) CONST_VINT128_W(0xfe, 0xfe, 0, 0);
+  rc += check_vuint128x ("check vec_xvxexpsp 2", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigsp (x);
+  sigt =  (vui32_t) CONST_VINT128_W(0x00ffffff, 0x00ffffff,
+				    0x00000001, 0x00000001);
+  rc += check_vuint128x ("check vec_xvxsigsp 2", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpsp (sig, exp);
+  xpt = (vf32_t) CONST_VINT128_W ( __FLOAT_MAX, __FLOAT_NMAX,
+				   __FLOAT_SUB, __FLOAT_NSUB );
+  rc += check_v4f32 ("check vec_xviexpsp 2", xp, xpt);
+
+  x = (vf32_t) CONST_VINT128_W ( __FLOAT_INF, __FLOAT_NINF ,
+				 __FLOAT_NAN, __FLOAT_NSNAN );
+#ifdef __DEBUG_PRINT__
+  print_v4f32x ("             x=", x);
+#endif
+  exp = vec_xvxexpsp (x);
+  expt =  (vui32_t) CONST_VINT128_W(0xff, 0xff, 0xff, 0xff);
+  rc += check_vuint128x ("check vec_xvxexpsp 3", (vui128_t) exp, (vui128_t) expt);
+
+  sig = vec_xvxsigsp (x);
+  sigt =  (vui32_t) CONST_VINT128_W(0x00000000, 0x00000000,
+				    0x00000001, 0x00400001);
+  rc += check_vuint128x ("check vec_xvxsigsp 3", (vui128_t) sig, (vui128_t) sigt);
+
+  sig = vec_or (sig, signmask),
+  xp = vec_xviexpsp (sig, exp);
+  xpt = (vf32_t) CONST_VINT128_W ( __FLOAT_INF, __FLOAT_NINF,
+				   __FLOAT_NAN, __FLOAT_NSNAN );
+  rc += check_v4f32 ("check vec_xviexpsp 3", xp, xpt);
+
+  return (rc);
+}
+
 float matrix_f32 [MN][MN] __attribute__ ((aligned (128)));
 
 void
@@ -2504,6 +2588,7 @@ test_vec_f32 (void)
   rc += test_float_iszero ();
   rc += test_float_isfinite ();
   rc += test_setb_sp ();
+  rc += test_extract_insert_f32 ();
   rc += test_lvgfsx ();
   rc += test_stvgfsx ();
   rc += test_f32_indentity_array ();

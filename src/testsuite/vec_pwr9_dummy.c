@@ -36,8 +36,45 @@
 #include <pveclib/vec_int128_ppc.h>
 #include <pveclib/vec_int512_ppc.h>
 #include <pveclib/vec_f128_ppc.h>
+#include <pveclib/vec_f64_ppc.h>
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
+
+vf32_t
+test_vec_xviexpsp_PWR9 (vui32_t sig, vui32_t exp)
+{
+  return vec_xviexpsp (sig, exp);
+}
+
+vui32_t
+test_vec_xvxexpsp_PWR9 (vf32_t f32)
+{
+  return vec_xvxexpsp (f32);
+}
+
+vui32_t
+test_vec_xvxsigsp_PWR9 (vf32_t f32)
+{
+  return vec_xvxsigsp (f32);
+}
+
+vf64_t
+test_vec_xviexpdp_PWR9 (vui64_t sig, vui64_t exp)
+{
+  return vec_xviexpdp (sig, exp);
+}
+
+vui64_t
+test_vec_xvxexpdp_PWR9 (vf64_t f64)
+{
+  return vec_xvxexpdp (f64);
+}
+
+vui64_t
+test_vec_xvxsigdp_PWR9 (vf64_t f64)
+{
+  return vec_xvxsigdp (f64);
+}
 
 vui32_t
 test_and_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)

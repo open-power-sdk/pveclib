@@ -40,24 +40,177 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
 
+vui32_t
+test_and_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+{
+  return vec_and_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_andc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+{
+  return vec_andc_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_xfer_bin128_2_vui32t (__binary128 f128)
+{
+  return vec_xfer_bin128_2_vui32t (f128);
+}
+
+vui128_t
+test_xfer_bin128_2_vui128t (__binary128 f128)
+{
+  return vec_xfer_bin128_2_vui128t (f128);
+}
+
+__binary128
+test_xfer_vui32t_2_bin128 (vui32_t f128)
+{
+  return vec_xfer_vui32t_2_bin128 (f128);
+}
+
 #ifndef PVECLIB_DISABLE_F128MATH
 #ifdef __FLOAT128__
+// TBD will sub-in pveclib softfloat for P8 when available
+
 __float128
 test_scalar_add128 (__float128 vra, __float128 vrb)
 {
-  return (vra + vrb);
+  if (__builtin_cpu_supports("ieee128"))
+    {
+      __float128 result;
+      __asm__(
+	      "xsaddqp %0,%1,%2"
+	      : "=v" (result)
+	      : "v" (vra), "v" (vrb)
+	      : );
+      return result;
+    }
+  else
+    // Generate call to __addkf3
+    return (vra + vrb);
+}
+
+__float128
+test_scalar_div128 (__float128 vra, __float128 vrb)
+{
+  if (__builtin_cpu_supports("ieee128"))
+    {
+      __float128 result;
+      __asm__(
+	      "xsdivqp %0,%1,%2"
+	      : "=v" (result)
+	      : "v" (vra), "v" (vrb)
+	      : );
+      return result;
+    }
+  else
+    // Generate call to __divkf3
+    return (vra / vrb);
 }
 
 __float128
 test_scalar_mul128 (__float128 vra, __float128 vrb)
 {
-  return (vra * vrb);
+  if (__builtin_cpu_supports("ieee128"))
+    {
+      __float128 result;
+      __asm__(
+	      "xsmulqp %0,%1,%2"
+	      : "=v" (result)
+	      : "v" (vra), "v" (vrb)
+	      : );
+      return result;
+    }
+  else
+    // Generate call to __mulkf3
+    return (vra * vrb);
+}
+
+__float128
+test_scalar_sub128 (__float128 vra, __float128 vrb)
+{
+  if (__builtin_cpu_supports("ieee128"))
+    {
+      __float128 result;
+      __asm__(
+	      "xssubqp %0,%1,%2"
+	      : "=v" (result)
+	      : "v" (vra), "v" (vrb)
+	      : );
+      return result;
+    }
+  else
+    // Generate call to __subkf3
+    return (vra - vrb);
+}
+
+__float128
+test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
+{
+  const __float128 f128_one = 1.0Q;
+  const __float128 inv_fact2 = (1.0Q / 2.0Q);
+  const __float128 inv_fact3 = (1.0Q / 6.0Q);
+  const __float128 inv_fact4 = (1.0Q / 24.0Q);
+  const __float128 inv_fact5 = (1.0Q / 120.0Q);
+  const __float128 inv_fact6 = (1.0Q / 720.0Q);
+  const __float128 inv_fact7 = (1.0Q / 5040.0Q);
+  const __float128 inv_fact8 = (1.0Q / 40320.0Q);
+
+  __float128 term, xma, xma2, xmaf2;
+  __float128 xma3, xmaf3, xma4, xmaf4, xma5, xmaf5;
+  __float128 xma6, xmaf6, xma7, xmaf7, xma8, xmaf8;
+
+  // 1st 8 terms of e**x = e**a * taylor( x-a )
+  xma = (x - a);
+  term = (f128_one + xma);
+  xma2 = (xma * xma);
+  xmaf2 = (xma2 * inv_fact2);
+  term = (term + xmaf2);
+  xma3 = (xma2 * xma);
+  xmaf3 = (xma3 * inv_fact3);
+  term =  (term + xmaf3);
+  xma4 = (xma3 * xma);
+  xmaf4 = (xma4 * inv_fact4);
+  term = (term + xmaf4);
+  xma5 = (xma4 * xma);
+  xmaf5 = (xma5 * inv_fact5);
+  term = (term + xmaf5);
+  xma6 = (xma5 * xma);
+  xmaf6 = (xma6 * inv_fact6);
+  term = (term + xmaf6);
+  xma7 = (xma6 * xma);
+  xmaf7 = (xma7 * inv_fact7);
+  term = (term + xmaf7);
+  xma8 = (xma7 * xma);
+  xmaf8 = (xma8 * inv_fact8);
+  term = (term + xmaf8);
+  return (expa * term);
 }
 #endif
 #endif
 
+__binary128
+test_vec_xsiexpqp (vui128_t sig, vui64_t exp)
+{
+  return vec_xsiexpqp (sig, exp);
+}
+
+vui64_t
+test_vec_xsxexpqp (__binary128 f128)
+{
+  return vec_xsxexpqp (f128);
+}
+
+vui128_t
+test_vec_xsxsigqp (__binary128 f128)
+{
+  return vec_xsxsigqp (f128);
+}
+
 vb128_t
-test_setb_qp (__binary128 f128)
+__test_setb_qp (__binary128 f128)
 {
   return vec_setb_qp (f128);
 }

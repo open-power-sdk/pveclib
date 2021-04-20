@@ -1390,13 +1390,13 @@ vec_signbitf128 (__binary128 f128)
  *  Merge the sign (bit 0) and significand (bits 16:127) from sig
  *  with the 15-bit exponent from exp (bits 49:63). The exponent is
  *  moved to bits 1:15 of the final result.
- *  The result is return as a Quad_precision floating point value.
+ *  The result is returned as a Quad_precision floating point value.
  *
  *  \note This operation is equivalent to the POWER9 xsiexpqp
  *  instruction and the built-in scalar_insert_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1404,8 +1404,8 @@ vec_signbitf128 (__binary128 f128)
  *  |power8   |  2-11 | 2/cycle  |
  *  |power9   |   2   | 4/cycle  |
  *
- *  @param sig Vector __int128 containing the Sign Bit and 112-bit significand.
- *  @param exp Vector long long containing the 15-bit exponent.
+ *  @param sig vector __int128 containing the Sign Bit and 112-bit significand.
+ *  @param exp vector unsigned long long element 0 containing the 15-bit exponent.
  *  @return a __binary128 value where the exponent bits (1:15) of sig
  *  are replaced from bits 49:63 of exp.
  *
@@ -1436,13 +1436,13 @@ vec_xsiexpqp (vui128_t sig, vui64_t exp)
  *
  *  Extract the quad-precision exponent (bits 1:15) and right justify
  *  it to (bits 49:63 of) doubleword 0 of the result vector.
- *  The result is return as vector long long integer value.
+ *  The result is returned as vector long long integer value.
  *
  *  \note This operation is equivalent to the POWER9 xsxexpqp
  *  instruction and the built-in scalar_extract_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1451,7 +1451,8 @@ vec_xsiexpqp (vui128_t sig, vui64_t exp)
  *  |power9   |   2   | 4/cycle  |
  *
  *  @param f128 __binary128 value.
- *  @return _Vector long long containing the 15-bit exponent in doubleword 0
+ *  @return vector unsigned long long element 0 containing the 15-bit
+ *  exponent
  *
  */
 static inline vui64_t
@@ -1483,14 +1484,14 @@ vec_xsxexpqp (__binary128 f128)
  *  Extract the quad-precision significand (bits 16:127) and
  *  restore the implied (hidden) bit (bit 15) if the quad-precition
  *  value is normal (not zero, subnormal, Infinity or NaN).
- *  The result is return as vector __int128 integer value with
+ *  The result is returned as vector __int128 integer value with
  *  up to 113 bits of significance.
  *
  *  \note This operation is equivalent to the POWER9 xsxsigqp
  *  instruction and the built-in scalar_extract_sig. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1499,7 +1500,7 @@ vec_xsxexpqp (__binary128 f128)
  *  |power9   |   3   | 2/cycle  |
  *
  *  @param f128 __binary128 value.
- *  @return Vector __int128 containing the significand.
+ *  @return vector __int128 containing the significand.
  *
  */
 static inline vui128_t

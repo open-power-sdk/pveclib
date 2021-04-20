@@ -2026,9 +2026,9 @@ vec_vstxsspx (vf64_t xs, const signed long long ra, float *rb)
  *
  *  \note This operation is equivalent to the POWER9 xviexpsp
  *  instruction and the built-in vec_insert_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2073,9 +2073,9 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
  *
  *  \note This operation is equivalent to the POWER9 xvxexpsp
  *  instruction and the built-in vector_extract_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2084,7 +2084,7 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
  *  |power9   |   2   | 4/cycle  |
  *
  *  @param vrb vector double value.
- *  @return _Vector unsigned int containing the 8-bit exponent right justified
+ *  @return vector unsigned int containing the 8-bit exponent right justified
  *  in each word
  *
  */
@@ -2123,9 +2123,9 @@ vec_xvxexpsp (vf32_t vrb)
  *
  *  \note This operation is equivalent to the POWER9 xvxsigsp
  *  instruction and the built-in vector_extract_sig. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2134,7 +2134,7 @@ vec_xvxexpsp (vf32_t vrb)
  *  |power9   |   3   | 2/cycle  |
  *
  *  @param vrb vector double value.
- *  @return Vector unsigned long long containing the significand.
+ *  @return vector unsigned int containing the significand.
  *
  */
 static inline vui32_t

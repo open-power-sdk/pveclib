@@ -1623,9 +1623,9 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
  *
  *  \note This operation is equivalent to the POWER9 xviexpdp
  *  instruction and the built-in vec_insert_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1633,8 +1633,8 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
  *  |power8   |  6-15 | 2/cycle  |
  *  |power9   |   2   | 4/cycle  |
  *
- *  @param sig Vector long long containing the Sign Bit and 52-bit significand.
- *  @param exp Vector long long containing the 11-bit exponent.
+ *  @param sig Vector unsigned long long containing the Sign Bit and 52-bit significand.
+ *  @param exp Vector unsigned long long containing the 11-bit exponent.
  *  @return a vf64_t value where the exponent bits (1:11) of sig
  *  are replaced from bits 53:63 of exp.
  *
@@ -1669,9 +1669,9 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
  *
  *  \note This operation is equivalent to the POWER9 xvxexpdp
  *  instruction and the built-in vector_extract_exp. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1680,7 +1680,7 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
  *  |power9   |   2   | 4/cycle  |
  *
  *  @param vrb vector double value.
- *  @return _Vector long long containing 11-bit exponent right justified
+ *  @return vector unsigned long long containing 11-bit exponent right justified
  *  in each doubleword
  *
  */
@@ -1718,9 +1718,9 @@ vec_xvxexpdp (vf64_t vrb)
  *
  *  \note This operation is equivalent to the POWER9 xvxsigdp
  *  instruction and the built-in vector_extract_sig. These require a
- *  POWER9 enables compiler targeting -mcpu=power9 and are not
- *  available for older compilers and POWER8 and earlier.
- *  This operation provides this operation for all VSX enabled
+ *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  available for older compilers nor POWER8 and earlier.
+ *  This function provides this operation for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -1729,7 +1729,7 @@ vec_xvxexpdp (vf64_t vrb)
  *  |power9   |   3   | 2/cycle  |
  *
  *  @param vrb vector double value.
- *  @return Vector unsigned long long containing the significand.
+ *  @return vector unsigned long long containing the significand.
  *
  */
 static inline vui64_t

@@ -5214,11 +5214,14 @@ test_cmpgt_f128 ()
 #endif
 #endif
 
+  // Protect Clang from Q constants
+#ifndef PVECLIB_DISABLE_F128MATH
   x = test_vec_max8_f128 (f128_e, inv_fact2, inv_fact3, inv_fact4, inv_fact5,
 			  inv_fact6, inv_fact7, inv_fact8);
   exp = vec_cmpequqp (x, inv_fact8);
   expt = (vb128_t) vf128_true;
   rc += check_f128bool ("check vec_max8_f128", x, exp, expt);
+#endif
 
   return (rc);
 }

@@ -40,6 +40,80 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+__binary128
+test_vec_max8_f128_PWR9 (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres;
+  vb128_t bool;
+
+  bool = vec_cmpgtuqp (vf2, vf1);
+  maxres = vec_self128 (vf1, vf2, bool);
+  bool = vec_cmpgtuqp (vf3, maxres);
+  maxres = vec_self128 (vf3, maxres, bool);
+  bool = vec_cmpgtuqp (vf4, maxres);
+  maxres = vec_self128 (vf4, maxres, bool);
+  bool = vec_cmpgtuqp (vf5, maxres);
+  maxres = vec_self128 (vf5, maxres, bool);
+  bool = vec_cmpgtuqp (vf6, maxres);
+  maxres = vec_self128 (vf6, maxres, bool);
+  bool = vec_cmpgtuqp (vf7, maxres);
+  maxres = vec_self128 (vf7, maxres, bool);
+  bool = vec_cmpgtuqp (vf8, maxres);
+  maxres = vec_self128 (vf8, maxres, bool);
+
+  return maxres;
+}
+
+vb128_t
+test_vec_cmpgttoqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgttoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuzqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpeqtoqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpeqtoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpequzqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpequqp_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequqp (vfa, vfb);
+}
+
+__float128
+test_absdiff_PWR9 (__float128 vra, __float128 vrb)
+{
+  __float128 result;
+  if (vra > vrb)
+    result = vra - vrb;
+  else
+    result = vrb - vra;
+  return result;
+}
+
 vf32_t
 test_vec_xviexpsp_PWR9 (vui32_t sig, vui32_t exp)
 {
@@ -74,6 +148,12 @@ vui64_t
 test_vec_xvxsigdp_PWR9 (vf64_t f64)
 {
   return vec_xvxsigdp (f64);
+}
+
+__binary128
+test_sel_bin128_2_bin128_PWR9 (__binary128 vfa, __binary128 vfb, vb128_t mask)
+{
+  return vec_sel_bin128_2_bin128 (vfa, vfb, mask);
 }
 
 vui32_t
@@ -169,6 +249,33 @@ __test_cmsumudm_PWR9 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 
 #ifndef PVECLIB_DISABLE_F128MATH
 #if defined (_ARCH_PWR9) &&(__GNUC__ > 7)
+
+__binary128
+test_gcc_max8_f128_PWR9 (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres = vf1;
+
+  if (vf2 > vf1)
+    maxres = vf2;
+  if (vf3 > maxres)
+    maxres = vf3;
+  if (vf4 > maxres)
+    maxres = vf4;
+  if (vf5 > maxres)
+    maxres = vf5;
+  if (vf6 > maxres)
+    maxres = vf6;
+  if (vf7 > maxres)
+    maxres = vf7;
+  if (vf8 > maxres)
+    maxres = vf8;
+
+  return maxres;
+}
+
 __float128
 test_scalar_add128_PWR9 (__float128 vra, __float128 vrb)
 {

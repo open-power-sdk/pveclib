@@ -39,6 +39,42 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 vb128_t
+test_vec_cmpgttoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgttoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpeqtoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpeqtoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpequzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpequqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequqp (vfa, vfb);
+}
+
+vb128_t
 test_setb_qp_PWR10 (__binary128 f128)
 {
   return vec_setb_qp (f128);

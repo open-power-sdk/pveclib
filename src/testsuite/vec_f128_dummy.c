@@ -40,6 +40,12 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
 
+__binary128
+test_sel_bin128_2_bin128 (__binary128 vfa, __binary128 vfb, vb128_t mask)
+{
+  return vec_sel_bin128_2_bin128 (vfa, vfb, mask);
+}
+
 vui32_t
 test_and_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 {
@@ -70,8 +76,425 @@ test_xfer_vui32t_2_bin128 (vui32_t f128)
   return vec_xfer_vui32t_2_bin128 (f128);
 }
 
+vb128_t
+test_cmpltf128_v1 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  vb128_t age0, altb, alt0, agtb;
+  vui32_t andp, andn;
+  vb128_t result;
+  age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
+  altb = vec_cmpltsq (vfa128, vfb128);
+  andp = vec_and ((vui32_t) age0, (vui32_t) altb);
+  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
+  agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  andn = vec_and ((vui32_t) alt0, (vui32_t) agtb);
+  result = (vb128_t) vec_or (andp, andn);
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v1b (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  vb128_t age0, altb, alt0, agtb;
+  vui32_t andp, andn;
+  vb128_t result;
+  age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
+  altb = vec_cmpltsq (vfa128, vfb128);
+  andp = vec_and ((vui32_t) altb, (vui32_t) age0);
+//  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
+  alt0 = (vb128_t) vec_nor ((vui32_t) age0, (vui32_t) age0);
+  agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  andn = vec_andc ((vui32_t) agtb, (vui32_t) age0);
+  result = (vb128_t) vec_or (andp, andn);
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v1c (vi128_t vfa128, vi128_t vfb128)
+{
+  vb128_t altb, agtb;
+  vb128_t signbool;
+  vb128_t result;
+  // a >= 0
+  // signbool = vec_setb_qp;
+
+  const vui8_t shift = vec_splat_u8 (7);
+  vui8_t splat = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  signbool = (vb128_t) vec_sra (splat, shift);
+
+  altb = vec_cmpltsq (vfa128, vfb128);
+  agtb = vec_cmpgtuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  return (vb128_t) vec_sel ((vui32_t)agtb, (vui32_t)altb, (vui32_t)signbool);
+}
+
+vb128_t
+test_cmpltf128_v2 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t age0, altb, alt0, agtb, nesm;
+  vui32_t andp, andn, or_ab;
+  vb128_t result;
+  age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
+  altb = vec_cmpltsq (vfa128, vfb128);
+  andp = vec_and ((vui32_t) age0, (vui32_t) altb);
+  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
+  agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  andn = vec_and ((vui32_t) alt0, (vui32_t) agtb);
+
+  or_ab = vec_or ((vui32_t) vfa128, (vui32_t) vfb128 );
+  nesm = vec_cmpneuq ((vui128_t) or_ab, (vui128_t) signmask);
+  andn = vec_and ((vui32_t) andn, (vui32_t) nesm);
+
+  result = (vb128_t) vec_or (andp, andn);
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v2b (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t age0, altb, alt0, agtb, nesm;
+  vui32_t andp, andn, or_ab;
+  vb128_t result;
+  age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
+  altb = vec_cmpltsq (vfa128, vfb128);
+  andp = vec_and ((vui32_t) age0, (vui32_t) altb);
+  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
+  agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  andn = vec_and ((vui32_t) alt0, (vui32_t) agtb);
+
+  or_ab = vec_or ((vui32_t) vfa128, (vui32_t) vfb128 );
+  nesm = vec_cmpequq ((vui128_t) or_ab, (vui128_t) signmask);
+  andn = vec_andc ((vui32_t) andn, (vui32_t) nesm);
+
+  result = (vb128_t) vec_or (andp, andn);
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v2c (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t altb, agtb, nesm;
+  vui32_t or_ab;
+  vb128_t signbool;
+  vb128_t result;
+
+  // a >= 0
+  // signbool = vec_setb_qp;
+  const vui8_t shift = vec_splat_u8 (7);
+  vui8_t splat = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  signbool = (vb128_t) vec_sra (splat, shift);
+
+  altb = vec_cmpltsq (vfa128, vfb128);
+  agtb = vec_cmpgtuq ((vui128_t) vfa128, (vui128_t) vfb128);
+
+  or_ab = vec_or ((vui32_t) vfa128, (vui32_t) vfb128 );
+  // For ne compare eq then and compliment
+  nesm = vec_cmpequq ((vui128_t) or_ab, (vui128_t) signmask);
+  agtb = (vb128_t) vec_andc ((vui32_t) agtb, (vui32_t) nesm);
+
+  return (vb128_t) vec_sel ((vui32_t)agtb, (vui32_t)altb, (vui32_t)signbool);
+}
+
+vb128_t
+test_cmpltf128_v3 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  vb128_t result;
+  vb128_t age0, bge0;
+  vi128_t vra, vrap, vran;
+  vi128_t vrb, vrbp, vrbn;
+
+  age0 = vec_cmpltsq (vfa128, (vi128_t) zero);
+  vrap = (vi128_t) vec_adduqm ((vui128_t) vfa128, (vui128_t) signmask);
+  vran = (vi128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfa128);
+  vra  = (vi128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_cmpltsq (vfb128, (vi128_t) zero);
+  vrbp = (vi128_t) vec_adduqm ((vui128_t) vfb128, (vui128_t) signmask);
+  vrbn = (vi128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfb128);
+  vrb  = (vi128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpltuq ((vui128_t) vra, (vui128_t) vrb);
+
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v3b (vui128_t vfa128, vui128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  vb128_t result;
+  vb128_t age0, bge0;
+  vui128_t vra, vrap, vran;
+  vui128_t vrb, vrbp, vrbn;
+
+  age0 = vec_cmpltuq (vfa128, (vui128_t) signmask);
+  vrap = (vui128_t) vec_adduqm ((vui128_t) vfa128, (vui128_t) signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfa128);
+  vra  = (vui128_t) vec_sel ((vui32_t)vran, (vui32_t)vrap, (vui32_t)age0);
+
+  bge0 = vec_cmpltuq (vfb128, (vui128_t) signmask);
+  vrbp = (vui128_t) vec_adduqm ((vui128_t) vfb128, (vui128_t) signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfb128);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbn, (vui32_t)vrbp, (vui32_t)bge0);
+
+  result = vec_cmpltuq ((vui128_t) vra, (vui128_t) vrb);
+
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v3c (vui128_t vfa128, vui128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  vb128_t result;
+  vb128_t age0, bge0;
+  vui128_t vra, vrap, vran;
+  vui128_t vrb, vrbp, vrbn;
+
+  age0 = vec_cmpleuq (vfa128, (vui128_t) signmask);
+  vrap = (vui128_t) vec_adduqm ((vui128_t) vfa128, (vui128_t) signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfa128);
+  vra  = (vui128_t) vec_sel ((vui32_t)vran, (vui32_t)vrap, (vui32_t)age0);
+
+  bge0 = vec_cmpleuq (vfb128, (vui128_t) signmask);
+  vrbp = (vui128_t) vec_adduqm ((vui128_t) vfb128, (vui128_t) signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfb128);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbn, (vui32_t)vrbp, (vui32_t)bge0);
+
+  result = vec_cmpltuq ((vui128_t) vra, (vui128_t) vrb);
+
+  return result;
+}
+
+vb128_t
+test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui8_t shift = vec_splat_u8 (7);
+
+  vb128_t result;
+  vb128_t age0, bge0;
+  vui128_t vra, vrap, vran;
+  vui128_t vrb, vrbp, vrbn;
+  vui8_t splta, spltb;
+
+  // signbool = vec_setb_qp;
+  splta = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  age0 = (vb128_t) vec_sra (splta, shift);
+
+  vrap = (vui128_t) vec_xor ((vui32_t) vfa128, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfa128);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  spltb = vec_splat ((vui8_t) vfb128, VEC_BYTE_H);
+  bge0 = (vb128_t) vec_sra (spltb, shift);
+
+  vrbp = (vui128_t) vec_xor ((vui32_t) vfb128, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfb128);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpltuq (vra, vrb);
+
+  return result;
+}
+
+vb128_t
+test_cmpeqf128_v1 (vui128_t vfa128, vui128_t vfb128)
+{
+  return vec_cmpequq (vfa128, vfb128);
+}
+
+vb128_t
+test_cmpeqf128_v2 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  vi128_t _a = (vi128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfa128);
+  vi128_t _b = (vi128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vfb128);
+  vb128_t eq_a, eq_b, and_eq, cmps;
+  vb128_t result;
+
+  eq_a = vec_cmpeqsq (vfa128, _a);
+  eq_b = vec_cmpeqsq (vfb128, _b);
+  and_eq = (vb128_t) vec_and ((vui32_t) eq_a, (vui32_t) eq_b );
+  cmps = vec_cmpeqsq (vfa128, vfb128);
+  result = (vb128_t) vec_or ((vui32_t) cmps, (vui32_t) and_eq);
+  return result;
+}
+
+vb128_t
+test_cmpeqf128_v3 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t cmps, or_ab, eq_s;
+  vb128_t result;
+
+  or_ab = (vb128_t) vec_or ((vui32_t) vfa128, (vui32_t) vfb128 );
+  eq_s = vec_cmpequq ((vui128_t) or_ab, (vui128_t) signmask);
+  cmps = vec_cmpeqsq (vfa128, vfb128);
+  result = (vb128_t) vec_or ((vui32_t) cmps, (vui32_t) eq_s);
+  return result;
+}
+
+vb128_t
+test_cmpeqf128_v4 (vi128_t vfa128, vi128_t vfb128)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  vb128_t cmps, or_ab, andc, eq_s;
+  vb128_t result;
+
+  or_ab = (vb128_t) vec_or ((vui32_t) vfa128, (vui32_t) vfb128 );
+  andc  = (vb128_t) vec_andc ((vui32_t) or_ab, (vui32_t) signmask);
+  eq_s = vec_cmpequq ((vui128_t) andc, (vui128_t) zero);
+  cmps = vec_cmpeqsq (vfa128, vfb128);
+  result = (vb128_t) vec_or ((vui32_t) cmps, (vui32_t) eq_s);
+  return result;
+}
+
+__binary128
+test_vec_max8_f128uz (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres;
+  vb128_t bool;
+
+  bool = vec_cmpgtuzqp (vf2, vf1);
+  maxres = vec_self128 (vf1, vf2, bool);
+  bool = vec_cmpgtuzqp (vf3, maxres);
+  maxres = vec_self128 (vf3, maxres, bool);
+  bool = vec_cmpgtuzqp (vf4, maxres);
+  maxres = vec_self128 (vf4, maxres, bool);
+  bool = vec_cmpgtuzqp (vf5, maxres);
+  maxres = vec_self128 (vf5, maxres, bool);
+  bool = vec_cmpgtuzqp (vf6, maxres);
+  maxres = vec_self128 (vf6, maxres, bool);
+  bool = vec_cmpgtuzqp (vf7, maxres);
+  maxres = vec_self128 (vf7, maxres, bool);
+  bool = vec_cmpgtuzqp (vf8, maxres);
+  maxres = vec_self128 (vf8, maxres, bool);
+
+  return maxres;
+}
+
+__binary128
+test_vec_max8_f128 (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres;
+  vb128_t bool;
+
+  bool = vec_cmpgtuqp (vf2, vf1);
+  maxres = vec_self128 (vf1, vf2, bool);
+  bool = vec_cmpgtuqp (vf3, maxres);
+  maxres = vec_self128 (vf3, maxres, bool);
+  bool = vec_cmpgtuqp (vf4, maxres);
+  maxres = vec_self128 (vf4, maxres, bool);
+  bool = vec_cmpgtuqp (vf5, maxres);
+  maxres = vec_self128 (vf5, maxres, bool);
+  bool = vec_cmpgtuqp (vf6, maxres);
+  maxres = vec_self128 (vf6, maxres, bool);
+  bool = vec_cmpgtuqp (vf7, maxres);
+  maxres = vec_self128 (vf7, maxres, bool);
+  bool = vec_cmpgtuqp (vf8, maxres);
+  maxres = vec_self128 (vf8, maxres, bool);
+
+  return maxres;
+}
+
 #ifndef PVECLIB_DISABLE_F128MATH
 #ifdef __FLOAT128__
+
+__binary128
+test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres = vf1;
+
+  if (vf2 > vf1)
+    maxres = vf2;
+  if (vf3 > maxres)
+    maxres = vf3;
+  if (vf4 > maxres)
+    maxres = vf4;
+  if (vf5 > maxres)
+    maxres = vf5;
+  if (vf6 > maxres)
+    maxres = vf6;
+  if (vf7 > maxres)
+    maxres = vf7;
+  if (vf8 > maxres)
+    maxres = vf8;
+
+  return maxres;
+}
+
+vb128_t
+test_vec_cmpequqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpequzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpeqtoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpeqtoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgtuqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgtuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgttoqp (vfa, vfb);
+}
+
+__float128
+test_absdiff (__float128 vra, __float128 vrb)
+{
+  __float128 result;
+  if (vra > vrb)
+    result = vra - vrb;
+  else
+    result = vrb - vra;
+  return result;
+}
+
 // TBD will sub-in pveclib softfloat for P8 when available
 
 __float128

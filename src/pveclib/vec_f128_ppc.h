@@ -114,9 +114,9 @@
  *
  * The discussion above raises a interesting question. If we can
  * provide useful implementations of Quad-Precision; classification,
- * extract/insert, compare exponent, convert to/from integer, and
- * compare operations, why not continue to a full soft-float
- * implementation?
+ * extract/insert, and compare exponent operations, why not continue
+ * with Quad-Precision compare, convert to/from integer, and
+ * arithmetic operations?
  *
  * This raises the stakes in complexity and size of implementation.
  * Providing a vector soft-float implementation equivalent to the
@@ -164,11 +164,16 @@
  *   - Other rounding modes
  *   - Exceptions when someone asks
  *
- * This is a big list. I can not commit to this effort with my current
+ * The intent is that such PVECLIB operations can be mixed in with or
+ * substituted for C Language _FLoat128 expressions or functions.
+ * The in-lined operations should have performance advantages over
+ * equivalent library functions on both POWER8/9.
+ *
+ * This is a big list. It is TBD how far I will get given  my current
  * limited resources.
  *
- * /note We are focusing on POWER8 here because the implementation gets
- * a lot harder for POWER7 and early. POWER7 is missing: Quadword
+ * \note We are focusing on POWER8 here because the implementation gets
+ * a lot harder for POWER7 and earlier. POWER7 is missing: Quadword
  * integer add/sub with carry extend. Wide (word) integer multiply.
  * Direct transfer between VRs and GPRs. Doubleword integer arithmetic,
  * compares. and count-leading zeros.
@@ -371,10 +376,10 @@ vec_xsxexpqp (__binary128 f128)
  *
  * \subsection f128_softfloat_0_0_1 Quad-Precision compares for POWER8
  *
- * IEEE floating-point encoding is a bit more complicated than binary
- * integers for compare operations. The two main complications are;
+ * IEEE floating-point compare is a bit more complicated than binary
+ * integer compare operations. The two main complications are;
  * Not-a-Number (NaN) which IEEE insists are <I>unordered</I>,
- * and signed 0.0 which IEEE insists are actually equal.
+ * and signed 0.0 where IEEE insists that -0.0 is equal to +0.0.
  * If you ignore the NaN and signed 0.0 cases you can treat
  * floating-point as signed magnitude binary integers, and
  * use integer compares and boolean logic.
@@ -563,9 +568,10 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * constants and so does not need to establish the TOC pointer nor
  * any address calculations to access constants via load instructions.
  *
- * The next IEEE issue is detecting NaN and returning <I>unordered</I>
- * results. Adding the following code to a compare operation insures
- * that compares where either comparand is NaN returns unordered result.
+ * The next IEEE issue is detecting NaNs and returning <I>unordered</I>
+ * status. Adding the following code to a compare operation insures
+ * that if either comparand is NaN; false (unordered) is returned for
+ * compares (eq, lt, gt).
  *
  * \code
   if (vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb))
@@ -576,12 +582,13 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * only be used if is required for correct results and
  * has not been tested by prior logic in this code path.
  *
- *
  * \note At this point we are not trying to comply with PowerISA by
  * setting any FPSCR bits associated with Quad-Precision compare.
- *
+ * If such is required, VXSNAN and/or VXVC can be set
+ * using the Move To FPSCR Bit 1 (mtfsb1) instruction.
  *
  * \subsection f128_softfloat_0_0_2 Quad-Precision converts for POWER8
+ * TBD.
  *
  * \section f128_examples_0_0 Examples
  * For example: using the the classification functions for implementing
@@ -1599,8 +1606,8 @@ vec_const_nansf128 ()
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -1654,8 +1661,8 @@ vec_cmpeqtoqp (__binary128 vfa, __binary128 vfb)
  *  |power8   | 10    | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -1698,7 +1705,7 @@ vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
  *  A NaN in either or both operands compare unequal.
  *
  *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
- *  Unordered Quad-Precision or a VSX Scalar Compare Equal
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Equal
  *  Quad-Precision instruction.
  *  Otherwise use vector __int128 arithmetic and logical operations
  *  to implement the equivalent Quad-precision floating-point
@@ -1717,8 +1724,8 @@ vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
  *  |power8   | 18-30 | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -1764,8 +1771,8 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
  *  Infinities and NaNs have the highest/lowest magnitudes.
  *
  *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
- *  Unordered Quad-Precision or VSX Scalar Compare Greater Than
- *  Quad-Precision instruction.
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
  *  Otherwise comparands are converted to unsigned integer magnitudes
  *  before using vector __int128 comparison to implement the equivalent
  *  Quad-precision floating-point operation. This leverages operations
@@ -1784,8 +1791,8 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
  *  |power8   | 26-35 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -1833,8 +1840,8 @@ vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
  *  Infinities and NaNs have the highest/lowest magnitudes.
  *
  *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
- *  Unordered Quad-Precision or VSX Scalar Compare Greater Than
- *  Quad-Precision instruction.
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
  *  Otherwise comparands are converted to unsigned integer magnitudes
  *  before using vector __int128 comparison to implement the equivalent
  *  Quad-precision floating-point operation. This leverages operations
@@ -1853,8 +1860,8 @@ vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -1908,7 +1915,7 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
  *  A NaN in either or both operands compare unordered.
  *
  *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
- *  Unordered Quad-Precision or VSX Scalar Compare Greater Than
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater Than
  *  Quad-Precision instruction.
  *  Otherwise comparands are converted to unsigned integer magnitudes
  *  before using vector __int128 comparison to implement the equivalent
@@ -1928,8 +1935,8 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
  *
- *  @param vfa 128-bit vector treated as an __binary128.
- *  @param vfb 128-bit vector treated as an __binary128.
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
  *  compare equal.
  */
@@ -2350,12 +2357,14 @@ vec_setb_qp (__binary128 f128)
 /** \brief Return int boolean true if the __float128 value
  *  is negative (sign bit is '1').
  *
- *  Anding with a signmask and then vec_all_eq compare with that mask
+ *  For POWER9 use scalar_test_neg (a special case of
+ *  scalar_test_data_class). For POWER8 and earlier, vec_and
+ *  with a signmask and then vec_all_eq compare with that mask
  *  generates the boolean of the sign bit.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4-20  | 2/cycle  |
+ *  |power8   | 4-10  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
  *  @param f128 a __float128 value in vector.
@@ -2364,8 +2373,8 @@ vec_setb_qp (__binary128 f128)
 static inline int
 vec_signbitf128 (__binary128 f128)
 {
-#if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC > 7)
-  return (scalar_test_neg (f128);
+#if defined (_ARCH_PWR9) && defined (scalar_test_neg) && (__GNUC__ > 7)
+  return scalar_test_neg (f128);
 #else
   vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
@@ -2383,10 +2392,14 @@ vec_signbitf128 (__binary128 f128)
  *  The result is returned as a Quad_precision floating point value.
  *
  *  \note This operation is equivalent to the POWER9 xsiexpqp
- *  instruction and the built-in scalar_insert_exp. These require a
- *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  instruction, This instruction requires a
+ *  POWER9-enabled compiler targeting -mcpu=power9 and is not
  *  available for older compilers nor POWER8 and earlier.
- *  This function provides this operation for all VSX-enabled
+ *  We can't use the built-in scalar_insert_exp because it requires
+ *  scalar (GPR) inputs and vec_insert_exp is not defined for
+ *  Quad-Precision.
+ *  We expect (in context) inputs will be in VRs.
+ *  This operation provides implementations for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2429,10 +2442,14 @@ vec_xsiexpqp (vui128_t sig, vui64_t exp)
  *  The result is returned as vector long long integer value.
  *
  *  \note This operation is equivalent to the POWER9 xsxexpqp
- *  instruction and the built-in scalar_extract_exp. These require a
- *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  instruction. This instruction requires a
+ *  POWER9-enabled compiler targeting -mcpu=power9 and is not
  *  available for older compilers nor POWER8 and earlier.
- *  This function provides this operation for all VSX-enabled
+ *  We can't use the built-in scalar_extract_exp because it returns
+ *  scalar (GPR) results and vec_extract_exp is not defined for
+ *  Quad-Precision.
+ *  We expect (in context) results are needed in VRs.
+ *  This operation provides implementations for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2440,7 +2457,7 @@ vec_xsiexpqp (vui128_t sig, vui64_t exp)
  *  |power8   |  4-13 | 2/cycle  |
  *  |power9   |   2   | 4/cycle  |
  *
- *  @param f128 __binary128 value.
+ *  @param f128 __binary128 scalar value in a vector register.
  *  @return vector unsigned long long element 0 containing the 15-bit
  *  exponent
  *
@@ -2475,10 +2492,14 @@ vec_xsxexpqp (__binary128 f128)
  *  up to 113 bits of significance.
  *
  *  \note This operation is equivalent to the POWER9 xsxsigqp
- *  instruction and the built-in scalar_extract_sig. These require a
- *  POWER9-enabled compiler targeting -mcpu=power9 and are not
+ *  instruction. This instruction requires a
+ *  POWER9-enabled compiler targeting -mcpu=power9 and is not
  *  available for older compilers nor POWER8 and earlier.
- *  This function provides this operation for all VSX-enabled
+ *  We can't use the built-in scalar_extract_sig because it returns
+ *  scalar (GPR) results and vec_extract_sig is not defined for
+ *  Quad-Precision.
+ *  We expect (in context) results are needed in VRs.
+ *  This operation provides implementations for all VSX-enabled
  *  platforms.
  *
  *  |processor|Latency|Throughput|
@@ -2486,7 +2507,7 @@ vec_xsxexpqp (__binary128 f128)
  *  |power8   | 10-19 | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
- *  @param f128 __binary128 value.
+ *  @param f128 __binary128 scalar value in a vector register.
  *  @return vector __int128 containing the significand.
  *
  */

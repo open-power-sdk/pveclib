@@ -4301,6 +4301,53 @@ test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,
 		    __binary128 vf5, __binary128 vf6,
 		    __binary128 vf7, __binary128 vf8);
 
+extern vb128_t
+test_vec_cmpgtuqp (__binary128 vfa, __binary128 vfb);
+
+__binary128
+test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  __binary128 maxres;
+  vb128_t bool;
+
+  bool = test_vec_cmpgtuqp (vf2, vf1);
+  maxres = vec_self128 (vf1, vf2, bool);
+  bool = test_vec_cmpgtuqp (vf3, maxres);
+  maxres = vec_self128 (vf3, maxres, bool);
+  bool = test_vec_cmpgtuqp (vf4, maxres);
+  maxres = vec_self128 (vf4, maxres, bool);
+  bool = test_vec_cmpgtuqp (vf5, maxres);
+  maxres = vec_self128 (vf5, maxres, bool);
+  bool = test_vec_cmpgtuqp (vf6, maxres);
+  maxres = vec_self128 (vf6, maxres, bool);
+  bool = test_vec_cmpgtuqp (vf7, maxres);
+  maxres = vec_self128 (vf7, maxres, bool);
+  bool = test_vec_cmpgtuqp (vf8, maxres);
+  maxres = vec_self128 (vf8, maxres, bool);
+
+  return maxres;
+}
+
+int timed_lib_max8_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 accum = 0.0Q;
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      accum += test_lib_max8_f128 (f128_e, inv_fact2,
+				   inv_fact3, inv_fact4,
+				   inv_fact5, inv_fact6,
+				   inv_fact7, inv_fact8);
+    }
+#endif
+   return 0;
+}
+
 int timed_gcc_max8_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -4428,6 +4475,20 @@ test_time_f128 (void)
 
   printf ("\n%s cmpgtuqp_gcc end", __FUNCTION__);
   printf ("\n%s cmpgtuqp_gcc  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s cmpgtuqp_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_lib_max8_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s cmpgtuqp_lib end", __FUNCTION__);
+  printf ("\n%s cmpgtuqp_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   printf ("\n%s cmpgtuqp_vec start, ...\n", __FUNCTION__);

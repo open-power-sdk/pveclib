@@ -69,10 +69,12 @@
 *
 *  - Power Instruction Set Architecture, Versions
 *  <a href="https://ibm.ent.box.com/s/jd5w15gz301s5b5dt375mshpq9c3lh4u">
-*  2.07B</a> and
+*  2.07B</a>,
 *  <a href="https://ibm.ent.box.com/s/1hzcwkwf8rbju5h9iyf44wm94amnlcrv">
-*  3.0B</a>,
-*  IBM, 2013-2017. Available from the
+*  3.0B</a>, and
+*  <a href="https://ibm.ent.box.com/s/hhjfw0x0lrbtyzmiaffnbxh2fuo0fog0">
+*  3.1</a>,
+*  IBM, 2013-2020. Available from the
 *  <a href="https://www-355.ibm.com/systems/power/openpower/">
 *  IBM Portal for OpenPOWER</a> under the <B>Public Documents</B> tab.
 *   - Publicly available PowerISA docs for older processors are hard
@@ -97,6 +99,62 @@
 *  POWER9 Processor User’s Manual</a>.
 *  -  Warren, Henry S. Jr, Hacker's Delight, 2nd Edition, Upper Saddle River, NJ:
 *  Addison Wesley, 2013.
+*
+*  \subsection mainpage_devel_history Release history
+*
+*  \subsubsection mainpage_rel_next Next Release
+*
+*  Proposed features:
+*  - Enable and exploit Power10 ISA instructions for both new operations
+*  and optimizations for existing operations.
+*    - Quadword integer shift/rotate.
+*    - Quadword integer signed/unsigned compare.
+*    - Expand mask byte/halfword/word/doubleword/quadword.
+*    - Extract/Insert exponent/significand for single/double/quad-precision
+*  - Configure and build Power10 specific runtime libraries.
+*  - Provide Vector Gather/Scatter operations.
+*  - Provide access to the Quad-Precision operations from POWER9/10
+*  vector implementations for POWER8
+*
+*  \subsubsection mainpage_rel_1_4 Release 1.0.4
+*
+*  Tagged v1.0.4 Release. This version is included in Fedora 33 and EPEL 7/8.
+*  - Operations Implemented: 452
+*  - Runtime library Symbols: 14
+*  - POWER9 Specific cases: 122
+*  - POWER8 Specific cases: 119
+*  - GCC version specific cases: 63
+*  - Clang specific cases: 26
+*  - Endian Specific cases: 121
+*
+*  This version adds run-time libraries for large order integer multiplies
+*  (512x512, 1024x1024, and 2048x2048) with interfaces defined in
+*  vec_int512_ppc.h. These libraries support static linkage
+*  (libpvecstatic.a) to platform specific implementations using
+*  platform suffixes (ie vec_mul2048x2048_PWR9)
+*  and dynamic linkage (libpvec.so) with IFUNC platform binding
+*  (simply vec_mul2048x2048).
+*
+*  \paragraph mainpage_rel_1_4_clang Using the CLANG compiler
+*  Application can compile with CLANG and use (most of the) the PVECLIB APIs.
+*  The APIs for vec_f128_ppc.h and vec_bcd_ppc.h are disabled or limited
+*  as CLANG does not support _Float128 nor Decimal Float types.
+*  Also CLANG can not be used to build the PVECLIB runtime libraries
+*  as it is missing the source attributes associated with the
+*  <B>STTGNUIFUNC symbol type extension</B>. But CLANG compiled
+*  applications can still link to and use these runtime functions.
+*
+*  \subsubsection mainpage_rel_1_3 Release 1.0.3
+*
+*  Tagged v1.0.3 for release. This version is included as package in Fedora 31.
+*  - Operations Implemented: 386
+*  - POWER9 Specific cases: 112
+*  - POWER8 Specific cases: 112
+*  - GCC version specific cases: 59
+*  - Endian Specific cases: 87
+*
+*  Includes updates for vector BCD arithmetic and conversions.
+*  Also vector quadword divide/modulo by 10**31 and 10**32.
 *
 *  \section mainpage_rationale Rationale
 *
@@ -132,17 +190,22 @@
 *  This can be helpful, if you are willing to apply grade school
 *  arithmetic (add, carry the 1) to vector elements.
 *
-*  PowerISA 3.0 (POWER9) did add a Vector Multiply-Sum Unsigned
+*  PowerISA 3.0 (POWER9) adds a Vector Multiply-Sum Unsigned
 *  Doubleword Modulo operation.  With this instruction (and a generated
 *  vector of zeros as input) you can effectively implement the simple
 *  doubleword integer multiply modulo operation in a few instructions.
 *  Similarly for Vector Multiply-Sum Unsigned Halfword Modulo.
 *  But this may not be obvious.
 *
+*  PowerISA 3.1 (POWER10) adds SIMD-equivalent forms of the FXU
+*  multiply, divide, and modulo instructions. Also additional
+*  128-bit divide, modulo, rotate, shift, and conversion operations.
+*
 *  This history embodies a set of trade-offs negotiated between the
 *  Software and Processor design architects at specific points in time.
 *  But most programmers would prefer to use a set of operators applied
-*  across the supported element types and sizes.
+*  across the supported element types/sizes while letting the
+*  compiler/runtime deal with the instruction level details.
 *
 *  \subsection mainpage_sub0 POWER Vector Library Goals
 *
@@ -158,7 +221,7 @@
 *
 *  - Provide equivalent functions across versions of the PowerISA.
 *  This includes some of the most useful vector instructions added to
-*  POWER9 (PowerISA 3.0B).
+*  POWER9 (PowerISA 3.0B) and POWER10 (PowerISA 3.1).
 *  Many of these operations can be implemented as inline function in
 *  a few vector instructions on earlier PowerISA versions.
 *  - Provide equivalent functions across versions of the compiler.
@@ -172,10 +235,13 @@
 *  For example add / subtract with carry and extend for int, long,
 *  and __int128.
 *  - Provide higher order functions not provided directly by the PowerISA.
-*  For example vector SIMD implementation for ASCII __isalpha, etc.
-*  As another example full __int128 implementations of Count Leading Zeros,
-*  Population Count, Shift left/right immediate, and large integer
-*  multiply/divide.
+*  For example:
+*    - Vector SIMD implementation for ASCII __isalpha, etc.
+*    - Vector Binary Code Decimal (BCD) Multiply/Divide/Convert.
+*    - Vector __int128 implementations of Count Leading/Trailing Zeros,
+*  Population Count, Shift left/right immediate.
+*    - Large integer (128-bit and greater) multiply/divide.
+*    - Vector Gather/Scatter.
 *  - Most implementations should be small enough to inline and allow
 *  the compiler opportunity to apply common optimization techniques.
 *  - Larger Implementations should be built into platform specific
@@ -405,12 +471,13 @@
 *  constant loads and permute control vectors that can be factored
 *  and reused across operations.  See vec_muluwm() code for details.
 *
-*  \paragraph mainpage_sub_1_1_3 Define new and useful operations
-*
 *  Once the pattern is understood it is not hard to write equivalent
 *  sequences using operations from the original <altivec.h>.  With a
 *  little care these sequences will be compatible with older compilers
 *  and older PowerISA versions.
+*
+*  \paragraph mainpage_sub_1_1_3 Define new and useful operations
+*
 *  These concepts can be extended to operations that PowerISA and the
 *  compiler does not support yet.  For example; a processor that may
 *  not have multiply even/odd/modulo of the required width (word,
@@ -419,6 +486,60 @@
 *  A full 128-bit by 128-bit multiply with 256-bit result only
 *  requires 36 instructions on POWER8 (using multiple word even/odd)
 *  and 15 instructions on POWER9 (using vmsumudm).
+*
+*  Other examples include Vector Scatter/Gather operations.
+*  The PowerISA does not provide Scatter/Gather instructions.
+*  It does provide instructions to directly store/load single vector
+*  elements to/from storage.
+*  For example; vec_vlxsfdx() and vec_vstxsfdx().
+*  Batches (in groups of 2-4) of these,
+*  combined with appropriate vector splat/merge operations,
+*  provide the effective Scatter/Gather operations:
+*  - Storing multiple vector elements to disjoint storage locations.
+*  - Loading multiple vector elements from disjoint storage locations.
+*
+*  The PowerISA does not provide for effective address computation
+*  from vector registers or elements. All Load/store instructions
+*  require scalar GPRs for Base Address and Index (offset).
+*  For 64-bit PowerISA, effective address (EA) calculations use 64-bit
+*  two's compliment addition.
+*
+*  This is not a serious limitation as often the element offsets are
+*  scalar constants or variables. So using multiple integer scalars as
+*  offsets for Scatter/Gather operation is reasonable
+*  (and highest performing) option.
+*  For example; vec_vglfdso() and vec_vsstfdso().
+*
+*  However there are times when it is useful to use vector elements as
+*  load/store offsets or array indexes. This requires a transfer of
+*  elements from a vector to scalar GPRs.
+*  When using smaller (than doubleword)
+*  elements, they are extended (signed or unsigned) to
+*  64-bit (doubleword) before use in storage EA calculates.
+*  For example; vec_vglfddo(), and vec_vsstfddo().
+*
+*  \note This behavior is defined by PowerISA section 1.10.3
+*  Effective Address Calculation.
+*
+*  If left shifts are required (to convert array indexes to offsets),
+*  64-bit shifts are applied after the element is extended.
+*  For example; vec_vglfddsx(), vec_vglfddx(),
+*  vec_vsstfddsx(), and vec_vsstfddx().
+*
+*  \note Similar gather/scatter operations are provided for doubleword
+*  integer elements (vec_int64_ppc.h) and word integer/float elements
+*  (vec_int64_ppc.h, vec_f32_ppc.h).
+*
+*  These integer extension and left shift operations can be on vector
+*  elements (before transfer) or scalar values (after transfer).
+*  The best (performing) sequence will depend on the compile target's
+*  PowerISA version and micro-architecture.
+*
+*  Starting with Power8 the ISA provides for direct transfers from
+*  vector elements to GRPs (<B>Move From VSR Doubleword</B>).
+*  Power9 adds <B>Move From VSR Lower Doubleword</B> simplifying
+*  access to the whole (both doublewords of the) 128-bit VSR.
+*
 *
 *  \paragraph mainpage_sub_1_1_4 Leverage other PowerISA facilities
 *

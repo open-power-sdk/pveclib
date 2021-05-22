@@ -38,6 +38,124 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+#if defined (_ARCH_PWR10) && (__GNUC__ > 10)
+// New support defined in Power Vector Intrinsic Programming Reference.
+// Waiting for GCC 11.2?
+int
+test_gcc_cmpsq_all_gt_PWR10 (vi128_t a, vi128_t b)
+{
+  return vec_all_gt (a, b);
+}
+
+vb128_t
+test_gcc_cmpsq_gt_PWR10 (vi128_t a, vi128_t b)
+{
+  return vec_cmpgt (a, b);
+}
+#endif
+
+vi128_t
+test_min_ui128_PWR10  (vi128_t a, vi128_t b)
+{
+  if (vec_cmpsq_all_lt (a, b))
+    return a;
+  else
+    return b;
+}
+
+vi128_t
+test_max_ui128_PWR10  (vi128_t a, vi128_t b)
+{
+  if (vec_cmpsq_all_gt (a, b))
+    return a;
+  else
+    return b;
+}
+
+int
+test_cmpsq_all_lt_PWR10 (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_lt (a, b);
+}
+
+int
+test_cmpsq_all_gt_PWR10 (vi128_t a, vi128_t b)
+{
+  return vec_cmpsq_all_gt (a, b);
+}
+
+vb128_t
+test_vec_cmpnetoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpnetoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpneuzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpneuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpneuqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpneuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpletoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpletoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpleuzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpleuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpleuqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpleuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgetoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgetoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgeuzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgeuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgeuqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgeuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmplttoqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmplttoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpltuzqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpltuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpltuqp_PWR10 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpltuqp (vfa, vfb);
+}
+
 vb128_t
 test_vec_cmpgttoqp_PWR10 (__binary128 vfa, __binary128 vfb)
 {

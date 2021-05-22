@@ -5150,6 +5150,46 @@ test_cmpgt_f128 ()
 #endif
 
 #if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgtuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgtuqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgtuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgtuzqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgttoqp 3c", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgtuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgtuqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgtuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgtuzqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgttoqp 3d", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
   x = vec_xfer_vui64t_2_bin128 ( vf128_max );
   y = vec_xfer_vui64t_2_bin128 ( vf128_one );
 #ifdef __DEBUG_PRINT__
@@ -5288,6 +5328,1326 @@ test_cmpgt_f128 ()
 }
 
 int
+test_cmplt_f128 ()
+{
+  __binary128 x, y;
+  vb128_t exp, expt;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 0", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 1", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 1", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 1b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 2", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuzqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmplttoqp 2b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 3", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuzqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmplttoqp 3b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuzqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmplttoqp 3c", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 3d", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 4", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuzqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmplttoqp 4b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 5", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpltuzqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmplttoqp 5b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 6", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 6", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 6", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpltuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpltuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpltuzqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmplttoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmplttoqp 6b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+  return (rc);
+}
+
+int
+test_cmpge_f128 ()
+{
+  __binary128 x, y;
+  vb128_t exp, expt;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 0", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 1", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 1", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 1b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 2", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 2b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 2c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 2c", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 2c", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 3", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 3b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 3c", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 3d", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 3e", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 3e", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 3e", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 4", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 4b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpgetoqp 5", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 5b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 6", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 6", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 6", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpgeuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpgeuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgeuzqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpgetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpgetoqp 6b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+  return (rc);
+}
+int
+test_cmple_f128 ()
+{
+  __binary128 x, y;
+  vb128_t exp, expt;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 0", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 0", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 1", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 1", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 1b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 1b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 2", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 2b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 2b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 2c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 2c", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 2c", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 3", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 3b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 3b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 3c", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 3c", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 3d", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 3d", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 3e", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 3e", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 3e", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 4", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 4b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 4b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 5", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpleuzqp 5b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpletoqp 5b", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 6", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 6", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 6", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpleuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpleuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpleuzqp 6b", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpletoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpletoqp 6b", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+  return (rc);
+}
+
+int
+test_cmpne_f128 ()
+{
+  __binary128 x, y;
+  vb128_t exp, expt;
+  int rc = 0;
+
+  printf ("\ntest_cmpne_f128 ...\n");
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 1", (vui128_t) exp, (vui128_t) expt);
+#endif
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 2", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 2", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 2", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 3", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 3", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 4", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 4", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuzqp 5", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpnetoqp 5", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 6", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 6", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 6", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 7", (vui128_t) exp, (vui128_t) expt);
+
+  // P8 should detect these because absolute magnitudes are different
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuzqp 7", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpnetoqp 7", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 8", (vui128_t) exp, (vui128_t) expt);
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 8", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 8", (vui128_t) exp, (vui128_t) expt);
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 9", (vui128_t) exp, (vui128_t) expt);
+
+  // P8 should detect these because absolute magnitudes are different
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuzqp 9", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpnetoqp 9", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuqp 10", (vui128_t) exp, (vui128_t) expt);
+
+  // P8 should detect these because absolute magnitudes are different
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuzqp 10", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpnetoqp 10", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuqp 11", (vui128_t) exp, (vui128_t) expt);
+
+  // P8 should detect these because absolute magnitudes are different
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpneuzqp 11", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_false;
+  rc += check_vuint128x ("check vec_cmpnetoqp 11", (vui128_t) exp, (vui128_t) expt);
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  exp = vec_cmpneuqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuqp 12", (vui128_t) exp, (vui128_t) expt);
+
+  // P8 should detect these because absolute magnitudes are different
+  exp = vec_cmpneuzqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpneuzqp 12", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_cmpnetoqp (x, y);
+  expt = (vb128_t) vf128_true;
+  rc += check_vuint128x ("check vec_cmpnetoqp 12", (vui128_t) exp, (vui128_t) expt);
+#endif
+  return (rc);
+}
+
+int
 test_vec_f128 (void)
 {
   int rc = 0;
@@ -5301,6 +6661,10 @@ test_vec_f128 (void)
   rc += test_extract_insert_f128 ();
   rc += test_cmpeq_f128 ();
   rc += test_cmpgt_f128 ();
+  rc += test_cmplt_f128 ();
+  rc += test_cmpge_f128 ();
+  rc += test_cmple_f128 ();
+  rc += test_cmpne_f128 ();
 #ifndef PVECLIB_DISABLE_F128MATH
 #ifdef __FLOAT128__
   rc += test_time_f128 ();

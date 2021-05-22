@@ -1763,6 +1763,229 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+/** \brief Vector Compare Greater Than or Equal (Total-order) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa >= vfb, otherwise all '0's.
+ *  Zeros, Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 26-35 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare greater than or equal.
+ */
+static inline vb128_t
+vec_cmpgetoqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa >= vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  vui128_t vfa128, vfb128;
+  vb128_t altb, agtb;
+  vb128_t signbool;
+  const vui8_t shift = vec_splat_u8 (7);
+  vui8_t splatvfa;
+
+  vfa128 = vec_xfer_bin128_2_vui128t (vfa);
+  vfb128 = vec_xfer_bin128_2_vui128t (vfb);
+
+  // Replace (vfa >= 0) with (vfa < 0) == vec_setb_qp (vfa)
+  splatvfa = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  signbool = (vb128_t) vec_sra (splatvfa, shift);
+
+  agtb = vec_cmpgesq ((vi128_t) vfa128, (vi128_t) vfb128);
+  altb = vec_cmpleuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  result = (vb128_t) vec_sel ((vui32_t)agtb, (vui32_t)altb, (vui32_t)signbool);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Greater Than Or Equal (Zero-unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa >= vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare greater than or equal.
+ */
+static inline vb128_t
+vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vfa >= vfb)
+    result = (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+  vui8_t splatvfa, splatvfb;
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpgeuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Greater Than or Equal (Unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa >= vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities of different signs compare ordered.
+ *  A NaN in either or both operands compare unordered.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater Than
+ *  Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare greater than or equal.
+ */
+static inline vb128_t
+vec_cmpgeuqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa >= vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+
+  if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
+    return (vb128_t) vec_splat_u32 (0);
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpgeuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
 /** \brief Vector Compare Greater Than (Total-order) Quad-Precision.
  *
  *  Compare Binary-float 128-bit values and return all '1's,
@@ -1794,7 +2017,7 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
- *  compare equal.
+ *  compare greater than.
  */
 static inline vb128_t
 vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
@@ -1863,7 +2086,7 @@ vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
- *  compare equal.
+ *  compare greater than.
  */
 static inline vb128_t
 vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
@@ -1938,7 +2161,7 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
- *  compare equal.
+ *  compare greater than.
  */
 static inline vb128_t
 vec_cmpgtuqp (__binary128 vfa, __binary128 vfb)
@@ -1979,6 +2202,635 @@ vec_cmpgtuqp (__binary128 vfa, __binary128 vfb)
   vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
 
   result = vec_cmpgtuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than or Equal (Total-order) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa <= vfb, otherwise all '0's.
+ *  Zeros, Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 26-35 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than or equal.
+ */
+static inline vb128_t
+vec_cmpletoqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa <= vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  vui128_t vfa128, vfb128;
+  vb128_t altb, agtb;
+  vb128_t signbool;
+  const vui8_t shift = vec_splat_u8 (7);
+  vui8_t splatvfa;
+
+  vfa128 = vec_xfer_bin128_2_vui128t (vfa);
+  vfb128 = vec_xfer_bin128_2_vui128t (vfb);
+
+  // Replace (vfa >= 0) with (vfa < 0) == vec_setb_qp (vfa)
+  splatvfa = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  signbool = (vb128_t) vec_sra (splatvfa, shift);
+
+  altb = vec_cmplesq ((vi128_t) vfa128, (vi128_t) vfb128);
+  agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  result = (vb128_t) vec_sel ((vui32_t)altb, (vui32_t)agtb, (vui32_t)signbool);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than or Equal (Zero-unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa <= vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than or equal.
+ */
+static inline vb128_t
+vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vfa <= vfb)
+    result = (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+  vui8_t splatvfa, splatvfb;
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpleuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than or Equal (Unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa <= vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities of different signs compare ordered.
+ *  A NaN in either or both operands compare unordered.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater Than
+ *  Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than or equal.
+ */
+static inline vb128_t
+vec_cmpleuqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa <= vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+
+  if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
+    return (vb128_t) vec_splat_u32 (0);
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpleuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than (Total-order) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa < vfb, otherwise all '0's.
+ *  Zeros, Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 26-35 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than.
+ */
+static inline vb128_t
+vec_cmplttoqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa < vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  vui128_t vfa128, vfb128;
+  vb128_t altb, agtb;
+  vb128_t signbool;
+  const vui8_t shift = vec_splat_u8 (7);
+  vui8_t splatvfa;
+
+  vfa128 = vec_xfer_bin128_2_vui128t (vfa);
+  vfb128 = vec_xfer_bin128_2_vui128t (vfb);
+
+  // Replace (vfa >= 0) with (vfa < 0) == vec_setb_qp (vfa)
+  splatvfa = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
+  signbool = (vb128_t) vec_sra (splatvfa, shift);
+
+  altb = vec_cmpltsq ((vi128_t) vfa128, (vi128_t) vfb128);
+  agtb = vec_cmpgtuq ((vui128_t) vfa128, (vui128_t) vfb128);
+  result = (vb128_t) vec_sel ((vui32_t)altb, (vui32_t)agtb, (vui32_t)signbool);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than (Zero-unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa < vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities and NaNs are compared as signed values.
+ *  Infinities and NaNs have the highest/lowest magnitudes.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater
+ *  Than Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than.
+ */
+static inline vb128_t
+vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vfa < vfb)
+    result = (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+  vui8_t splatvfa, splatvfb;
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpltuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Less Than (Unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa < vfb, otherwise all '0's.
+ *  Zeros of either sign are converted to +0.
+ *  Infinities of different signs compare ordered.
+ *  A NaN in either or both operands compare unordered.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Greater Than
+ *  Quad-Precision instruction.
+ *  Otherwise comparands are converted to unsigned integer magnitudes
+ *  before using vector __int128 comparison to implement the equivalent
+ *  Quad-precision floating-point operation. This leverages operations
+ *  from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 28-37 | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare less than.
+ */
+static inline vb128_t
+vec_cmpltuqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpgtqp %0,%2,%1;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa < vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vui128_t vra, vrb;
+  vb128_t age0, bge0;
+  vui128_t vrap, vran;
+  vui128_t vrbp, vrbn;
+
+  if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
+    return (vb128_t) vec_splat_u32 (0);
+
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+
+  age0 = vec_setb_qp (vfa);
+  vrap = (vui128_t) vec_xor ((vui32_t) vra, signmask);
+  vran = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vra);
+  vra  = (vui128_t) vec_sel ((vui32_t)vrap, (vui32_t)vran, (vui32_t)age0);
+
+  bge0 = vec_setb_qp (vfb);
+  vrbp = (vui128_t) vec_xor ((vui32_t) vrb, signmask);
+  vrbn = (vui128_t) vec_subuqm ((vui128_t) zero, (vui128_t) vrb);
+  vrb  = (vui128_t) vec_sel ((vui32_t)vrbp, (vui32_t)vrbn, (vui32_t)bge0);
+
+  result = vec_cmpltuq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Not Equal (Total-order) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa != vfb, otherwise all '0's.
+ *  Zeros, Infinities and NaN of the same sign compare equal.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or a VSX Scalar Compare Equal
+ *  Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 6     | 2/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare not equal.
+ */
+static inline vb128_t
+vec_cmpnetoqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpeqqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result= (vb128_t) vec_splat_u32 (0);
+  if (vfa != vfb)
+    result= (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  vui128_t vra, vrb;
+  vra = vec_xfer_bin128_2_vui128t (vfa);
+  vrb = vec_xfer_bin128_2_vui128t (vfb);
+  result = vec_cmpneuq ( vra,  vrb );
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Not Equal (Zero-unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa != vfb, otherwise all '0's.
+ *  Zeros of either sign compare equal.
+ *  Infinities and NaNs of the same sign compare equal.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or a VSX Scalar Compare Equal
+ *  Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare not equal.
+ */
+static inline vb128_t
+vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpeqqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vfa != vfb)
+    result = (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t cmps, or_ab, eq_s;
+  vui64_t vra, vrb;
+
+  vra = vec_xfer_bin128_2_vui64t (vfa);
+  vrb = vec_xfer_bin128_2_vui64t (vfb);
+
+  or_ab = (vb128_t) vec_or ( vra, vrb );
+  eq_s = vec_cmpequq ((vui128_t) or_ab, (vui128_t) signmask);
+  cmps = vec_cmpequq ((vui128_t) vra, (vui128_t)vrb);
+  result = (vb128_t) vec_nor ((vui32_t) cmps, (vui32_t) eq_s);
+#endif
+  return result;
+}
+
+/** \brief Vector Compare Equal (Unordered) Quad-Precision.
+ *
+ *  Compare Binary-float 128-bit values and return all '1's,
+ *  if vfa == vfb, otherwise all '0's.
+ *  Zeros of either sign compare equal.
+ *  Infinities of the same sign compare equal.
+ *  A NaN in either or both operands compare unequal.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use a VSX Scalar Compare
+ *  Unordered Quad-Precision or (POWER10) VSX Scalar Compare Equal
+ *  Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the IEEE standard
+ *  relative to signed zero, or NaN comparison.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 18-30 | 1/cycle  |
+ *  |power9   | 3     | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return 128-bit vector boolean reflecting __binary128
+ *  compare equal.
+ */
+static inline vb128_t
+vec_cmpneuqp (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+#if defined (_ARCH_PWR10) && defined (__FLOAT128__)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscmpeqqp %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = (vb128_t) vec_nor ((vui32_t) result, (vui32_t) result);
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vfa != vfb)
+    result = (vb128_t) vec_splat_s32 (-1);
+#else // defined( _ARCH_PWR8 )
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  vb128_t cmps, or_ab, eq_s;
+  vui64_t vra, vrb;
+
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb))
+    return result;
+
+  vra = vec_xfer_bin128_2_vui64t (vfa);
+  vrb = vec_xfer_bin128_2_vui64t (vfb);
+
+  or_ab = (vb128_t) vec_or ( vra, vrb );
+  eq_s = vec_cmpequq ((vui128_t) or_ab, (vui128_t) signmask);
+  cmps = vec_cmpequq ((vui128_t) vra, (vui128_t) vrb);
+  result = (vb128_t) vec_nor ((vui32_t) cmps, (vui32_t) eq_s);
 #endif
   return result;
 }

@@ -5722,7 +5722,7 @@ test_cmpge_f128 ()
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // Don't expect to detect this case for P8 but should on P9
   exp = vec_cmpgetoqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpgetoqp 1b", (vui128_t) exp, (vui128_t) expt);
 #endif
 #endif
@@ -6090,7 +6090,7 @@ test_cmple_f128 ()
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // Don't expect to detect this case for P8 but should on P9
   exp = vec_cmpletoqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpletoqp 1b", (vui128_t) exp, (vui128_t) expt);
 #endif
 #endif
@@ -6525,7 +6525,7 @@ test_cmpne_f128 ()
   print_vfloat128x(" y=  ", y);
 #endif
   exp = vec_cmpneuqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpneuqp 7", (vui128_t) exp, (vui128_t) expt);
 
   // P8 should detect these because absolute magnitudes are different
@@ -6546,17 +6546,17 @@ test_cmpne_f128 ()
   print_vfloat128x(" y=  ", y);
 #endif
   exp = vec_cmpneuqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpneuqp 8", (vui128_t) exp, (vui128_t) expt);
 
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // Don't expect to detect this case for P8 but should on P9
   exp = vec_cmpneuzqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpneuzqp 8", (vui128_t) exp, (vui128_t) expt);
 
   exp = vec_cmpnetoqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpnetoqp 8", (vui128_t) exp, (vui128_t) expt);
 #endif
 #endif
@@ -6569,7 +6569,7 @@ test_cmpne_f128 ()
   print_vfloat128x(" y=  ", y);
 #endif
   exp = vec_cmpneuqp (x, y);
-  expt = (vb128_t) vf128_false;
+  expt = (vb128_t) vf128_true;
   rc += check_vuint128x ("check vec_cmpneuqp 9", (vui128_t) exp, (vui128_t) expt);
 
   // P8 should detect these because absolute magnitudes are different

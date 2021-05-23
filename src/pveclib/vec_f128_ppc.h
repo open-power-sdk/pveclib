@@ -2820,7 +2820,7 @@ vec_cmpneuqp (__binary128 vfa, __binary128 vfb)
   vb128_t cmps, or_ab, eq_s;
   vui64_t vra, vrb;
 
-  result = (vb128_t) vec_splat_u32 (0);
+  result = (vb128_t) vec_splat_u32 (-1);
   if (vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb))
     return result;
 

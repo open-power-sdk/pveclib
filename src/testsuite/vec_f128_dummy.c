@@ -40,6 +40,64 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f128_ppc.h>
 
+int
+test_scalar_test_neg (__binary128 vfa)
+{
+  return vec_signbitf128 (vfa);
+}
+
+int
+test_scalar_cmpto_exp_gt (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  return scalar_cmp_exp_gt (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_any_gt (vra, vrb);
+#endif
+}
+
+int
+test_scalar_cmp_exp_gt (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  return scalar_cmp_exp_gt (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+
+  if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
+    return 0;
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_any_gt (vra, vrb);
+#endif
+}
+
+int
+test_scalar_cmp_exp_unordered (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  return scalar_cmp_exp_unordered (vfa, vfb);
+#else
+  return (vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb));
+#endif
+}
+
+vb128_t
+test_bool_cmp_exp_unordered (__binary128 vfa, __binary128 vfb)
+{
+  return (vb128_t) vec_or ((vui32_t) vec_isnanf128 (vfa),
+			   (vui32_t) vec_isnanf128 (vfb));
+}
+
 __binary128
 test_sel_bin128_2_bin128 (__binary128 vfa, __binary128 vfb, vb128_t mask)
 {
@@ -464,6 +522,78 @@ vb128_t
 test_vec_cmpeqtoqp (__binary128 vfa, __binary128 vfb)
 {
   return vec_cmpeqtoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpneuqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpneuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpneuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpnetoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpnetoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpleuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpleuqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpleuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpletoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpletoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgeuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgeuqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgeuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpgetoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpgetoqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpltuzqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmpltuqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpltuqp (vfa, vfb);
+}
+
+vb128_t
+test_vec_cmplttoqp (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmplttoqp (vfa, vfb);
 }
 
 vb128_t

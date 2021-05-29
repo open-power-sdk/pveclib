@@ -1649,7 +1649,7 @@ vec_cmpeqtoqp (__binary128 vfa, __binary128 vfb)
  *  operation. This leverages operations from vec_int128_ppc.h.
  *
  *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to signed zero, or NaN comparison.
+ *  relative NaN comparison.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -1711,8 +1711,8 @@ vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
  *  to implement the equivalent Quad-precision floating-point
  *  operation. This leverages operations from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to signed zero, or NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -1924,8 +1924,8 @@ vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
  *  Quad-precision floating-point operation. This leverages operations
  *  from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -2145,8 +2145,8 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
  *  Quad-precision floating-point operation. This leverages operations
  *  from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -2367,8 +2367,8 @@ vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
  *  Quad-precision floating-point operation. This leverages operations
  *  from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -2588,8 +2588,8 @@ vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
  *  Quad-precision floating-point operation. This leverages operations
  *  from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on
@@ -2782,8 +2782,8 @@ vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
  *  to implement the equivalent Quad-precision floating-point
  *  operation. This leverages operations from vec_int128_ppc.h.
  *
- *  \note This operation <I>may not</I> follow the IEEE standard
- *  relative to signed zero, or NaN comparison.
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to NaN comparison and setting the FPSCR.
  *  However if the hardware target includes an instruction that does
  *  implement the IEEE standard, the implementation may use that.
  *  This relaxed implementation may be useful for implementations on

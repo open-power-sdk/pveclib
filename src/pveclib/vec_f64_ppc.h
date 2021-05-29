@@ -1644,12 +1644,15 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
 {
   vf64_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
+#if defined (vec_insert_exp)
+  result = vec_insert_exp (sig, exp);
+#else
   __asm__(
       "xviexpdp %x0,%x1,%x2"
       : "=wa" (result)
       : "wa" (sig), "wa" (exp)
       : );
-
+#endif
 #else
   vui32_t tmp, t128;
   const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
@@ -1668,7 +1671,7 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
  *  The result is returned as vector long long integer value.
  *
  *  \note This operation is equivalent to the POWER9 xvxexpdp
- *  instruction and the built-in vector_extract_exp. These require a
+ *  instruction and the built-in vec_extract_exp. These require a
  *  POWER9-enabled compiler targeting -mcpu=power9 and are not
  *  available for older compilers nor POWER8 and earlier.
  *  This function provides this operation for all VSX-enabled
@@ -1689,13 +1692,15 @@ vec_xvxexpdp (vf64_t vrb)
 {
   vui64_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
-
+#if defined (vec_extract_exp)
+  result = vec_extract_exp (vrb);
+#else
   __asm__(
       "xvxexpdp %x0,%x1"
       : "=wa" (result)
       : "wa" (vrb)
       : );
-
+#endif
 #else
   vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
@@ -1717,7 +1722,7 @@ vec_xvxexpdp (vf64_t vrb)
  *  up to 53 bits of significance.
  *
  *  \note This operation is equivalent to the POWER9 xvxsigdp
- *  instruction and the built-in vector_extract_sig. These require a
+ *  instruction and the built-in vec_extract_sig. These require a
  *  POWER9-enabled compiler targeting -mcpu=power9 and are not
  *  available for older compilers nor POWER8 and earlier.
  *  This function provides this operation for all VSX-enabled
@@ -1737,13 +1742,15 @@ vec_xvxsigdp (vf64_t vrb)
 {
   vui64_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
-
+#if defined (vec_extract_sig)
+  result = vec_extract_sig (vrb);
+#else
   __asm__(
       "xvxsigdp %x0,%x1"
       : "=wa" (result)
       : "wa" (vrb)
       : );
-
+#endif
 #else
   vui32_t t128, tmp;
   vui32_t normal;

@@ -2047,12 +2047,15 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
 {
   vf32_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
+#if defined (vec_insert_exp)
+  result = vec_insert_exp (sig, exp);
+#else
   __asm__(
       "xviexpsp %x0,%x1,%x2"
       : "=wa" (result)
       : "wa" (sig), "wa" (exp)
       : );
-
+#endif
 #else
   vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
@@ -2072,7 +2075,7 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
  *  The result is returned as vector unsigned integer value.
  *
  *  \note This operation is equivalent to the POWER9 xvxexpsp
- *  instruction and the built-in vector_extract_exp. These require a
+ *  instruction and the built-in vec_extract_exp. These require a
  *  POWER9-enabled compiler targeting -mcpu=power9 and are not
  *  available for older compilers nor POWER8 and earlier.
  *  This function provides this operation for all VSX-enabled
@@ -2093,13 +2096,15 @@ vec_xvxexpsp (vf32_t vrb)
 {
   vui32_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
-
+#if defined (vec_extract_exp)
+  result = vec_extract_exp (vrb);
+#else
   __asm__(
       "xvxexpsp %x0,%x1"
       : "=wa" (result)
       : "wa" (vrb)
       : );
-
+#endif
 #else
   vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
@@ -2122,7 +2127,7 @@ vec_xvxexpsp (vf32_t vrb)
  *  up to 24 bits of significance.
  *
  *  \note This operation is equivalent to the POWER9 xvxsigsp
- *  instruction and the built-in vector_extract_sig. These require a
+ *  instruction and the built-in vec_extract_sig. These require a
  *  POWER9-enabled compiler targeting -mcpu=power9 and are not
  *  available for older compilers nor POWER8 and earlier.
  *  This function provides this operation for all VSX-enabled
@@ -2142,13 +2147,15 @@ vec_xvxsigsp (vf32_t vrb)
 {
   vui32_t result;
 #if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
-
+#if defined (vec_extract_sig)
+  result = vec_extract_sig (vrb);
+#else
   __asm__(
       "xvxsigsp %x0,%x1"
       : "=wa" (result)
       : "wa" (vrb)
       : );
-
+#endif
 #else
   vui32_t t128, tmp;
   vui32_t normal;

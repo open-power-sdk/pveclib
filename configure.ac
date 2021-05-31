@@ -1,8 +1,8 @@
 ## dnl Process this file with autoconf to produce a configure script.
 
 
-AC_PREREQ(2.63)
-AC_INIT([pveclib], [1.0.4], munroesj52@gmail.com pc@us.ibm.com, , https://github.com/open-power-sdk/pveclib)
+AC_PREREQ([2.69])
+AC_INIT([pveclib],[1.0.4],[munroesj52@gmail.com pc@us.ibm.com],[],[https://github.com/open-power-sdk/pveclib])
 
 AC_ENABLE_SHARED
 LT_INIT([disable-shared])
@@ -20,7 +20,7 @@ PVECLIB_SO_VERSION=1:4:0
 AC_SUBST(PVECLIB_SO_VERSION)
 
 AC_PROG_CC
-AC_PROG_LIBTOOL
+LT_INIT
 
 # This directive is to avoid buggy libtool that doesn't add the '-Wl,--no-as-needed'
 # directive in the correct position of LDFLAGS

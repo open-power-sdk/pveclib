@@ -228,10 +228,6 @@ TESTS += pveclib_test
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
-	testsuite/vec_perf_f64.c \
-	testsuite/vec_perf_f32.c \
-	testsuite/vec_perf_i512.c \
-	testsuite/vec_perf_i128.c \
 	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
@@ -253,14 +249,29 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_test_i512.h \
 	testsuite/arith128_test_i16.h \
 	testsuite/arith128_test_i32.h \
-	testsuite/arith128_test_i64.h \
-	testsuite/vec_perf_f32.h \
-	testsuite/vec_perf_f64.h \
-	testsuite/vec_perf_i512.h \
-	testsuite/vec_perf_i128.h
+	testsuite/arith128_test_i64.h 
 
 pveclib_test_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
 pveclib_test_LDADD = .libs/libpvecstatic.a .libs/libvecdummy.a
+
+TESTS += pveclib_perf
+pveclib_perf_SOURCES = \
+	testsuite/pveclib_perf.c \
+	testsuite/arith128_print.c \
+	testsuite/vec_perf_i128.c \
+	testsuite/vec_perf_i512.c \
+	testsuite/vec_perf_f32.c \
+	testsuite/vec_perf_f64.c \
+	testsuite/vec_perf_f128.c \
+	testsuite/arith128_print.h \
+	testsuite/vec_perf_i128.h \
+	testsuite/vec_perf_i512.h \
+	testsuite/vec_perf_f32.h \
+	testsuite/vec_perf_f64.h \
+	testsuite/vec_perf_f128.h
+
+pveclib_perf_CFLAGS = $(AM_CPPFLAGS) $(PVECLIB_DEFAULT_CFLAGS) $(AM_CFLAGS)
+pveclib_perf_LDADD = .libs/libpvecstatic.a .libs/libvecdummy.a
 	
 TESTS += vec_dummy
 

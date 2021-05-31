@@ -29,7 +29,6 @@
 #include <pveclib/vec_int32_ppc.h>
 #include <pveclib/vec_f32_ppc.h>
 #include <testsuite/arith128_test_f32.h>
-#include <testsuite/vec_perf_f32.h>
 
 #define __FLOAT_ZERO (0x00000000)
 #define __FLOAT_NZERO (0x80000000)
@@ -2148,42 +2147,6 @@ test_extract_insert_f32 ()
   return (rc);
 }
 
-float matrix_f32 [MN][MN] __attribute__ ((aligned (128)));
-
-void
-test_f32_Imatrix_init (float * array)
-{
-  long i, j, k;
-  long rows, columns;
-
-  rows = columns = MN;
-
-#ifdef __DEBUG_PRINT__
-  printf ("init_indentity array[%d,%d]\n",
-	  rows, columns);
-#endif
-
-  for ( i=0; i<rows; i++ )
-  {
-    for ( j=0; j<columns; j++ )
-      {
-	k = (i * columns) + j;
-	if (i == j)
-	  {
-	    array [k] = 1.0;
-#ifdef __DEBUG_PRINT__
-	    printf ("init_indentity array[%d,%d] is %f\n",
-			i, j, array [k]);
-#endif
-	  }
-	else
-	  {
-	    array [k] = 0.0;
-	  }
-      }
-  }
-}
-
 int
 #if !defined(__clang__)
 __attribute__ ((optimize ("unroll-loops")))
@@ -2230,133 +2193,6 @@ test_f32_Imatrix_check (float * array)
   return rc;
 }
 
-void
-#if !defined(__clang__)
-__attribute__ ((optimize ("unroll-loops")))
-#endif
-test_f32_matrix_transpose (float * tm, float * m)
-{
-  long i, j, k, l;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for ( i=0; i<rows; i++ )
-  {
-    for ( j=0; j<columns; j++ )
-      {
-	k = (i * columns) + j;
-	l = (j * columns) + i;
-	tm[l] = m[k];
-      }
-  }
-}
-
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f32_matrix_gather_transpose (float * tm, float * m)
-{
-  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
-  vi32_t vra;
-  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-  vra = vra_init;
-#ifdef __DEBUG_PRINT__
-  printf ("test_f32_matrix_gather_transpose (%p, %p)\n", tm, m);
-  printf ("vra    = {%d, %d, %d, %d}\n",
-	  vra[0], vra[1], vra[2], vra[3]);
-  printf ("stride = {%d, %d, %d, %d}\n",
-	  stride[0], stride[1], stride[2], stride[3]);
-#endif
-  for (i = 0; i < rows; i++)
-    {
-      float *cadr = &m[i];
-      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
-      vra = vra_init;
-      for (j = 0; j < columns/4; j++)
-	{
-	  radr[j] = vec_vgl4fswo (cadr, vra);
-	  vra = vec_add ( vra, stride);
-	}
-    }
-}
-
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f32_matrix_gatherx2_transpose (float * tm, float * m)
-{
-  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
-  vi32_t vra;
-  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for (i = 0; i < rows; i+=2)
-    {
-      float *cadr = &m[i];
-      float *cadr1 = &m[i+1];
-      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
-      vf32_t *radr1 = (vf32_t*)&tm[((i+1) * columns)];
-
-      vra = vra_init;
-      for (j = 0; j < columns/4; j++)
-	{
-	  vf32_t vrow0, vrow1;
-	  vrow0 = vec_vgl4fswo (cadr, vra);
-	  vrow1 = vec_vgl4fswo (cadr1, vra);
-	  radr[j] = vrow0;
-	  radr1[j] = vrow1;
-	  vra = vec_add ( vra, stride);
-	}
-    }
-}
-
-#if 1
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f32_matrix_gatherx4_transpose (float * tm, float * m)
-{
-  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
-  vi32_t vra;
-  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for (i = 0; i < rows; i+=4)
-    {
-      float *cadr = &m[i];
-      float *cadr1 = &m[i+1];
-      float *cadr2 = &m[i+2];
-      float *cadr3 = &m[i+3];
-      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
-      vf32_t *radr1 = (vf32_t*)&tm[((i+1) * columns)];
-      vf32_t *radr2 = (vf32_t*)&tm[((i+2) * columns)];
-      vf32_t *radr3 = (vf32_t*)&tm[((i+3) * columns)];
-
-      vra = vra_init;
-      for (j = 0; j < columns/4; j++)
-	{
-	  vf32_t vrow0, vrow1, vrow2, vrow3;
-	  vrow0 = vec_vgl4fswo (cadr, vra);
-	  vrow1 = vec_vgl4fswo (cadr1, vra);
-	  vrow2 = vec_vgl4fswo (cadr2, vra);
-	  vrow3 = vec_vgl4fswo (cadr3, vra);
-	  radr[j] = vrow0;
-	  radr1[j] = vrow1;
-	  radr2[j] = vrow2;
-	  radr3[j] = vrow3;
-	  vra = vec_add ( vra, stride);
-	}
-    }
-}
-#endif
 int
 test_f32_indentity_array ()
 {
@@ -2387,106 +2223,6 @@ test_f32_indentity_array ()
   rc += test_f32_Imatrix_check (&tmatrix[0][0]);
 #endif
   return rc;
-}
-
-#define TIMING_ITERATIONS 10
-
-int
-test_time_f32 (void)
-{
-  long i;
-  uint64_t t_start, t_end, t_delta;
-  double delta_sec;
-  int rc = 0;
-
-  printf ("\n%s is_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_is_f32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s is_f32 end", __FUNCTION__);
-  printf ("\n%s is_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s fpclassify_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_fpclassify_f32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s fpclassify_f32 end", __FUNCTION__);
-  printf ("\n%s fpclassify_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  // initialize the test array to the Identity matrix
-  test_f32_Imatrix_init  (&matrix_f32[0][0]);
-
-  printf ("\n%s scalar_transpose_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_scalar_f32_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s scalar_transpose_f32 end", __FUNCTION__);
-  printf ("\n%s scalar_transpose_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gather_transpose_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gather_f32_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gather_transpose_f32 end", __FUNCTION__);
-  printf ("\n%s gather_transpose_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gatherx2_transpose_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gatherx2_f32_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gatherx2_transpose_f32 end", __FUNCTION__);
-  printf ("\n%s gatherx2_transpose_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gatherx4_transpose_f32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gatherx4_f32_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gatherx4_transpose_f32 end", __FUNCTION__);
-  printf ("\n%s gatherx4_transpose_f32  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  return (rc);
 }
 
 int
@@ -2592,8 +2328,6 @@ test_vec_f32 (void)
   rc += test_lvgfsx ();
   rc += test_stvgfsx ();
   rc += test_f32_indentity_array ();
-
-  rc += test_time_f32 ();
 
   return (rc);
 }

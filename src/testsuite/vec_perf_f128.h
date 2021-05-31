@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2018] IBM Corporation.
+ Copyright (c) [2021] Steven Munroe
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 
- vec_perf_f64.h
+ vec_perf_f128.h
 
- Contributors:
-      IBM Corporation, Steven Munroe
-      Created on: Jul 31, 2018
- */
+ Contributors: Steven Munroe
+ Created on: Apr 2, 2021
+*/
 
-#ifndef TESTSUITE_VEC_PERF_F64_H_
-#define TESTSUITE_VEC_PERF_F64_H_
+#ifndef SRC_TESTSUITE_VEC_PERF_F128_H_
+#define SRC_TESTSUITE_VEC_PERF_F128_H_
 
-extern int timed_is_f64 (void);
-extern int timed_fpclassify_f64 (void);
-extern int timed_setup_f64_transpose ();
-extern int timed_scalar_f64_transpose ();
-extern int timed_gather_f64_transpose ();
-extern int timed_gatherx2_f64_transpose ();
-extern int timed_gatherx4_f64_transpose ();
+extern int timed_expxsuba_v1_f128 (void);
+extern int timed_expxsuba_v2_f128 (void);
+extern int timed_gcc_max8_f128 (void);
+extern int timed_lib_max8_f128 (void);
+extern int timed_vec_max8_f128 (void);
 
-#endif /* TESTSUITE_VEC_PERF_F64_H_ */
+//extern int test_time_f128 (void);
+
+#endif /* SRC_TESTSUITE_VEC_PERF_F128_H_ */

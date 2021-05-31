@@ -35,7 +35,6 @@
 #include <testsuite/arith128_print.h>
 
 #include <testsuite/arith128_test_i128.h>
-#include <testsuite/vec_perf_i128.h>
 
 extern const vui128_t vtipowof10 [];
 
@@ -80,11 +79,7 @@ db_vec_clzq (vui128_t vra)
 
   vt1 = vec_vclz ((__vector unsigned long long)vra);
   print_v2xint64 ("ctz = ", vt1);
-#if 0
-  vt2 = (__vector unsigned long long)vec_cmpeq ((__vector unsigned long long)vra, vzero);
-#else
   vt2 = (__vector unsigned long long)vec_cmplt (vt1, v64);
-#endif
   print_v2xint64 ("cmp = ", vt2);
   vt3 = (__vector unsigned long long)vec_sld ((__vector unsigned char)vzero, (__vector unsigned char)vt2, 8);
   print_v2xint64 ("slo8= ", vt3);
@@ -152,11 +147,7 @@ db_vec_mulluq (vui32_t a, vui32_t b)
   print_vint128 (" t_odd  = ", (vui128_t)t_odd);
   print_vint128 (" tmq    = ", (vui128_t)tmq);
   /* shift the low 128 bits of partial product right 32-bits */
-#if 0
-  t_odd = vec_sro (t_odd, (vui8_t)sro_4);
-#else
   t_odd = vec_sld (z, t_odd, 12);
-#endif
   print_vint128 (" t_odd  = ", (vui128_t)t_odd);
   /* add the high 128 bits of even / odd partial products */
   __asm__(
@@ -6433,161 +6424,6 @@ test_avguq (void)
 }
 #undef __DEBUG_PRINT__
 
-#define TIMING_ITERATIONS 10
-
-int
-test_time_i128 (void)
-{
-  long i;
-  uint64_t t_start, t_end, t_delta;
-  double delta_sec;
-  int rc = 0;
-
-  printf ("\n%s mul10uq start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_mul10uq ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s mul10uq end", __FUNCTION__);
-  printf ("\n%s mul10uq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s cmul10ecuq start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_cmul10ecuq ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s cmul10ecuq end", __FUNCTION__);
-  printf ("\n%s cmul10ecuq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s mulluq start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_mulluq ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s mulluq end", __FUNCTION__);
-  printf ("\n%s mulluq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s muludq start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_muludq ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s muludq end", __FUNCTION__);
-  printf ("\n%s muludq  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s muludqx start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_muludqx ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s muludqx end", __FUNCTION__);
-  printf ("\n%s muludqx  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s longdiv_e32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_longdiv_e32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s longdiv_e32 end", __FUNCTION__);
-  printf ("\n%s longdiv_e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-#ifndef PVECLIB_DISABLE_DFP
-  printf ("\n%s longbcdcf_10e32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_longbcdcf_10e32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s longbcdcf_10e32 end", __FUNCTION__);
-  printf ("\n%s longbcdcf_10e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s longbcdct_10e32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_longbcdct_10e32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-#endif
-
-  printf ("\n%s longbcdct_10e32 end", __FUNCTION__);
-  printf ("\n%s longbcdct_10e32 tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s cfmaxdouble_10e32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_cfmaxdouble_10e32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s cfmaxdouble_10e32 end", __FUNCTION__);
-  printf ("\n%s cfmaxdouble_10e32 delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s ctmaxdouble_10e32 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_ctmaxdouble_10e32 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s ctmaxdouble_10e32 end", __FUNCTION__);
-  printf ("\n%s ctmaxdouble_10e32 delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  return (rc);
-}
-
 //#define __DEBUG_PRINT__ 1
 int
 test_subcuq (void)
@@ -10177,8 +10013,6 @@ test_longdiv_e31 (void)
 }
 
 //#define __DEBUG_PRINT__ 1
-extern vui128_t
-example_longdiv_10e32 (vui128_t *q, vui128_t *d, long int _N);
 #ifdef __DEBUG_PRINT__
 #define test_example_longdiv_10e32(_i, _j, _k)	example_longdiv_10e32(_i, _j, _k)
 #else
@@ -10384,9 +10218,6 @@ test_vec_i128 (void)
   rc += test_div_modudq_e31 ();
   rc += test_longdiv_e31 ();
   rc += test_longdiv_e32 ();
-#endif
-#if 1
-  rc += test_time_i128();
 #endif
   return (rc);
 }

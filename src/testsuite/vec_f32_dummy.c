@@ -32,6 +32,7 @@
 
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_f32_ppc.h>
+#include <testsuite/arith128_test_f32.h>
 
 vf32_t
 test_vec_xviexpsp (vui32_t sig, vui32_t exp)
@@ -632,6 +633,175 @@ __vector bool int
 test_pred_f32_zero (vf32_t value)
 {
 	return (vec_iszerof32 (value));
+}
+
+
+/*
+ * The following are both compile tests for Gather/Scatter operations
+ * and performance kernels for performance tests.
+ */
+
+
+float matrix_f32 [MN][MN] __attribute__ ((aligned (128)));
+
+void
+test_f32_Imatrix_init (float * array)
+{
+  long i, j, k;
+  long rows, columns;
+
+  rows = columns = MN;
+
+#ifdef __DEBUG_PRINT__
+  printf ("init_indentity array[%d,%d]\n",
+	  rows, columns);
+#endif
+
+  for ( i=0; i<rows; i++ )
+  {
+    for ( j=0; j<columns; j++ )
+      {
+	k = (i * columns) + j;
+	if (i == j)
+	  {
+	    array [k] = 1.0;
+#ifdef __DEBUG_PRINT__
+	    printf ("init_indentity array[%d,%d] is %f\n",
+			i, j, array [k]);
+#endif
+	  }
+	else
+	  {
+	    array [k] = 0.0;
+	  }
+      }
+  }
+}
+
+void
+#if !defined(__clang__)
+__attribute__ ((optimize ("unroll-loops")))
+#endif
+test_f32_matrix_transpose (float * tm, float * m)
+{
+  long i, j, k, l;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for ( i=0; i<rows; i++ )
+  {
+    for ( j=0; j<columns; j++ )
+      {
+	k = (i * columns) + j;
+	l = (j * columns) + i;
+	tm[l] = m[k];
+      }
+  }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f32_matrix_gather_transpose (float * tm, float * m)
+{
+  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
+  vi32_t vra;
+  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+  vra = vra_init;
+#ifdef __DEBUG_PRINT__
+  printf ("test_f32_matrix_gather_transpose (%p, %p)\n", tm, m);
+  printf ("vra    = {%d, %d, %d, %d}\n",
+	  vra[0], vra[1], vra[2], vra[3]);
+  printf ("stride = {%d, %d, %d, %d}\n",
+	  stride[0], stride[1], stride[2], stride[3]);
+#endif
+  for (i = 0; i < rows; i++)
+    {
+      float *cadr = &m[i];
+      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
+      vra = vra_init;
+      for (j = 0; j < columns/4; j++)
+	{
+	  radr[j] = vec_vgl4fswo (cadr, vra);
+	  vra = vec_add ( vra, stride);
+	}
+    }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f32_matrix_gatherx2_transpose (float * tm, float * m)
+{
+  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
+  vi32_t vra;
+  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for (i = 0; i < rows; i+=2)
+    {
+      float *cadr = &m[i];
+      float *cadr1 = &m[i+1];
+      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
+      vf32_t *radr1 = (vf32_t*)&tm[((i+1) * columns)];
+
+      vra = vra_init;
+      for (j = 0; j < columns/4; j++)
+	{
+	  vf32_t vrow0, vrow1;
+	  vrow0 = vec_vgl4fswo (cadr, vra);
+	  vrow1 = vec_vgl4fswo (cadr1, vra);
+	  radr[j] = vrow0;
+	  radr1[j] = vrow1;
+	  vra = vec_add ( vra, stride);
+	}
+    }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f32_matrix_gatherx4_transpose (float * tm, float * m)
+{
+  vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
+  vi32_t vra;
+  vi32_t stride = { MN * 4 * 4, MN * 4 * 4, MN * 4 * 4, MN * 4 * 4 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for (i = 0; i < rows; i+=4)
+    {
+      float *cadr = &m[i];
+      float *cadr1 = &m[i+1];
+      float *cadr2 = &m[i+2];
+      float *cadr3 = &m[i+3];
+      vf32_t *radr = (vf32_t*)&tm[(i * columns)];
+      vf32_t *radr1 = (vf32_t*)&tm[((i+1) * columns)];
+      vf32_t *radr2 = (vf32_t*)&tm[((i+2) * columns)];
+      vf32_t *radr3 = (vf32_t*)&tm[((i+3) * columns)];
+
+      vra = vra_init;
+      for (j = 0; j < columns/4; j++)
+	{
+	  vf32_t vrow0, vrow1, vrow2, vrow3;
+	  vrow0 = vec_vgl4fswo (cadr, vra);
+	  vrow1 = vec_vgl4fswo (cadr1, vra);
+	  vrow2 = vec_vgl4fswo (cadr2, vra);
+	  vrow3 = vec_vgl4fswo (cadr3, vra);
+	  radr[j] = vrow0;
+	  radr1[j] = vrow1;
+	  radr2[j] = vrow2;
+	  radr3[j] = vrow3;
+	  vra = vec_add ( vra, stride);
+	}
+    }
 }
 
 /* Compiler generation tests.  */

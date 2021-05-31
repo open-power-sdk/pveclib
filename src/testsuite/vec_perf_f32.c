@@ -90,6 +90,16 @@ int timed_fpclassify_f32 (void)
 }
 
 int
+timed_setup_f32_transpose ()
+{
+  int rc = 0;
+
+  test_f32_Imatrix_init (&matrix_f32[0][0]);
+
+  return rc;
+}
+
+int
 timed_scalar_f32_transpose ()
 {
   float tmatrix[MN][MN] __attribute__ ((aligned (128)));

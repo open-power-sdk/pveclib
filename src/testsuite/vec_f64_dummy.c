@@ -33,6 +33,7 @@
 //#define __DEBUG_PRINT__
 
 #include <pveclib/vec_f64_ppc.h>
+#include <testsuite/arith128_test_f64.h>
 
 vf64_t
 test_vec_xviexpdp (vui64_t sig, vui64_t exp)
@@ -559,5 +560,166 @@ vb64_t
 __test_cmpledp (vf64_t a, vf64_t b)
 {
   return vec_cmple (a, b);
+}
+
+/*
+ * The following are both compile tests for Gather/Scatter operations
+ * and performance kernels for performance tests.
+ */
+
+double matrix_f64[MN][MN] __attribute__ ((aligned (128)));
+
+void
+test_f64_Imatrix_init (double * array)
+{
+  long i, j, k;
+  long rows, columns;
+
+  rows = columns = MN;
+
+#ifdef __DEBUG_PRINT__
+  printf ("init_indentity array[%d,%d]\n",
+	  rows, columns);
+#endif
+
+  for ( i=0; i<rows; i++ )
+  {
+    for ( j=0; j<columns; j++ )
+      {
+	k = (i * columns) + j;
+	if (i == j)
+	  {
+	    array [k] = 1.0;
+#ifdef __DEBUG_PRINT__
+	    printf ("init_indentity array[%d,%d] is %f\n",
+			i, j, array [k]);
+#endif
+	  }
+	else
+	  {
+	    array [k] = 0.0;
+	  }
+      }
+  }
+}
+
+void
+#if !defined(__clang__)
+__attribute__ ((optimize ("unroll-loops")))
+#endif
+test_f64_matrix_transpose (double * tm, double * m)
+{
+  long i, j, k, l;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for ( i=0; i<rows; i++ )
+  {
+    for ( j=0; j<columns; j++ )
+      {
+	k = (i * columns) + j;
+	l = (j * columns) + i;
+	tm[l] = m[k];
+      }
+  }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f64_matrix_gather_transpose (double * tm, double * m)
+{
+  vi64_t vra = { 0, MN * 8 };
+  vui64_t stride = { MN * 8 * 2, MN * 8 * 2 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for (i = 0; i < rows; i++)
+    {
+      double *cadr = &m[i];
+      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
+      vra = (vi64_t) { 0, MN*8};
+      for (j = 0; j < columns/2; j++)
+	{
+	  radr[j] = vec_vglfddo (cadr, vra);
+	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
+	}
+    }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f64_matrix_gatherx2_transpose (double * tm, double * m)
+{
+  vi64_t vra =
+    { 0, MN * 8 };
+  vui64_t stride =
+    { MN * 8 * 2, MN * 8 * 2 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for (i = 0; i < rows; i+=2)
+    {
+      double *cadr = &m[i];
+      double *cadr1 = &m[i+1];
+      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
+      vf64_t *radr1 = (vf64_t*)&tm[((i+1) * columns)];
+
+      vra = (vi64_t) { 0, MN*8};
+      for (j = 0; j < columns/2; j++)
+	{
+	  vf64_t vrow0, vrow1;
+	  vrow0 = vec_vglfddo (cadr, vra);
+	  vrow1 = vec_vglfddo (cadr1, vra);
+	  radr[j] = vrow0;
+	  radr1[j] = vrow1;
+	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
+	}
+    }
+}
+
+void
+//__attribute__ ((optimize ("unroll-loops")))
+test_f64_matrix_gatherx4_transpose (double * tm, double * m)
+{
+  vi64_t vra =
+    { 0, MN * 8 };
+  vui64_t stride =
+    { MN * 8 * 2, MN * 8 * 2 };
+  long i, j;
+  long rows, columns;
+
+  rows = columns = MN;
+
+  for (i = 0; i < rows; i+=4)
+    {
+      double *cadr = &m[i];
+      double *cadr1 = &m[i+1];
+      double *cadr2 = &m[i+2];
+      double *cadr3 = &m[i+3];
+      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
+      vf64_t *radr1 = (vf64_t*)&tm[((i+1) * columns)];
+      vf64_t *radr2 = (vf64_t*)&tm[((i+2) * columns)];
+      vf64_t *radr3 = (vf64_t*)&tm[((i+3) * columns)];
+
+      vra = (vi64_t) { 0, MN*8};
+      for (j = 0; j < columns/2; j++)
+	{
+	  vf64_t vrow0, vrow1, vrow2, vrow3;
+	  vrow0 = vec_vglfddo (cadr, vra);
+	  vrow1 = vec_vglfddo (cadr1, vra);
+	  vrow2 = vec_vglfddo (cadr2, vra);
+	  vrow3 = vec_vglfddo (cadr3, vra);
+	  radr[j] = vrow0;
+	  radr1[j] = vrow1;
+	  radr2[j] = vrow2;
+	  radr3[j] = vrow3;
+	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
+	}
+    }
 }
 #endif

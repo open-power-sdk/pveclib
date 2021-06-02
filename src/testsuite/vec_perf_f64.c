@@ -88,8 +88,6 @@ int timed_fpclassify_f64 (void)
    return 0;
 }
 
-//static double tmatrix[MN][MN] __attribute__ ((aligned (128)));
-
 int
 timed_setup_f64_transpose ()
 {

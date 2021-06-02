@@ -626,7 +626,6 @@ test_f64_matrix_transpose (double * tm, double * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gather_transpose (double * tm, double * m)
 {
   vi64_t vra = { 0, MN * 8 };
@@ -650,7 +649,6 @@ test_f64_matrix_gather_transpose (double * tm, double * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gatherx2_transpose (double * tm, double * m)
 {
   vi64_t vra =
@@ -683,7 +681,6 @@ test_f64_matrix_gatherx2_transpose (double * tm, double * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f64_matrix_gatherx4_transpose (double * tm, double * m)
 {
   vi64_t vra =

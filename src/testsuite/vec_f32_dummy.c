@@ -701,7 +701,6 @@ test_f32_matrix_transpose (float * tm, float * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f32_matrix_gather_transpose (float * tm, float * m)
 {
   vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
@@ -733,7 +732,6 @@ test_f32_matrix_gather_transpose (float * tm, float * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f32_matrix_gatherx2_transpose (float * tm, float * m)
 {
   vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };
@@ -765,7 +763,6 @@ test_f32_matrix_gatherx2_transpose (float * tm, float * m)
 }
 
 void
-//__attribute__ ((optimize ("unroll-loops")))
 test_f32_matrix_gatherx4_transpose (float * tm, float * m)
 {
   vi32_t vra_init = { 0, MN*4, (MN*2)*4, (MN*3)*4 };

@@ -46,6 +46,58 @@ test_scalar_test_neg (__binary128 vfa)
   return vec_signbitf128 (vfa);
 }
 
+// Convert Float DP to QP
+__binary128
+test_convert_dpqp (vf64_t f64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  result = f64[VEC_DW_H];
+#elif  defined (_ARCH_PWR8)
+  f64[VEC_DW_L] = 0.0;
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  const vui64_t exp_delta = {(0x3fff - 0x3ff), (0x3fff - 0x3ff)};
+
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  if (vec_any_isnormalf64 (vec_splat (f64, VEC_DW_H)))
+    {
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = vec_addudm (d_exp, exp_delta);
+    } else {
+	if (vec_all_iszerof64 (vec_splat (f64, VEC_DW_H)))
+	  {
+	    q_sig = (vui128_t) d_sig;
+	    q_exp = (vui64_t) d_exp;
+	  }
+	else
+	  {
+	    if (vec_all_issubnormalf64 (vec_splat (f64, VEC_DW_H)))
+	      {
+		vui64_t q_denorm = { (0x3fff - 1022), 0 };
+		vui64_t f64_clz;
+		d_sig = vec_sldi ( d_sig, 12);
+		f64_clz = vec_clzd (d_sig);
+		d_sig = vec_sl (d_sig, f64_clz);
+		q_exp = vec_subudm (q_denorm, f64_clz);
+		q_sig = vec_srqi ((vui128_t) d_sig, 15);
+	      } else {
+		q_sig = vec_srqi ((vui128_t) d_sig, 4);
+		q_exp = (vui64_t) CONST_VINT64_DW(0x7fff000000000000, 0);
+	      }
+	  }
+    }
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) f64, signmask);
+  result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
 int
 test_scalar_cmpto_exp_gt (__binary128 vfa, __binary128 vfb)
 {
@@ -477,7 +529,7 @@ test_vec_max8_f128 (__binary128 vf1, __binary128 vf2,
   return maxres;
 }
 
-#ifndef PVECLIB_DISABLE_F128MATH
+#ifndef PVECLIB_DISABLE_F128ARITH
 #ifdef __FLOAT128__
 
 __binary128
@@ -488,6 +540,7 @@ test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,
 {
   __binary128 maxres = vf1;
 
+#ifndef __clang__
   if (vf2 > vf1)
     maxres = vf2;
   if (vf3 > maxres)
@@ -502,6 +555,7 @@ test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,
     maxres = vf7;
   if (vf8 > maxres)
     maxres = vf8;
+#endif
 
   return maxres;
 }
@@ -617,12 +671,16 @@ test_vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
 __float128
 test_absdiff (__float128 vra, __float128 vrb)
 {
+#ifndef __clang__
   __float128 result;
   if (vra > vrb)
     result = vra - vrb;
   else
     result = vrb - vra;
   return result;
+#else
+  return vra;
+#endif
 }
 
 // TBD will sub-in pveclib softfloat for P8 when available
@@ -630,6 +688,7 @@ test_absdiff (__float128 vra, __float128 vrb)
 __float128
 test_scalar_add128 (__float128 vra, __float128 vrb)
 {
+#ifndef __clang__
   if (__builtin_cpu_supports("ieee128"))
     {
       __float128 result;
@@ -643,11 +702,15 @@ test_scalar_add128 (__float128 vra, __float128 vrb)
   else
     // Generate call to __addkf3
     return (vra + vrb);
+#else
+  return vra;
+#endif
 }
 
 __float128
 test_scalar_div128 (__float128 vra, __float128 vrb)
 {
+#ifndef __clang__
   if (__builtin_cpu_supports("ieee128"))
     {
       __float128 result;
@@ -661,11 +724,15 @@ test_scalar_div128 (__float128 vra, __float128 vrb)
   else
     // Generate call to __divkf3
     return (vra / vrb);
+#else
+  return vra;
+#endif
 }
 
 __float128
 test_scalar_mul128 (__float128 vra, __float128 vrb)
 {
+#ifndef __clang__
   if (__builtin_cpu_supports("ieee128"))
     {
       __float128 result;
@@ -679,11 +746,15 @@ test_scalar_mul128 (__float128 vra, __float128 vrb)
   else
     // Generate call to __mulkf3
     return (vra * vrb);
+#else
+  return vra;
+#endif
 }
 
 __float128
 test_scalar_sub128 (__float128 vra, __float128 vrb)
 {
+#ifndef __clang__
   if (__builtin_cpu_supports("ieee128"))
     {
       __float128 result;
@@ -697,11 +768,15 @@ test_scalar_sub128 (__float128 vra, __float128 vrb)
   else
     // Generate call to __subkf3
     return (vra - vrb);
+#else
+  return vra;
+#endif
 }
 
 __float128
 test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
 {
+#ifndef __clang__
   const __float128 f128_one = 1.0Q;
   const __float128 inv_fact2 = (1.0Q / 2.0Q);
   const __float128 inv_fact3 = (1.0Q / 6.0Q);
@@ -740,6 +815,9 @@ test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
   xmaf8 = (xma8 * inv_fact8);
   term = (term + xmaf8);
   return (expa * term);
+#else
+  return x;
+#endif
 }
 #endif
 #endif

@@ -29,7 +29,6 @@
 #include <pveclib/vec_int64_ppc.h>
 #include <pveclib/vec_f64_ppc.h>
 #include <testsuite/arith128_test_f64.h>
-#include <testsuite/vec_perf_f64.h>
 
 #define __DOUBLE_ZERO (0x0000000000000000UL)
 #define __DOUBLE_NZERO (0x8000000000000000UL)
@@ -2944,42 +2943,6 @@ test_extract_insert_f64 ()
   return (rc);
 }
 
-double matrix_f64 [MN][MN] __attribute__ ((aligned (128)));
-
-void
-test_f64_Imatrix_init (double * array)
-{
-  long i, j, k;
-  long rows, columns;
-
-  rows = columns = MN;
-
-#ifdef __DEBUG_PRINT__
-  printf ("init_indentity array[%d,%d]\n",
-	  rows, columns);
-#endif
-
-  for ( i=0; i<rows; i++ )
-  {
-    for ( j=0; j<columns; j++ )
-      {
-	k = (i * columns) + j;
-	if (i == j)
-	  {
-	    array [k] = 1.0;
-#ifdef __DEBUG_PRINT__
-	    printf ("init_indentity array[%d,%d] is %f\n",
-			i, j, array [k]);
-#endif
-	  }
-	else
-	  {
-	    array [k] = 0.0;
-	  }
-      }
-  }
-}
-
 int
 #if !defined(__clang__)
 __attribute__ ((optimize ("unroll-loops")))
@@ -3026,126 +2989,6 @@ test_f64_Imatrix_check (double * array)
   return rc;
 }
 
-void
-#if !defined(__clang__)
-__attribute__ ((optimize ("unroll-loops")))
-#endif
-test_f64_matrix_transpose (double * tm, double * m)
-{
-  long i, j, k, l;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for ( i=0; i<rows; i++ )
-  {
-    for ( j=0; j<columns; j++ )
-      {
-	k = (i * columns) + j;
-	l = (j * columns) + i;
-	tm[l] = m[k];
-      }
-  }
-}
-
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f64_matrix_gather_transpose (double * tm, double * m)
-{
-  vi64_t vra = { 0, MN * 8 };
-  vui64_t stride = { MN * 8 * 2, MN * 8 * 2 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for (i = 0; i < rows; i++)
-    {
-      double *cadr = &m[i];
-      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
-      vra = (vi64_t) { 0, MN*8};
-      for (j = 0; j < columns/2; j++)
-	{
-	  radr[j] = vec_vglfddo (cadr, vra);
-	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
-	}
-    }
-}
-
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f64_matrix_gatherx2_transpose (double * tm, double * m)
-{
-  vi64_t vra =
-    { 0, MN * 8 };
-  vui64_t stride =
-    { MN * 8 * 2, MN * 8 * 2 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for (i = 0; i < rows; i+=2)
-    {
-      double *cadr = &m[i];
-      double *cadr1 = &m[i+1];
-      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
-      vf64_t *radr1 = (vf64_t*)&tm[((i+1) * columns)];
-
-      vra = (vi64_t) { 0, MN*8};
-      for (j = 0; j < columns/2; j++)
-	{
-	  vf64_t vrow0, vrow1;
-	  vrow0 = vec_vglfddo (cadr, vra);
-	  vrow1 = vec_vglfddo (cadr1, vra);
-	  radr[j] = vrow0;
-	  radr1[j] = vrow1;
-	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
-	}
-    }
-}
-
-void
-//__attribute__ ((optimize ("unroll-loops")))
-test_f64_matrix_gatherx4_transpose (double * tm, double * m)
-{
-  vi64_t vra =
-    { 0, MN * 8 };
-  vui64_t stride =
-    { MN * 8 * 2, MN * 8 * 2 };
-  long i, j;
-  long rows, columns;
-
-  rows = columns = MN;
-
-  for (i = 0; i < rows; i+=4)
-    {
-      double *cadr = &m[i];
-      double *cadr1 = &m[i+1];
-      double *cadr2 = &m[i+2];
-      double *cadr3 = &m[i+3];
-      vf64_t *radr = (vf64_t*)&tm[(i * columns)];
-      vf64_t *radr1 = (vf64_t*)&tm[((i+1) * columns)];
-      vf64_t *radr2 = (vf64_t*)&tm[((i+2) * columns)];
-      vf64_t *radr3 = (vf64_t*)&tm[((i+3) * columns)];
-
-      vra = (vi64_t) { 0, MN*8};
-      for (j = 0; j < columns/2; j++)
-	{
-	  vf64_t vrow0, vrow1, vrow2, vrow3;
-	  vrow0 = vec_vglfddo (cadr, vra);
-	  vrow1 = vec_vglfddo (cadr1, vra);
-	  vrow2 = vec_vglfddo (cadr2, vra);
-	  vrow3 = vec_vglfddo (cadr3, vra);
-	  radr[j] = vrow0;
-	  radr1[j] = vrow1;
-	  radr2[j] = vrow2;
-	  radr3[j] = vrow3;
-	  vra = (vi64_t) vec_addudm ((vui64_t) vra, stride);
-	}
-    }
-}
-
 int
 test_indentity_array ()
 {
@@ -3177,107 +3020,6 @@ test_indentity_array ()
   return rc;
 }
 
-#define TIMING_ITERATIONS 10
-#if 1
-int
-test_time_f64 (void)
-{
-  long i;
-  uint64_t t_start, t_end, t_delta;
-  double delta_sec;
-  int rc = 0;
-
-  printf ("\n%s is_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_is_f64 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s is_f64 end", __FUNCTION__);
-  printf ("\n%s is_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
-	  delta_sec);
-
-  printf ("\n%s fpclassify_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_fpclassify_f64 ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s fpclassify_f64 end", __FUNCTION__);
-  printf ("\n%s fpclassify_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-
-  // initialize the test array to the Identity matrix
-  test_f64_Imatrix_init  (&matrix_f64[0][0]);
-
-  printf ("\n%s scalar_transpose_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_scalar_f64_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s scalar_transpose_f64 end", __FUNCTION__);
-  printf ("\n%s scalar_transpose_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gather_transpose_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gather_f64_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gather_transpose_f64 end", __FUNCTION__);
-  printf ("\n%s gather_transpose_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gatherx2_transpose_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gatherx2_f64_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gatherx2_transpose_f64 end", __FUNCTION__);
-  printf ("\n%s gatherx2_transpose_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  printf ("\n%s gatherx4_transpose_f64 start, ...\n", __FUNCTION__);
-  t_start = __builtin_ppc_get_timebase ();
-  for (i = 0; i < TIMING_ITERATIONS; i++)
-    {
-      rc += timed_gatherx4_f64_transpose ();
-    }
-  t_end = __builtin_ppc_get_timebase ();
-  t_delta = t_end - t_start;
-  delta_sec = TimeDeltaSec (t_delta);
-
-  printf ("\n%s gatherx4_transpose_f64 end", __FUNCTION__);
-  printf ("\n%s gatherx4_transpose_f64  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
-	  t_delta, delta_sec);
-
-  return (rc);
-}
-#endif
 int
 test_vec_f64 (void)
 {
@@ -3302,8 +3044,5 @@ test_vec_f64 (void)
   rc += test_stvgdfdx ();
   rc += test_indentity_array ();
 
-  rc += test_time_f64 ();
-
   return (rc);
 }
-

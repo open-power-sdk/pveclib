@@ -25,6 +25,7 @@
 
 extern int timed_is_f32 (void);
 extern int timed_fpclassify_f32 (void);
+extern int timed_setup_f32_transpose ();
 extern int timed_scalar_f32_transpose ();
 extern int timed_gather_f32_transpose ();
 extern int timed_gatherx2_f32_transpose ();

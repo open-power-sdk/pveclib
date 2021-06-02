@@ -74,6 +74,21 @@ test_muludq(void);
 extern int
 test_msumudm (void);
 
+extern vui128_t
+__test_muludq (vui128_t *mh, vui128_t a, vui128_t b);
+
+extern vui128_t
+example_longdiv_10e32 (vui128_t *q, vui128_t *d, long int _N);
+
+#ifndef PVECLIB_DISABLE_DFP
+extern vBCD_t
+example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
+
+extern long int
+example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
+			 long int _C , long int _N);
+#endif
+
 extern int
 test_vec_i128 (void);
 

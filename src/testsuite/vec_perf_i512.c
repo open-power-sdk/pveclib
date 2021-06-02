@@ -28,7 +28,6 @@
 #include <pveclib/vec_int128_ppc.h>
 #include <pveclib/vec_int512_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_print.h>
 #include <testsuite/arith128_test_i512.h>
 #include <testsuite/vec_perf_i512.h>

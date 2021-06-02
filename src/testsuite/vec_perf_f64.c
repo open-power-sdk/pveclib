@@ -89,6 +89,16 @@ int timed_fpclassify_f64 (void)
 }
 
 int
+timed_setup_f64_transpose ()
+{
+  int rc = 0;
+
+  test_f64_Imatrix_init (&matrix_f64[0][0]);
+
+  return rc;
+}
+
+int
 timed_scalar_f64_transpose ()
 {
   double tmatrix[MN][MN] __attribute__ ((aligned (128)));

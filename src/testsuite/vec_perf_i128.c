@@ -33,8 +33,8 @@
 //#define __DEBUG_PRINT__
 #include <pveclib/vec_int128_ppc.h>
 
-//#include "arith128.h"
 #include <testsuite/arith128_print.h>
+#include <testsuite/arith128_test_i128.h>
 #include <testsuite/vec_perf_i128.h>
 
 extern const vui128_t vtipowof10 [];
@@ -201,8 +201,6 @@ timed_muludq (void)
 /* Older (GCC6) compilers ignore the "no-unroll-loops" pragma and make
    it hard to isolate each iteration of vec_muludq.  This version
    calls __test_muludq from vec_int128_dummy.c as a work around.  */
-extern vui128_t
-__test_muludq (vui128_t *mh, vui128_t a, vui128_t b);
 
 int
 timed_muludqx (void)
@@ -239,8 +237,6 @@ timed_muludqx (void)
 }
 
 //#define __DEBUG_PRINT__ 1
-extern vui128_t
-example_longdiv_10e32 (vui128_t *q, vui128_t *d, long int _N);
 #define test_example_longdiv_10e32(_i, _j, _k)	example_longdiv_10e32(_i, _j, _k)
 
 int
@@ -286,8 +282,6 @@ timed_longdiv_e32 (void)
 
 #ifndef PVECLIB_DISABLE_DFP
 //#define __DEBUG_PRINT__ 1
-extern vBCD_t
-example_longbcdcf_10e32 (vui128_t *q, vui128_t *d, long int _N);
 #define test_example_longbcdcf_10e32(_i, _j, _k)	example_longbcdcf_10e32(_i, _j, _k)
 
 int
@@ -379,9 +373,7 @@ timed_longbcdcf_10e32 (void)
 
 //#define __DEBUG_PRINT__ 1
 #define test_example_longbcdct_10e32(_i, _j, _k, _l)	example_longbcdct_10e32(_i, _j, _k, _l)
-extern long int
-example_longbcdct_10e32 (vui128_t *d, vBCD_t decimal,
-			 long int _C , long int _N);
+
 
 int
 timed_longbcdct_10e32 (void)

@@ -2612,23 +2612,29 @@ vec_cmpeqsq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpequq (vui128_t vra, vui128_t vrb)
 {
-#ifdef _ARCH_PWR8
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpeq (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpequq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return vrt;
+#endif
+#elif defined (_ARCH_PWR8)
   vui64_t equd, swapd;
 
   equd = (vui64_t) vec_cmpequd ((vui64_t) vra, (vui64_t) vrb);
   swapd = vec_swapd (equd);
   return (vb128_t) vec_and (equd, swapd);
 #else
-  vui32_t equw, equ1, equ2, equ3;
-
-  equw = (vui32_t) vec_cmpeq ((vui32_t) vra,
-      (vui32_t) vrb);
-  equ1 = vec_sld (equw, equw, 4);
-  equ2 = vec_sld (equw, equw, 8);
-  equ3 = vec_sld (equw, equw, 12);
-  equw = vec_and (equw, equ1);
-  equ2 = vec_and (equ2, equ3);
-  return (vui128_t) vec_and (equw, equ2);
+  if (vec_all_eq ((vui32_t) vra, (vui32_t) vrb))
+    return (vb128_t) vec_cmpeq ((vui32_t) vra, (vui32_t) vrb);
+  else
+    return (vb128_t) vec_splat_u32 (0);
 #endif
 }
 
@@ -2652,12 +2658,26 @@ vec_cmpequq (vui128_t vra, vui128_t vrb)
 static inline vb128_t
 vec_cmpgesq (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpge (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtsq %0,%2,%1;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
+#endif
+#else
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
   _b = vec_xor ((vui32_t) vrb, signbit);
   return vec_cmpgeuq ((vui128_t) _a, (vui128_t) _b);
+#endif
 }
 
 /** \brief Vector Compare Greater Than or Equal Unsigned Quadword.
@@ -2687,10 +2707,24 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpgeuq (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpge (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtuq %0,%2,%1;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
+#endif
+#else
   vui128_t a_b;
 
   a_b = vec_subcuq (vra, vrb);
   return vec_setb_cyq (a_b);
+#endif
 }
 
 /** \brief Vector Compare Greater Than Signed Quadword.
@@ -2713,12 +2747,26 @@ vec_cmpgeuq (vui128_t vra, vui128_t vrb)
 static inline vb128_t
 vec_cmpgtsq (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpgt (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtsq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return vrt;
+#endif
+#else
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
   _b = vec_xor ((vui32_t) vrb, signbit);
   return vec_cmpgtuq ((vui128_t) _a, (vui128_t) _b);
+#endif
 }
 
 /** \brief Vector Compare Greater Than Unsigned Quadword.
@@ -2748,10 +2796,24 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpgtuq (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpgt (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtuq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return vrt;
+#endif
+#else
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
   return vec_setb_ncq (b_a);
+#endif
 }
 
 /** \brief Vector Compare Less Than or Equal Signed Quadword.
@@ -2774,12 +2836,26 @@ vec_cmpgtuq (vui128_t vra, vui128_t vrb)
 static inline vb128_t
 vec_cmplesq (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmple (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtsq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
+#endif
+#else
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
   _b = vec_xor ((vui32_t) vrb, signbit);
   return vec_cmpleuq ((vui128_t) _a, (vui128_t) _b);
+#endif
 }
 
 /** \brief Vector Compare Less Than or Equal Unsigned Quadword.
@@ -2809,10 +2885,24 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpleuq (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmple (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtuq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
+#endif
+#else
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
   return vec_setb_cyq (b_a);
+#endif
 }
 
 
@@ -2836,12 +2926,26 @@ vec_cmpleuq (vui128_t vra, vui128_t vrb)
 static inline vb128_t
 vec_cmpltsq (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmplt (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtsq %0,%2,%1;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return vrt;
+#endif
+#else
   const vui32_t signbit = CONST_VINT128_W(0x80000000, 0, 0, 0);
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
   _b = vec_xor ((vui32_t) vrb, signbit);
   return vec_cmpltuq ((vui128_t) _a, (vui128_t) _b);
+#endif
 }
 
 /** \brief Vector Compare Less Than Unsigned Quadword.
@@ -2871,10 +2975,24 @@ vec_cmpltsq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpltuq (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmplt (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpgtuq %0,%2,%1;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return vrt;
+#endif
+#else
   vui128_t  a_b;
 
   a_b = vec_subcuq (vra, vrb);
   return vec_setb_ncq (a_b);
+#endif
 }
 
 /** \brief Vector Compare Equal Signed Quadword.
@@ -2926,26 +3044,29 @@ vec_cmpnesq (vi128_t vra, vi128_t vrb)
 static inline vb128_t
 vec_cmpneuq (vui128_t vra, vui128_t vrb)
 {
-#ifdef _ARCH_PWR8
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_cmpne (vra, vrb);
+#else
+  vb128_t vrt;
+  __asm__(
+      "vcmpequq %0,%1,%2;\n"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb)
+      : );
+  return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
+#endif
+#elif defined (_ARCH_PWR8)
   __vector unsigned long long equd, swapd;
 
-  equd = (vui64_t) vec_cmpequd ((vui64_t) vra,
-      (vui64_t) vrb);
+  equd = (vui64_t) vec_cmpequd ((vui64_t) vra, (vui64_t) vrb);
   swapd = vec_swapd (equd);
   return (vb128_t) vec_nand (equd, swapd);
 #else
-  vui32_t equw, equ1, equ2, equ3;
-
-  equw = (vui32_t) vec_cmpeq ((vui32_t) vra, (vui32_t) vrb);
-  equ1 = vec_sld (equw, equw, 4);
-  equ2 = vec_sld (equw, equw, 8);
-  equ3 = vec_sld (equw, equw, 12);
-  equw = vec_and (equw, equ1);
-  equ2 = vec_and (equ2, equ3);
-  /* POWER7 does not have vnand nor xxlnand, so requires an extra vnor
-     after the final vand.  */
-  equw = vec_and (equw, equ2);
-  return (vb128_t) vec_nor (equw, equw);
+  if (vec_any_ne ((vui32_t) vra, (vui32_t) vrb))
+    return (vb128_t) vec_splat_s32 (-1);
+  else
+    return (vb128_t) vec_splat_u32 (0);
 #endif
 }
 
@@ -2971,7 +3092,22 @@ int
 vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_eq (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpequq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#elif defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq((vui64_t)vra, (vui64_t)vrb);
 #else
   result = vec_all_eq((vui32_t)vra, (vui32_t)vrb);
@@ -2999,6 +3135,22 @@ vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
 static inline int
 vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ge (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtsq. %0,%4,%3;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t a_b, _a, _b;
@@ -3008,6 +3160,7 @@ vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
 
   a_b = vec_subcuq (_a, _b);
   return vec_all_eq((vui32_t)a_b, carry128);
+#endif
 }
 
 /** \brief Vector Compare any Greater Than Signed Quadword.
@@ -3030,6 +3183,22 @@ vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
 static inline int
 vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ge (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtsq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t b_a, _a, _b;
@@ -3039,6 +3208,7 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
 
   b_a = vec_subcuq (_b, _a);
   return vec_all_eq((vui32_t)b_a, ncarry128);
+#endif
 }
 
 /** \brief Vector Compare any Less Than or Equal Signed Quadword.
@@ -3061,6 +3231,22 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
 static inline int
 vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_le (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtsq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t b_a, _a, _b;
@@ -3070,6 +3256,7 @@ vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
 
   b_a = vec_subcuq (_b, _a);
   return vec_all_eq((vui32_t)b_a, carry128);
+#endif
 }
 
 /** \brief Vector Compare any Less Than Signed Quadword.
@@ -3092,6 +3279,22 @@ vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
 static inline int
 vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_lt (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtsq. %0,%4,%3;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t a_b, _a, _b;
@@ -3101,6 +3304,7 @@ vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
 
   a_b = vec_subcuq (_a, _b);
   return vec_all_eq((vui32_t)a_b, ncarry128);
+#endif
 }
 
 /** \brief Vector Compare all Not Equal Signed Quadword.
@@ -3125,7 +3329,22 @@ int
 vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ne (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpequq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#elif defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
@@ -3155,7 +3374,22 @@ int
 vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_eq (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpequq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#elif defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
@@ -3183,11 +3417,28 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 static inline int
 vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ge (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtuq. %0,%4,%3;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
   vui128_t a_b;
 
   a_b = vec_subcuq (vra, vrb);
   return vec_all_eq ((vui32_t) a_b, carry128);
+#endif
 }
 
 /** \brief Vector Compare any Greater Than Unsigned Quadword.
@@ -3210,11 +3461,28 @@ vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
 static inline int
 vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ge (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtuq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
   return vec_all_eq ((vui32_t) b_a, ncarry128);
+#endif
 }
 
 /** \brief Vector Compare any Less Than or Equal Unsigned Quadword.
@@ -3237,11 +3505,28 @@ vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
 static inline int
 vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_le (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtuq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
   return vec_all_eq ((vui32_t) b_a, carry128);
+#endif
 }
 
 /** \brief Vector Compare any Less Than Unsigned Quadword.
@@ -3264,11 +3549,28 @@ vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
 static inline int
 vec_cmpuq_all_lt (vui128_t vra, vui128_t vrb)
 {
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_lt (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpgtuq. %0,%4,%3;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,25,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
   vui128_t  a_b;
 
   a_b = vec_subcuq (vra, vrb);
   return vec_all_eq ((vui32_t) a_b, ncarry128);
+#endif
 }
 
 /** \brief Vector Compare all Not Equal Unsigned Quadword.
@@ -3293,7 +3595,22 @@ int
 vec_cmpuq_all_ne (vui128_t vra, vui128_t vrb)
 {
   int result;
-#if defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+  return vec_all_ne (vra, vrb);
+#else
+  vb128_t vrt;
+  int u, r;
+  __asm__(
+      "vcmpequq. %0,%3,%4;\n"
+      "mfocrf    %1,2;\n"
+      "rlwinm    %2,%1,27,1"
+      : "=v" (vrt), "=&r" (u), "=r" (r)
+      : "v" (vra), "v" (vrb)
+      : "cr6");
+  return r;
+#endif
+#elif defined (_ARCH_PWR8) && (__GNUC__ >= 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
   result = !vec_all_eq ((vui64_t) vra, (vui64_t) vrb);
 #else
   result = !vec_all_eq ((vui32_t) vra, (vui32_t) vrb);
@@ -4406,7 +4723,6 @@ vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
       : );
 #else
   vui128_t p_even, p_odd, p_sum1, p_cry1, p_cry2;
-  const vui64_t zero = { 0, 0 };
   // Generate separate 128-bit even/odd products to isolate the carries
   p_even = vec_muleud (a, b);
   p_odd  = vec_muloud (a, b);
@@ -5666,7 +5982,7 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4 - 6 |2/2 cycles|
+ *  |power8   | 4 - 6 | 2/cycle  |
  *  |power9   | 3 - 5 | 2/cycle  |
  *
  *  Vector quadword carries are normally the result of a
@@ -5682,7 +5998,7 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
 static inline vb128_t
 vec_setb_cyq (vui128_t vcy)
 {
-#ifdef _ARCH_PWR8
+#ifdef _ARCH_PWR9
   const vui128_t zero = (vui128_t) vec_splat_u32(0);
 
   return (vb128_t) vec_vsubuqm (zero, vcy);
@@ -5690,11 +6006,8 @@ vec_setb_cyq (vui128_t vcy)
   const vui32_t ones =  vec_splat_u32(1);
   vui32_t rcy;
 
-  rcy = vec_and ((vui32_t)vcy, ones);
-  rcy = (vui32_t) vec_cmpeq (rcy, ones);
-  rcy = vec_splat (rcy, VEC_W_L);
-
-  return (vb128_t) rcy;
+  rcy = vec_splat ((vui32_t) vcy, VEC_W_L);
+  return (vb128_t) vec_cmpeq (rcy, ones);
 #endif
 }
 
@@ -5706,7 +6019,7 @@ vec_setb_cyq (vui128_t vcy)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4 - 6 |2/2 cycles|
+ *  |power8   | 4 - 6 | 2/cycle  |
  *  |power9   | 3 - 5 | 2/cycle  |
  *
  *  Vector quadword carries are normally the result of a
@@ -5722,19 +6035,16 @@ vec_setb_cyq (vui128_t vcy)
 static inline vb128_t
 vec_setb_ncq (vui128_t vcy)
 {
-#ifdef _ARCH_PWR8
+#ifdef _ARCH_PWR9
   const vui128_t zero = (vui128_t) vec_splat_u32(0);
 
   return (vb128_t) vec_vsubeuqm (zero, zero, vcy);
 #else
-  const vui32_t ones =  vec_splat_u32(1);
+  const vui32_t zero =  CONST_VINT128_W(0, 0, 0, 0);
   vui32_t rcy;
 
-  rcy = vec_and ((vui32_t)vcy, ones);
-  rcy = (vui32_t) vec_cmplt (rcy, ones);
-  rcy = vec_splat (rcy, VEC_W_L);
-
-  return (vb128_t) rcy;
+  rcy = vec_splat ((vui32_t) vcy, VEC_W_L);
+  return (vb128_t) vec_cmpeq (rcy, zero);
 #endif
 }
 

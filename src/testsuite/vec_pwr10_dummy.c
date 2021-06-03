@@ -54,6 +54,60 @@ test_gcc_cmpsq_gt_PWR10 (vi128_t a, vi128_t b)
 }
 #endif
 
+vb128_t
+test_vec_cmpeqsq_PWR10 (vi128_t a, vi128_t b)
+{
+  return (vec_cmpeqsq (a, b));
+}
+
+vb128_t
+test_vec_cmpgesq_PWR10 (vi128_t a, vi128_t b)
+{
+  return (vec_cmpgesq (a, b));
+}
+
+vb128_t
+test_vec_cmpgtsq_PWR10 (vi128_t a, vi128_t b)
+{
+  return (vec_cmpgtsq (a, b));
+}
+
+vb128_t
+test_vec_cmpltsq_PWR10 (vi128_t a, vi128_t b)
+{
+  return (vec_cmpltsq (a, b));
+}
+
+vb128_t
+test_vec_cmpequq_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_cmpequq (a, b));
+}
+
+vb128_t
+test_vec_cmpgtuq_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_cmpgtuq (a, b));
+}
+
+vb128_t
+test_vec_cmpgeuq_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_cmpgeuq (a, b));
+}
+
+vb128_t
+test_vec_cmpltuq_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_cmpltuq (a, b));
+}
+
+vb128_t
+test_vec_cmpneuq_PWR10 (vui128_t a, vui128_t b)
+{
+  return (vec_cmpneuq (a, b));
+}
+
 vi128_t
 test_min_ui128_PWR10  (vi128_t a, vi128_t b)
 {

@@ -41,6 +41,126 @@
 #include <pveclib/vec_f128_ppc.h>
 
 int
+test_vec_cmpqp_all_tone (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_tone (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzne (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzne (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_ne (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_ne (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_tole (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_tole (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzle (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzle (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_le (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_le (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_toge (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_toge (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzge (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzge (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_ge (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_ge (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_tolt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_tolt (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzlt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzlt (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_lt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_lt (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_togt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_togt (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzgt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzgt (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_gt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_gt (vfa, vfb);
+}
+
+int
+test_vec_all_isunorderedf128 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_all_isunorderedf128 (vfa, vfb);
+}
+
+vb128_t
+test_vec_isunorderedf128 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_isunorderedf128 (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_toeq (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_toeq (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzeq (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzeq (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_eq (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_eq (vfa, vfb);
+}
+
+int
 test_scalar_test_neg (__binary128 vfa)
 {
   return vec_signbitf128 (vfa);
@@ -148,6 +268,18 @@ test_bool_cmp_exp_unordered (__binary128 vfa, __binary128 vfb)
 {
   return (vb128_t) vec_or ((vui32_t) vec_isnanf128 (vfa),
 			   (vui32_t) vec_isnanf128 (vfb));
+}
+
+vb128_t
+test_bool_cmp_exp_unordered_v2 (__binary128 vfa, __binary128 vfb)
+{
+  vb128_t result;
+
+  result = (vb128_t) vec_splat_u32 (0);
+  if (vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb))
+    result = (vb128_t) vec_splat_s32 (-1);
+
+  return result;
 }
 
 __binary128

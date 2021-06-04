@@ -6333,6 +6333,3864 @@ test_cmpne_f128 ()
   return (rc);
 }
 
+//#define __DEBUG_PRINT__
+int
+test_cmpeq_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\ntest_cmpeq_all_f128 ...\n");
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (!vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_eq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_eq 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzeq 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toeq (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toeq 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_eq( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_eq (x, y));
+#endif
+  }
+#endif
+  return (rc);
+}
+
+int
+test_cmpgt_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_gt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_gt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzgt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzgt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_togt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_togt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_gt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_gt (x, y));
+#endif
+  }
+#endif
+#endif
+
+  return (rc);
+}
+
+int
+test_cmplt_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_lt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_lt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzlt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzlt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tolt (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tolt 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_lt( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_lt (x, y));
+#endif
+  }
+#endif
+#endif
+
+  return (rc);
+}
+
+int
+test_cmpge_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ge 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzge 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_toge (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_toge 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ge( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ge (x, y));
+#endif
+  }
+#endif
+#endif
+
+  return (rc);
+}
+
+int
+test_cmple_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 0 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 1b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 2b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nsub );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 3b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 3c fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 3d fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 4b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+
+  if (!vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 5b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_le (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_le 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzle (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzle 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tole (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tole 6b fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_le( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_le (x, y));
+#endif
+  }
+#endif
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__
+int
+test_cmpne_all_f128 ()
+{
+  __binary128 x, y;
+  int rc = 0;
+
+  printf ("\ntest_cmpne_all_f128 ...\n");
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 1 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 2 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 3 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 4 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 5 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 6 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 7 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Don't expect to detect this case for P8 but should on P9
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 8 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 9 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (!vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 10 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 11 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+
+#if 1
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  if (!vec_cmpqp_all_ne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_ne 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  // P8 should detect these because absolute magnitudes are different
+  if (!vec_cmpqp_all_uzne (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_uzne 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+
+  if (!vec_cmpqp_all_tone (x, y))
+  {
+      rc += 1;
+      printf ("vec_cmpqp_all_tone 12 fail\n");
+#ifdef __DEBUG_PRINT__
+      print_vfloat128x ("vec_cmpqp_all_ne( ", x);
+      print_vfloat128x ("                 ,", y);
+      printf           ("                )= %d",
+			vec_cmpqp_all_ne (x, y));
+#endif
+  }
+#endif
+  return (rc);
+}
+
 int
 test_vec_f128 (void)
 {
@@ -6351,5 +10209,12 @@ test_vec_f128 (void)
   rc += test_cmpge_f128 ();
   rc += test_cmple_f128 ();
   rc += test_cmpne_f128 ();
+
+  rc += test_cmpeq_all_f128 ();
+  rc += test_cmpgt_all_f128 ();
+  rc += test_cmplt_all_f128 ();
+  rc += test_cmpge_all_f128 ();
+  rc += test_cmple_all_f128 ();
+  rc += test_cmpne_all_f128 ();
   return (rc);
 }

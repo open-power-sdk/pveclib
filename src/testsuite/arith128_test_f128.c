@@ -9920,7 +9920,7 @@ test_cmpne_all_f128 ()
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
 #endif
-  if (vec_cmpqp_all_ne (x, y))
+  if (!vec_cmpqp_all_ne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_ne 7 fail\n");
@@ -9934,7 +9934,7 @@ test_cmpne_all_f128 ()
 
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // P8 should detect these because absolute magnitudes are different
-  if (vec_cmpqp_all_uzne (x, y))
+  if (!vec_cmpqp_all_uzne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_uzne 7 fail\n");
@@ -9946,7 +9946,7 @@ test_cmpne_all_f128 ()
 #endif
   }
 
-  if (vec_cmpqp_all_tone (x, y))
+  if (!vec_cmpqp_all_tone (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_tone 7 fail\n");
@@ -9967,7 +9967,7 @@ test_cmpne_all_f128 ()
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
 #endif
-  if (vec_cmpqp_all_ne (x, y))
+  if (!vec_cmpqp_all_ne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_ne 8 fail\n");
@@ -9981,7 +9981,7 @@ test_cmpne_all_f128 ()
 
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // Don't expect to detect this case for P8 but should on P9
-  if (vec_cmpqp_all_uzne (x, y))
+  if (!vec_cmpqp_all_uzne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_uzne 8 fail\n");
@@ -9993,7 +9993,7 @@ test_cmpne_all_f128 ()
 #endif
   }
 
-  if (vec_cmpqp_all_tone (x, y))
+  if (!vec_cmpqp_all_tone (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_tone 8 fail\n");
@@ -10014,7 +10014,7 @@ test_cmpne_all_f128 ()
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
 #endif
-  if (vec_cmpqp_all_ne (x, y))
+  if (!vec_cmpqp_all_ne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_ne 9 fail\n");
@@ -10028,7 +10028,7 @@ test_cmpne_all_f128 ()
 
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   // P8 should detect these because absolute magnitudes are different
-  if (vec_cmpqp_all_uzne (x, y))
+  if (!vec_cmpqp_all_uzne (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_uzne 9 fail\n");
@@ -10040,7 +10040,7 @@ test_cmpne_all_f128 ()
 #endif
   }
 
-  if (vec_cmpqp_all_tone (x, y))
+  if (!vec_cmpqp_all_tone (x, y))
   {
       rc += 1;
       printf ("vec_cmpqp_all_tone 9 fail\n");

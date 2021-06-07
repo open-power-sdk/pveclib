@@ -3916,7 +3916,7 @@ vec_cmpqp_all_ne (__binary128 vfa, __binary128 vfb)
   or_ab = (vb128_t) vec_or ( vra, vrb );
   result = (vec_cmpuq_all_ne ((vui128_t) or_ab, (vui128_t) signmask)
             && vec_cmpuq_all_ne ((vui128_t) vra, (vui128_t)vrb))
-         && !vec_all_isunorderedf128 (vfa, vfb);
+         || vec_all_isunorderedf128 (vfa, vfb);
 #endif
   return result;
 }

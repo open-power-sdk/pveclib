@@ -92,6 +92,36 @@ const vui64_t vf128_nsnan = CONST_VINT64_DW(0xffff000080000000, 0);
 const vui32_t vf128_true = CONST_VINT32_W(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
 const vui32_t vf128_false = CONST_VINT32_W(0, 0, 0, 0);
 
+// Use this to hide locally defined constants from Clang (etc).
+// Thius will prevent incorrect optimization for Clang9/10
+static inline __binary128
+const_xfer_vui64t_2_bin128 (vui64_t f128)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__clang_major__ > 6)
+   __binary128 result;
+ #ifdef __VSX__
+   __asm__(
+       "xxlor %x0,%x1,%x1"
+       : "=wa" (result)
+       : "wa" (f128)
+       : );
+ #else
+   __asm__(
+       "vor %0,%1,%1"
+       : "=v" (result)
+       : "v" (f128)
+       : );
+ #endif
+  return result;
+#else
+  __VF_128 vunion;
+
+  vunion.vx2 = f128;
+
+  return (vunion.vf1);
+#endif
+}
+
 int
 test_isinf_signf128 (void)
 {
@@ -6384,6 +6414,8 @@ test_cmpeq_all_f128 ()
 #endif
   }
 #endif
+
+#if 1
   x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
   y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
 #ifdef __DEBUG_PRINT__
@@ -6429,7 +6461,6 @@ test_cmpeq_all_f128 ()
   }
 #endif
 
-#if 1
   x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
@@ -6473,8 +6504,8 @@ test_cmpeq_all_f128 ()
 #endif
 
 #if 1
-  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
-  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  x = const_xfer_vui64t_2_bin128 ( vf128_max );
+  y = const_xfer_vui64t_2_bin128 ( vf128_max );
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
@@ -6561,8 +6592,8 @@ test_cmpeq_all_f128 ()
 #endif
 
 #if 1
-  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
-  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  x = const_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = const_xfer_vui64t_2_bin128 ( vf128_nmax );
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
@@ -9782,8 +9813,8 @@ test_cmpne_all_f128 ()
 #endif
 
 #if 1
-  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
-  y = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  x = const_xfer_vui64t_2_bin128 ( vf128_max );
+  y = const_xfer_vui64t_2_bin128 ( vf128_max );
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);
@@ -9870,8 +9901,8 @@ test_cmpne_all_f128 ()
 #endif
 
 #if 1
-  x = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
-  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  x = const_xfer_vui64t_2_bin128 ( vf128_nmax );
+  y = const_xfer_vui64t_2_bin128 ( vf128_nmax );
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
   print_vfloat128x(" y=  ", y);

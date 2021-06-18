@@ -24,10 +24,14 @@
 
 extern int timed_expxsuba_v1_f128 (void);
 extern int timed_expxsuba_v2_f128 (void);
+
 extern int timed_gcc_max8_f128 (void);
 extern int timed_lib_max8_f128 (void);
 extern int timed_vec_max8_f128 (void);
+extern int timed_vec_max8_f128uz (void);
 
-//extern int test_time_f128 (void);
+extern int timed_gcc_dpqp_f128 (void);
+extern int timed_lib_dpqp_f128 (void);
+extern int timed_vec_dpqp_f128 (void);
 
 #endif /* SRC_TESTSUITE_VEC_PERF_F128_H_ */

@@ -149,7 +149,9 @@
  * - Quad-Precision from/to integer word/doubleword/quadword.
  *   - Cases that don't require rounding (i.e truncate and DW to QP).
  *   - Cases that require rounding
- *     - Round to odd
+ *     - Round to odd. See
+ * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
+ * GCC Avoids Double Rounding Errors With Round-To-Odd</a>
  *     - Round to Nearest/Even
  *     - Others if asked
  * - Quad-Precision arithmetic
@@ -588,7 +590,377 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * using the Move To FPSCR Bit 1 (mtfsb1) instruction.
  *
  * \subsection f128_softfloat_0_0_2 Quad-Precision converts for POWER8
- * TBD.
+ *
+ * IEEE floating-point conversions are also a bit complicated.
+ * Dealing with Not-a-Number (NaN), Infinities and subnormal is
+ * part of it.
+ * But the conversion may also require normalization and rounding
+ * depending on element size and types involved.
+ * Some examples:
+ * - Double precision floats and long long ints can be represented
+ * exactly in Quad precision float. But:
+ * - Down conversions (to doubleword) from Quad-Precision may require
+ *  rounding/truncation.
+ *  - Conversions to integer that overflow are given special values.
+ * - Conversions between QP and quadword integer may also require
+ *  rounding/truncation.
+ *   - 128-bit integer values may not fit into the QPs 113-bit
+ *   significand.
+ *
+ * For PowerISA 3.0 (POWER9) includes full hardware instruction
+ * support for Quad-Precision, Including:
+ * - Conversions between Quad-Precison and Double floating-point
+ * (xscvdpqp, xscvqpdp[o]).
+ * - Conversions between Quad-Precison and doubleword and word integer
+ * (xscvqpsdz, xscvqpswz, xscvqpudz, xscvqpuwz, xscvsdqp, xscvudqp).
+ *
+ * PowerISA 3.1 (POWER10) includes:
+ * - Conversions between Quad-Precison and quadword integer
+ * (xscvqpsqz, xscvqpuqz, xscvsqqp, xscvuqqp).
+ *
+ * For POWER8 (and earlier) we need to do a little more work
+ * The general plan for conversion starts by disassembling the input
+ * value into its parts and analyze.
+ * For signed integer values disassemble usually means sign and
+ * unsigned magnitude.
+ * Analysis might be a range check or counting leading zeros.
+ * For floating point values this is usually sign, exponent, and
+ * significand.
+ * Analysis usually means determining the data class (NaN, infinity,
+ * normal, subnormal, zero) as each requires special handling in the
+ * conversion.
+ *
+ * Conversion involves adjusting the <I>parts</I> as needed the match
+ * the type of the result. This is normally only adds and shifts.
+ * Finally we need to reassemble the parts based on the result type.
+ * For integers this normally just converting the unsigned magnitude
+ * to a signed '2's complement value based on the sign of the input.
+ * For floating-point this requires merging the sign bit with the
+ * (adjusted) significand and merging that with the (adjusted)
+ * exponent.
+ *
+ * The good news is that all of the require operations are already
+ * available in <B>altivec.h</B> or PVECLIB.
+ *
+ * \subsubsection f128_softfloat_0_0_2_0 Convert Double-Precision to Quad-Precision
+ *
+ * This is one of the simpler conversions as the conversion is always
+ * exact (no rounding/truncation is required, and no overflow is
+ * possible). The process starts with disassembling the
+ * double-precision value.
+ * \code
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
+  // Extract the exponent, significand, and sign bit.
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  q_sign = vec_and ((vui32_t) f64, signmask);
+ * \endcode
+ * We insure that the low-order doubleword of the vector f64 is zeroed.
+ * This is necessary for then we normalize the 128-bit significand for
+ * the quad-precision result.
+ * The operations vec_xvxexpdp() and vec_xvxsigdp() are provided by
+ * vec_f64_ppc.h supporting bot the POWER9 instruction and equivalent
+ * implementation for POWER8.
+ * And finally we extract the sign-bit. We can't use the copysign()
+ * here due to the difference in type.
+ *
+ * Now we analyze the data class of the double-precision input.
+ * \code
+  if (vec_all_isfinitef64 (f64))
+    { // Not NaN or Inf
+      if (vec_all_isnormalf64 (vec_splat (f64, VEC_DW_H)))
+	{
+	// ... adjust exponent and expand significand
+	}
+      else
+	{ // Must be zero or subnormal
+	  if (vec_all_iszerof64 (f64))
+	    {
+	      // ... copy zero exponent and significand
+	    }
+	  else
+	    { // Must be subnormal
+	      // ... normalize signifcand for QP and adjust exponent
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      // ... set exponent to QP max and expand significand
+    }
+ * \endcode
+ * This code is arranged with an eye to the most common cases and
+ * specifics of the conversion required by each data class.
+ * The operations vec_all_isfinitef64(), vec_all_isnormalf64() and
+ * vec_all_iszerof64() are provided by
+ * vec_f64_ppc.h supporting both the POWER9 instruction and equivalent
+ * implementation for POWER8.
+ *
+ * The normal case requires shifting the significand and adjusting the exponent.
+ * \code
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+          ...
+	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
+	  q_exp = vec_addudm (d_exp, exp_delta);
+ * \endcode
+ * The double significand has the fraction bits starting a bit-12 and
+ * the implied '1' in bit-11. For quad-precision we need to shift this
+ * right 4-bits to align the fraction to start in bit-16.
+ * We need a quadword shift as the significand will now extend into
+ * the high order bits of the second (low order) doubleword.
+ * To adjust the exponent we need to convert the double biased exponent
+ * (1 to 2046) into unbiased (-1022 to +1023) by subtracting the
+ * exponent bias (+1023 or 0x3ff) value. Then we can add the
+ * quad-precision exponent bias (+16383 or 0x3fff) to compute the
+ * final exponent.
+ * We can combine the bias difference into a single constant
+ * (0x3fff - 0x3ff) and only need a single add at runtime.
+ *
+ * The operations vec_srqi() is provided by vec_int128_ppc.h and
+ * vec_addudm() is provided by vec_int64_ppc.h.
+ * We use PVECLIB operations here to insure that this code is safe to
+ * use with older compilers and pre-POWER8 processors.
+ *
+ * The zero case requires setting the quad-precision significand and
+ * exponent to zero.
+ * \code
+	      q_sig = (vui128_t) d_sig;
+	      q_exp = (vui64_t) d_exp;
+ * \endcode
+ * We know that the double significand and exponent are zero, so just
+ * assign them to the quad-precision parts. The sign bit will applied
+ * later with the common insert exponent code.
+ *
+ * The subnormal case is a bit more complicated.
+ * The tricky part is while the double-precision value is subnormal
+ * the equivalent quad-precision value is not.
+ * So we need to normalize the significand and compute a new exponent.
+ * \code
+    // Need to adjust the quad exponent by the f64 denormal exponent
+    // (-1023) knowing that the f64 sig will have at least 12 leading '0's
+    vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (16383 - (1023 -12)), 0 );
+    vui64_t f64_clz;
+    f64_clz = vec_clzd (d_sig);
+    d_sig = vec_vsld (d_sig, f64_clz);
+    q_exp = vec_subudm (q_denorm, f64_clz);
+    q_sig = vec_srqi ((vui128_t) d_sig, 15);
+ * \endcode
+ * We use a doubleword count leading zeros (ctz) and shift left to
+ * normalize the significand so that the first '1'-bit moves to bit-0.
+ * Then we compute the quad-precision exponent by subtracting the ctz
+ * value from a constant (16383 - (1023 -12)).
+ * This represents the quad-precision exponent bias, minus the
+ * double-precsion exponent bias, minus the minimum leading zero count
+ * for the double-precision subnormal significand.
+ *
+ * The NaN/Infinity case requires shifting the significand and setting
+ * the exponent to quad-precision max.
+ * \code
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+ * \endcode
+ * We need this shift as NaN has a non-zero significand and it might
+ * be nonzero in one of the low order bits.
+ * Separating out the infinity case (where the significand is zero)
+ * is not worth the extra (isnan) test to avoid the shift.
+ *
+ * Now all the parts are converted to quad-precision, we are ready to
+ * reassemble the QP result.
+ * \code
+  // Copy Sign-bit to QP significand before insert.
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  // Insert exponent into significand to complete conversion to QP
+  result = vec_xsiexpqp (q_sig, q_exp);
+ * \endcode
+ *
+ * Putting this all together we get something like:
+ * \code
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
+  // Extract the exponent, significand, and sign bit.
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  q_sign = vec_and ((vui32_t) f64, signmask);
+  if (vec_all_isfinitef64 (f64))
+    { // Not NaN or Inf
+      if (vec_all_isnormalf64 (vec_splat (f64, VEC_DW_H)))
+	{
+	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
+	  q_exp = vec_addudm (d_exp, exp_delta);
+	}
+      else
+	{ // zero or subnormal
+	  if (vec_all_iszerof64 (f64))
+	    {
+	      q_sig = (vui128_t) d_sig;
+	      q_exp = (vui64_t) d_exp;
+	    }
+	  else
+	    { // Must be subnormal
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - 1023 -12), 0 );
+	      vui64_t f64_clz;
+	      f64_clz = vec_clzd (d_sig);
+	      d_sig = vec_vsld (d_sig, f64_clz);
+	      q_exp = vec_subudm (q_denorm, f64_clz);
+	      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+    }
+  // Copy Sign-bit to QP significand before insert.
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  // Insert exponent into significand to complete conversion to QP
+  result = vec_xsiexpqp (q_sig, q_exp);
+ * \endcode
+ *
+ * At this stage we have a functionally correct implementation and now
+ * we can look for opportunities for optimization.
+ * One issue is the generated code is fairly large
+ * (~436 bytes and ~100 instructions).
+ * For POWER8 the data class predicates (vec_all_isfinitef64, etc)
+ * each require one or more vector constant loads and bit mask
+ * operations before the associated vector compares.
+ * Also the extract significand operation requires the equivalent of
+ * isnormal (with two vector compares) as preparation for conditionally
+ * restoring the implied (hidden) bit.
+ *
+ * By testing the extracted parts (exponent and significand) directly
+ * we can avoid simplify the data class compare logic and elliminate
+ * some (redundant) vector constant loads. For example:
+ * \code
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  // ...
+  // The extract sig operation has already tested for finite/subnormal.
+  // So avoid testing isfinite/issubnormal again by simply testing
+  // the extracted exponent.
+  if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_naninf), 1))
+    { // Not Nan or Inf
+      if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_denorm), 1))
+	{
+	// ... adjust exponent and expand significand
+	}
+      else
+	{ // Must be zero or subnormal
+	  if (vec_cmpud_all_eq (d_sig, d_denorm))
+	    {
+	      // ... copy zero exponent and significand
+	    }
+	  else
+	    { // Must be subnormal
+	      // ... normalize signifcand for QP and adjust exponent
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      // ... set exponent to QP max and expand significand
+    }
+ * \endcode
+ * The implementation based on this logic is smaller
+ * (~300 bytes and ~75 instructions).
+ * Performance results TBD.
+ *
+ * \subsubsection f128_softfloat_0_0_2_1 Convert Doubleword integer to Quad-Precision
+ * Converting binary integers to floating point is simpler as there
+ * are fewer data classes to deal with. Basically zero and non-zero
+ * numbers (no signed 0s, infinities or NaNs).
+ * Also the conversion from 64-bit integers to 128-bit floating-point
+ * is always exact (there is no rounding).
+ *
+ * Unsigned doubleword is the simplest case. We only need to test for
+ * binary zero. If zero just return a QP +0.0 constant. Otherwise
+ * we can treat the binary magnitude as a denormalized number and
+ * normalize it. The binary zero test and processing looks like this:
+ * \code
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  // Quick test for 0UL as this case requires a special exponent.
+  d_sig = int64;
+  if (vec_cmpud_all_eq (int64, d_zero))
+    { // Zero sign, exponent and significand.
+      result = vec_xfer_vui64t_2_bin128 (d_zero);
+    }
+  else ...
+ * \endcode
+ * For the non-zero case we assume the binary point follows the unit
+ * bit (bit-63) of the 64-bit magnitude.
+ * Then we use count leading zeros to find the first significant bit.
+ * This count is used to normalize/shift (left justify) the
+ * magnitude and adjust the QP exponent to reflect the binary
+ * point following the unit (original doubleword bit 63) bit.
+ * So far we are using only doubleword data and instructions.
+ * \code
+    { // We need to produce a normalized QP, so we treat the integer
+      // like a denormal, then normalize it.
+      // Start with the quad exponent bias + 63 then subtract the count of
+      // leading '0's. The 64-bit sig can have 0-63 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t i64_clz = vec_clzd (int64);
+      d_sig = vec_vsld (int64, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+ * \endcode
+ * The high order bit (after normalization) will become the
+ * <I>implicit</I> (hidden) bit in QP format. So we shift the quadword
+ * right 15-bits to become the QP significand.
+ * This shift includes the low order 64-bits we zeroed out early on
+ * and zeros out the sign-bit as a bonus.
+ * Finally we use vec_xsiexpqp() to merge the adjusted exponent and
+ * significand.
+ *
+ * The signed doubleword conversion is bit more complicated.
+ * We deal with zero case in the same way. Otherwise
+ * we need split the signed doubleword into a sign-bit and unsigned
+ * 63-bit magnitude. Which looks something like this:
+ * \code
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  ...
+      // Convert 2s complement to signed magnitude form.
+      q_sign = vec_and ((vui32_t) int64, signmask);
+      d_neg  = vec_subudm (d_zero, (vui64_t)int64);
+      d_sign = (vui64_t) vec_cmpequd ((vui64_t) q_sign, (vui64_t) signmask);
+      // Select the original int64 if positive otherwise the negated value.
+      d_sig = (vui64_t) vec_sel ((vui32_t) int64, (vui32_t) d_neg, (vui32_t) d_sign);
+ * \endcode
+ * The normalization process is basically the same as unsigned but we
+ * merge the sign-bit into the significant before inserting the
+ * exponent.
+ * \code
+      // Count leading zeros and normalize.
+      i64_clz = vec_clzd (d_sig);
+      d_sig = vec_vsld (d_sig, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      // Copy Sign-bit to QP significand before insert.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+      // Insert exponent into significand to complete conversion to QP
+      result = vec_xsiexpqp (q_sig, q_exp);
+ * \endcode
+ *
+ *
+ * \subsubsection f128_softfloat_0_0_2_2 Convert Quadword integer to Quad-Precision
+ * TBD
+ *
+ * \note See
+ * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
+*  GCC Avoids Double Rounding Errors With Round-To-Odd</a>
+ *
+ * \subsubsection f128_softfloat_0_0_2_x Convert Quad-Precision to Double-Precision
+ * TBD
  *
  * \section f128_examples_0_0 Examples
  * For example: using the the classification functions for implementing
@@ -748,6 +1120,7 @@ static inline int vec_all_isnanf128 (__binary128 f128);
 static inline vb128_t vec_isnanf128 (__binary128 f128);
 static inline vb128_t vec_isunorderedf128 (__binary128 vfa, __binary128 vfb);
 static inline vb128_t vec_setb_qp (__binary128 f128);
+static inline __binary128 vec_xsiexpqp (vui128_t sig, vui64_t exp);
 ///@endcond
 
  /** \brief Select and Transfer from one of two __binary128 scalars
@@ -4346,6 +4719,255 @@ vec_signbitf128 (__binary128 f128)
   tmp = vec_and_bin128_2_vui32t (f128, signmask);
   return vec_all_eq(tmp, signmask);
 #endif
+}
+
+/** \brief VXS Scalar Convert Double-Precision to Quad-Precision format.
+ *
+ *  The left most double-precision element of vector f64 is converted
+ *  to quad-precision format.
+ *
+ *  For POWER9 use the xscvdpqp instruction.
+ *  For POWER8 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to Signaling NaN and setting the FPSCR.
+ *  However if the hardware target includes the xscvdpqp instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param f64 a vector double. The left most element is converted.
+ *  @return a __binary128 value.
+ */
+__binary128
+static inline vec_xscvdpqp (vf64_t f64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = f64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvdpqp %0,%1"
+      : "=v" (result)
+      : "v" (f64)
+      : );
+#endif
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+
+  f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
+  // Extract the exponent, significand, and sign bit.
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  q_sign = vec_and ((vui32_t) f64, signmask);
+  // The extract sig operation has already tested for finite/subnormal.
+  // So avoid testing isfinite/issubnormal again by simply testing
+  // the extracted exponent.
+  if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_naninf), 1))
+    {
+      if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_denorm), 1))
+	{
+	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
+	  q_exp = vec_addudm (d_exp, exp_delta);
+	}
+      else
+	{
+	  if (vec_cmpud_all_eq (d_sig, d_denorm))
+	    {
+	      q_sig = (vui128_t) d_sig;
+	      q_exp = (vui64_t) d_exp;
+	    }
+	  else
+	    { // Must be subnormal but we need to produce a normal QP.
+	      // So need to adjust the quad exponent by the f64 denormal
+	      // exponent (-1023) and any leading '0's in the f64 sig.
+	      // There will be at least 12.
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - (1023 - 12)), 0 );
+	      vui64_t f64_clz;
+	      f64_clz = vec_clzd (d_sig);
+	      d_sig = vec_vsld (d_sig, f64_clz);;
+	      q_exp = vec_subudm (q_denorm, f64_clz);
+	      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+    }
+  // Copy Sign-bit to QP significand before insert.
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  // Insert exponent into significand to complete conversion to QP
+  result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+/** \brief VXS Scalar Convert Signed-Doubleword to Quad-Precision format.
+ *
+ *  The left most signed doubleword element of vector int64 is converted
+ *  to quad-precision format.
+ *
+ *  For POWER9 use the xscvsdqp instruction.
+ *  For POWER8 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *
+ *  \note At this point we are not trying to comply with PowerISA by
+ *  setting any FPSCR bits associated with Quad-Precision convert.
+ *  If such is required, FR and/or FI can be set
+ *  using the Move To FPSCR Bit 0 (mtfsb0) instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param int64 a vector signed long long. The left most element is converted.
+ *  @return a __binary128 value.
+ */
+__binary128
+static inline vec_xscvsdqp (vi64_t int64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = int64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvsdqp %0,%1"
+      : "=v" (result)
+      : "v" (int64)
+      : );
+#endif
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, q_exp, d_sign, d_neg;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+
+  if (vec_cmpud_all_eq ((vui64_t) int64, d_zero))
+    {
+      result = vec_xfer_vui64t_2_bin128 (d_zero);
+    }
+  else
+    {
+      // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 63 then subtract the count
+      // leading '0's. The 64-bit magnitude has 1-63 leading '0's
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t i64_clz;
+      // Convert 2s complement to signed magnitude form.
+      q_sign = vec_and ((vui32_t) int64, signmask);
+      d_neg  = vec_subudm (d_zero, (vui64_t)int64);
+      d_sign = (vui64_t) vec_cmpequd ((vui64_t) q_sign, (vui64_t) signmask);
+      d_sig = (vui64_t) vec_sel ((vui32_t) int64, (vui32_t) d_neg, (vui32_t) d_sign);
+      // Count leading zeros and normalize.
+      i64_clz = vec_clzd (d_sig);
+      d_sig = vec_vsld (d_sig, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      // Copy Sign-bit to QP significand before insert.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+      // Insert exponent into significand to complete conversion to QP
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+/** \brief VXS Scalar Convert Unsigned-Doubleword to Quad-Precision format.
+ *
+ *  The left most unsigned doubleword element of vector int64 is converted
+ *  to quad-precision format.
+ *
+ *  For POWER9 use the xscvudqp instruction.
+ *  For POWER8 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *  \note At this point we are not trying to comply with PowerISA by
+ *  setting any FPSCR bits associated with Quad-Precision convert.
+ *  If such is required, FR and/or FI can be set
+ *  using the Move To FPSCR Bit 0 (mtfsb0) instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param int64 a vector unsigned long long. The left most element is converted.
+ *  @return a __binary128 value.
+ */
+__binary128
+static inline vec_xscvudqp (vui64_t int64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = int64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvudqp %0,%1"
+      : "=v" (result)
+      : "v" (int64)
+      : );
+#endif
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  d_sig = int64;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpud_all_eq (int64, d_zero))
+    {
+      result = vec_xfer_vui64t_2_bin128 (d_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 63 then subtract the count of
+      // leading '0's. The 64-bit sig can have 0-63 leading '0's.
+      const vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t i64_clz = vec_clzd (int64);
+      d_sig = vec_vsld (int64, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      // Insert exponent into significand to complete conversion to QP
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
 }
 
 /** \brief Scalar Insert Exponent Quad-Precision

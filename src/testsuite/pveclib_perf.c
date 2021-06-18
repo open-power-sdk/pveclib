@@ -566,7 +566,7 @@ test_time_f128 (void)
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s f128 CC end", __FUNCTION__);
-  printf ("\n%s f128 CC  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+  printf ("\n%s f128 CC tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
 	  delta_sec);
 
   printf ("\n%s f128_LIB start, ...\n", __FUNCTION__);
@@ -580,7 +580,7 @@ test_time_f128 (void)
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s f128_LIB end", __FUNCTION__);
-  printf ("\n%s f128_LIB  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+  printf ("\n%s f128_LIB tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   printf ("\n%s cmpgtuqp_gcc start, ...\n", __FUNCTION__);
@@ -594,7 +594,7 @@ test_time_f128 (void)
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s cmpgtuqp_gcc end", __FUNCTION__);
-  printf ("\n%s cmpgtuqp_gcc  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+  printf ("\n%s cmpgtuqp_gcc tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   printf ("\n%s cmpgtuqp_lib start, ...\n", __FUNCTION__);
@@ -608,7 +608,7 @@ test_time_f128 (void)
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s cmpgtuqp_lib end", __FUNCTION__);
-  printf ("\n%s cmpgtuqp_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+  printf ("\n%s cmpgtuqp_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   printf ("\n%s cmpgtuqp_vec start, ...\n", __FUNCTION__);
@@ -622,21 +622,63 @@ test_time_f128 (void)
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s cmpgtuqp_vec end", __FUNCTION__);
-  printf ("\n%s cmpgtuqp_vec  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+  printf ("\n%s cmpgtuqp_vec tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   printf ("\n%s cmpgtuzqp_vec start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
     {
-      rc += timed_vec_max8_f128 ();
+      rc += timed_vec_max8_f128uz ();
     }
   t_end = __builtin_ppc_get_timebase ();
   t_delta = t_end - t_start;
   delta_sec = TimeDeltaSec (t_delta);
 
   printf ("\n%s cmpgtuzqp_vec end", __FUNCTION__);
-  printf ("\n%s cmpgtuzqp_vec  tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+  printf ("\n%s cmpgtuzqp_vec tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s cvt_dpqp_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_dpqp_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s cvt_dpqp_gcc end", __FUNCTION__);
+  printf ("\n%s cvt_dpqp_gcc tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s cvt_dpqp_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_dpqp_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s cvt_dpqp_lib end", __FUNCTION__);
+  printf ("\n%s cvt_dpqp_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s cvt_dpqp_vec start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_dpqp_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s cvt_dpqp_vec end", __FUNCTION__);
+  printf ("\n%s cvt_dpqp_vec tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   return (rc);

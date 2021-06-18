@@ -56,6 +56,23 @@ const __float128 inv_fact6 = (1.0Q / 720.0Q);
 const __float128 inv_fact7 = (1.0Q / 5040.0Q);
 const __float128 inv_fact8 = (1.0Q / 40320.0Q);
 
+const double f64_one = 1.0;
+const double f64_fact2 = (1.0 / 2.0);
+const double f64_fact3 = (1.0 / 6.0);
+const double f64_fact4 = (1.0 / 24.0);
+const double f64_fact5 = (1.0 / 120.0);
+const double f64_fact6 = (1.0 / 720.0);
+const double f64_fact7 = (1.0 / 5040.0);
+const double f64_fact8 = (1.0 / 40320.0);
+const double f64_fact9 = (1.0 / 362880.0);
+const double f64_fact10 = (1.0 / 3628800.0);
+
+const vf64_t invfact1_2 = {1.0, 2.0};
+const vf64_t invfact3_4 = {6.0, 24.0};
+const vf64_t invfact5_6 = {120.0, 720.0};
+const vf64_t invfact7_8 = {5040.0, 40320.0};
+const vf64_t invfact9_10 = {362880.0, 3628800.0};
+
 __float128
 test_scalarLib_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
 {
@@ -111,8 +128,23 @@ test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,
 		    __binary128 vf5, __binary128 vf6,
 		    __binary128 vf7, __binary128 vf8);
 
+extern void
+test_gcc_dpqp_f128 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5);
+
+extern void
+test_vec_dpqp_f128 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5);
+
 extern vb128_t
 test_vec_cmpgtuqp (__binary128 vfa, __binary128 vfb);
+
+extern __binary128
+test_vec_xscvdpqp (vf64_t f64);
 
 __binary128
 test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
@@ -139,6 +171,81 @@ test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
   maxres = vec_self128 (vf8, maxres, bool);
 
   return maxres;
+}
+
+void
+test_lib_dpqp_f128 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5)
+{
+  vf128[0] = test_vec_xscvdpqp (vf1);
+  vf1[VEC_DW_H] = vf1[VEC_DW_L];
+  vf128[1] = test_vec_xscvdpqp (vf1);
+
+  vf128[2] = test_vec_xscvdpqp (vf2);
+  vf2[VEC_DW_H] = vf2[VEC_DW_L];
+  vf128[3] = test_vec_xscvdpqp (vf2);
+
+  vf128[4] = test_vec_xscvdpqp (vf3);
+  vf3[VEC_DW_H] = vf3[VEC_DW_L];
+  vf128[5] = test_vec_xscvdpqp (vf3);
+
+  vf128[6] = test_vec_xscvdpqp (vf4);
+  vf4[VEC_DW_H] = vf4[VEC_DW_L];
+  vf128[7] = test_vec_xscvdpqp (vf4);
+
+  vf128[8] = test_vec_xscvdpqp (vf5);
+  vf5[VEC_DW_H] = vf5[VEC_DW_L];
+  vf128[8] = test_vec_xscvdpqp (vf5);
+}
+
+int timed_vec_dpqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_vec_dpqp_f128 (tbl, invfact1_2,
+			  invfact3_4, invfact5_6,
+			  invfact7_8, invfact9_10);
+    }
+#endif
+   return 0;
+}
+
+int timed_lib_dpqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_dpqp_f128 (tbl, invfact1_2,
+			  invfact3_4, invfact5_6,
+			  invfact7_8, invfact9_10);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_dpqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_dpqp_f128 (tbl, invfact1_2,
+			  invfact3_4, invfact5_6,
+			  invfact7_8, invfact9_10);
+    }
+#endif
+   return 0;
 }
 
 int timed_lib_max8_f128 (void)

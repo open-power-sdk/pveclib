@@ -2040,10 +2040,12 @@ static inline vui128_t vec_mulhuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_mulluq (vui128_t a, vui128_t b);
 static inline vui128_t vec_muloud (vui64_t a, vui64_t b);
 static inline vui128_t vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b);
+static inline vi128_t vec_negsq (vi128_t int128);
 static inline vui128_t vec_popcntq (vui128_t vra);
 static inline vb128_t vec_setb_cyq (vui128_t vcy);
 static inline vb128_t vec_setb_ncq (vui128_t vcy);
 static inline vb128_t vec_setb_sq (vi128_t vra);
+static inline vi128_t vec_selsq (vi128_t vra, vi128_t vrb, vb128_t vrc);
 static inline vui128_t vec_sldq (vui128_t vrw, vui128_t vrx,
 				 vui128_t vrb);
 static inline vui128_t vec_sldqi (vui128_t vrw, vui128_t vrx,
@@ -2061,7 +2063,6 @@ static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
 static inline vui128_t vec_vsldbi (vui128_t vra, vui128_t vrb,
 				   const unsigned int shb);
 ///@endcond
-
 
 /** \brief Vector Absolute Difference Unsigned Quadword.
  *
@@ -2091,6 +2092,29 @@ vec_absduq (vui128_t vra, vui128_t vrb)
 #else
   return vec_subuqm (vec_maxuq (vra, vrb), vec_minuq (vra, vrb));
 #endif
+}
+
+/** \brief Vector Absolute Value Signed Quadword.
+ *
+ *  Compute the absolute value of a signed quadwords.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 1/cycle  |
+ *  |power9   | 9-12  | 1/cycle  |
+ *
+ *  @param vra vector of signed __int128
+ *  @return vector of the absolute value of vra.
+ */
+static inline vi128_t
+vec_abssq (vi128_t vra)
+{
+  vi128_t q_neg;
+  vb128_t b_sign;
+  // Convert 2s complement to unsigned magnitude form.
+  q_neg  = vec_negsq (vra);
+  b_sign = vec_setb_sq (vra);
+  return vec_selsq (vra, q_neg, b_sign);
 }
 
 /** \brief Vector Average Unsigned Quadword.
@@ -2613,7 +2637,7 @@ static inline vb128_t
 vec_cmpequq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpeq (vra, vrb);
 #else
   vb128_t vrt;
@@ -2659,7 +2683,7 @@ static inline vb128_t
 vec_cmpgesq (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpge (vra, vrb);
 #else
   vb128_t vrt;
@@ -2708,7 +2732,7 @@ static inline vb128_t
 vec_cmpgeuq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpge (vra, vrb);
 #else
   vb128_t vrt;
@@ -2748,7 +2772,7 @@ static inline vb128_t
 vec_cmpgtsq (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpgt (vra, vrb);
 #else
   vb128_t vrt;
@@ -2797,7 +2821,7 @@ static inline vb128_t
 vec_cmpgtuq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpgt (vra, vrb);
 #else
   vb128_t vrt;
@@ -2837,7 +2861,7 @@ static inline vb128_t
 vec_cmplesq (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmple (vra, vrb);
 #else
   vb128_t vrt;
@@ -2886,7 +2910,7 @@ static inline vb128_t
 vec_cmpleuq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmple (vra, vrb);
 #else
   vb128_t vrt;
@@ -2927,7 +2951,7 @@ static inline vb128_t
 vec_cmpltsq (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmplt (vra, vrb);
 #else
   vb128_t vrt;
@@ -2976,7 +3000,7 @@ static inline vb128_t
 vec_cmpltuq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmplt (vra, vrb);
 #else
   vb128_t vrt;
@@ -3045,7 +3069,7 @@ static inline vb128_t
 vec_cmpneuq (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_cmpne (vra, vrb);
 #else
   vb128_t vrt;
@@ -3093,7 +3117,7 @@ vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_eq (vra, vrb);
 #else
   vb128_t vrt;
@@ -3136,7 +3160,7 @@ static inline int
 vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
@@ -3184,7 +3208,7 @@ static inline int
 vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
@@ -3232,7 +3256,7 @@ static inline int
 vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_le (vra, vrb);
 #else
   vb128_t vrt;
@@ -3280,7 +3304,7 @@ static inline int
 vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_lt (vra, vrb);
 #else
   vb128_t vrt;
@@ -3330,7 +3354,7 @@ vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ne (vra, vrb);
 #else
   vb128_t vrt;
@@ -3375,7 +3399,7 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_eq (vra, vrb);
 #else
   vb128_t vrt;
@@ -3418,7 +3442,7 @@ static inline int
 vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
@@ -3462,7 +3486,7 @@ static inline int
 vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
@@ -3506,7 +3530,7 @@ static inline int
 vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_le (vra, vrb);
 #else
   vb128_t vrt;
@@ -3550,7 +3574,7 @@ static inline int
 vec_cmpuq_all_lt (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_lt (vra, vrb);
 #else
   vb128_t vrt;
@@ -3596,7 +3620,7 @@ vec_cmpuq_all_ne (vui128_t vra, vui128_t vrb)
 {
   int result;
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
-#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 1))
+#if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
   return vec_all_ne (vra, vrb);
 #else
   vb128_t vrt;
@@ -5788,6 +5812,46 @@ vec_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c1, vui128_t c2)
   return (pl);
 }
 
+/** \brief Vector Negate Signed Quadword.
+ *
+ *  Negate (0 - int128) the quadword.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *  |power9   |  9-12 | 2/cycle  |
+ *
+ *  @param int128 a 128-bit vector treated as signed __int128.
+ *  @return The negative of int128.
+ */
+static inline vi128_t
+vec_negsq (vi128_t int128)
+{
+  const vui128_t q_zero = (vui128_t) { 0 };
+  // Negate 2s complement quadword integer.
+  return (vi128_t) vec_subuqm (q_zero, (vui128_t)int128);
+}
+
+/** \brief Vector Negate Unsigned Quadword.
+ *
+ *  Negate (0 - int128) the quadword.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *  |power9   |  9-12 | 2/cycle  |
+ *
+ *  @param int128 a 128-bit vector treated as unsigned __int128.
+ *  @return The negative of int128.
+ */
+static inline vui128_t
+vec_neguq (vui128_t int128)
+{
+  const vui128_t q_zero = (vui128_t) { 0 };
+  // Negate 2s complement quadword integer.
+  return vec_subuqm (q_zero, int128);
+}
+
 /** \brief Vector Population Count Quadword for unsigned
  *  __int128 elements.
  *
@@ -5972,6 +6036,46 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
     }
 #endif
   return ((vui128_t) result);
+}
+
+/** \brief Vector Select Signed Quadword.
+ *
+ *  Return the value, (vra & ~vrc) | (vrb & vrc).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  3    | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned __int128.
+ *  @param vrb a 128-bit vector treated as unsigned __int128.
+ *  @param vrc a 128-bit vector treated as bool __int128.
+ *  @return The selected bit from vra and vrb
+ */
+static inline vi128_t
+vec_selsq (vi128_t vra, vi128_t vrb, vb128_t vrc)
+{
+  return (vi128_t) vec_sel ((vui32_t) vra, (vui32_t)vrb, (vui32_t)vrc);
+}
+
+/** \brief Vector Select Unsigned Quadword.
+ *
+ *  Return the value, (vra & ~vrc) | (vrb & vrc).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  3    | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned __int128.
+ *  @param vrb a 128-bit vector treated as unsigned __int128.
+ *  @param vrc a 128-bit vector treated as bool __int128.
+ *  @return The selected bit from vra and vrb
+ */
+static inline vui128_t
+vec_seluq (vui128_t vra, vui128_t vrb, vb128_t vrc)
+{
+  return (vui128_t) vec_sel ((vui32_t) vra, (vui32_t)vrb, (vui32_t)vrc);
 }
 
 /*! \brief Vector Set Bool from Quadword Carry.
@@ -6358,8 +6462,7 @@ vec_sraq (vi128_t vra, vui128_t vrb)
 static inline vi128_t
 vec_sraqi (vi128_t vra, const unsigned int shb)
 {
-  vui8_t result, lshift;
-  vui128_t vsgn;
+  vui8_t result;
 
   if (shb < 127)
     {
@@ -6371,6 +6474,8 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	  : "v" (vra), "v" (rshift)
 	  : );
 #else
+      vui8_t lshift;
+      vui128_t vsgn;
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
 	  if (shb > 0)

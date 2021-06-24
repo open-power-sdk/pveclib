@@ -26,6 +26,24 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+vi128_t
+__test_vec_abssq (vi128_t vra)
+{
+  return vec_abssq (vra);
+}
+
+vi128_t
+__test_vec_negsq (vi128_t int128)
+{
+  return vec_negsq (int128);
+}
+
+vui128_t
+__test_vec_neguq (vui128_t int128)
+{
+  return vec_neguq (int128);
+}
+
 vui128_t
 __test_msumcud (vui64_t a, vui64_t b, vui128_t c)
 {

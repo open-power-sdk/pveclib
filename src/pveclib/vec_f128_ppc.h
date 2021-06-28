@@ -1743,7 +1743,7 @@ vec_all_isnanf128 (__binary128 f128)
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
   return scalar_test_data_class (f128, 0x40);
 #elif defined (_ARCH_PWR8)
-  vui32_t tmp, tmp2;
+  vui32_t tmp;
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
@@ -2288,7 +2288,6 @@ vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -2509,7 +2508,6 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -2730,7 +2728,6 @@ vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -2951,7 +2948,6 @@ vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -3317,7 +3313,7 @@ vec_cmpqp_all_uzeq (__binary128 vfa, __binary128 vfb)
   result = (vfa == vfb);
 #else // defined( _ARCH_PWR8 )
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  vb128_t cmps, or_ab, eq_s;
+  vb128_t or_ab;
   vui64_t vra, vrb;
 
   vra = vec_xfer_bin128_2_vui64t (vfa);
@@ -3369,7 +3365,7 @@ vec_cmpqp_all_eq (__binary128 vfa, __binary128 vfb)
   result = (vfa == vfb);
 #else // defined( _ARCH_PWR8 )
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  vb128_t cmps, or_ab, eq_s;
+  vb128_t or_ab;
   vui64_t vra, vrb;
 
   vra = vec_xfer_bin128_2_vui64t (vfa);
@@ -3489,7 +3485,6 @@ vec_cmpqp_all_uzge (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -3680,7 +3675,6 @@ vec_cmpqp_all_uzgt (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -3870,7 +3864,6 @@ vec_cmpqp_all_uzle (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -4061,7 +4054,6 @@ vec_cmpqp_all_uzlt (__binary128 vfa, __binary128 vfb)
   vb128_t age0, bge0;
   vui128_t vrap, vran;
   vui128_t vrbp, vrbn;
-  vui8_t splatvfa, splatvfb;
 
   vra = vec_xfer_bin128_2_vui128t (vfa);
   vrb = vec_xfer_bin128_2_vui128t (vfb);
@@ -4228,7 +4220,7 @@ vec_cmpqp_all_uzne (__binary128 vfa, __binary128 vfb)
   result = (vfa != vfb);
 #else // defined( _ARCH_PWR8 )
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  vb128_t cmps, or_ab, eq_s;
+  vb128_t or_ab;
   vui64_t vra, vrb;
 
   vra = vec_xfer_bin128_2_vui64t (vfa);
@@ -4280,7 +4272,7 @@ vec_cmpqp_all_ne (__binary128 vfa, __binary128 vfb)
   result = (vfa != vfb);
 #else // defined( _ARCH_PWR8 )
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  vb128_t cmps, or_ab, eq_s;
+  vb128_t or_ab;
   vui64_t vra, vrb;
 
   vra = vec_xfer_bin128_2_vui64t (vfa);
@@ -4799,7 +4791,7 @@ static inline vec_xscvdpqp (vf64_t f64)
 	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - (1023 - 12)), 0 );
 	      vui64_t f64_clz;
 	      f64_clz = vec_clzd (d_sig);
-	      d_sig = vec_vsld (d_sig, f64_clz);;
+	      d_sig = vec_vsld (d_sig, f64_clz);
 	      q_exp = vec_subudm (q_denorm, f64_clz);
 	      q_sig = vec_srqi ((vui128_t) d_sig, 15);
 	    }
@@ -4860,7 +4852,7 @@ static inline vec_xscvsdqp (vi64_t int64)
       : );
 #endif
 #elif  defined (_ARCH_PWR8)
-  vui64_t d_exp, d_sig, q_exp, d_sign, d_neg;
+  vui64_t d_sig, q_exp, d_sign, d_neg;
   vui128_t q_sig;
   vui32_t q_sign;
   const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
@@ -4896,7 +4888,7 @@ static inline vec_xscvsdqp (vi64_t int64)
       result = vec_xsiexpqp (q_sig, q_exp);
     }
 #else
-  result = f64[VEC_DW_H];
+  result = int64[VEC_DW_H];
 #endif
   return result;
 }
@@ -4940,7 +4932,7 @@ static inline vec_xscvudqp (vui64_t int64)
       : );
 #endif
 #elif  defined (_ARCH_PWR8)
-  vui64_t d_exp, d_sig, q_exp;
+  vui64_t d_sig, q_exp;
   vui128_t q_sig;
   const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
 

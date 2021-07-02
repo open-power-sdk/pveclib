@@ -38,7 +38,8 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
-#if defined (_ARCH_PWR10) && (__GNUC__ > 10)
+#if defined (_ARCH_PWR10) && (__GNUC__ > 11) \
+    || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
 // New support defined in Power Vector Intrinsic Programming Reference.
 // Waiting for GCC 11.2?
 int

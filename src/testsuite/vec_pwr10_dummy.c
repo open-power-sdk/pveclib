@@ -277,7 +277,7 @@ test_setb_sd_PWR10 (vi64_t vra)
   return vec_setb_sd (vra);
 }
 
-vui128_t
+vb128_t
 test_setb_sq_PWR10 (vi128_t vcy)
 {
   return vec_setb_sq (vcy);

@@ -451,19 +451,19 @@ test_cmpuq_all_ne (vui128_t a, vui128_t b)
   return vec_cmpuq_all_ne (a, b);
 }
 
-vui128_t
+vb128_t
 test_setb_cyq (vui128_t vcy)
 {
   return vec_setb_cyq (vcy);
 }
 
-vui128_t
+vb128_t
 test_setb_ncq (vui128_t vcy)
 {
   return vec_setb_ncq (vcy);
 }
 
-vui128_t
+vb128_t
 test_setb_sq (vi128_t vcy)
 {
   return vec_setb_sq (vcy);

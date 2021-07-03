@@ -555,6 +555,7 @@ test_time_f128 (void)
   double delta_sec;
   int rc = 0;
 
+#if 0
   printf ("\n%s f128 CC start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
@@ -582,7 +583,7 @@ test_time_f128 (void)
   printf ("\n%s f128_LIB end", __FUNCTION__);
   printf ("\n%s f128_LIB tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
-
+#endif
   printf ("\n%s cmpgtuqp_gcc start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
@@ -657,7 +658,7 @@ test_time_f128 (void)
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
     {
-      rc += timed_gcc_dpqp_f128 ();
+      rc += timed_lib_dpqp_f128 ();
     }
   t_end = __builtin_ppc_get_timebase ();
   t_delta = t_end - t_start;
@@ -671,7 +672,7 @@ test_time_f128 (void)
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
     {
-      rc += timed_gcc_dpqp_f128 ();
+      rc += timed_vec_dpqp_f128 ();
     }
   t_end = __builtin_ppc_get_timebase ();
   t_delta = t_end - t_start;

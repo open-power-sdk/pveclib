@@ -180,16 +180,13 @@ test_convert_udqp (vui64_t int64)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
   result = int64[VEC_DW_H];
 #elif  defined (_ARCH_PWR8)
-  vui64_t d_exp, d_sig, q_exp;
+  vui64_t d_sig, q_exp;
   vui128_t q_sig;
-  vui32_t q_sign;
   const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
 
-  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
-  d_sig = int64;
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.int64
   // Quick test for 0UL as this case requires a special exponent.
-  if (vec_cmpud_all_eq (d_sig, d_zero))
+  if (vec_cmpud_all_eq (int64, d_zero))
     {
       result = vec_xfer_vui64t_2_bin128 (d_zero);
     }
@@ -199,8 +196,8 @@ test_convert_udqp (vui64_t int64)
       // Start with the quad exponent bias + 63 then subtract the count of
       // leading '0's. The 64-bit sig can have 0-63 leading '0's.
       vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
-      vui64_t i64_clz = vec_clzd (d_sig);
-      d_sig = vec_vsld (d_sig, i64_clz);
+      vui64_t i64_clz = vec_clzd (int64);
+      d_sig = vec_vsld (int64, i64_clz);
       q_exp = vec_subudm (q_expm, i64_clz);
       q_sig = vec_srqi ((vui128_t) d_sig, 15);
       result = vec_xsiexpqp (q_sig, q_exp);
@@ -220,7 +217,7 @@ test_convert_sdqp (vi64_t int64)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
   result = int64[VEC_DW_H];
 #elif  defined (_ARCH_PWR8)
-  vui64_t d_exp, d_sig, q_exp, d_sign, d_inv;
+  vui64_t d_sig, q_exp, d_sign, d_inv;
   vui128_t q_sig;
   vui32_t q_sign;
   const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
@@ -325,6 +322,9 @@ test_convert_dpqp_v3 (vf64_t f64)
   return result;
 }
 
+  if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
+    {
+      if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_low))
 __binary128
 test_convert_dpqp_v2 (vf64_t f64)
 {
@@ -438,7 +438,6 @@ test_scalar_cmpto_exp_gt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
@@ -454,7 +453,6 @@ test_scalar_cmp_exp_gt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
@@ -552,14 +550,12 @@ vb128_t
 test_cmpltf128_v1b (vi128_t vfa128, vi128_t vfb128)
 {
   const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  vb128_t age0, altb, alt0, agtb;
+  vb128_t age0, altb, agtb;
   vui32_t andp, andn;
   vb128_t result;
   age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
   altb = vec_cmpltsq (vfa128, vfb128);
   andp = vec_and ((vui32_t) altb, (vui32_t) age0);
-//  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
-  alt0 = (vb128_t) vec_nor ((vui32_t) age0, (vui32_t) age0);
   agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
   andn = vec_andc ((vui32_t) agtb, (vui32_t) age0);
   result = (vb128_t) vec_or (andp, andn);
@@ -571,10 +567,9 @@ test_cmpltf128_v1c (vi128_t vfa128, vi128_t vfb128)
 {
   vb128_t altb, agtb;
   vb128_t signbool;
-  vb128_t result;
+
   // a >= 0
   // signbool = vec_setb_qp;
-
   const vui8_t shift = vec_splat_u8 (7);
   vui8_t splat = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
   signbool = (vb128_t) vec_sra (splat, shift);
@@ -637,7 +632,6 @@ test_cmpltf128_v2c (vi128_t vfa128, vi128_t vfb128)
   vb128_t altb, agtb, nesm;
   vui32_t or_ab;
   vb128_t signbool;
-  vb128_t result;
 
   // a >= 0
   // signbool = vec_setb_qp;

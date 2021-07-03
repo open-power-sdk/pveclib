@@ -322,9 +322,6 @@ test_convert_dpqp_v3 (vf64_t f64)
   return result;
 }
 
-  if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
-    {
-      if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_low))
 __binary128
 test_convert_dpqp_v2 (vf64_t f64)
 {

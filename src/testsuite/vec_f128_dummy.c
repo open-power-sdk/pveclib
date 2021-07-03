@@ -168,6 +168,216 @@ test_scalar_test_neg (__binary128 vfa)
 
 // Convert Float DP to QP
 __binary128
+test_vec_xscvdpqp (vf64_t f64)
+{
+  return vec_xscvdpqp (f64);
+}
+
+__binary128
+test_convert_udqp (vui64_t int64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  result = int64[VEC_DW_H];
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_sig, q_exp;
+  vui128_t q_sig;
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.int64
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpud_all_eq (int64, d_zero))
+    {
+      result = vec_xfer_vui64t_2_bin128 (d_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 63 then subtract the count of
+      // leading '0's. The 64-bit sig can have 0-63 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t i64_clz = vec_clzd (int64);
+      d_sig = vec_vsld (int64, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+  // Insert exponent into significand to complete conversion to QP
+  // result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = int64[VEC_DW_H];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_sdqp (vi64_t int64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  result = int64[VEC_DW_H];
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_sig, q_exp, d_sign, d_inv;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+
+  if (vec_cmpud_all_eq ((vui64_t) int64, d_zero))
+    {
+      result = vec_xfer_vui64t_2_bin128 (d_zero);
+    }
+  else
+    {
+      q_sign = vec_and ((vui32_t) int64, signmask);
+      d_inv  = vec_subudm (d_zero, (vui64_t)int64);
+      d_sign = (vui64_t) vec_cmpequd ((vui64_t) q_sign, (vui64_t) signmask);
+      d_sig = (vui64_t) vec_sel ((vui32_t) int64, (vui32_t) d_inv, (vui32_t) d_sign);
+      // We need to produce a normal QP, so we treat the integer as
+      // denormal, Then normalize it.
+      // Start with the quad exponent bias + 63 then subtract the count of
+      // leading '0's. The 64-bit sig will have at 0-63 leading '0's
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t i64_clz = vec_clzd (d_sig);
+      d_sig = vec_vsld (d_sig, i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      // Copy Sign-bit to QP significand before insert.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+      // Insert exponent into significand to complete conversion to QP
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int64[VEC_DW_H];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_dpqp_v3 (vf64_t f64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  result = f64[VEC_DW_H];
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
+  // Extract the exponent, significand, and sign bit.
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  q_sign = vec_and ((vui32_t) f64, signmask);
+  // The extract sig operation has already tested for finite/subnormal.
+  // So avoid testing isfinite/issubnormal again by simply testing
+  // the extracted exponent.
+  if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_naninf), 1))
+    {
+      if (__builtin_expect (!vec_cmpud_all_eq (d_exp, d_denorm), 1))
+	{
+	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
+	  q_exp = vec_addudm (d_exp, exp_delta);
+	}
+      else
+	{ // We can simplify iszero by comparing the sig to 0
+	  if (vec_cmpud_all_eq (d_sig, d_denorm))
+	    {
+	      q_sig = (vui128_t) d_sig;
+	      q_exp = (vui64_t) d_exp;
+	    }
+	  else
+	    { // Must be subnormal but we need to produce a normal QP
+	      // Need to adjust the quad exponent by the f64 denormal exponent
+	      // (-1023) and that the f64 sig will have at least 12 leading '0's
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - (1023 -12)), 0 );
+	      vui64_t f64_clz;
+	      //d_sig = vec_sldi (d_sig, 12);
+	      f64_clz = vec_clzd (d_sig);
+	      d_sig = vec_vsld (d_sig, f64_clz);
+	      q_exp = vec_subudm (q_denorm, f64_clz);
+	      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+    }
+
+  // Copy Sign-bit to QP significand before insert.
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  // Insert exponent into significand to complete conversion to QP
+  result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_dpqp_v2 (vf64_t f64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  result = f64[VEC_DW_H];
+#elif  defined (_ARCH_PWR8)
+  f64[VEC_DW_L] = 0.0;
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+  d_exp = vec_xvxexpdp (f64);
+  d_sig = vec_xvxsigdp (f64);
+  if (__builtin_expect (vec_all_isfinitef64 (f64), 1))
+    {
+      if (__builtin_expect (vec_all_isnormalf64 (vec_splat (f64, VEC_DW_H)), 1))
+	{
+	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
+	  q_exp = vec_addudm (d_exp, exp_delta);
+	}
+      else
+	{
+	  if (vec_all_iszerof64 (f64))
+	    {
+	      q_sig = (vui128_t) d_sig;
+	      q_exp = (vui64_t) d_exp;
+	    }
+	  else
+	    { // Must be subnormal
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - 1023), 0 );
+	      vui64_t f64_clz;
+	      d_sig = vec_sldi (d_sig, 12);
+	      f64_clz = vec_clzd (d_sig);
+	      d_sig = vec_sl (d_sig, f64_clz);
+	      q_exp = vec_subudm (q_denorm, f64_clz);
+	      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      q_sig = vec_srqi ((vui128_t) d_sig, 4);
+      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+    }
+
+  q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) f64, signmask);
+  result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+__binary128
 test_convert_dpqp (vf64_t f64)
 {
   __binary128 result;
@@ -195,7 +405,7 @@ test_convert_dpqp (vf64_t f64)
 	  {
 	    if (vec_all_issubnormalf64 (vec_splat (f64, VEC_DW_H)))
 	      {
-		vui64_t q_denorm = { (0x3fff - 1022), 0 };
+		vui64_t q_denorm = { (0x3fff - 1023), 0 };
 		vui64_t f64_clz;
 		d_sig = vec_sldi ( d_sig, 12);
 		f64_clz = vec_clzd (d_sig);
@@ -204,7 +414,7 @@ test_convert_dpqp (vf64_t f64)
 		q_sig = vec_srqi ((vui128_t) d_sig, 15);
 	      } else {
 		q_sig = vec_srqi ((vui128_t) d_sig, 4);
-		q_exp = (vui64_t) CONST_VINT64_DW(0x7fff000000000000, 0);
+		q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
 	      }
 	  }
     }
@@ -225,7 +435,6 @@ test_scalar_cmpto_exp_gt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
@@ -241,7 +450,6 @@ test_scalar_cmp_exp_gt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   if (__builtin_expect ((vec_all_isnanf128 (vfa) || vec_all_isnanf128 (vfb)), 0))
@@ -339,14 +547,12 @@ vb128_t
 test_cmpltf128_v1b (vi128_t vfa128, vi128_t vfb128)
 {
   const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  vb128_t age0, altb, alt0, agtb;
+  vb128_t age0, altb, agtb;
   vui32_t andp, andn;
   vb128_t result;
   age0 = vec_cmpgesq (vfa128, (vi128_t) zero);
   altb = vec_cmpltsq (vfa128, vfb128);
   andp = vec_and ((vui32_t) altb, (vui32_t) age0);
-//  alt0 = vec_cmpltsq (vfa128, (vi128_t) zero);
-  alt0 = (vb128_t) vec_nor ((vui32_t) age0, (vui32_t) age0);
   agtb = vec_cmpgeuq ((vui128_t) vfa128, (vui128_t) vfb128);
   andn = vec_andc ((vui32_t) agtb, (vui32_t) age0);
   result = (vb128_t) vec_or (andp, andn);
@@ -358,10 +564,9 @@ test_cmpltf128_v1c (vi128_t vfa128, vi128_t vfb128)
 {
   vb128_t altb, agtb;
   vb128_t signbool;
-  vb128_t result;
+
   // a >= 0
   // signbool = vec_setb_qp;
-
   const vui8_t shift = vec_splat_u8 (7);
   vui8_t splat = vec_splat ((vui8_t) vfa128, VEC_BYTE_H);
   signbool = (vb128_t) vec_sra (splat, shift);
@@ -424,7 +629,6 @@ test_cmpltf128_v2c (vi128_t vfa128, vi128_t vfb128)
   vb128_t altb, agtb, nesm;
   vui32_t or_ab;
   vb128_t signbool;
-  vb128_t result;
 
   // a >= 0
   // signbool = vec_setb_qp;
@@ -663,6 +867,51 @@ test_vec_max8_f128 (__binary128 vf1, __binary128 vf2,
 
 #ifndef PVECLIB_DISABLE_F128ARITH
 #ifdef __FLOAT128__
+
+void
+test_vec_dpqp_f128 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5)
+{
+  vf128[0] = vec_xscvdpqp (vf1);
+  vf1[VEC_DW_H] = vf1[VEC_DW_L];
+  vf128[1] = vec_xscvdpqp (vf1);
+
+  vf128[2] = vec_xscvdpqp (vf2);
+  vf2[VEC_DW_H] = vf2[VEC_DW_L];
+  vf128[3] = vec_xscvdpqp (vf2);
+
+  vf128[4] = vec_xscvdpqp (vf3);
+  vf3[VEC_DW_H] = vf3[VEC_DW_L];
+  vf128[5] = vec_xscvdpqp (vf3);
+
+  vf128[6] = vec_xscvdpqp (vf4);
+  vf4[VEC_DW_H] = vf4[VEC_DW_L];
+  vf128[7] = vec_xscvdpqp (vf4);
+
+  vf128[8] = vec_xscvdpqp (vf5);
+  vf5[VEC_DW_H] = vf5[VEC_DW_L];
+  vf128[8] = vec_xscvdpqp (vf5);
+}
+
+void
+test_gcc_dpqp_f128 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5)
+{
+  vf128[0] = vf1[VEC_DW_H];
+  vf128[1] = vf1[VEC_DW_L];
+  vf128[2] = vf2[VEC_DW_H];
+  vf128[3] = vf2[VEC_DW_L];
+  vf128[4] = vf3[VEC_DW_H];
+  vf128[5] = vf3[VEC_DW_L];
+  vf128[6] = vf4[VEC_DW_H];
+  vf128[7] = vf4[VEC_DW_L];
+  vf128[8] = vf5[VEC_DW_H];
+  vf128[9] = vf5[VEC_DW_L];
+}
 
 __binary128
 test_gcc_max8_f128 (__binary128 vf1, __binary128 vf2,

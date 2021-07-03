@@ -40,10 +40,177 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+int
+test_gcc_cmpqpne_PWR9 (__float128 vfa, __float128 vfb)
+{
+  return (vfa != vfb);
+}
+
+int
+test_gcc_cmpqpeq_PWR9 (__float128 vfa, __float128 vfb)
+{
+  return (vfa == vfb);
+}
+
+int
+test_gcc_cmpqpneV2_PWR9 (__float128 vfa, __float128 vfb)
+{
+  return !(vfa == vfb);
+}
+
+void
+test_gcc_udqp_f128_PWR9 (__binary128 * vf128,
+		    vui64_t vf1, vui64_t vf2,
+		    vui64_t vf3, vui64_t vf4,
+		    vui64_t vf5)
+{
+  vf128[0] = vf1[VEC_DW_H];
+  vf128[1] = vf1[VEC_DW_L];
+  vf128[2] = vf2[VEC_DW_H];
+  vf128[3] = vf2[VEC_DW_L];
+  vf128[4] = vf3[VEC_DW_H];
+  vf128[5] = vf3[VEC_DW_L];
+  vf128[6] = vf4[VEC_DW_H];
+  vf128[7] = vf4[VEC_DW_L];
+  vf128[8] = vf5[VEC_DW_H];
+  vf128[9] = vf5[VEC_DW_L];
+}
+
+void
+test_gcc_dpqp_f128_PWR9 (__binary128 * vf128,
+		    vf64_t vf1, vf64_t vf2,
+		    vf64_t vf3, vf64_t vf4,
+		    vf64_t vf5)
+{
+  vf128[0] = vf1[VEC_DW_H];
+  vf128[1] = vf1[VEC_DW_L];
+  vf128[2] = vf2[VEC_DW_H];
+  vf128[3] = vf2[VEC_DW_L];
+  vf128[4] = vf3[VEC_DW_H];
+  vf128[5] = vf3[VEC_DW_L];
+  vf128[6] = vf4[VEC_DW_H];
+  vf128[7] = vf4[VEC_DW_L];
+  vf128[8] = vf5[VEC_DW_H];
+  vf128[9] = vf5[VEC_DW_L];
+}
+#endif
+
+int
+test_gcc_cmpdpne_PWR9 (double vfa, double vfb)
+{
+  return (vfa != vfb);
+}
+
+int
+test_vec_cmpqp_all_tone_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_tone (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzne_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzne (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_ne_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_ne (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_toeq_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_toeq (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_uzeq_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_uzeq (vfa, vfb);
+}
+
+int
+test_vec_cmpqp_all_eq_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_all_eq (vfa, vfb);
+}
+
 int
 test_scalar_test_neg_PWR9 (__binary128 vfa)
 {
   return vec_signbitf128 (vfa);
+}
+
+// Convert Float DP to QP
+__binary128
+test_convert_dpqp_PWR9 (vf64_t f64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = f64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvdpqp %0,%1"
+      : "=v" (result)
+      : "v" (f64)
+      : );
+#endif
+#else // likely call to libgcc concert.
+  result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+// Convert Float SD to QP
+__binary128
+test_convert_sdqp_PWR9 (vi64_t i64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = i64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvsdqp %0,%1"
+      : "=v" (result)
+      : "v" (i64)
+      : );
+#endif
+#else // likely call to libgcc concert.
+  result = i64[VEC_DW_H];
+#endif
+  return result;
+}
+
+// Convert Float UD to QP
+__binary128
+test_convert_udqp_PWR9 (vui64_t i64)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // earlier GCC versions generate extra data moves for this.
+  result = i64[VEC_DW_H];
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvudqp %0,%1"
+      : "=v" (result)
+      : "v" (i64)
+      : );
+#endif
+#else // likely call to libgcc concert.
+  result = i64[VEC_DW_H];
+#endif
+  return result;
 }
 
 int
@@ -1528,7 +1695,7 @@ __test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
 #endif
 
 #ifdef scalar_cmp_exp_eq
-#if 0
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 8)
 /* there is an instruction for this, but is not supported in
    GCC (8.2) yet.  */
 int

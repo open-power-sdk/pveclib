@@ -41,6 +41,30 @@
 #include <pveclib/vec_f128_ppc.h>
 
 int
+test_vec_cmpqp_exp_eq (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_eq ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_gt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_gt ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_lt (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_lt ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_unordered (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_unordered ( vfa, vfb);
+}
+
+int
 test_vec_cmpqp_all_tone (__binary128 vfa, __binary128 vfb)
 {
   return vec_cmpqp_all_tone (vfa, vfb);
@@ -166,11 +190,336 @@ test_scalar_test_neg (__binary128 vfa)
   return vec_signbitf128 (vfa);
 }
 
+vf64_t
+test_vec_xscvqpdpo (__binary128 f128)
+{
+  return vec_xscvqpdpo (f128);
+}
+
+vui64_t
+test_vec_xscvqpudz (__binary128 f128)
+{
+  return vec_xscvqpudz (f128);
+}
+
+vui128_t
+test_vec_xscvqpuqz (__binary128 f128)
+{
+  return vec_xscvqpuqz (f128);
+}
+
 // Convert Float DP to QP
 __binary128
 test_vec_xscvdpqp (vf64_t f64)
 {
   return vec_xscvdpqp (f64);
+}
+
+// Convert Integer QW to QP
+__binary128
+test_vec_xscvsqqp (vi128_t int128)
+{
+  return vec_xscvsqqp (int128);
+}
+
+__binary128
+test_vec_xscvuqqp (vui128_t int128)
+{
+  return vec_xscvuqqp (int128);
+}
+
+__binary128
+test_convert_uqqpn (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t lowmask = CONST_VINT128_W( 0, 0, 0, 1);
+
+//  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW(0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+#if 1
+      // The Significand (including the L-bit) is right justified in
+      // are in the high-order 113-bits of q_sig.
+      // The guard, round, and sticky (GRX) bits are in the low-order
+      // 15 bits.
+      // The sticky-bits are the last 13 bits and are logically ORed
+      // (or added to 0x1fff) to produce the X-bit.
+      //
+      // For "round to Nearest, ties to even".
+      // GRX = 0b001 - 0b011; truncate
+      // GRX = 0b100 and bit-112 is odd; round up, otherwise truncate
+      // GRX = 0b100 - 0b111; round up
+      // We can simplify by copying bit-112 and OR it with bit-X
+      // Then add 0x3fff to q_sig will generate a carry into bit-112
+      // if and only if GRX > 0b100 or (GRX == 0b100) && (bit-112 == 1)
+      const vui32_t RXmask = CONST_VINT128_W( 0, 0, 0, 0x3fff);
+      vui128_t q_carry, q_sigc;
+      vb128_t qcmask;
+      vui32_t q_odd;
+      // Isolate bit-112 and OR into GRX bits if q_sig is odd
+      q_odd = (vui32_t) vec_srhi ((vui16_t)q_sig, 15);
+      q_odd = vec_and (q_odd, lowmask);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_odd);
+      // We add 0x3fff to GRX which may carry into low order sig-bit
+      // This may result in a carry out of bit L into bit-C.
+      q_carry = vec_addcuq (q_sig, (vui128_t) RXmask);
+      q_sig = vec_adduqm (q_sig, (vui128_t) RXmask);
+      // Generate a bool mask from the carry to use in the vsel
+      qcmask = vec_setb_cyq (q_carry);
+      // Two cases; 1) We did carry so shift (double) left 112 bits
+      q_sigc = vec_sldqi (q_carry, q_sig, 112);
+      // 2) no carry so shift left 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Select which based on carry
+      q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) q_sigc, (vui32_t) qcmask);
+      // Increment the exponent based on the carry
+      q_exp = vec_addudm (q_exp, (vui64_t) q_carry);
+#else
+      const vui32_t q_carry = CONST_VINT128_W(0x20000, 0, 0, 0);
+      const vui32_t nlmask = CONST_VINT128_W( 0x7fffffff, -1, -1, -1);
+      vui32_t q_GRX, q_low;
+      vui128_t q_rnd;
+      // We need to separate the Significand
+      // from the guard, round, and sticky (GRX) bits
+      // Left justify the GRX bits
+      q_GRX = (vui32_t) vec_slqi ((vui128_t) q_sig, (128-15));
+      // Pre-normalize the significand with the L (implicit) bit.
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Separate the low order significand (even/odd) bit.
+      q_low = vec_and ((vui32_t)q_sig, lowmask);
+      // And merge with sticky bits.
+      q_GRX = vec_or (q_GRX, q_low);
+      // Use Add write carry to force carry for rounding.
+      q_rnd = vec_addcuq ((vui128_t) q_GRX, (vui128_t) nlmask);
+      q_sig = vec_addeuqm (q_sig, q_zero,  q_rnd);
+      // Check if rounding generated a carry (C-bit) and adjust
+      if (vec_all_eq ((vui32_t) q_sig, q_carry))
+        {
+	  q_sig = vec_srqi ((vui128_t) q_sig, 1);
+          q_exp = vec_addudm (q_exp, (vui64_t) lowmask);
+        }
+#endif
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_uqqpn_V0 (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t q_carry = CONST_VINT128_W(0x20000, 0, 0, 0);
+  const vui32_t lowmask = CONST_VINT128_W( 0, 0, 0, 1);
+  const vui32_t nlmask = CONST_VINT128_W( 0x7fffffff, -1, -1, -1);
+
+//  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW(0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      vui32_t q_GRX, q_low;
+      vui128_t q_rnd;
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // For "round to Nearest, ties to even".
+      // We need to separate the Significand (including the L-bit)
+      // from the guard, round, and sticky (GRX) bits
+      // Left justify the GRX bits
+      q_GRX = (vui32_t) vec_slqi ((vui128_t) q_sig, (128-15));
+      // Pre-normalize the significand with the L (implicit) bit.
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Separate the low order significand (even/odd) bit.
+      q_low = vec_and ((vui32_t)q_sig, lowmask);
+      // And merge with sticky bits.
+      q_GRX = vec_or (q_GRX, q_low);
+      // Use Add write carry to force carry for rounding.
+      q_rnd = vec_addcuq ((vui128_t) q_GRX, (vui128_t) nlmask);
+      q_sig = vec_addeuqm (q_sig, q_zero,  q_rnd);
+      // Check if rounding generated a carry (C-bit) and adjust
+      if (vec_all_eq ((vui32_t) q_sig, q_carry))
+        {
+	  q_sig = vec_srqi ((vui128_t) q_sig, 1);
+          q_exp = vec_addudm (q_exp, (vui64_t) lowmask);
+        }
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_uqqpz (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+
+//  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW(0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // The simplest is we "round toward zero" (truncate).
+      q_sig = vec_srqi ( q_sig, 15 );
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
+#endif
+  return result;
+}
+
+__binary128
+test_convert_uqqpo (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t oddmask = CONST_VINT128_W(0, 0, 0, 0x7fff);
+
+//  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW(0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      vui32_t q_odd;
+
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // Here we "round to odd". So need to detect if any
+      // GRX bits (lower 15-bits) are not zero.
+      // And then add with the oddmask will set the odd-bit position.
+      q_odd = vec_and ((vui32_t) q_sig, oddmask);
+      q_odd = vec_add (q_odd, oddmask);
+      // Then or the odd-bit into the low order bit of the significand.
+      q_sig = (vui128_t) vec_or  ((vui32_t) q_sig, q_odd);
+      // Shift the significand into the correct position for xsiexpqp
+      q_sig = vec_srqi ( q_sig, 15 );
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
+#endif
+  return result;
 }
 
 __binary128
@@ -251,6 +600,317 @@ test_convert_sdqp (vi64_t int64)
     }
 #else
   result = int64[VEC_DW_H];
+#endif
+  return result;
+}
+
+vui128_t
+test_convert_qpuqz (__binary128 f128)
+{
+  vui128_t result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+  // GCC runtime does not convert directly from F128 to vector _int128
+  // So convert to __int128 then xfer via union.
+  __VEC_U_128 xxx;
+  xxx.ui128 = f128;
+  result = xxx.vx1;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp, q_delta;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff+128), 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0 );
+
+  result = q_zero;
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
+    {
+      if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_low))
+	{ // Greater than or equal to 1.0
+	  if (vec_cmpuq_all_lt ((vui128_t) q_exp, (vui128_t) exp_high))
+	    { // Less than 2**128-1
+#if 1
+	      const vui64_t exp_127 = (vui64_t) CONST_VINT64_DW( (0x3fff+127), 0 );
+	      q_sig = vec_slqi ((vui128_t) q_sig, 15);
+	      q_delta = vec_subudm (exp_127, q_exp);
+	      q_delta = vec_swapd (q_delta);
+	      q_sig = vec_srq (q_sig, (vui128_t) q_delta);
+#else
+	      const vui64_t exp_112 = (vui64_t) CONST_VINT64_DW( (0x3fff+112), 0 );
+	      if (vec_cmpuq_all_lt ((vui128_t) q_exp, (vui128_t) exp_112))
+		{ // Less than 2**112
+		  q_delta = vec_subudm (exp_112, q_exp);
+		  q_sig = vec_srq (q_sig, (vui128_t) q_delta);
+		}
+	      else
+		{ // greater then 2**112
+		  q_delta = vec_subudm (q_exp, exp_112);
+		  q_sig = vec_slq (q_sig, (vui128_t) q_delta);
+		}
+#endif
+	      result = q_sig;
+	    }
+	  else
+	    { // set result to 2**128-1
+	      result = (vui128_t) q_ones;
+	    }
+	}
+      else
+	{ // less than 1.0
+	  result = (vui128_t) q_zero;
+	}
+    }
+  else
+    { // isinf or isnan.
+      vb128_t is_inf, is_pos;
+      is_inf = vec_cmpequq (q_sig, q_zero);
+      is_pos = vec_cmpneuq ((vui128_t) q_sign, (vui128_t) signmask);
+      result = (vui128_t) vec_and ((vui32_t) is_inf, (vui32_t) is_pos);
+      //  else NaN or -Infinity returns zero
+    }
+
+#else
+  // GCC runtime does not convert directly from F128 to vector _int128
+  // So convert to __int128 then xfer via union.
+  __VEC_U_128 xxx;
+  xxx.ui128 = f128;
+  result = xxx.vx1;
+#endif
+  return result;
+}
+
+vf64_t
+test_convert_qpdpo_v2 (__binary128 f128)
+{
+  vf64_t result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // GCC runtime does not convert/round directly from __float128 to
+  // vector double. So convert scalar double then copy to vector double.
+  result = (vf64_t) { 0.0, 0.0 };
+  result [VEC_DW_H] = __builtin_truncf128_round_to_odd (f128);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvqpdpo %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else //  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, x_exp;
+  vui64_t q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+//  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+  const vui64_t qpdp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW( (0x3fff - 1022), (0x3fff - 1022) );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff + 1023), (0x3fff + 1023));
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0x7fff );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+
+  q_exp = vec_xsxexpqp (f128);
+  x_exp = vec_splatd (q_exp, VEC_DW_H);
+  q_sig = vec_xsxsigqp (f128);
+  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (!vec_cmpud_all_eq (x_exp, q_naninf), 1))
+    {
+      if (vec_cmpud_all_ge (x_exp, exp_tiny))
+	{ // Greater than or equal to 2**-1022
+	  if (vec_cmpud_all_le (x_exp, exp_high))
+	    { // Less than or equal to 2**+1023
+	      vui64_t d_X;
+	      // Convert the significand to double with left shift 4
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      // For round-to-odd just test for any GRX bits nonzero
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) q_sig, (vui64_t) q_zero);
+#if 1
+	      d_X = vec_mrgald (q_zero, (vui128_t) d_X);
+	      d_X = (vui64_t) vec_slqi ((vui128_t) d_X, 1);
+#else
+	      d_X = vec_mrgald ((vui128_t) d_X, q_zero);
+	      d_X = vec_srdi (d_X, 63);
+#endif
+	      d_sig = (vui64_t) vec_or ((vui32_t) q_sig, (vui32_t) d_X);
+	      d_exp = vec_subudm (q_exp, qpdp_delta);
+	    }
+	  else
+	    { // To high so return infinity OR double max???
+	      d_sig = (vui64_t) CONST_VINT64_DW (0x001fffffffffffff, 0);
+	      d_exp = (vui64_t) CONST_VINT64_DW (0x7fe, 0);
+	    }
+	}
+      else
+	{ // tiny
+	  vui64_t d_X;
+	  vui64_t q_delta;
+	  const vui64_t exp_tinyr = (vui64_t)
+	      CONST_VINT64_DW( (0x3fff-(1022+53)), (0x3fff-(1022+53)));
+	  q_delta = vec_subudm (exp_tiny, x_exp);
+	  // Set double exp to denormal
+	  d_exp = (vui64_t) q_zero;
+	  if (vec_cmpud_all_gt (x_exp, exp_tinyr))
+	    {
+	      // Convert the significand to double with left shift 4
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      d_sig = (vui64_t) vec_srq (q_sig, (vui128_t) q_delta);
+	      // For round-to-odd just test for any nonzero GRX bits.
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) d_sig, (vui64_t) q_zero);
+#if 1
+	      // Generate a low order 0b1 in DW[0]
+	      d_X = vec_mrgald (q_zero, (vui128_t) d_X);
+	      d_X = (vui64_t) vec_slqi ((vui128_t) d_X, 1);
+#else
+	      d_X = vec_mrgald ((vui128_t) d_X, q_zero);
+	      d_X = vec_srdi (d_X, 63);
+#endif
+	      d_sig = (vui64_t) vec_or ((vui32_t) d_sig, (vui32_t) d_X);
+	    }
+	  else
+	    { // tinyr
+	      // For round-to-odd just test for any nonzero GRX bits.
+	      d_X = (vui64_t) vec_addcuq (q_sig, q_ones);
+	      d_sig = (vui64_t) vec_swapd (d_X);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      const vui64_t q_quiet   = CONST_VINT64_DW(0x0000800000000000, 0);
+#if 1
+      vb128_t is_inf;
+      vui128_t x_sig;
+      is_inf = vec_cmpequq ((vui128_t) q_sig, (vui128_t) q_zero);
+      x_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) q_quiet);
+      q_sig = (vui128_t) vec_sel ((vui32_t)x_sig, (vui32_t)q_sig, (vui32_t)is_inf);
+#else
+      if (vec_cmpuq_all_ne ((vui128_t) q_sig, (vui128_t) q_zero))
+	{
+	  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) q_quiet);
+	}
+#endif
+      d_sig = (vui64_t)vec_slqi (q_sig, 4);
+      d_exp = d_naninf;
+    }
+ // q_exp = vec_swapd (q_exp);
+  d_sig [VEC_DW_L] = 0UL;
+  d_sig = (vui64_t) vec_or ((vui32_t) d_sig, q_sign);
+  result = vec_xviexpdp (d_sig, d_exp);
+#endif
+  return result;
+}
+
+vf64_t
+test_convert_qpdpo (__binary128 f128)
+{
+  vf64_t result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // GCC runtime does not convert/round directly from __float128 to
+  // vector double. So convert scalar double then copy to vector double.
+  result = (vf64_t) { 0.0, 0.0 };
+  result [VEC_DW_H] = __builtin_truncf128_round_to_odd (f128);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvqpdpo %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else //  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig;
+  vui64_t q_exp, q_delta;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+//  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW( (0x3fff - 1022), 0 );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff + 1023), 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
+    {
+      if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_tiny))
+	{ // Greater than or equal to 2**-1022
+	  if (vec_cmpuq_all_le ((vui128_t) q_exp, (vui128_t) exp_high))
+	    { // Less than or equal to 2**+1023
+	      vui64_t d_X;
+	      // Convert the significand to double with left shift 4
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      // For round-to-odd just test for any GRX bits nonzero
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) q_sig, (vui64_t) q_zero);
+	      d_X = vec_mrgald ((vui128_t) d_X, q_zero);
+	      d_X = vec_srdi (d_X, 63);
+	      d_sig = (vui64_t) vec_or ((vui32_t) q_sig, (vui32_t) d_X);
+	      d_exp = vec_subudm (q_exp, exp_delta);
+	    }
+	  else
+	    { // To high so return infinity OR double max???
+	      d_sig = (vui64_t) CONST_VINT64_DW (0x001fffffffffffff, 0);
+	      d_exp = (vui64_t) CONST_VINT64_DW (0x7fe, 0);
+	    }
+	}
+      else
+	{ // tiny
+	  vui64_t d_X;
+	  const vui64_t exp_tinyr = (vui64_t)
+	      CONST_VINT64_DW( (0x3fff-(1022+53) ), 0);
+	  q_delta = vec_subudm (exp_tiny, q_exp);
+	  q_delta = vec_swapd (q_delta);
+	  if (vec_cmpuq_all_gt ((vui128_t) q_exp, (vui128_t) exp_tinyr))
+	    {
+	      // Convert the significand to double with left shift 4
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      d_sig = (vui64_t) vec_srq (q_sig, (vui128_t) q_delta);
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) d_sig, (vui64_t) q_zero);
+	      d_X = vec_mrgald ((vui128_t) d_X, q_zero);
+	      d_X = vec_srdi (d_X, 63);
+	      d_sig = (vui64_t) vec_or ((vui32_t) d_sig, (vui32_t) d_X);
+	      d_exp = (vui64_t) { 0, 0 };
+	    }
+	  else
+	    { // tinyr
+	      d_X = (vui64_t) vec_addcuq (q_sig, q_ones);
+	      d_sig = (vui64_t) vec_swapd (d_X);
+	      d_exp = (vui64_t) q_zero;
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      if (vec_cmpuq_all_ne ((vui128_t) q_sig, (vui128_t) q_zero))
+	{
+	  const vui64_t q_quiet   = CONST_VINT64_DW(0x0000800000000000, 0);
+	  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) q_quiet);
+	}
+      d_sig = (vui64_t)vec_slqi (q_sig, 4);
+      d_exp = d_naninf;
+    }
+ // q_exp = vec_swapd (q_exp);
+  d_sig [VEC_DW_L] = 0UL;
+  d_sig = (vui64_t) vec_or ((vui32_t) d_sig, q_sign);
+  result = vec_xviexpdp (d_sig, d_exp);
 #endif
   return result;
 }
@@ -506,6 +1166,12 @@ vui32_t
 test_andc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 {
   return vec_andc_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_xor_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+{
+  return vec_xor_bin128_2_vui32t (f128, mask);
 }
 
 vui32_t
@@ -867,6 +1533,142 @@ test_vec_max8_f128 (__binary128 vf1, __binary128 vf2,
 
 #ifndef PVECLIB_DISABLE_F128ARITH
 #ifdef __FLOAT128__
+
+void
+test_vec_qpdpo_f128 (vf64_t * vx64,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  vf64_t vxf1, vxf2, vxf3, vxf4;
+
+  vxf1 = vec_xscvqpdpo (vf1);
+  vxf2 = vec_xscvqpdpo (vf2);
+  vxf3 = vec_xscvqpdpo (vf3);
+  vxf4 = vec_xscvqpdpo (vf4);
+
+  vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
+  vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
+
+  vx64[0] = vxf1;
+  vx64[1] = vxf3;
+
+  vxf1 = vec_xscvqpdpo (vf5);
+  vxf2 = vec_xscvqpdpo (vf6);
+  vxf3 = vec_xscvqpdpo (vf7);
+  vxf4 = vec_xscvqpdpo (vf8);
+
+  vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
+  vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
+
+  vx64[2] = vxf1;
+  vx64[3] = vxf3;
+}
+
+void
+test_gcc_qpdpo_f128 (vf64_t * vx64,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  vf64_t vxf1, vxf2, vxf3, vxf4;
+
+  vxf1[0] = vf1;
+  vxf1[1] = vf2;
+  vxf2[0] = vf3;
+  vxf2[1] = vf4;
+  vxf3[0] = vf5;
+  vxf3[1] = vf6;
+  vxf4[0] = vf7;
+  vxf4[1] = vf8;
+
+  vx64[0] = vxf1;
+  vx64[1] = vxf2;
+  vx64[2] = vxf3;
+  vx64[3] = vxf4;
+}
+
+void
+test_vec_qpuq_f128 (vui128_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  vf128[0] = vec_xscvqpuqz (vf1);
+  vf128[1] = vec_xscvqpuqz (vf2);
+  vf128[2] = vec_xscvqpuqz (vf3);
+  vf128[3] = vec_xscvqpuqz (vf4);
+  vf128[4] = vec_xscvqpuqz (vf5);
+  vf128[5] = vec_xscvqpuqz (vf6);
+  vf128[6] = vec_xscvqpuqz (vf7);
+  vf128[7] = vec_xscvqpuqz (vf8);
+}
+
+void
+test_gcc_qpuq_f128 (vui128_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  unsigned __int128 *vx128 = (unsigned __int128 *)vf128;
+  unsigned __int128 vi1, vi2, vi3, vi4, vi5, vi6, vi7, vi8;
+
+  vi1 = vf1;
+  vi2 = vf2;
+  vi3 = vf3;
+  vi4 = vf4;
+  vi5 = vf5;
+  vi6 = vf6;
+  vi7 = vf7;
+  vi8 = vf8;
+
+  vx128[0] = vi1;
+  vx128[1] = vi2;
+  vx128[2] = vi3;
+  vx128[3] = vi4;
+  vx128[4] = vi5;
+  vx128[5] = vi6;
+  vx128[6] = vi7;
+  vx128[7] = vi8;
+}
+
+void
+test_vec_uqqp_f128 (__binary128 * vf128,
+		    vui128_t vf1, vui128_t vf2,
+		    vui128_t vf3, vui128_t vf4,
+		    vui128_t vf5, vui128_t vf6,
+		    vui128_t vf7, vui128_t vf8)
+{
+  vf128[0] = vec_xscvuqqp (vf1);
+  vf128[1] = vec_xscvuqqp (vf2);
+  vf128[2] = vec_xscvuqqp (vf3);
+  vf128[3] = vec_xscvuqqp (vf4);
+  vf128[4] = vec_xscvuqqp (vf5);
+  vf128[5] = vec_xscvuqqp (vf6);
+  vf128[6] = vec_xscvuqqp (vf7);
+  vf128[7] = vec_xscvuqqp (vf8);
+}
+
+void
+test_gcc_uqqp_f128 (__binary128 * vf128,
+		    vui128_t vf1, vui128_t vf2,
+		    vui128_t vf3, vui128_t vf4,
+		    vui128_t vf5, vui128_t vf6,
+		    vui128_t vf7, vui128_t vf8)
+{
+  vf128[0] = vf1[0];
+  vf128[1] = vf2[0];
+  vf128[2] = vf3[0];
+  vf128[3] = vf4[0];
+  vf128[4] = vf5[0];
+  vf128[5] = vf6[0];
+  vf128[6] = vf7[0];
+  vf128[7] = vf8[0];
+}
 
 void
 test_vec_dpqp_f128 (__binary128 * vf128,
@@ -1231,6 +2033,12 @@ __binary128
 test_vec_absf128 (__binary128 f128)
 {
   return vec_absf128 (f128);
+}
+
+__binary128
+test_vec_nabsf128 (__binary128 f128)
+{
+  return vec_nabsf128 (f128);
 }
 
 __binary128

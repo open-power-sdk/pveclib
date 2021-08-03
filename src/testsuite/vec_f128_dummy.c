@@ -1066,21 +1066,11 @@ test_absdiff (__float128 vra, __float128 vrb)
 
 // TBD will sub-in pveclib softfloat for P8 when available
 
+#if 0 // turn off until Round-to-odd implementation is ready
 __float128
 test_scalar_add128 (__float128 vra, __float128 vrb)
 {
 #ifndef __clang__
-  if (__builtin_cpu_supports("ieee128"))
-    {
-      __float128 result;
-      __asm__(
-	      "xsaddqp %0,%1,%2"
-	      : "=v" (result)
-	      : "v" (vra), "v" (vrb)
-	      : );
-      return result;
-    }
-  else
     // Generate call to __addkf3
     return (vra + vrb);
 #else
@@ -1092,17 +1082,6 @@ __float128
 test_scalar_div128 (__float128 vra, __float128 vrb)
 {
 #ifndef __clang__
-  if (__builtin_cpu_supports("ieee128"))
-    {
-      __float128 result;
-      __asm__(
-	      "xsdivqp %0,%1,%2"
-	      : "=v" (result)
-	      : "v" (vra), "v" (vrb)
-	      : );
-      return result;
-    }
-  else
     // Generate call to __divkf3
     return (vra / vrb);
 #else
@@ -1114,17 +1093,6 @@ __float128
 test_scalar_mul128 (__float128 vra, __float128 vrb)
 {
 #ifndef __clang__
-  if (__builtin_cpu_supports("ieee128"))
-    {
-      __float128 result;
-      __asm__(
-	      "xsmulqp %0,%1,%2"
-	      : "=v" (result)
-	      : "v" (vra), "v" (vrb)
-	      : );
-      return result;
-    }
-  else
     // Generate call to __mulkf3
     return (vra * vrb);
 #else
@@ -1136,23 +1104,13 @@ __float128
 test_scalar_sub128 (__float128 vra, __float128 vrb)
 {
 #ifndef __clang__
-  if (__builtin_cpu_supports("ieee128"))
-    {
-      __float128 result;
-      __asm__(
-	      "xssubqp %0,%1,%2"
-	      : "=v" (result)
-	      : "v" (vra), "v" (vrb)
-	      : );
-      return result;
-    }
-  else
     // Generate call to __subkf3
     return (vra - vrb);
 #else
   return vra;
 #endif
 }
+#endif
 
 __float128
 test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)

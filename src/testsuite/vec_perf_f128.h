@@ -22,8 +22,10 @@
 #ifndef SRC_TESTSUITE_VEC_PERF_F128_H_
 #define SRC_TESTSUITE_VEC_PERF_F128_H_
 
+#if 0 // turn off until Round-to-odd implementation is ready
 extern int timed_expxsuba_v1_f128 (void);
 extern int timed_expxsuba_v2_f128 (void);
+#endif
 
 extern int timed_gcc_max8_f128 (void);
 extern int timed_lib_max8_f128 (void);

@@ -75,6 +75,23 @@ const vf64_t invfact5_6 = {120.0, 720.0};
 const vf64_t invfact7_8 = {5040.0, 40320.0};
 const vf64_t invfact9_10 = {362880.0, 3628800.0};
 
+const __float128 qpfact1 = 1.0Q;
+const __float128 qpfact2 = 2.0Q;
+const __float128 qpfact3 = 6.0Q;
+const __float128 qpfact4 = 24.0Q;
+const __float128 qpfact5 = 120.0Q;
+const __float128 qpfact6 = 720.0Q;
+const __float128 qpfact7 = 5040.0Q;
+const __float128 qpfact8 = 40320.0Q;
+
+const vui128_t i128fact1 = {1};
+const vui128_t i128fact2 = {2};
+const vui128_t i128fact3 = {6};
+const vui128_t i128fact4 = {24};
+const vui128_t i128fact5 = {120};
+const vui128_t i128fact6 = {720};
+const vui128_t i128fact7 = {5040};
+const vui128_t i128fact8 = {40320};
 
 #if 0 // turn off until Round-to-odd implementation is ready
 __float128
@@ -145,11 +162,56 @@ test_vec_dpqp_f128 (__binary128 * vf128,
 		    vf64_t vf3, vf64_t vf4,
 		    vf64_t vf5);
 
+extern void
+test_vec_uqqp_f128 (__binary128 * vf128,
+		    vui128_t vf1, vui128_t vf2,
+		    vui128_t vf3, vui128_t vf4,
+		    vui128_t vf5, vui128_t vf6,
+		    vui128_t vf7, vui128_t vf8);
+
+extern void
+test_gcc_uqqp_f128 (__binary128 * vf128,
+		    vui128_t vf1, vui128_t vf2,
+		    vui128_t vf3, vui128_t vf4,
+		    vui128_t vf5, vui128_t vf6,
+		    vui128_t vf7, vui128_t vf8);
+
+extern void
+test_vec_qpuq_f128 (vui128_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
+extern void
+test_gcc_qpuq_f128 (vui128_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
+extern void
+test_vec_qpdpo_f128 (vf64_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
+extern void
+test_gcc_qpdpo_f128 (vf64_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
 extern vb128_t
 test_vec_cmpgtuqp (__binary128 vfa, __binary128 vfb);
 
 extern __binary128
 test_vec_xscvdpqp (vf64_t f64);
+
+extern vf64_t
+test_vec_xscvqpdpo (__binary128 f128);
 
 __binary128
 test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
@@ -179,6 +241,38 @@ test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
 }
 
 void
+test_lib_qpdpo_f128 (vf64_t * vx64,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  vf64_t vxf1, vxf2, vxf3, vxf4;
+
+  vxf1 = test_vec_xscvqpdpo (vf1);
+  vxf2 = test_vec_xscvqpdpo (vf2);
+  vxf3 = test_vec_xscvqpdpo (vf3);
+  vxf4 = test_vec_xscvqpdpo (vf4);
+
+  vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
+  vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
+
+  vx64[0] = vxf1;
+  vx64[1] = vxf3;
+
+  vxf1 = test_vec_xscvqpdpo (vf5);
+  vxf2 = test_vec_xscvqpdpo (vf6);
+  vxf3 = test_vec_xscvqpdpo (vf7);
+  vxf4 = test_vec_xscvqpdpo (vf8);
+
+  vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
+  vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
+
+  vx64[2] = vxf1;
+  vx64[3] = vxf3;
+}
+
+void
 test_lib_dpqp_f128 (__binary128 * vf128,
 		    vf64_t vf1, vf64_t vf2,
 		    vf64_t vf3, vf64_t vf4,
@@ -203,6 +297,207 @@ test_lib_dpqp_f128 (__binary128 * vf128,
   vf128[8] = test_vec_xscvdpqp (vf5);
   vf5[VEC_DW_H] = vf5[VEC_DW_L];
   vf128[8] = test_vec_xscvdpqp (vf5);
+}
+
+extern vui128_t
+test_vec_xscvqpuqz (__binary128 f128);
+
+void
+test_lib_qpuq_f128 (vui128_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8)
+{
+  vf128[0] = test_vec_xscvqpuqz (vf1);
+  vf128[1] = test_vec_xscvqpuqz (vf2);
+  vf128[2] = test_vec_xscvqpuqz (vf3);
+  vf128[3] = test_vec_xscvqpuqz (vf4);
+  vf128[4] = test_vec_xscvqpuqz (vf5);
+  vf128[5] = test_vec_xscvqpuqz (vf6);
+  vf128[6] = test_vec_xscvqpuqz (vf7);
+  vf128[7] = test_vec_xscvqpuqz (vf8);
+}
+
+extern __binary128
+test_vec_xscvuqqp (vui128_t int128);
+
+void
+test_lib_uqqp_f128 (__binary128 * vf128,
+		    vui128_t vf1, vui128_t vf2,
+		    vui128_t vf3, vui128_t vf4,
+		    vui128_t vf5, vui128_t vf6,
+		    vui128_t vf7, vui128_t vf8)
+{
+  vf128[0] = test_vec_xscvuqqp (vf1);
+  vf128[1] = test_vec_xscvuqqp (vf2);
+  vf128[2] = test_vec_xscvuqqp (vf3);
+  vf128[3] = test_vec_xscvuqqp (vf4);
+  vf128[4] = test_vec_xscvuqqp (vf5);
+  vf128[5] = test_vec_xscvuqqp (vf6);
+  vf128[6] = test_vec_xscvuqqp (vf7);
+  vf128[7] = test_vec_xscvuqqp (vf8);
+}
+int timed_lib_qpdpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vf64_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_qpdpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_qpdpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vf64_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_qpdpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_vec_qpdpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vf64_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_vec_qpdpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_vec_qpuq_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vui128_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_vec_qpuq_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_lib_qpuq_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vui128_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_qpuq_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_qpuq_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  vui128_t tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_qpuq_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_vec_uqqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_vec_uqqp_f128 (tbl,
+			  i128fact1, i128fact2,
+			  i128fact3, i128fact4,
+			  i128fact5, i128fact6,
+			  i128fact7, i128fact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_lib_uqqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_uqqp_f128 (tbl,
+			  i128fact1, i128fact2,
+			  i128fact3, i128fact4,
+			  i128fact5, i128fact6,
+			  i128fact7, i128fact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_uqqp_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __float128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_uqqp_f128 (tbl,
+			  i128fact1, i128fact2,
+			  i128fact3, i128fact4,
+			  i128fact5, i128fact6,
+			  i128fact7, i128fact8);
+    }
+#endif
+   return 0;
 }
 
 int timed_vec_dpqp_f128 (void)

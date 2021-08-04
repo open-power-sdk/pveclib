@@ -51,8 +51,8 @@
  * for float and double but not for __ieee128.
  * These built-ins are not defined in GCC 6.4. See
  * <a href="https://gcc.gnu.org/onlinedocs/">compiler documentation</a>.
- * These are useful operations and can be implement in a few
- * vector logical instruction for earlier machines. So it seems
+ * These are useful operations and can be implemented in a few
+ * vector logical instructions for earlier machines. So it seems
  * reasonable to add these to pveclib for both vector and scalar forms.
  *
  * Quad-Precision is not supported in hardware until POWER9. However
@@ -61,9 +61,58 @@
  * The soft-float implementation follows the ABI and passes __float128
  * parameters and return values in vector registers.
  *
+ * The PowerISA 3.0 also defines a number of useful quad-precision
+ * operations using the "round-to-odd" override. This is useful when
+ * the results of quad-precision arithmetic must be rounded to a
+ * shorter precision while avoiding double rounding. Recent GCC
+ * compilers support these operations as built-ins for the POWER9
+ * target, but they not supported by the C language or GCC runtime
+ * library. This means that round-to-odd is not easily available to
+ * libraries that need to support IEEE-128 on POWER8. Again it may be
+ * reasonable to add these to pveclib.
+ *
+ * \note See
+ * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
+ * GCC Avoids Double Rounding Errors With Round-To-Odd</a>
+ *
+ * Another issue is the performance of GCC soft-float runtime for
+ * IEEE-128 (KF mode). There seem to be a number of issues with code
+ * generation for transfers from __float128 to 64-bit integer GPRs.
+ * This is required to match the ABI (vector) parameters to the
+ * soft-float runtime using integer scalars. For POWER8 targets
+ * the GCC compiler generates store vector followed by two load
+ * doubleword instructions. This generates high frequencies of
+ * load-hit-store rejects at runtime.
+ * It also looks like there is significant instruction latency
+ * associated with the XER carry bit required for extended (128-bit)
+ * integer arithmetic.
+ *
+ * \note Both of these issues can be avoided by providing a soft-float
+ * implementation for __float128 using VSX vector 128-bit arithmetic and
+ * logical operations. So far direct comparisons for _float128 compare
+ * and conversion operations show a significant performance gain for
+ * the PVECLIB vector implementations vs the GCC KF mode runtime.
+ * The most convincing results will come when the round-to-odd
+ * implementations for IEEE-128 add and multiply are available.
+ * This allows direct performance comparison across __float128
+ * arithmetic operations. Please stand by.
+ *
+ * There are number of __float128 operations that should generate a
+ * single instruction for POWER9 and few (less than 10) instructions
+ * for POWER8.
+ * This includes all of the __float128 classification functions
+ * (isnormal/subnormal/finite/inf/nan/zero).
+ * Unfortunately for POWER8 the compilers will generate calls to the
+ * GCC runtime (__unordkf2, __gekf2, ...) for these functions.
+ * In many cases the code size generated for the runtime calls
+ * far exceeds any in-line VSX code PVECLIB will generate.
+ *
  * So it is not unreasonable for this header to provide vector forms
  * of the __float128 classification functions
- * (isnormal/subnormal/finite/inf/nan/zero, copysign, and abs).
+ * (isnormal/subnormal/finite/inf/nan/zero). It is little additional
+ * effort to include the
+ * sign bit manipulation operations (copysign, abs, nabs, and neg).
+ *
  * These functions can be implemented directly using (one or more) POWER9
  * instructions, or a few vector logical and integer compare
  * instructions for POWER7/8. Each is comfortably small enough to be
@@ -75,12 +124,31 @@
  * It also seems reasonable to provide Quad-Precision extract/insert
  * exponent/significand and compare exponent operations for POWER7/8.
  * And with the PowerISA 3.1 release providing POWER9/8 implementations
- * of min/max/convert/compare.
+ * of min/max and quadword integer converts.
+ *
+ * The quad-precision arithmetic, compare, and conversion operations
+ * are large enough that most applications will want to call a library.
+ * PVECLIB will build and release the appropriate CPU tuned libraries.
+ * This will follow the general design used for multiple
+ * quadword integer multiply functions (vec_int512_ppc.h).
  *
  * These PVECLIB operations should be useful for applications using
- * Quad-Precision while needing to still support POWER8. They should
- * also be useful and improve performance for soft-float
- * implementations of math library functions.
+ * Quad-Precision while needing to still support POWER8 but also
+ * build for POWER9/10.
+ * An important goal is to allow applications and libraries to safely
+ * substitute PVECLIB operations for C language and math.h __float128
+ * operators and functions as point optimizations.
+ * The largest gains will be seen for builds targeting POWER8 without
+ * degrading performance when targeting POWER9/10.
+ * They should also be useful and improve performance for
+ * soft-float implementations of math library functions.
+ *
+ * \note At this time, PVECLIB does not intend to replace existing
+ * GCC/libm IEEE-128 runtime APIs and will maintain it own unique
+ * name-space. However if the maintainers of these projects want to
+ * leverage PVECLIB they are allowed under the terms of the
+ * <a href="http://www.apache.org/licenses/LICENSE-2.0">
+ * Apache License, Version 2.0.</a>
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -102,6 +170,10 @@
  * - Defined in the OpenPOWER ABI but <I>not</I> yet defined in
  * <altivec.h> provided by available compilers in common use.
  * Examples include scalar_test_neg, scalar_test_data_class, etc.
+ * - Defined for POWER9 (as built-ins) but not supported in the
+ * soft-float runtime implementation provided for POWER8.
+ * Examples include the arithmetic/conversion operations supporting
+ * the <I>round-to-odd</I> override.
  * - Providing special vector float tests for special conditions
  * without generating extraneous floating-point exceptions.
  * This is important for implementing __float128 forms of ISO C99 Math
@@ -149,9 +221,7 @@
  * - Quad-Precision from/to integer word/doubleword/quadword.
  *   - Cases that don't require rounding (i.e truncate and DW to QP).
  *   - Cases that require rounding
- *     - Round to odd. See
- * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
- * GCC Avoids Double Rounding Errors With Round-To-Odd</a>
+ *     - Round to odd.
  *     - Round to Nearest/Even
  *     - Others if asked
  * - Quad-Precision arithmetic
@@ -220,13 +290,20 @@
  * vec_issubnormalf128(),
  * vec_iszerof128(),
  * vec_setb_qp().
+ * - Sign bit manipulation;
+ * vec_absf128(),
+ * vec_nabsf128(),
+ * vec_negf128(),
+ * vec_copysignf128().
  * - Data manipulation;
- * vec_copysignf128(),
  * vec_xsiexpqp(),
  * vec_xsxexpqp(),
  * vec_xsxsigqp().
  * - Exponent Compare;
- * TBD: The compare exponent quad-precision operation defined for P9.
+ * vec_cmpqp_exp_eq(),
+ * vec_cmpqp_exp_gt(),
+ * vec_cmpqp_exp_lt(),
+ * vec_cmpqp_exp_unordered().
  *
  * For example the data class test isnan:
  * \code
@@ -235,16 +312,16 @@ vec_isnanf128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && \
   defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t result = CONST_VINT128_W (0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x40))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = CONST_VINT128_W (-1, -1, -1, -1);
 
   return (vb128_t)result;
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpgtuq ((vui128_t)tmp , (vui128_t)expmask);
@@ -293,7 +370,7 @@ vec_isnanf128 (__binary128 f128)
  * This is required because while __float128 values are held in VRs,
  * the compiler considers them to be scalars and will not
  * allow simple casts to (any) vector type. So the PVECLIB
- * implementation provides <I>xfer</I> function using a unions to
+ * implementation provides <I>xfer</I> function using a union to
  * transfer the __float128 value to a vector type.
  * In most case this logical transfer simply serves to make the
  * compiler happy and does not need to generate any code.
@@ -335,7 +412,7 @@ vec_xsxexpqp (__binary128 f128)
 
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0)
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0)
 
   tmp = vec_and_bin128_2_vui32t (f128, expmask);
   result = (vui64_t) vec_sld (tmp, tmp, 10);
@@ -376,6 +453,300 @@ vec_xsxexpqp (__binary128 f128)
  * right justify the exponent in vector doubleword 0.
  * This matches the results of the xsxexpqp instruction.
  *
+ * \subsection f128_softfloat_IRRN_0_0 Intermediate results and Rounding for Quad-Precision
+ *
+ * The IEEE-128 floating-point storage (external) format fits neatly in
+ * 128-bits. But this compact format needs to be expanded internally
+ * during QP operations. The sign and exponent are normally manipulated
+ * separately from the significand. And for finite values the
+ * Leading-bit (implied but not included in the storage format) must
+ * be restored to take part in arithmetic/rounding/normalization
+ * operations.
+ *
+ * \note The <I>Leading</I>, <I>Hidden</I>,  and <I>Implicit</I> bits
+ * are different names for the most significant bit of the significand.
+ * This bit is Hidden or Implicit only for the external or storage
+ * format of floating-point numbers. But it needs to be explicitly
+ * represented in the internal <I>Intermediate Results (<B>IR</B>)</I>.
+ * See Also: PowerISA 3.0
+ * 7.3.3 VSX Floating-Point Execution Models.
+ *
+ * For a soft-float implementation of IEEE-128 on POWER8 we want to
+ * extract these components into 128-bit vector registers and operate
+ * on them using vector instructions. This allows direct use of 128-bit
+ * arithmetic/shift/rotate operations (see vec_int128_ppc.h), while
+ * avoiding expensive transfers between VRs and GPRs.
+ *
+ * To extract the sign-bit we can either AND with a 128-bit mask or use
+ * a set-bool operation (vec_setb_qp() or vec_setb_sq()).
+ * The masked sign-bit can be ORed with the final IEEE-128 vector
+ * result to set the appropriate sign.
+ * The 128-bit vector bool can be used with vec_sel()
+ * (vec_self128(), vec_selsq(), vec_seluq()) to select
+ * results based on the sign-bit while avoiding branch logic.
+ *
+ * We use vec_xsxexpqp() to extract the 15-bit exponent into a
+ * vector doubleword integer element. The biased exponent is returned
+ * in the high doubleword (matching the POWER9 instruction).
+ * Depending on the operation, the exponent (or derived values)
+ * may need to be transfered/replicated to the low doubleword element.
+ * This is easily accomplished using vec_splatd().
+ *
+ * We use vec_xsxsigqp() to extract the 113-bit significand into a
+ * vector quadword integer. This operation restores the leading-bit
+ * for normal (not NaN, Infinity, denormal or zero) values.
+ * The significand is returned right-justified in the quadword.
+ *
+ * At the end of the operation we can use vec_or() and vec_xsiexpqp()
+ * to combine these (sign, exponent, and significand) components into
+ * a IEEE-128 result.
+ *
+ * \subsubsection f128_softfloat_IRRN_0_1 Representing Intermediate results for Quad-Precision
+ *
+ * Internal IEEE floating-point operations will need/generate
+ * additional bits to support normalization and rounding.
+ * The PowerISA describes a
+ * <B>VSX Execution Model for IEEE Operations</B>
+ *
+ * IEEE quad-precision execution model
+ *  |  |   | 0 |1 ----------------------------- 112|   |   |   |
+ *  |:-|:-:|:-:|:---------------------------------:|:-:|:-:|--:|
+ *  | S| C | L |             FRACTION              | G | R | X |
+ *  | - Sign bit |||||||
+ *  | - Carry bit |||||||
+ *  | - Leading bit, also called the implicit or hidden bit |||||||
+ *  | - Fraction (112-bits) |||||||
+ *  | - Guard bit |||||||
+ *  | - Round bit |||||||
+ *  | - (X) AKA Sticky bit, logical OR of remaining bits |||||||
+ *
+ * This model is a guide for processor design and soft-float
+ * implementors. This is also described as the
+ * <I>Intermediate result Representation (<B>IR</B>)</I>.
+ * As such the implementation may arrange these bits into
+ * different registers as dictated by design and performance.
+ *
+ * The GRX bits extend the low order bits of the fraction and are
+ * required for rounding. Basically these bits encode how <I>near</I>
+ * the intermediate result is to a representable result.
+ * The GR bits are required for post-normalization of the result
+ * and participate in shifts during normalization. For right shifts,
+ * bits shift out of the R-bit are logically ORed into the X-bit.
+ * For left shifts, 0 bits shifted into the R-bit
+ * (the X-bit is ignored).
+ *
+ * As mentioned before, it is convenient to keep sign-bit in a separate
+ * vector quadword. Its not an extension of the significand but is
+ * needed to select results for arithmetic and some rounding modes.
+ *
+ * The remaining (C through X) bits can be represented in a vector
+ * quadword register or a register pair. For example integer to QP
+ * conversions can be represented in a vector quadword by left
+ * justifying the magnitude before normalization and rounding.
+ * For example from vec_xscvuqqp():
+ * \code
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit significand can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW (0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // The Significand (including the L-bit) is right justified in
+      // in the high-order 113-bits of q_sig.
+      // The guard, round, and sticky (GRX) bits are in the low-order
+      // 15 bits.
+      ...
+    }
+ * \endcode
+ * The simplest case is <I>Round Toward Zero</I>
+ * \code
+      // Round toward zero to normalize and truncate
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      ...
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+      ...
+ * \endcode
+ * The <I>Round to Nearest Even</I> case may increment the significand
+ * and that may generate a carry from the <B>L-bit</B>. One option is
+ * to use vec_addcuq() to capture the carry. For example:
+ * \code
+      ...
+      // We add 0x3fff to GRX-bits which may carry into low order sig-bit
+      // This may result in a carry out from the L-bit into C-bit.
+      q_carry = vec_addcuq (q_sig, (vui128_t) RXmask);
+      q_sig = vec_adduqm (q_sig, (vui128_t) RXmask);
+      // Generate a bool mask from the carry to use in the vsel
+      qcmask = vec_setb_cyq (q_carry);
+      // Two cases; 1) We did carry so shift (double) left 112 bits
+      q_sigc = vec_sldqi (q_carry, q_sig, 112);
+      // 2) no carry so shift right 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Select which based on carry
+      q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) q_sigc, (vui32_t) qcmask);
+      // Increment the exponent based on the carry
+      q_exp = vec_addudm (q_exp, (vui64_t) q_carry);
+ * \endcode
+ * In this case having the carry as a separate vector simplifies
+ * adjusting the exponent.
+ *
+ * Other cases that require quadword register pairs are QP
+ * Multiply and Multiply-Add. The product of two 113-bit
+ * significands requires 226-bits. We can use operations from
+ * vec_int128_ppc.h. By pre-adjusting the inputs before the
+ * multiply we can align the split between the high and low 113-bits
+ * of the product to align with the high and low quadword registers.
+ * For example:
+ * \code
+      ... // Not final
+      // Pre-align that multiply inputs so that the product is split
+      // with the L-Fraction-bits in high_sig, and GRX-bits in low_sig.
+      a_sig = vec_slqi (a_sig, 8);
+      b_sig = vec_slqi (b_sig, 7);
+      low_sig = vec_muludq (&high_sig, a_sig, b_sig);
+ * \endcode
+ * This simplifies the <I>Round to Odd</I> case.
+ *
+ * \subsubsection f128_softfloat_IRRN_0_2 Rounding for Quad-Precision
+ * TBD
+ *
+ * The PowerISA support 6 rounding modes for Quad-Precision
+ *
+ * - Round to Nearest Even
+ * - Round towards Zero
+ * - Round towards +Infinity
+ * - Round towards -Infinity
+ * - Round to Nearest Away
+ * - Round to Odd
+ *
+ * \note See
+ * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
+*  GCC Avoids Double Rounding Errors With Round-To-Odd</a>
+ *
+ * The first four modes are encoded in the <B>FPSCR<sub>RN</sub></B>
+ * rounding mode bits. The last two are encoded in instructions as
+ * instruction local overrides.
+ * The VSX Scalar Round to Quad-Precision Integer instruction can
+ * override the RN and encode any of the six rounding modes.
+ *
+ * The rounding mode results are defined in terms of the intermediate
+ * result (IR), and how close it is to the <I>representable result</I>,
+ * based on the GRX-bits. The IR is either; exact,
+ * closer to the next lower (NL) representable result,
+ * Midway between, or
+ * closer to the next Higher (NH) representable result,
+ *
+ *  | G | R | X | interpretation |
+ *  |:-:|:-:|:-:|:----------------------------------|
+ *  | 0 | 0 | 0 | IR is exact |
+ *  | 0 | 0 | 1 | IR is closer to NL |
+ *  | 0 | 1 | 0 | IR is closer to NL |
+ *  | 0 | 1 | 1 | IR is closer to NL |
+ *  | 1 | 0 | 0 | IR is midway between NL and NH |
+ *  | 1 | 0 | 1 | IR is closer to NH |
+ *  | 1 | 1 | 0 | IR is closer to NH |
+ *  | 1 | 1 | 1 | IR is closer to NH |
+ *
+ * Next lower is effectively truncating the IR (setting GRX = 0b000),
+ * while next higher will increment the significand by one.
+ *
+ * - Round to Nearest Even
+ *  - If exact chose IR
+ *  - Otherwise if IR is closer to NL, choose NL
+ *  - Otherwise if IR is closer to NH, choose NH
+ *  - Otherwise if IR in midway, choose whichever makes the result even.
+ * - Round towards Zero
+ *  - If exact chose IR
+ *  - Otherwise, choose NL
+ * - Round towards +Infinity
+ *  - If exact chose IR
+ *  - Otherwise if positive, choose NH
+ *  - Otherwise if negative, choose NL
+ * - Round towards -Infinity
+ *  - If exact chose IR
+ *  - Otherwise if positive, choose NL
+ *  - Otherwise if negative, choose NH
+ * - Round to Nearest Away
+ *  - If exact chose IR
+ *  - Otherwise if G = 0, choose NL
+ *  - Otherwise if G = 1, choose NH
+ * - Round to Odd
+ *  - If exact chose IR
+ *  - Otherwise, choose NL, and if G=1,  or R=1, or X=1,
+ *  set the least significant bit to 1.
+ *
+ * Coding examples TBD. Full examples waiting for
+ * VSX Scalar Round to Quad-Precision Integer implementation.
+ *
+ * Coding example for Round to Nearest Even.
+ * \code
+      const vui32_t RXmask = CONST_VINT128_W ( 0, 0, 0, 0x3fff);
+      const vui32_t lowmask = CONST_VINT128_W ( 0, 0, 0, 1);
+      vui128_t q_carry, q_sigc;
+      vb128_t qcmask;
+      vui32_t q_odd;
+
+      // The Significand (including the L-bit) is right justified in
+      // in the high-order 113-bits of q_sig.
+      // The guard, round, and sticky (GRX) bits are in the low-order
+      // 15 bits.
+      //
+      // For "Round to Nearest Even".
+      // GRX = 0b001 - 0b011; truncate
+      // GRX = 0b100 and bit-112 is odd; round up, otherwise truncate
+      // GRX = 0b100 - 0b111; round up
+      // We simplify by copying bit-112 and ORing it with X-bits.
+      // Then add 0x3fff to q_sig will generate a carry into bit-112
+      // if and only if GRX > 0b100 or (GRX == 0b100) && (bit-112 == 1)
+      // Isolate bit-112 and OR into GRX bits if q_sig is odd
+      q_odd = (vui32_t) vec_srhi ((vui16_t)q_sig, 15);
+      q_odd = vec_and (q_odd, lowmask);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_odd);
+      // Now we round by adding 0x3fff to GRX-bits, which may
+      // carry into bit-112, incrementing the significand.
+      // This may result in a carry out of bit L into bit-C.
+      q_carry = vec_addcuq (q_sig, (vui128_t) RXmask);
+      q_sig = vec_adduqm (q_sig, (vui128_t) RXmask);
+      // Now we have two cases with and without carry/renormalize
+      // Generate a bool mask from the carry to use in the vsel
+      qcmask = vec_setb_cyq (q_carry);
+      // case 1) We did carry so shift left (double quadword) 112 bits
+      q_sigc = vec_sldqi (q_carry, q_sig, 112);
+      // case 2) no carry so shift right 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Select result based on on carry bool
+      q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) q_sigc, (vui32_t) qcmask);
+      // Increment the exponent based on the carry-bit
+      q_exp = vec_addudm (q_exp, (vui64_t) q_carry);
+ * \endcode
+ * This code runs about 16 instructions.
+ *
+ * Coding example for Round toward Zero
+ * \code
+      // Simplest case, shift right 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+ * \endcode
+ * This code runs about 3 instructions.
+ *
+ * Coding example for Round to Odd
+ * \code
+      const vui32_t RXmask = CONST_VINT128_W ( 0, 0, 0, 0x7fff);
+      vui32_t q_odd;
+      // For "Round to Odd".
+      // If if G=1, or R=1, or X=1, Set least significant bit to 1.
+      // Isolate GRX bit then add the mask.
+      q_odd = vec_and ((vui32_t) q_siq, RXmask);
+      // The add will generate a carry into bit 112, for non-zero GRX
+      q_odd = vec_add (q_odd, RXmask);
+      // Or this into bit 112 of the q_sig.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_odd);
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+ * \endcode
+ * This code runs about 6 instructions to load the mask and round=odd.
+ *
  * \subsection f128_softfloat_0_0_1 Quad-Precision compares for POWER8
  *
  * IEEE floating-point compare is a bit more complicated than binary
@@ -383,7 +754,7 @@ vec_xsxexpqp (__binary128 f128)
  * Not-a-Number (NaN) which IEEE insists are <I>unordered</I>,
  * and signed 0.0 where IEEE insists that -0.0 is equal to +0.0.
  * If you ignore the NaN and signed 0.0 cases you can treat
- * floating-point as signed magnitude binary integers, and
+ * floating-point values as signed magnitude binary integers, and
  * use integer compares and boolean logic.
  * Which looks like this:
  *
@@ -488,7 +859,7 @@ test_cmpltf128_v1c (vi128_t vfa128, vi128_t vfb128)
 vb128_t
 test_cmpltf128_v2c (vi128_t vfa128, vi128_t vfb128)
 {
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t altb, agtb, nesm;
   vui32_t or_ab;
   vb128_t signbool;
@@ -536,8 +907,8 @@ test_cmpltf128_v2c (vi128_t vfa128, vi128_t vfb128)
 vb128_t
 test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
 {
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   const vui8_t shift = vec_splat_u8 (7);
 
   vb128_t result;
@@ -597,7 +968,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * But the conversion may also require normalization and rounding
  * depending on element size and types involved.
  * Some examples:
- * - Double precision floats and long long ints can be represented
+ * - Double precision floats and long long integers can be represented
  * exactly in Quad precision float. But:
  * - Down conversions (to doubleword) from Quad-Precision may require
  *  rounding/truncation.
@@ -630,7 +1001,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * normal, subnormal, zero) as each requires special handling in the
  * conversion.
  *
- * Conversion involves adjusting the <I>parts</I> as needed the match
+ * Conversion involves adjusting the <I>parts</I> as needed to match
  * the type of the result. This is normally only adds and shifts.
  * Finally we need to reassemble the parts based on the result type.
  * For integers this normally just converting the unsigned magnitude
@@ -639,7 +1010,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * (adjusted) significand and merging that with the (adjusted)
  * exponent.
  *
- * The good news is that all of the require operations are already
+ * The good news is that all of the required operations are already
  * available in <B>altivec.h</B> or PVECLIB.
  *
  * \subsubsection f128_softfloat_0_0_2_0 Convert Double-Precision to Quad-Precision
@@ -649,7 +1020,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * possible). The process starts with disassembling the
  * double-precision value.
  * \code
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
   // Extract the exponent, significand, and sign bit.
@@ -661,7 +1032,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * This is necessary for then we normalize the 128-bit significand for
  * the quad-precision result.
  * The operations vec_xvxexpdp() and vec_xvxsigdp() are provided by
- * vec_f64_ppc.h supporting bot the POWER9 instruction and equivalent
+ * vec_f64_ppc.h supporting both the POWER9 instruction and equivalent
  * implementation for POWER8.
  * And finally we extract the sign-bit. We can't use the copysign()
  * here due to the difference in type.
@@ -700,7 +1071,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  *
  * The normal case requires shifting the significand and adjusting the exponent.
  * \code
-  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW ( (0x3fff - 0x3ff), 0 );
           ...
 	  q_sig = vec_srqi ((vui128_t) d_sig, 4);
 	  q_exp = vec_addudm (d_exp, exp_delta);
@@ -740,7 +1111,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * \code
     // Need to adjust the quad exponent by the f64 denormal exponent
     // (-1023) knowing that the f64 sig will have at least 12 leading '0's
-    vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (16383 - (1023 -12)), 0 );
+    vui64_t q_denorm = (vui64_t) CONST_VINT64_DW ( (16383 - (1023 -12)), 0 );
     vui64_t f64_clz;
     f64_clz = vec_clzd (d_sig);
     d_sig = vec_vsld (d_sig, f64_clz);
@@ -759,7 +1130,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * the exponent to quad-precision max.
  * \code
       q_sig = vec_srqi ((vui128_t) d_sig, 4);
-      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+      q_exp = (vui64_t) CONST_VINT64_DW (0x7fff, 0);
  * \endcode
  * We need this shift as NaN has a non-zero significand and it might
  * be nonzero in one of the low order bits.
@@ -780,8 +1151,8 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
   vui64_t d_exp, d_sig, q_exp;
   vui128_t q_sig;
   vui32_t q_sign;
-  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW ( (0x3fff - 0x3ff), 0 );
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
   // Extract the exponent, significand, and sign bit.
@@ -804,7 +1175,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
 	    }
 	  else
 	    { // Must be subnormal
-	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - 1023 -12), 0 );
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW ( (0x3fff - 1023 -12), 0 );
 	      vui64_t f64_clz;
 	      f64_clz = vec_clzd (d_sig);
 	      d_sig = vec_vsld (d_sig, f64_clz);
@@ -816,7 +1187,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
   else
     { // isinf or isnan.
       q_sig = vec_srqi ((vui128_t) d_sig, 4);
-      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+      q_exp = (vui64_t) CONST_VINT64_DW (0x7fff, 0);
     }
   // Copy Sign-bit to QP significand before insert.
   q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
@@ -835,12 +1206,12 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  * isnormal (with two vector compares) as preparation for conditionally
  * restoring the implied (hidden) bit.
  *
- * By testing the extracted parts (exponent and significand) directly
- * we can avoid simplify the data class compare logic and elliminate
+ * By testing the extracted (exponent and significand) parts directly
+ * we can simplify the compare logic and eliminate
  * some (redundant) vector constant loads. For example:
  * \code
-  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
-  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW ( 0x7ff, 0 );
+  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW ( 0, 0 );
   // ...
   // The extract sig operation has already tested for finite/subnormal.
   // So avoid testing isfinite/issubnormal again by simply testing
@@ -905,7 +1276,7 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
       // like a denormal, then normalize it.
       // Start with the quad exponent bias + 63 then subtract the count of
       // leading '0's. The 64-bit sig can have 0-63 leading '0's.
-      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW ((0x3fff + 63), 0 );
       vui64_t i64_clz = vec_clzd (int64);
       d_sig = vec_vsld (int64, i64_clz);
       q_exp = vec_subudm (q_expm, i64_clz);
@@ -923,11 +1294,11 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
  *
  * The signed doubleword conversion is bit more complicated.
  * We deal with zero case in the same way. Otherwise
- * we need split the signed doubleword into a sign-bit and unsigned
- * 63-bit magnitude. Which looks something like this:
+ * we need to separate the signed doubleword into a sign-bit and
+ * unsigned 64-bit magnitude. Which looks something like this:
  * \code
-  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW ( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   ...
       // Convert 2s complement to signed magnitude form.
       q_sign = vec_and ((vui32_t) int64, signmask);
@@ -951,16 +1322,352 @@ test_cmpltf128_v3d (vui128_t vfa128, vui128_t vfb128)
       result = vec_xsiexpqp (q_sig, q_exp);
  * \endcode
  *
+ * \subsubsection f128_softfloat_0_0_2_2 Convert Quad-Precision to Quadword integer
  *
- * \subsubsection f128_softfloat_0_0_2_2 Convert Quadword integer to Quad-Precision
+ * Convertions between quad-precision and quadword integers is
+ * complicated by the fact that the QP significand is only 113-bits
+ * while the quadword integer magnitude can be 127/128 bits.
+ * It may not be possible to represent the quadword magnitude
+ * exactly.
+ * Conversions from quad-precision float to integer may have
+ * nonzero fractions which require rounding/truncation.
+ *
+ * For POWER9 we have the
+ * <B>VSX Scalar Convert with round to zero Quad-Precision to
+ * Signed/Unsigned Doubleword
+ * <I>(xscvqpsdz/xscvqpudz)</I></B> instructions.
+ * For POWER10 we have the
+ * <B>VSX Scalar Convert with round to zero Quad-Precision to
+ * Signed/Unsigned Quadword
+ * <I>(xscvqpsqz/xscvqpuqz)</I></B> instructions.
+ * Conversion using other rounding modes require using
+ * <B>VSX Scalar Round to Quad-Precision Integer <I>(xsrqpi)</I></B>
+ * instruction.
+ *
+ * \note The <I>xsrqpi</I> instruction
+ * allows for overriding the rounding mode as an immediate operand.
+ * So a two instruction sequence can implement any of the four
+ * <B>FPSCR<sub>RN</sub></B> rounding modes plus the fifth
+ * (Round to Nearest Away) mode specific to floating point integer
+ * instructions.
+ *
+ * For this example we will look at Convert with Round to Zero
+ * Quad-Precision to Unsigned Quadword.
+ * The POWER10 operation can be implemented as a single xscvqpuqz
+ * instruction. For example:
+ * \code
+static inline vui128_t
+vec_xscvqpuqz (__binary128 f128)
+{
+  vui128_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvqpuqz %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#else
+...
+#endif
+  return result;
+}
+ * \endcode
+ * We use in-line assembler here as there are no current or planed
+ * compiler intrinsics for this and the C language only supports
+ * conversions between __float128 and __int128 scalars.
+ * The scalar conversions returns the __int128 result in GPR pair,
+ * while we need the result in vector register.
+ *
+ * \note We could try to implement the POWER9 convert to quadword
+ * operation using two xscvqpudz instructions (at 12-cycles each).
+ * But this also requires two QP-multiplies (at 24-cycles each),
+ * plus xscvudqp/xssubqp (at 12-cycles each).
+ * So far it looks like using the POWER8 implementation for POWER9
+ * will actually perform better.
+ *
+ * The POWER8 implementation looks like this:
+ * \code
+  vui64_t q_exp, q_delta, x_exp;
+  vui128_t q_sig;
+  vb128_t b_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW ( 0x3fff, 0x3fff );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW ( (0x3fff+128), (0x3fff+128) );
+  const vui64_t exp_127 = (vui64_t) CONST_VINT64_DW ( (0x3fff+127), (0x3fff+127) );
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW ( 0x7fff, 0x7fff );
+
+  result = q_zero;
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  x_exp = vec_splatd (q_exp, VEC_DW_H);
+  b_sign = vec_setb_qp (f128);
+  if (__builtin_expect (!vec_cmpud_all_eq (x_exp, q_naninf), 1))
+    {
+      if (vec_cmpud_all_ge (x_exp, exp_low)
+       && vec_cmpud_all_eq ((vui64_t)b_sign, (vui64_t)q_zero))
+	{ // Greater than or equal to 1.0
+	  if (vec_cmpud_all_lt (x_exp, exp_high))
+	    { // Less than 2**128-1
+	      q_sig = vec_slqi (q_sig, 15);
+	      q_delta = vec_subudm (exp_127, x_exp);
+	      result = vec_srq (q_sig, (vui128_t) q_delta);
+	    }
+	  else
+	    { // set result to 2**128-1
+	      result = (vui128_t) q_ones;
+	    }
+	}
+      else
+	{ // less than 1.0 or negative
+	  result = (vui128_t) q_zero;
+	}
+    }
+  else
+    { // isinf or isnan.
+      vb128_t is_inf;
+      // Positive Inf returns all ones
+      // else NaN or -Infinity returns zero
+      is_inf = vec_cmpequq (q_sig, (vui128_t) q_zero);
+      // result = ~NaN | (pos & Inf) -> Inf & (pos & Inf) -> pos & Inf
+      result = (vui128_t) vec_andc ((vui32_t) is_inf, (vui32_t) b_sign);
+    }
+ * \endcode
+ * As is the usual for floating-point conversions, we extract the sign,
+ * significand, and exponent then test for class and range.
+ * We compare the extracted exponent directly using vector doubleword
+ * compares. These are faster (on POWER8) than quadword compares but
+ * require doubleword splatting the QP exponent and compare constants
+ * for correct results. This only requires one additional instruction
+ * (xxpermdi) as the vector constants will be loaded as quadwords
+ * either way.
+ *
+ * The outer test is for NaN/Infinity. These should be rare so we use
+ * __builtin_expect().  The implementation returns special values
+ * to match the instruction definition.
+ *
+ * Once we know the value is finite, we check for greater than or equal
+ * to +1.0. Negative or fractional values return quadword zero.
+ * Then we check for less than 2<sup>128</sup>. If not we return
+ * all ones (2<sup>128</sup> -1).
+ *
+ * If the input is in the valid range for unsigned quadword we
+ * left-justify the significand then shift the quadword right by
+ * (127 - <sub>unbiased</sub>exp). The right shift truncates
+ * (round toward zero) any fractional bits. See vec_xscvqpuqz().
+ *
+ * The signed operation follows similar logic with appropriate
+ * adjustments for negative values and reduced magnitude range.
+ * The doubleword versions of the convert operation follows the
+ * same outline with different range constants.
+ * See vec_xscvqpsqz(), vec_xscvqpudz() and vec_xscvqpsdz().
+ *
+ * \subsubsection f128_softfloat_0_0_2_3 Convert Quadword integer to Quad-Precision
  * TBD
  *
- * \note See
- * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
-*  GCC Avoids Double Rounding Errors With Round-To-Odd</a>
+ * Conversions from doubleword integer to quad-precision float can be
+ * represented exactly and do not require any rounding.
+ * But conversions from quadword integer to quad-precision float may
+ * overflow the 113-bit significand which does require rounding.
+ *
+ * For POWER9 we have the
+ * <B>VSX Scalar Convert Signed/Unsigned Doubleword to Quad-Precision format
+ * <I>(xscvsdqp/xscvudqp)</I></B> instructions.
+ * For POWER10 we have the
+ * <B>VSX Scalar Convert with Round Signed/Unsigned Quadword to
+ * Quad-Precision format
+ * <I>(xscvsqqp/xscvuqqp)</I></B> instructions.
+ * One of four rounding modes is selected from the 2-bit
+ * <B>FPSCR.<sub>RN</sub></B> field.
+ * The default rounding mode is <I>Round to Nearest Even</I>
+ * which we will use in this example.
+ * Convert using other rounding modes by changing the
+ * <B>FPSCR.<sub>RN</sub></B> field.
+ *
+ * For example:
+ * \code
+__binary128
+static inline vec_xscvuqqp (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+...
+#endif
+  return result;
+}
+ * \endcode
+ * The POWER10 implementation uses the <B>xscvuqqp</B> instruction.
+ * While POWER9 implementation uses <B>xscvudqp</B> instructions to
+ * convert the high/low 64-bit halves of the quadword integer.
+ * To complete the conversion we need to multiply the converted high
+ * 64-bits by 2**64 than add the lower converted 64-bits.
+ * The compiler should generate something like this:
+ * \code
+<test_vec_xscvuqqp_PWR9>:
+     addis   r9,r2,0 ## R_PPC64_TOC16_HA   .rodata."0x1.0p64"
+     addi    r9,r9,0 ## R_PPC64_TOC16_LO   .rodata."0x1.0p64"
+     xxspltd v0,v2,1
+     xscvudqp v2,v2
+     xscvudqp v0,v0
+     lxv     v1,0(r9)
+     xsmaddqp v2,v0,v1
+     blr
+ * \endcode
+ *
+ * The POWER8 implementation looks like this:
+ * \code
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t lowmask = CONST_VINT128_W ( 0, 0, 0, 1);
+
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the QW integer
+      // like a denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW (0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // For example Round to Zero
+      // Shift right 15-bits to normalize and truncate
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      //...
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+ * \endcode
+ * In this example the significand (including the L-bit) is right
+ * justified in the high-order 113-bits of q_sig.
+ * The guard, round, and sticky (GRX) bits are in the low-order
+ * 15 bits.
+ * The sticky-bits are the last 13 bits and are logically ORed
+ * (or added to 0x1fff) to produce the X-bit.
+ *
+ * The signed quadword conversion is bit more complicated for both
+ * POWER9/8. For example:
+ * \code
+__binary128
+static inline vec_xscvsqqp (vi128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvsqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  __binary128 hi64, lo64, i_sign;
+  __binary128 two64 = 0x1.0p64;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  vui128_t q_neg;
+  vb128_t b_sign;
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  // Collect the sign bit of the input value.
+  q_sign = vec_and ((vui32_t) int128, signmask);
+  // Convert 2s complement to unsigned magnitude form.
+  q_neg  = (vui128_t) vec_negsq (int128);
+  b_sign = vec_setb_sq (int128);
+  q_sig = vec_seluq ((vui128_t) int128, q_neg, b_sign);
+  // generate a signed 0.0 to use with vec_copysignf128
+  i_sign = vec_xfer_vui32t_2_bin128 (q_sign);
+  // Convert the unsigned int128 magnitude to __binary128
+  vui64_t int64 = (vui64_t) q_sig;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+  // copy the __int128's sign into the __binary128 result
+  result = vec_copysignf128 (result, i_sign);
+#elif  defined (_ARCH_PWR8)
+...
+#endif
+  return result;
+}
+ * \endcode
+ * For POWER9
+ * we can not just use the signed doubleword conversions for this case.
+ * First we split the signed quadword into a 128-bit boolean
+ * (representing the sign) and an unsigned quadword magnitude.
+ * Then perform the unsigned conversion to QP format as for
+ * vec_xscvuqqp(), And finally use vec_copysignf128() to insert the
+ * original sign into the QP result.
+ *
+ * Similarly for POWER8:
+ *
+ * \code
+ #elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  vui128_t q_neg;
+  vui32_t q_sign;
+  vb128_t b_sign;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t lowmask = CONST_VINT128_W ( 0, 0, 0, 1);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq ((vui128_t) int128, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Collect the sign bit of the input value.
+      q_sign = vec_and ((vui32_t) int128, signmask);
+      // Convert 2s complement to signed magnitude form.
+      q_neg  = (vui128_t) vec_negsq (int128);
+      b_sign = vec_setb_sq (int128);
+      q_sig = vec_seluq ((vui128_t) int128, q_neg, b_sign);
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW (0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // For example Round to Zero
+      // Shift right 15-bits to normalize and truncate
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+
+      q_exp = vec_swapd (q_exp);
+      // Copy Sign-bit to QP significand before insert.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+ * \endcode
  *
  * \subsubsection f128_softfloat_0_0_2_x Convert Quad-Precision to Double-Precision
  * TBD
+ *
+ * \subsubsection f128_softfloat_0_0_2_y Round to Quad-Precision Integer
+ * TBD
+ *
+ *
  *
  * \section f128_examples_0_0 Examples
  * For example: using the the classification functions for implementing
@@ -1121,6 +1828,8 @@ static inline vb128_t vec_isnanf128 (__binary128 f128);
 static inline vb128_t vec_isunorderedf128 (__binary128 vfa, __binary128 vfb);
 static inline vb128_t vec_setb_qp (__binary128 f128);
 static inline __binary128 vec_xsiexpqp (vui128_t sig, vui64_t exp);
+static inline vui64_t vec_xsxexpqp (__binary128 f128);
+static inline vui128_t vec_xsxsigqp (__binary128 f128);
 ///@endcond
 
  /** \brief Select and Transfer from one of two __binary128 scalars
@@ -1259,6 +1968,51 @@ static inline __binary128 vec_xsiexpqp (vui128_t sig, vui64_t exp);
    vunion.vf1 = f128;
 
    result = (vec_andc (vunion.vx4, mask));
+ #endif
+   return result;
+ }
+
+ /** \brief Transfer a quadword from a __binary128 scalar to a vector int
+  * and logical Exclusive OR with mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ANDed with mask as a 128-bit vector int.
+ */
+ static inline vui32_t
+ vec_xor_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+ {
+   vui32_t result;
+ #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+    && !defined (_ARCH_PWR9)
+   // Work around for GCC PR 100085
+ #ifdef __VSX__
+   __asm__(
+       "xxlxor %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vxor %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+ #else
+   __VF_128 vunion;
+
+   vunion.vf1 = f128;
+
+   result = (vec_xor (vunion.vx4, mask));
  #endif
    return result;
  }
@@ -1618,7 +2372,9 @@ vec_xfer_vui128t_2_bin128 (vui128_t f128)
   return (vunion.vf1);
 }
 
-/** \brief Clear the sign bit of __float128 input
+/** \brief Absolute Quad-Precision
+ *
+ *  Clear the sign bit of the __float128 input
  *  and return the resulting positive __float128 value.
  *
  *  |processor|Latency|Throughput|
@@ -1642,7 +2398,7 @@ vec_absf128 (__binary128 f128)
       :);
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   result = vec_xfer_vui32t_2_bin128 (tmp);
@@ -1678,7 +2434,7 @@ vec_all_isfinitef128 (__binary128 f128)
   return !scalar_test_data_class (f128, 0x70);
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_and_bin128_2_vui32t (f128, expmask);
   return !vec_all_eq(tmp, expmask);
@@ -1710,8 +2466,8 @@ vec_all_isinff128 (__binary128 f128)
   return scalar_test_data_class (f128, 0x30);
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_all_eq(tmp, expmask);
@@ -1744,15 +2500,15 @@ vec_all_isnanf128 (__binary128 f128)
   return scalar_test_data_class (f128, 0x40);
 #elif defined (_ARCH_PWR8)
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp  = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpuq_all_gt ((vui128_t) tmp, (vui128_t) expmask);
 #else
   vui32_t tmp, tmp2;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp  = vec_andc_bin128_2_vui32t (f128, signmask);
   tmp2 = vec_and_bin128_2_vui32t (f128, expmask);
@@ -1788,8 +2544,8 @@ vec_all_isnormalf128 (__binary128 f128)
   return !scalar_test_data_class (f128, 0x7f);
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t vec_zero = CONST_VINT128_W (0, 0, 0, 0);
 
   tmp = vec_and_bin128_2_vui32t (f128, expmask);
   return !(vec_all_eq (tmp, expmask) || vec_all_eq(tmp, vec_zero));
@@ -1823,7 +2579,7 @@ vec_all_issubnormalf128 (__binary128 f128)
 #else
   const vui64_t minnorm = CONST_VINT128_DW(0x0001000000000000UL, 0UL);
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t tmp1;
 
   // Equivalent to vec_absf128 (f128)
@@ -1888,7 +2644,7 @@ vec_all_iszerof128 (__binary128 f128)
 #else
   vui64_t tmp2;
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   // Equivalent to vec_absf128 (f128)
   tmp2 = (vui64_t) vec_andc_bin128_2_vui32t (f128, signmask);
@@ -1924,7 +2680,7 @@ vec_copysignf128 (__binary128 f128x, __binary128 f128y)
       : "v" (f128x), "v" (f128y)
       :);
 #else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui32_t tmpx, tmpy, tmp;
   tmpx = vec_xfer_bin128_2_vui32t (f128x);
   tmpy = vec_xfer_bin128_2_vui32t (f128y);
@@ -1942,7 +2698,7 @@ vec_copysignf128 (__binary128 f128x, __binary128 f128y)
 static inline __binary128
 vec_const_huge_valf128 ()
 {
-  const vui32_t posinf = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t posinf = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   return vec_xfer_vui32t_2_bin128 (posinf);
 }
@@ -1954,7 +2710,7 @@ vec_const_huge_valf128 ()
 static inline __binary128
 vec_const_inff128 ()
 {
-  const vui32_t posinf = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t posinf = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   return vec_xfer_vui32t_2_bin128 (posinf);
 }
@@ -1966,7 +2722,7 @@ vec_const_inff128 ()
 static inline __binary128
 vec_const_nanf128 ()
 {
-  const vui32_t posnan = CONST_VINT128_W(0x7fff8000, 0, 0, 0);
+  const vui32_t posnan = CONST_VINT128_W (0x7fff8000, 0, 0, 0);
 
   return vec_xfer_vui32t_2_bin128 (posnan);
 }
@@ -1978,7 +2734,7 @@ vec_const_nanf128 ()
 static inline __binary128
 vec_const_nansf128 ()
 {
-  const vui32_t signan = CONST_VINT128_W(0x7fff4000, 0, 0, 0);
+  const vui32_t signan = CONST_VINT128_W (0x7fff4000, 0, 0, 0);
 
   return vec_xfer_vui32t_2_bin128 (signan);
 }
@@ -2084,7 +2840,7 @@ vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
   if (vfa == vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t cmps, or_ab, eq_s;
   vui64_t vra, vrb;
 
@@ -2147,7 +2903,7 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
   if (vfa == vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t cmps, or_ab, eq_s;
   vui64_t vra, vrb;
   vb128_t unordered;
@@ -2282,8 +3038,8 @@ vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
   if (vfa >= vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2356,8 +3112,8 @@ vec_cmpgeuqp (__binary128 vfa, __binary128 vfb)
   if (vfa >= vfb)
     result= (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2502,8 +3258,8 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
   if (vfa > vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2576,8 +3332,8 @@ vec_cmpgtuqp (__binary128 vfa, __binary128 vfb)
   if (vfa > vfb)
     result= (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2722,8 +3478,8 @@ vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
   if (vfa <= vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2796,8 +3552,8 @@ vec_cmpleuqp (__binary128 vfa, __binary128 vfb)
   if (vfa <= vfb)
     result= (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -2942,8 +3698,8 @@ vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
   if (vfa < vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3016,8 +3772,8 @@ vec_cmpltuqp (__binary128 vfa, __binary128 vfb)
   if (vfa < vfb)
     result= (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3148,7 +3904,7 @@ vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
   if (vfa != vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t cmps, or_ab, eq_s;
   vui64_t vra, vrb;
 
@@ -3163,7 +3919,7 @@ vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
-/** \brief Vector Compare Equal (Unordered) Quad-Precision.
+/** \brief Vector Compare Not Equal (Unordered) Quad-Precision.
  *
  *  Compare Binary-float 128-bit values and return all '1's,
  *  if vfa == vfb, otherwise all '0's.
@@ -3194,7 +3950,7 @@ vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
  *  @return 128-bit vector boolean reflecting __binary128
- *  compare equal.
+ *  compare not equal.
  */
 static inline vb128_t
 vec_cmpneuqp (__binary128 vfa, __binary128 vfb)
@@ -3212,7 +3968,7 @@ vec_cmpneuqp (__binary128 vfa, __binary128 vfb)
   if (vfa != vfb)
     result = (vb128_t) vec_splat_s32 (-1);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t cmps, or_ab, eq_s;
   vui64_t vra, vrb;
   vb128_t unordered;
@@ -3312,7 +4068,7 @@ vec_cmpqp_all_uzeq (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa == vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t or_ab;
   vui64_t vra, vrb;
 
@@ -3364,7 +4120,7 @@ vec_cmpqp_all_eq (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa == vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t or_ab;
   vui64_t vra, vrb;
 
@@ -3479,8 +4235,8 @@ vec_cmpqp_all_uzge (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa >= vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3543,8 +4299,8 @@ vec_cmpqp_all_ge (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa >= vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3669,8 +4425,8 @@ vec_cmpqp_all_uzgt (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa > vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3733,8 +4489,8 @@ vec_cmpqp_all_gt (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa > vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3858,8 +4614,8 @@ vec_cmpqp_all_uzle (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa <= vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -3922,8 +4678,8 @@ vec_cmpqp_all_le (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa <= vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -4048,8 +4804,8 @@ vec_cmpqp_all_uzlt (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa < vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -4112,8 +4868,8 @@ vec_cmpqp_all_lt (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa < vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vui128_t vra, vrb;
   vb128_t age0, bge0;
   vui128_t vrap, vran;
@@ -4219,7 +4975,7 @@ vec_cmpqp_all_uzne (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa != vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t or_ab;
   vui64_t vra, vrb;
 
@@ -4271,7 +5027,7 @@ vec_cmpqp_all_ne (__binary128 vfa, __binary128 vfb)
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
   result = (vfa != vfb);
 #else // defined( _ARCH_PWR8 )
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   vb128_t or_ab;
   vui64_t vra, vrb;
 
@@ -4284,6 +5040,193 @@ vec_cmpqp_all_ne (__binary128 vfa, __binary128 vfb)
          || vec_all_isunorderedf128 (vfa, vfb);
 #endif
   return result;
+}
+
+/** \brief Vector Compare Quad-Precision Exponents for Equal.
+ *
+ *  Compare the exponents of two Binary-float 128-bit values and
+ *  return 1,
+ *  if vfa<sup>exp</sup> == vfb<sup>exp</sup>, otherwise 0.
+ *  A NaN in either or both operands compare unequal.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use the
+ *  VSX Scalar Compare Exponents Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-17 | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return int boolean reflecting __binary128 exponent compare equal.
+ */
+static inline int
+vec_cmpqp_exp_eq (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) \
+  && defined (__FLOAT128__) && (__GNUC__ >= 9)
+  return scalar_cmp_exp_eq (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_cmpuq_all_eq ((vui128_t) vra, (vui128_t) vrb);
+#endif
+}
+
+/** \brief Vector Compare Exponents Quad-Precision for Greater Than.
+ *
+ *  Compare the exponents of two Binary-float 128-bit values and
+ *  return 1,
+ *  if vfa<sup>exp</sup> > vfb<sup>exp</sup>, otherwise 0.
+ *  A NaN in either or both operands returns 0.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use the
+ *  VSX Scalar Compare Exponents Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-17 | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return int boolean reflecting __binary128 exponent compare greater than.
+ */
+
+static inline int
+vec_cmpqp_exp_gt (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) \
+  && defined (__FLOAT128__) && (__GNUC__ >= 9)
+  return scalar_cmp_exp_gt (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_cmpuq_all_gt ((vui128_t) vra, (vui128_t) vrb);
+#endif
+}
+
+
+/** \brief Vector Compare Exponents Quad-Precision for Less Than.
+ *
+ *  Compare the exponents of two Binary-float 128-bit values and
+ *  return 1,
+ *  if vfa<sup>exp</sup> < vfb<sup>exp</sup>, otherwise 0.
+ *  A NaN in either or both operands returns 0.
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use the
+ *  VSX Scalar Compare Exponents Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-17 | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return int boolean reflecting __binary128 exponent compare equal.
+ */
+static inline int
+vec_cmpqp_exp_lt (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) \
+  && defined (__FLOAT128__) && (__GNUC__ >= 9)
+  return scalar_cmp_exp_lt (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_cmpuq_all_lt ((vui128_t) vra, (vui128_t) vrb);
+#endif
+}
+
+/** \brief Vector Compare Exponents Quad-Precision for Unordered.
+ *
+ *  Compare two Binary-float 128-bit values and
+ *  return 1, if either or both operands are NaN,
+ *  otherwise 0.
+ *
+ *
+ *  For POWER9 (PowerISA 3.0B) or later, use the
+ *  VSX Scalar Compare Exponents Quad-Precision instruction.
+ *  Otherwise use vector __int128 arithmetic and logical operations
+ *  to implement the equivalent Quad-precision floating-point
+ *  operation. This leverages operations from vec_int128_ppc.h.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes an instruction that does
+ *  implement the IEEE standard, the implementation may use that.
+ *  This relaxed implementation may be useful for implementations on
+ *  POWER8 and earlier. Especially for soft-float implementations
+ *  where it is known these special cases do not occur.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  8-17 | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return int boolean reflecting __binary128 unordered.
+ */
+
+static inline int
+vec_cmpqp_exp_unordered (__binary128 vfa, __binary128 vfb)
+{
+#if defined (_ARCH_PWR9) && defined (scalar_cmp_exp_gt) \
+  && defined (__FLOAT128__) && (__GNUC__ >= 9)
+  return scalar_cmp_exp_unordered (vfa, vfb);
+#else
+  vui32_t vra, vrb;
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+
+  vra = vec_and_bin128_2_vui32t (vfa, expmask);
+  vrb = vec_and_bin128_2_vui32t (vfb, expmask);
+  return vec_cmpuq_all_lt ((vui128_t) vra, (vui128_t) vrb);
+#endif
 }
 
 /** \brief Return 128-bit vector boolean true if the __float128 value
@@ -4311,14 +5254,14 @@ static inline vb128_t
 vec_isfinitef128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(-1, -1, -1, -1);
+  vui32_t result = CONST_VINT128_W (-1, -1, -1, -1);
 
   if (scalar_test_data_class (f128, 0x70))
-    result = CONST_VINT128_W(0, 0, 0, 0);
+    result = CONST_VINT128_W (0, 0, 0, 0);
 
   return (vb128_t)result;
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
   vui32_t tmp;
   vb128_t tmp2, tmp3;
 
@@ -4330,8 +5273,8 @@ vec_isfinitef128 (__binary128 f128)
 }
 
 /** \brief Return true (nonzero) value if the __float128 value is
- * infinity. For infinity indicate the sign as +1 for positive infinity
- * and -1 for negative infinity.
+ *  infinity. If infinity, indicate the sign as +1 for positive infinity
+ *  and -1 for negative infinity.
  *
  *  A IEEE Binary128 infinity has a exponent of 0x7fff and significand
  *  of all zeros.  Using the vec_all_eq compare conditional verifies
@@ -4365,8 +5308,8 @@ vec_isinf_signf128 (__binary128 f128)
     result = 0;
 #else
   vui32_t tmp, t128;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   t128 = vec_xfer_bin128_2_vui32t (f128);
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
@@ -4406,16 +5349,16 @@ static inline vb128_t
 vec_isinff128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t result = CONST_VINT128_W (0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x30))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = CONST_VINT128_W (-1, -1, -1, -1);
 
   return (vb128_t)result;
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpequq ((vui128_t)tmp , (vui128_t)expmask);
@@ -4446,16 +5389,16 @@ static inline vb128_t
 vec_isnanf128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t result = CONST_VINT128_W (0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x40))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = CONST_VINT128_W (-1, -1, -1, -1);
 
   return (vb128_t)result;
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
   return vec_cmpgtuq ((vui128_t)tmp , (vui128_t)expmask);
@@ -4485,16 +5428,16 @@ static inline vb128_t
 vec_isnormalf128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(-1, -1, -1, -1);
+  vui32_t result = CONST_VINT128_W (-1, -1, -1, -1);
 
   if (scalar_test_data_class (f128, 0x7f))
-    result = CONST_VINT128_W(0, 0, 0, 0);
+    result = CONST_VINT128_W (0, 0, 0, 0);
 
   return (vb128_t)result;
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t vec_zero = CONST_VINT128_W (0, 0, 0, 0);
   vb128_t result;
 
   tmp = vec_and_bin128_2_vui32t (f128, expmask);
@@ -4527,17 +5470,17 @@ static inline vb128_t
 vec_issubnormalf128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t result = CONST_VINT128_W (0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x03))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = CONST_VINT128_W (-1, -1, -1, -1);
 
   return (vb128_t)result;
 #else
   vui32_t tmp, tmpz, tmp2;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t minnorm = CONST_VINT128_W(0x00010000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t vec_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t minnorm = CONST_VINT128_W (0x00010000, 0, 0, 0);
 
   // Equivalent to vec_absf128 (f128)
   tmp = vec_andc_bin128_2_vui32t (f128, signmask);
@@ -4599,22 +5542,89 @@ static inline vb128_t
 vec_iszerof128 (__binary128 f128)
 {
 #if defined (_ARCH_PWR9) && defined (scalar_test_data_class) && defined (__FLOAT128__) && (__GNUC__ > 7)
-  vui32_t result = CONST_VINT128_W(0, 0, 0, 0);
+  vui32_t result = CONST_VINT128_W (0, 0, 0, 0);
 
   if (scalar_test_data_class (f128, 0x0c))
-    result = CONST_VINT128_W(-1, -1, -1, -1);
+    result = CONST_VINT128_W (-1, -1, -1, -1);
 
   return (vb128_t)result;
 #else
   vui128_t t128;
   const vui64_t vec_zero = CONST_VINT128_DW(0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   // Equivalent to vec_absf128 (f128)
   t128 = (vui128_t) vec_andc_bin128_2_vui32t (f128, signmask);
   return  (vb128_t)vec_cmpequq (t128, (vui128_t)vec_zero);
 #endif
 }
+
+/** \brief Negative Absolute value Quad-Precision
+ *
+ *  Unconditionally set sign bit of the __float128 input
+ *  and return the resulting positive __float128 value.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-11  | 2/cycle  |
+ *  |power9   | 2     | 4/cycle  |
+ *
+ *  @param f128 a __float128 value containing a signed value.
+ *  @return a __float128 value with magnitude from f128 and a negative
+ *  sign.
+ */
+static inline __binary128
+vec_nabsf128 (__binary128 f128)
+{
+  __binary128 result;
+#if _ARCH_PWR9
+  __asm__(
+      "xsnabsqp %0,%1;\n"
+      : "=v" (result)
+      : "v" (f128)
+      :);
+#else
+  vui32_t tmp;
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+
+  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
+  result = vec_xfer_vui32t_2_bin128 (tmp);
+#endif
+  return (result);
+}
+
+/** \brief Negate the sign bit of a __float128 input
+ *  and return the resulting __float128 value.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 2-11  | 2/cycle  |
+ *  |power9   | 2     | 4/cycle  |
+ *
+ *  @param f128 a __float128 value containing a signed value.
+ *  @return a __float128 value with magnitude from f128 and the opposite
+ *  sign of f128.
+ */
+static inline __binary128
+vec_negf128 (__binary128 f128)
+{
+  __binary128 result;
+#if _ARCH_PWR9
+  __asm__(
+      "xsneqqp %0,%1;\n"
+      : "=v" (result)
+      : "v" (f128)
+      :);
+#else
+  vui32_t tmp;
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+
+  tmp = vec_xor_bin128_2_vui32t (f128, signmask);
+  result = vec_xfer_vui32t_2_bin128 (tmp);
+#endif
+  return (result);
+}
+
 /** \brief Select and Transfer from one of two __binary128 scalars
  * under a 128-bit mask. The result is a __binary128 of the selected
  * value.
@@ -4706,14 +5716,14 @@ vec_signbitf128 (__binary128 f128)
   return scalar_test_neg (f128);
 #else
   vui32_t tmp;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   tmp = vec_and_bin128_2_vui32t (f128, signmask);
   return vec_all_eq(tmp, signmask);
 #endif
 }
 
-/** \brief VXS Scalar Convert Double-Precision to Quad-Precision format.
+/** \brief VSX Scalar Convert Double-Precision to Quad-Precision format.
  *
  *  The left most double-precision element of vector f64 is converted
  *  to quad-precision format.
@@ -4755,10 +5765,10 @@ static inline vec_xscvdpqp (vf64_t f64)
   vui64_t d_exp, d_sig, q_exp;
   vui128_t q_sig;
   vui32_t q_sign;
-  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
-  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
-  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW( 0, 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW ( (0x3fff - 0x3ff), 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW ( 0x7ff, 0 );
+  const vui64_t d_denorm = (vui64_t) CONST_VINT64_DW ( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
 
   f64[VEC_DW_L] = 0.0; // clear the right most element to zero.
@@ -4788,7 +5798,7 @@ static inline vec_xscvdpqp (vf64_t f64)
 	      // So need to adjust the quad exponent by the f64 denormal
 	      // exponent (-1023) and any leading '0's in the f64 sig.
 	      // There will be at least 12.
-	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW( (0x3fff - (1023 - 12)), 0 );
+	      vui64_t q_denorm = (vui64_t) CONST_VINT64_DW ( (0x3fff - (1023 - 12)), 0 );
 	      vui64_t f64_clz;
 	      f64_clz = vec_clzd (d_sig);
 	      d_sig = vec_vsld (d_sig, f64_clz);
@@ -4800,7 +5810,7 @@ static inline vec_xscvdpqp (vf64_t f64)
   else
     { // isinf or isnan.
       q_sig = vec_srqi ((vui128_t) d_sig, 4);
-      q_exp = (vui64_t) CONST_VINT64_DW(0x7fff, 0);
+      q_exp = (vui64_t) CONST_VINT64_DW (0x7fff, 0);
     }
   // Copy Sign-bit to QP significand before insert.
   q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
@@ -4812,7 +5822,309 @@ static inline vec_xscvdpqp (vf64_t f64)
   return result;
 }
 
-/** \brief VXS Scalar Convert Signed-Doubleword to Quad-Precision format.
+/** \brief VSX Scalar Convert with round Quad-Precision to Double-Precision
+ *  (using round to odd).
+ *
+ *  The quad-precision element of vector f128 is converted
+ *  to double-precision.
+ *  The Floating point value is rounded to odd before conversion.
+ *  The result is placed in doubleword element 0
+ *  while element 1 is set to zero.
+ *
+ *  For POWER9 use the xscvqpdpo instruction.
+ *  For POWER8 and earlier use vector instructions generated by PVECLIB
+ *  operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xscvqpdpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 1/cycle  |
+ *  |power9   |   12  | 1/cycle  |
+ *
+ *  @param f128 128-bit vector treated as a scalar __binary128.
+ *  @return a vector unsigned long long value.
+ */
+static inline vf64_t
+vec_xscvqpdpo (__binary128 f128)
+{
+  vf64_t result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // GCC runtime does not convert/round directly from __float128 to
+  // vector double. So convert scalar double then copy to vector double.
+  result = (vf64_t) { 0.0, 0.0 };
+  result [VEC_DW_H] = __builtin_truncf128_round_to_odd (f128);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvqpdpo %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else //  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, x_exp;
+  vui64_t q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+  const vui64_t qpdp_delta = (vui64_t) CONST_VINT64_DW ( (0x3fff - 0x3ff), 0 );
+  const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW ( (0x3fff - 1022), (0x3fff - 1022) );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW ( (0x3fff + 1023), (0x3fff + 1023));
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW ( 0x7fff, 0x7fff );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW ( 0x7ff, 0 );
+
+  q_exp = vec_xsxexpqp (f128);
+  x_exp = vec_splatd (q_exp, VEC_DW_H);
+  q_sig = vec_xsxsigqp (f128);
+  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (!vec_cmpud_all_eq (x_exp, q_naninf), 1))
+    {
+      if (vec_cmpud_all_ge (x_exp, exp_tiny))
+	{ // Greater than or equal to 2**-1022
+	  if (vec_cmpud_all_le (x_exp, exp_high))
+	    { // Less than or equal to 2**+1023
+	      vui64_t d_X;
+	      // Convert the significand to double with left shift 4
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      // For round-to-odd just test for any GRX bits nonzero
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) q_sig, (vui64_t) q_zero);
+	      d_X = vec_mrgald (q_zero, (vui128_t) d_X);
+	      d_X = (vui64_t) vec_slqi ((vui128_t) d_X, 1);
+	      d_sig = (vui64_t) vec_or ((vui32_t) q_sig, (vui32_t) d_X);
+	      d_exp = vec_subudm (q_exp, qpdp_delta);
+	    }
+	  else
+	    { // To high so return infinity OR double max???
+	      d_sig = (vui64_t) CONST_VINT64_DW (0x001fffffffffffff, 0);
+	      d_exp = (vui64_t) CONST_VINT64_DW (0x7fe, 0);
+	    }
+	}
+      else
+	{ // tiny
+	  vui64_t d_X;
+	  vui64_t q_delta;
+	  const vui64_t exp_tinyr = (vui64_t)
+	      CONST_VINT64_DW ( (0x3fff-(1022+53)), (0x3fff-(1022+53)));
+	  q_delta = vec_subudm (exp_tiny, x_exp);
+	  // Set double exp to denormal
+	  d_exp = (vui64_t) q_zero;
+	  if (vec_cmpud_all_gt (x_exp, exp_tinyr))
+	    {
+	      // Convert the significand to double with left shift 4
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      d_sig = (vui64_t) vec_srq (q_sig, (vui128_t) q_delta);
+	      // For round-to-odd just test for any nonzero GRX bits.
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) d_sig, (vui64_t) q_zero);
+	      // Generate a low order 0b1 in DW[0]
+	      d_X = vec_mrgald (q_zero, (vui128_t) d_X);
+	      d_X = (vui64_t) vec_slqi ((vui128_t) d_X, 1);
+	      d_sig = (vui64_t) vec_or ((vui32_t) d_sig, (vui32_t) d_X);
+	    }
+	  else
+	    { // tinyr
+	      // For round-to-odd just test for any nonzero GRX bits.
+	      d_X = (vui64_t) vec_addcuq (q_sig, q_ones);
+	      d_sig = (vui64_t) vec_swapd (d_X);
+	    }
+	}
+    }
+  else
+    { // isinf or isnan.
+      const vui64_t q_quiet   = CONST_VINT64_DW (0x0000800000000000, 0);
+      vb128_t is_inf;
+      vui128_t x_sig;
+      is_inf = vec_cmpequq ((vui128_t) q_sig, (vui128_t) q_zero);
+      x_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) q_quiet);
+      q_sig = (vui128_t) vec_sel ((vui32_t)x_sig, (vui32_t)q_sig, (vui32_t)is_inf);
+      d_sig = (vui64_t)vec_slqi (q_sig, 4);
+      d_exp = d_naninf;
+    }
+
+  d_sig [VEC_DW_L] = 0UL;
+  d_sig = (vui64_t) vec_or ((vui32_t) d_sig, q_sign);
+  result = vec_xviexpdp (d_sig, d_exp);
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Convert with round to zero Quad-Precision to Unsigned doubleword.
+ *
+ *  The quad-precision element of vector f128 is converted
+ *  to an unsigned doubleword integer.
+ *  The Floating point value is rounded toward zero before conversion.
+ *  The result is placed in element 0 while element 1 is set to zero.
+ *
+ *  For POWER9 use the xscvqpudz instruction.
+ *  For POWER8 and earlier use vector instructions generated by PVECLIB
+ *  operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xscvqpudz instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   |   ?   | 2/cycle  |
+ *
+ *  @param f128 128-bit vector treated as a scalar __binary128.
+ *  @return a vector unsigned long long value.
+ */
+static inline vui64_t
+vec_xscvqpudz (__binary128 f128)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  __asm__(
+      "xscvqpudz %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#else
+  vui64_t q_exp, q_delta, x_exp;
+  vui128_t q_sig;
+  vb128_t b_sign;
+  const vui64_t q_zero = { 0, 0 };
+  const vui64_t q_ones = { -1, -1 };
+  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW ( 0x3fff, 0x3fff );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW ( (0x3fff+64), (0x3fff+64) );
+  const vui64_t exp_63 = (vui64_t) CONST_VINT64_DW ( (0x3fff+63), (0x3fff+63) );
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW ( 0x7fff, 0x7fff );
+
+  result = q_zero;
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  x_exp = vec_splatd (q_exp, VEC_DW_H);
+  b_sign = vec_setb_qp (f128);
+  if (__builtin_expect (!vec_cmpud_all_eq (x_exp, q_naninf), 1))
+    {
+      if (vec_cmpud_all_ge (x_exp, exp_low)
+       && vec_cmpud_all_eq ((vui64_t)b_sign, (vui64_t)q_zero))
+	{ // Greater than or equal to 1.0
+	  if (vec_cmpud_all_lt (x_exp, exp_high))
+	    { // Less than 2**64-1
+	      q_sig = vec_slqi (q_sig, 15);
+	      q_delta = vec_subudm (exp_63, x_exp);
+	      result = vec_vsrd ((vui64_t) q_sig, q_delta);
+	    }
+	  else
+	    { // set result to 2**64-1
+	      result = q_ones;
+	    }
+	}
+      else
+	{ // less than 1.0 or negative
+	  result = q_zero;
+	}
+    }
+  else
+    { // isinf or isnan.
+      vb128_t is_inf;
+      // Positive Inf returns all ones
+      // else NaN or -Infinity returns zero
+      is_inf = vec_cmpequq (q_sig, (vui128_t) q_zero);
+      // result = ~NaN | (pos & Inf) -> Inf & (pos & Inf) -> pos & Inf
+      result = (vui64_t) vec_andc ((vui32_t) is_inf, (vui32_t) b_sign);
+    }
+  result = vec_mrgahd ((vui128_t) result, (vui128_t) q_zero);
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Convert with round to zero Quad-Precision to Unsigned Quadword.
+ *
+ *  The quad-precision element of vector f128 is converted
+ *  to an unsigned quadword integer.
+ *  The Floating point value is rounded toward zero before conversion.
+ *
+ *  For POWER10 use the xscvqpuqz instruction.
+ *  For POWER9 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xscvqpuqz instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   |   ?   | 2/cycle  |
+ *
+ *  @param f128 128-bit vector treated as a scalar __binary128.
+ *  @return a vector unsigned __int128 value.
+ */
+static inline vui128_t
+vec_xscvqpuqz (__binary128 f128)
+{
+  vui128_t result;
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 10)
+  __asm__(
+      "xscvqpuqz %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#else
+  vui64_t q_exp, q_delta, x_exp;
+  vui128_t q_sig;
+  vb128_t b_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW ( 0x3fff, 0x3fff );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW ( (0x3fff+128), (0x3fff+128) );
+  const vui64_t exp_127 = (vui64_t) CONST_VINT64_DW ( (0x3fff+127), (0x3fff+127) );
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW ( 0x7fff, 0x7fff );
+
+  result = q_zero;
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  x_exp = vec_splatd (q_exp, VEC_DW_H);
+  b_sign = vec_setb_qp (f128);
+  if (__builtin_expect (!vec_cmpud_all_eq (x_exp, q_naninf), 1))
+    {
+      if (vec_cmpud_all_ge (x_exp, exp_low)
+       && vec_cmpud_all_eq ((vui64_t)b_sign, (vui64_t)q_zero))
+	{ // Greater than or equal to 1.0
+	  if (vec_cmpud_all_lt (x_exp, exp_high))
+	    { // Less than 2**128-1
+	      q_sig = vec_slqi (q_sig, 15);
+	      q_delta = vec_subudm (exp_127, x_exp);
+	      result = vec_srq (q_sig, (vui128_t) q_delta);
+	    }
+	  else
+	    { // set result to 2**128-1
+	      result = (vui128_t) q_ones;
+	    }
+	}
+      else
+	{ // less than 1.0 or negative
+	  result = (vui128_t) q_zero;
+	}
+    }
+  else
+    { // isinf or isnan.
+      vb128_t is_inf;
+      // Positive Inf returns all ones
+      // else NaN or -Infinity returns zero
+      is_inf = vec_cmpequq (q_sig, (vui128_t) q_zero);
+      // result = ~NaN | (pos & Inf) -> Inf & (pos & Inf) -> pos & Inf
+      result = (vui128_t) vec_andc ((vui32_t) is_inf, (vui32_t) b_sign);
+    }
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Convert Signed-Doubleword to Quad-Precision format.
  *
  *  The left most signed doubleword element of vector int64 is converted
  *  to quad-precision format.
@@ -4855,8 +6167,8 @@ static inline vec_xscvsdqp (vi64_t int64)
   vui64_t d_sig, q_exp, d_sign, d_neg;
   vui128_t q_sig;
   vui32_t q_sign;
-  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW ( 0, 0 );
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
 
   int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
 
@@ -4870,7 +6182,7 @@ static inline vec_xscvsdqp (vi64_t int64)
       // denormal, then normalize it.
       // Start with the quad exponent bias + 63 then subtract the count
       // leading '0's. The 64-bit magnitude has 1-63 leading '0's
-      vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW ((0x3fff + 63), 0 );
       vui64_t i64_clz;
       // Convert 2s complement to signed magnitude form.
       q_sign = vec_and ((vui32_t) int64, signmask);
@@ -4893,7 +6205,7 @@ static inline vec_xscvsdqp (vi64_t int64)
   return result;
 }
 
-/** \brief VXS Scalar Convert Unsigned-Doubleword to Quad-Precision format.
+/** \brief VSX Scalar Convert Unsigned-Doubleword to Quad-Precision format.
  *
  *  The left most unsigned doubleword element of vector int64 is converted
  *  to quad-precision format.
@@ -4934,7 +6246,7 @@ static inline vec_xscvudqp (vui64_t int64)
 #elif  defined (_ARCH_PWR8)
   vui64_t d_sig, q_exp;
   vui128_t q_sig;
-  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
+  const vui64_t d_zero = (vui64_t) CONST_VINT64_DW ( 0, 0 );
 
   int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
   d_sig = int64;
@@ -4948,7 +6260,7 @@ static inline vec_xscvudqp (vui64_t int64)
       // denormal, then normalize it.
       // Start with the quad exponent bias + 63 then subtract the count of
       // leading '0's. The 64-bit sig can have 0-63 leading '0's.
-      const vui64_t q_expm = (vui64_t) CONST_VINT64_DW((0x3fff + 63), 0 );
+      const vui64_t q_expm = (vui64_t) CONST_VINT64_DW ((0x3fff + 63), 0 );
       vui64_t i64_clz = vec_clzd (int64);
       d_sig = vec_vsld (int64, i64_clz);
       q_exp = vec_subudm (q_expm, i64_clz);
@@ -4957,7 +6269,261 @@ static inline vec_xscvudqp (vui64_t int64)
       result = vec_xsiexpqp (q_sig, q_exp);
     }
 #else
-  result = f64[VEC_DW_H];
+  result = int64[VEC_DW_H];
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Convert Signed-Quadword to Quad-Precision format.
+ *
+ *  The signed quadword element of vector int128 is converted
+ *  to quad-precision format.
+ *  If the conversion is not exact the default rounding mode is
+ *  "Round to Nearest Even".
+ *
+ *  For POWER10 use the xscvuqqp instruction.
+ *  POWER9 only supports doubleword converts so use a combination of
+ *  two xscvudqp and xsmaddqp instructions.
+ *  For POWER8 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *  \note The POWER8 implementation ignores the hardware rounding mode
+ *  <B>FPSCR<sub>RN</sub></B>.
+ *
+ *  \note At this point we are not trying to comply with PowerISA by
+ *  setting any FPSCR bits associated with Quad-Precision convert.
+ *  If such is required, FPFR, FR and FI can be set
+ *  using the Move To FPSCR Bit 0/1 (mtfsb[0|1]) instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   | 44-53 |1/13cycles|
+ *
+ *  @param int128 a vector signed __int128 which is converted to QP format.
+ *  @return a __binary128 value.
+ */
+__binary128
+static inline vec_xscvsqqp (vi128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvsqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  __binary128 hi64, lo64, i_sign;
+  __binary128 two64 = 0x1.0p64;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  vui128_t q_neg;
+  vb128_t b_sign;
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  // Collect the sign bit of the input value.
+  q_sign = vec_and ((vui32_t) int128, signmask);
+  // Convert 2s complement to unsigned magnitude form.
+  q_neg  = (vui128_t) vec_negsq (int128);
+  b_sign = vec_setb_sq (int128);
+  q_sig = vec_seluq ((vui128_t) int128, q_neg, b_sign);
+  // Generate a signed 0.0 to use with vec_copysignf128
+  i_sign = vec_xfer_vui32t_2_bin128 (q_sign);
+  // Convert the unsigned int128 magnitude to __binary128
+  vui64_t int64 = (vui64_t) q_sig;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+  // Copy the __int128's sign into the __binary128 result
+  result = vec_copysignf128 (result, i_sign);
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  vui128_t q_neg;
+  vui32_t q_sign;
+  vb128_t b_sign;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t lowmask = CONST_VINT128_W ( 0, 0, 0, 1);
+  const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq ((vui128_t) int128, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Collect the sign bit of the input value.
+      q_sign = vec_and ((vui32_t) int128, signmask);
+      // Convert 2s complement to signed magnitude form.
+      q_neg  = (vui128_t) vec_negsq (int128);
+      b_sign = vec_setb_sq (int128);
+      q_sig = vec_seluq ((vui128_t) int128, q_neg, b_sign);
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW (0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+
+      // The Significand (including the L-bit) is right justified in
+      // in the high-order 113-bits of q_sig.
+      // The guard, round, and sticky (GRX) bits are in the low-order
+      // 15 bits.
+      // The sticky-bits are the last 13 bits and are logically ORed
+      // (or added to 0x1fff) to produce the X-bit.
+      //
+      // For "Round to Nearest Even".
+      // GRX = 0b001 - 0b011; truncate
+      // GRX = 0b100 and bit-112 is odd; round up, otherwise truncate
+      // GRX = 0b100 - 0b111; round up
+      // We can simplify by copying bit-112 and OR it with bit-X
+      // Then add 0x3fff to q_sig will generate a carry into bit-112
+      // if and only if GRX > 0b100 or (GRX == 0b100) && (bit-112 == 1)
+      const vui32_t RXmask = CONST_VINT128_W ( 0, 0, 0, 0x3fff);
+      vui128_t q_carry, q_sigc;
+      vb128_t qcmask;
+      vui32_t q_odd;
+      // Isolate bit-112 and OR into GRX bits if q_sig is odd
+      q_odd = (vui32_t) vec_srhi ((vui16_t)q_sig, 15);
+      q_odd = vec_and (q_odd, lowmask);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_odd);
+      // We add 0x3fff to GRX-bits which may carry into low order sig-bit
+      // This may result in a carry out of bit L into bit-C.
+      q_carry = vec_addcuq (q_sig, (vui128_t) RXmask);
+      q_sig = vec_adduqm (q_sig, (vui128_t) RXmask);
+      // Generate a bool mask from the carry to use in the vsel
+      qcmask = vec_setb_cyq (q_carry);
+      // Two cases; 1) We did carry so shift (double) left 112 bits
+      q_sigc = vec_sldqi (q_carry, q_sig, 112);
+      // 2) no carry so shift left 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Select which based on carry
+      q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) q_sigc, (vui32_t) qcmask);
+      // Increment the exponent based on the carry
+      q_exp = vec_addudm (q_exp, (vui64_t) q_carry);
+
+      q_exp = vec_swapd (q_exp);
+      // Copy Sign-bit to QP significand before insert.
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Convert Unsigned-Quadword to Quad-Precision format.
+ *
+ *  The unsigned quadword element of vector int128 is converted
+ *  to quad-precision format.
+ *  If the conversion is not exact the default rounding mode is
+ *  "Round to Nearest Even".
+ *
+ *  For POWER10 use the xscvuqqp instruction.
+ *  POWER9 only supports doubleword converts so use a combination of
+ *  two xscvudqp and xsmaddqp instructions.
+ *  For POWER8 and earlier use vector instruction generated by PVECLIB
+ *  operations.
+ *
+ *  \note The POWER8 implementation ignores the hardware rounding mode
+ *  <B>FPSCR<sub>RN</sub></B>.
+ *
+ *  \note At this point we are not trying to comply with PowerISA by
+ *  setting any FPSCR bits associated with Quad-Precision convert.
+ *  If such is required, FPFR, FR and FI can be set
+ *  using the Move To FPSCR Bit 0/1 (mtfsb[0|1]) instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ?   | 2/cycle  |
+ *  |power9   | 38-47 |1/13cycles|
+ *
+ *  @param int128 a vector unsigned __int128 which is converted to QP format.
+ *  @return a __binary128 value.
+ */
+__binary128
+static inline vec_xscvuqqp (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t q_exp;
+  vui128_t q_sig;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t lowmask = CONST_VINT128_W ( 0, 0, 0, 1);
+
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 128-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW (0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding.
+      // The Significand (including the L-bit) is right justified in
+      // in the high-order 113-bits of q_sig.
+      // The guard, round, and sticky (GRX) bits are in the low-order
+      // 15 bits.
+      // The sticky-bits are the last 13 bits and are logically ORed
+      // (or added to 0x1fff) to produce the X-bit.
+      //
+      // For "Round to Nearest Even".
+      // GRX = 0b001 - 0b011; truncate
+      // GRX = 0b100 and bit-112 is odd; round up, otherwise truncate
+      // GRX = 0b100 - 0b111; round up
+      // We can simplify by copying bit-112 and OR it with bit-X
+      // Then add 0x3fff to q_sig will generate a carry into bit-112
+      // if and only if GRX > 0b100 or (GRX == 0b100) && (bit-112 == 1)
+      const vui32_t RXmask = CONST_VINT128_W ( 0, 0, 0, 0x3fff);
+      vui128_t q_carry, q_sigc;
+      vb128_t qcmask;
+      vui32_t q_odd;
+      // Isolate bit-112 and OR into GRX bits if q_sig is odd
+      q_odd = (vui32_t) vec_srhi ((vui16_t)q_sig, 15);
+      q_odd = vec_and (q_odd, lowmask);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_odd);
+      // We add 0x3fff to GRX-bits which may carry into low order sig-bit
+      // This may result in a carry out of bit L into bit-C.
+      q_carry = vec_addcuq (q_sig, (vui128_t) RXmask);
+      q_sig = vec_adduqm (q_sig, (vui128_t) RXmask);
+      // Generate a bool mask from the carry to use in the vsel
+      qcmask = vec_setb_cyq (q_carry);
+      // Two cases; 1) We did carry so shift (double) left 112 bits
+      q_sigc = vec_sldqi (q_carry, q_sig, 112);
+      // 2) no carry so shift left 15 bits
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
+      // Select which based on carry
+      q_sig = (vui128_t) vec_sel ((vui32_t) q_sig, (vui32_t) q_sigc, (vui32_t) qcmask);
+      // Increment the exponent based on the carry
+      q_exp = vec_addudm (q_exp, (vui64_t) q_carry);
+      q_exp = vec_swapd (q_exp);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
 #endif
   return result;
 }
@@ -5004,7 +6570,7 @@ vec_xsiexpqp (vui128_t sig, vui64_t exp)
 
 #else
   vui32_t tmp, t128;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_sld ((vui32_t) exp, (vui32_t) exp, 6);
   t128 =  vec_sel ((vui32_t) sig, tmp, expmask);
@@ -5053,7 +6619,7 @@ vec_xsxexpqp (__binary128 f128)
 
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
 
   tmp = vec_and_bin128_2_vui32t (f128, expmask);
   result = (vui64_t) vec_sld (tmp, tmp, 10);
@@ -5101,10 +6667,10 @@ vec_xsxsigqp (__binary128 f128)
       : );
 #else
   vui32_t t128, tmp, normal;
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t sigmask = CONST_VINT128_W(0x0000ffff, -1, -1, -1);
-  const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
-  const vui32_t hidden = CONST_VINT128_W(0x00010000, 0, 0, 0);
+  const vui32_t zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t sigmask = CONST_VINT128_W (0x0000ffff, -1, -1, -1);
+  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t hidden = CONST_VINT128_W (0x00010000, 0, 0, 0);
 
   // Check if f128 is normal. Normal values need the hidden bit
   // restored to the significand. We use a simpler sequence here as

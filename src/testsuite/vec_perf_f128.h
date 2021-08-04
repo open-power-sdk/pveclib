@@ -36,4 +36,16 @@ extern int timed_gcc_dpqp_f128 (void);
 extern int timed_lib_dpqp_f128 (void);
 extern int timed_vec_dpqp_f128 (void);
 
+extern int timed_gcc_uqqp_f128 (void);
+extern int timed_lib_uqqp_f128 (void);
+extern int timed_vec_uqqp_f128 (void);
+
+extern int timed_gcc_qpuq_f128 (void);
+extern int timed_lib_qpuq_f128 (void);
+extern int timed_vec_qpuq_f128 (void);
+
+extern int timed_gcc_qpdpo_f128 (void);
+extern int timed_lib_qpdpo_f128 (void);
+extern int timed_vec_qpdpo_f128 (void);
+
 #endif /* SRC_TESTSUITE_VEC_PERF_F128_H_ */

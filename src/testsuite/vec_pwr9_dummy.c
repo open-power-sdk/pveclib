@@ -97,6 +97,30 @@ test_gcc_dpqp_f128_PWR9 (__binary128 * vf128,
 #endif
 
 int
+test_vec_cmpqp_exp_eq_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_eq ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_gt_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_gt ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_lt_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_lt ( vfa, vfb);
+}
+
+int
+test_vec_cmpqp_exp_unordered_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_cmpqp_exp_unordered ( vfa, vfb);
+}
+
+int
 test_gcc_cmpdpne_PWR9 (double vfa, double vfb)
 {
   return (vfa != vfb);
@@ -144,6 +168,44 @@ test_scalar_test_neg_PWR9 (__binary128 vfa)
   return vec_signbitf128 (vfa);
 }
 
+vf64_t
+test_vec_xscvqpdpo_PWR9 (__binary128 f128)
+{
+  return vec_xscvqpdpo (f128);
+}
+
+vui64_t
+test_vec_xscvqpudz_PWR9 (__binary128 f128)
+{
+  return vec_xscvqpudz (f128);
+}
+
+vui128_t
+test_vec_xscvqpuqz_PWR9 (__binary128 f128)
+{
+  return vec_xscvqpuqz (f128);
+}
+
+// Convert Float DP to QP
+__binary128
+test_vec_xscvdpqp_PWR9 (vf64_t f64)
+{
+  return vec_xscvdpqp (f64);
+}
+
+// Convert Integer QW to QP
+__binary128
+test_vec_xscvsqqp_PWR9 (vi128_t int128)
+{
+  return vec_xscvsqqp (int128);
+}
+
+__binary128
+test_vec_xscvuqqp_PWR9 (vui128_t int128)
+{
+  return vec_xscvuqqp (int128);
+}
+
 // Convert Float DP to QP
 __binary128
 test_convert_dpqp_PWR9 (vf64_t f64)
@@ -163,6 +225,213 @@ test_convert_dpqp_PWR9 (vf64_t f64)
 #endif
 #else // likely call to libgcc concert.
   result = f64[VEC_DW_H];
+#endif
+  return result;
+}
+
+vf64_t
+test_convert_qpdpo_PWR9 (__binary128 f128)
+{
+  vf64_t result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 9)
+  // GCC runtime does not convert/round directly from __float128 to
+  // vector double. So convert scalar double then copy to vector double.
+  result = (vf64_t) { 0.0, 0.0 };
+  result [VEC_DW_H] = __builtin_truncf128_round_to_odd (f128);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xscvqpdpo %0,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+#else //  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig;
+  vui64_t q_exp, q_delta;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+  const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
+  const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW( (0x3fff-1022), 0 );
+  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff+1023), 0 );
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0 );
+  const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
+
+  q_exp = vec_xsxexpqp (f128);
+  q_sig = vec_xsxsigqp (f128);
+  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
+    {
+      if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_tiny))
+	{ // Greater than or equal to 2**-1022
+	  if (vec_cmpuq_all_lt ((vui128_t) q_exp, (vui128_t) exp_high))
+	    { // Less than or equal to 2**+1023
+	      vui64_t d_X;
+	      // Convert the significand to double with left shift 4
+	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	      // The GRX round bits are now in bits 64-127 (DW element 1)
+	      // For round-to-odd just test for any GRX bits nonzero
+	      d_X = (vui64_t) vec_cmpgtud ((vui64_t) q_sig, (vui64_t) q_zero);
+	      d_X = vec_mrgald ((vui128_t) d_X, q_zero);
+	      d_X = vec_srdi (d_X, 63);
+	      d_sig = (vui64_t) vec_or ((vui32_t) q_sig, (vui32_t) d_X);
+	      d_exp = vec_subudm (q_exp, exp_delta);
+	    }
+	  else
+	    { // To high so return infinity
+	      d_sig = (vui64_t) {0, 0};
+	      d_exp = (vui64_t) {0x3ff, 0x3ff};
+	    }
+	}
+      else
+	{ // tiny
+	  vui64_t d_X;
+	  q_delta = vec_subudm (exp_tiny, q_exp);
+	  // Convert the significand to double with left shift 4
+	  // The GRX round bits are now in bits 64-127 (DW element 1)
+	  q_sig = vec_slqi ((vui128_t) q_sig, 4);
+	  d_X = (vui64_t) vec_cmpgtud ((vui64_t) q_sig, (vui64_t)q_zero);
+	  d_sig = (vui64_t) vec_srq (q_sig, (vui128_t) q_delta);
+	  d_exp = (vui64_t) {0, 0};
+	}
+    }
+  else
+    { // isinf or isnan.
+      d_sig = (vui64_t)vec_slqi (q_sig, 4);
+      d_exp = d_naninf;
+    }
+ // q_exp = vec_swapd (q_exp);
+  d_sig [VEC_DW_L] = 0UL;
+  d_sig = (vui64_t) vec_or ((vui32_t) d_sig, q_sign);
+  result = vec_xviexpdp (d_sig, d_exp);
+#endif
+  return result;
+}
+
+
+// TBD PWR9 version of qpuqz
+// Work in progress, needs a number of things including
+vui128_t
+test_convert_qpuqz_PWR9 (__binary128 f128)
+{
+  vui128_t result;
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 9)
+//  vui64_t q_exp, q_delta;
+//  vui32_t q_sign;
+  const vui128_t q_zero = { 0 };
+  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+//  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+//  const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff+128), 0 );
+//  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+//  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0 );
+  const __binary128 qp_low = 0x1.0p-1;
+  const __binary128 qp_high = 0x1.0p+128;
+
+  result = q_zero;
+//  q_exp = vec_xsxexpqp (f128);
+//  q_sign = vec_and_bin128_2_vui32t (f128, signmask);
+  if (__builtin_expect (vec_all_isfinitef128 (f128), 1))
+    {
+      if (vec_cmpqp_exp_gt (f128, qp_low))
+	{ // Greater than or equal to 1.0
+	  if (vec_cmpqp_exp_lt (f128, qp_high))
+	    { // Less than 2**128-1e
+	      const __binary128 qp_shr64 = 0x1.0p-64;
+	      const __binary128 qp_shl64 = 0x1.0p+64;
+	      __binary128 tmp128, hi128;
+	      vui64_t ull_low, ull_high;
+	      // TBD xscvqpudz to proceed.
+	      tmp128 = f128 * qp_shr64;
+	      ull_high = vec_xscvqpudz (tmp128);
+	      //hi128 = ull_high [VEC_DW_H];
+	      hi128 = vec_xscvudqp (ull_high);
+	      hi128 = hi128 * qp_shl64;
+	      tmp128 = tmp128 - hi128;
+	      ull_low = vec_xscvqpudz (tmp128);
+	      result = (vui128_t) vec_mrgahd ((vui128_t) ull_high, (vui128_t) ull_low);
+	    }
+	  else
+	    { // set result to 2**128-1
+	      result = (vui128_t) q_ones;
+	    }
+	}
+      else
+	{ // less than 1.0
+	  result = (vui128_t) q_zero;
+	}
+    }
+  else
+    { // isinf or isnan.
+      vb128_t is_neg;
+      if (vec_all_isnanf128(f128))
+        result = q_zero;
+      else// is inf
+	{
+	  is_neg = vec_setb_qp (f128);
+	  result = (vb128_t) vec_nor ((vui32_t) is_neg, (vui32_t) is_neg);
+	}
+      //  else NaN or -Infinity returns zero
+    }
+
+#else
+  __VEC_U_128 xxx;
+  xxx.ui128 = f128;
+  result = xxx.vx1;
+#endif
+  return result;
+}
+
+__binary128
+test_convert_uqqp_PWR9 (vui128_t int128)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "xscvuqqp %0,%1"
+      : "=v" (result)
+      : "v" (int128)
+      : );
+#elif defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
+  vui64_t int64 = (vui64_t) int128;
+  __binary128 hi64, lo64;
+  __binary128 two64 = 0x1.0p64;
+  hi64 = int64[VEC_DW_H];
+  lo64 = int64[VEC_DW_L];
+  result = (hi64 * two64) + lo64;
+#elif  defined (_ARCH_PWR8)
+  vui64_t d_exp, d_sig, q_exp;
+  vui128_t q_sig;
+  vui32_t q_sign;
+  const vui128_t q_zero = (vui128_t) { 0 };
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+
+//  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
+  q_sig = int128;
+  // Quick test for 0UL as this case requires a special exponent.
+  if (vec_cmpuq_all_eq (q_sig, q_zero))
+    {
+      result = vec_xfer_vui128t_2_bin128 (q_zero);
+    }
+  else
+    { // We need to produce a normal QP, so we treat the integer like a
+      // denormal, then normalize it.
+      // Start with the quad exponent bias + 127 then subtract the count of
+      // leading '0's. The 64-bit sig can have 0-127 leading '0's.
+      vui64_t q_expm = (vui64_t) CONST_VINT64_DW(0, (0x3fff + 127));
+      vui64_t i64_clz = (vui64_t) vec_clzq (q_sig);
+      q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
+      q_exp = vec_subudm (q_expm, i64_clz);
+      // This is the part that might require rounding. As is we truncate.
+      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      result = vec_xsiexpqp (q_sig, q_exp);
+    }
+#else
+  result = int128[0];
 #endif
   return result;
 }
@@ -376,6 +645,18 @@ test_vec_cmpequqp_PWR9 (__binary128 vfa, __binary128 vfb)
   return vec_cmpequqp (vfa, vfb);
 }
 
+__binary128
+test_vec_absf128_PWR9 (__binary128 f128)
+{
+  return vec_absf128 (f128);
+}
+
+__binary128
+test_vec_nabsf128_PWR9 (__binary128 f128)
+{
+  return vec_nabsf128 (f128);
+}
+
 __float128
 test_absdiff_PWR9 (__float128 vra, __float128 vrb)
 {
@@ -439,6 +720,12 @@ vui32_t
 test_andc_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)
 {
   return vec_andc_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_xor_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)
+{
+  return vec_xor_bin128_2_vui32t (f128, mask);
 }
 
 vui32_t

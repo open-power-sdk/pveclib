@@ -31,6 +31,7 @@
 #ifdef __FLOAT128__
 #ifndef PVECLIB_DISABLE_F128ARITH
 
+#if 0 // turn off until Round-to-odd implementation is ready
 extern __float128
 test_scalar_add128 (__float128 vra, __float128 vrb);
 
@@ -42,6 +43,7 @@ test_scalar_mul128 (__float128 vra, __float128 vrb);
 
 extern __float128
 test_scalar_sub128 (__float128 vra, __float128 vrb);
+#endif
 
 extern __float128
 test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa);
@@ -91,6 +93,7 @@ const vui128_t i128fact6 = {720};
 const vui128_t i128fact7 = {5040};
 const vui128_t i128fact8 = {40320};
 
+#if 0 // turn off until Round-to-odd implementation is ready
 __float128
 test_scalarLib_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
 {
@@ -124,6 +127,7 @@ test_scalarLib_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
   term = test_scalar_add128 (term, xmaf8);
   return test_scalar_mul128(expa, term);;
 }
+#endif
 
 #define N 10
 #define TIMING_ITERATIONS 10
@@ -626,6 +630,7 @@ int timed_expxsuba_v1_f128 (void)
    return 0;
 }
 
+#if 0 // turn off until Round-to-odd implementation is ready
 int timed_expxsuba_v2_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -639,6 +644,7 @@ int timed_expxsuba_v2_f128 (void)
 #endif
    return 0;
 }
+#endif
 
 #endif
 #endif

@@ -555,7 +555,7 @@ test_time_f128 (void)
   double delta_sec;
   int rc = 0;
 
-#if 0
+#if 0 // turn off until Round-to-odd implementation is ready
   printf ("\n%s f128 CC start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)

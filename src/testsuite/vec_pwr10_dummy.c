@@ -55,6 +55,27 @@ test_gcc_cmpsq_gt_PWR10 (vi128_t a, vi128_t b)
 }
 #endif
 
+vi128_t
+__test_vec_abssq_PWR10 (vi128_t vra)
+{
+  return vec_abssq (vra);
+}
+
+
+// Convert QP to Unsigned Integer QW
+vui128_t
+test_vec_xscvqpuqz_PWR10 (__binary128 f128)
+{
+  return vec_xscvqpuqz (f128);
+}
+
+// Convert Integer QW to QP
+__binary128
+test_vec_xscvuqqp_PWR10 (vui128_t int128)
+{
+  return vec_xscvuqqp (int128);
+}
+
 vb128_t
 test_vec_cmpeqsq_PWR10 (vi128_t a, vi128_t b)
 {

@@ -373,7 +373,7 @@ test_convert_qpuqz_PWR9 (__binary128 f128)
       else// is inf
 	{
 	  is_neg = vec_setb_qp (f128);
-	  result = (vb128_t) vec_nor ((vui32_t) is_neg, (vui32_t) is_neg);
+	  result = (vui128_t) vec_nor ((vui32_t) is_neg, (vui32_t) is_neg);
 	}
       //  else NaN or -Infinity returns zero
     }

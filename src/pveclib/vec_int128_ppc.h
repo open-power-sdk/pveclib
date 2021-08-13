@@ -5814,7 +5814,7 @@ vec_sraq (vi128_t vra, vui128_t vrb)
   /* For some reason the vsr instruction only works
    * correctly if the bit shift value is splatted to each byte
    * of the vector.  */
-  vsgn = vec_setb_sq (vra);
+  vsgn = (vui128_t) vec_setb_sq (vra);
   vsht = vec_sub (zero, (vui8_t) vrb);
   result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra, (vui128_t) vsht);
 
@@ -5856,7 +5856,7 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	{
 	  if (shb > 0)
 	    {
-	      vsgn = vec_setb_sq (vra);
+	      vsgn = (vui128_t) vec_setb_sq (vra);
 	      result = vec_sld ((vui8_t) vsgn, (vui8_t) vra, 16 - (shb / 8));
 	    }
 	  else
@@ -5882,7 +5882,7 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	      else
 		lshift = vec_splats ((unsigned char) lshb);
 
-	      vsgn = vec_setb_sq (vra);
+	      vsgn = (vui128_t) vec_setb_sq (vra);
 	      result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra,
 					  (vui128_t) lshift);
 #ifdef _ARCH_PWR8

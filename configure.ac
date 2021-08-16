@@ -20,7 +20,7 @@ PVECLIB_SO_VERSION=1:4:0
 AC_SUBST(PVECLIB_SO_VERSION)
 
 AC_PROG_CC
-AC_PROG_LIBTOOL
+LT_INIT
 
 # This directive is to avoid buggy libtool that doesn't add the '-Wl,--no-as-needed'
 # directive in the correct position of LDFLAGS

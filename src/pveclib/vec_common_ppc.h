@@ -256,7 +256,7 @@ typedef __vector __bool int vb128_t;
 typedef union
 {
   /*! \brief Signed 128-bit integer from pair of 64-bit GPRs.  */
-  unsigned __int128 i128;
+  signed __int128 i128;
   /*! \brief Unsigned 128-bit integer from pair of 64-bit GPRs.  */
   unsigned __int128 ui128;
 #ifndef PVECLIB_DISABLE_DFP

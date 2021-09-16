@@ -2076,7 +2076,7 @@ int
 test_extract_insert_f32 ()
 {
   vf32_t x, xp, xpt;
-  vui32_t sig, sigt, sigs;
+  vui32_t sig, sigt;
   vui32_t exp, expt;
   vui32_t signmask;
   int rc = 0;

@@ -561,6 +561,7 @@ __test_cmpledp (vf64_t a, vf64_t b)
 {
   return vec_cmple (a, b);
 }
+#endif
 
 /*
  * The following are both compile tests for Gather/Scatter operations
@@ -719,4 +720,3 @@ test_f64_matrix_gatherx4_transpose (double * tm, double * m)
 	}
     }
 }
-#endif

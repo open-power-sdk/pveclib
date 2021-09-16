@@ -1654,7 +1654,7 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
       : );
 #endif
 #else
-  vui32_t tmp, t128;
+  vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
 
   tmp = (vui32_t) vec_slqi ((vui128_t) exp, 52);
@@ -1704,7 +1704,6 @@ vec_xvxexpdp (vf64_t vrb)
 #else
   vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
 
   tmp = vec_and ((vui32_t) vrb, expmask);
   result = (vui64_t) vec_srqi ((vui128_t) tmp, 52);

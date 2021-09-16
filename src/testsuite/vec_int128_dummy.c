@@ -1352,7 +1352,7 @@ example_print_vint128 (vi128_t value)
   t_mid = (vui64_t) vec_subuqm (val128, tmp);
 
   // Work-around for GCC PR 96139
-#ifdef __clang__
+#if defined (__clang__) || (__GNUC__ > 9)
   printf ("%c%07llu%016llu%016llu", sign, t_high[VEC_DW_L],
 	  t_mid[VEC_DW_L], t_low[VEC_DW_L]);
 #else

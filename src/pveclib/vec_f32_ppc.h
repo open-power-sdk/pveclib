@@ -2109,7 +2109,6 @@ vec_xvxexpsp (vf32_t vrb)
   vui32_t tmp;
   const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
 					  0x7f800000, 0x7f800000);
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
 
   tmp = vec_and ((vui32_t) vrb, expmask);
   result = vec_srwi (tmp, 23);

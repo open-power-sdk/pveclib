@@ -2813,7 +2813,7 @@ int
 test_extract_insert_f64 ()
 {
   vf64_t x, xp, xpt;
-  vui64_t sig, sigt, sigs;
+  vui64_t sig, sigt;
   vui64_t exp, expt;
   vui64_t signmask;
   int rc = 0;

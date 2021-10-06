@@ -765,6 +765,7 @@ test_time_f128 (void)
   printf ("\n%s cvt_qpuq_vec end", __FUNCTION__);
   printf ("\n%s cvt_qpuq_vec tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
+
   printf ("\n%s cvt_qpdpo_gcc start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)
@@ -805,6 +806,48 @@ test_time_f128 (void)
 
   printf ("\n%s cvt_qpdpo_vec end", __FUNCTION__);
   printf ("\n%s cvt_qpdpo_vec tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s mulqpo_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_mulqpo_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mulqpo_gcc end", __FUNCTION__);
+  printf ("\n%s mulqpo_gcc tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s mulqpo_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_lib_mulqpo_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mulqpo_lib end", __FUNCTION__);
+  printf ("\n%s mulqpo_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s mulqpn_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_lib_mulqpn_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s mulqpn_lib end", __FUNCTION__);
+  printf ("\n%s mulqpn_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
   return (rc);

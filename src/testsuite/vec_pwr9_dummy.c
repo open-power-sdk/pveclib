@@ -40,6 +40,29 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+__binary128
+test_mulqpo_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 6)
+#if defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Earlier GCC versions may not support this built-in.
+  result = __builtin_mulf128_round_to_odd (vfa, vfb);
+#else
+  // If the compiler supports _ARCH_PWR9, must support mnemonics.
+  __asm__(
+      "xsmulqpo %0,%1,%2"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#endif
+#else
+  // Call soft-float runtime
+  result = vfa * vfb;
+#endif
+  return result;
+}
+
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 int
 test_gcc_cmpqpne_PWR9 (__float128 vfa, __float128 vfb)

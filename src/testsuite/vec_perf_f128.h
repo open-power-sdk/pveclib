@@ -52,4 +52,10 @@ extern int timed_gcc_mulqpo_f128 (void);
 extern int timed_lib_mulqpo_f128 (void);
 extern int timed_lib_mulqpn_f128 (void);
 
+extern int timed_gcc_addqpn_f128 (void);
+extern int timed_lib_addqpo_f128 (void);
+
+extern int timed_gcc_subqpn_f128 (void);
+extern int timed_lib_subqpo_f128 (void);
+
 #endif /* SRC_TESTSUITE_VEC_PERF_F128_H_ */

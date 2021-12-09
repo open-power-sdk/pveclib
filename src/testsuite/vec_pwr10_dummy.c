@@ -39,9 +39,9 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 #if defined (_ARCH_PWR10) && (__GNUC__ > 11) \
-    || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
+    || ((__GNUC__ == 11) && (__GNUC_MINOR__ > 2))
 // New support defined in Power Vector Intrinsic Programming Reference.
-// Waiting for GCC 11.2?
+// Waiting for GCC 11.3?
 int
 test_gcc_cmpsq_all_gt_PWR10 (vi128_t a, vi128_t b)
 {

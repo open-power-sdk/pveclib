@@ -36,6 +36,12 @@
 #include <testsuite/arith128_test_f64.h>
 
 vf64_t
+test_vec_copysignf64 (vf64_t x, vf64_t y)
+{
+  return vec_copysignf64 (x, y);
+}
+
+vf64_t
 test_vec_xviexpdp (vui64_t sig, vui64_t exp)
 {
   return vec_xviexpdp (sig, exp);

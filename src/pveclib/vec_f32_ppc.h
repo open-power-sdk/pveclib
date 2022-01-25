@@ -788,31 +788,52 @@ vec_any_iszerof32 (vf32_t vf32)
 #endif
 }
 
-/** \brief Copy the sign bit from vf32y merged with magnitude from
- *  vf32x and return the resulting vector float values.
+/** \brief Copy the sign bit from vf32x merged with magnitude from
+ *  vf32y and return the resulting vector float values.
+ *
+ *  \note This operation was patterned after the intrinsic vec_cpsgn
+ *  (altivec.h) introduced for POWER7 and VSX. It turns out the
+ *  original (GCC 4.9) compiler implementation reversed the operands
+ *  and does not match the PowerISA or the Vector Intrinsic Programming
+ *  Reference manuals. Subsequent compilers and PVECLIB
+ *  implementations replicated this (operand order) error.
+ *  This has now been reported as bug against the compilers, which are
+ *  in the process of applying fixes and distributing updates.
+ *  This version of PVECLIB is updated to match the Vector Intrinsic
+ *  Programming Reference. This implementation is independent of the
+ *  compilers update status.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
  *
- *  @param vf32x vector float values containing the magnitudes.
- *  @param vf32y vector float values containing the sign bits.
- *  @return vector float values with magnitude from vf32x and the
- *  sign of vf32y.
+ *  @param vf32x vector float values containing the sign bits.
+ *  @param vf32y vector float values containing the magnitudes.
+ *  @return vector float values with magnitude from vf32y and the
+ *  sign of vf32x.
  */
 static inline vf32_t
 vec_copysignf32 (vf32_t vf32x, vf32_t vf32y)
 {
 #if _ARCH_PWR7
-  /* P9 has a 2 cycle xvcpsgnsp and eliminates a const load. */
+#ifdef PVECLIB_CPSGN_FIXED
   return (vec_cpsgn (vf32x, vf32y));
+#else
+  vf32_t result;
+  __asm__(
+      "xvcpsgnsp %x0,%x1,%x2;\n"
+      : "=wa" (result)
+      : "wa" (vf32x), "wa" (vf32y)
+      :);
+  return (result);
+#endif
 #else
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000,
       0x80000000, 0x80000000);
   vf32_t result;
 
-  result = (vf32_t)vec_sel ((vui32_t)vf32x, (vui32_t)vf32y, signmask);
+  result = (vf32_t)vec_sel ((vui32_t)vf32y, (vui32_t)vf32x, signmask);
   return (result);
 #endif
 }

@@ -441,7 +441,7 @@ vec_xsxexpqp (__binary128 f128)
  * \endcode
  *
  * \note Would like to use the intrinsic scalar_extract_exp() here but
- * this is not available until GCC 11.
+ * this is not available until GCC 11 (or later).
  * Also GCC defines these scalar built-ins to return integer scalar
  * values in GPRs.
  * This would defeat the purpose of an all vector implementation.
@@ -1769,7 +1769,7 @@ static inline vec_xscvsqqp (vi128_t int128)
   lo64 = int64[VEC_DW_L];
   result = (hi64 * two64) + lo64;
   // copy the __int128's sign into the __binary128 result
-  result = vec_copysignf128 (result, i_sign);
+  result = vec_copysignf128 (i_sign, result);
 #elif  defined (_ARCH_PWR8)
 ...
 #endif
@@ -3806,18 +3806,29 @@ vec_all_iszerof128 (__binary128 f128)
 #endif
 }
 
-/** \brief Copy the sign bit from f128y and merge with the magnitude
- *  from f128x. The merged result is returned as a __float128 value.
+/** \brief Copy the sign bit from f128x and merge with the magnitude
+ *  from f128y. The merged result is returned as a __float128 value.
+ *
+ *  \note This operation was patterned after the intrinsic vec_cpsgn
+ *  (altivec.h) introduced for POWER7 and VSX. It turns out the
+ *  original (GCC 4.9) compiler implementation reversed the operands
+ *  and does not match the PowerISA or the Vector Intrinsic Programming
+ *  Reference manuals. Subsequent compilers and PVECLIB
+ *  implementations replicated this (operand order) error.
+ *  This has now been reported as bug against the compilers, which are
+ *  in the process of applying fixes and distributing updates.
+ *  This version of PVECLIB is updated to match the Vector Intrinsic
+ *  Programming Reference.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 2-11  | 2/cycle  |
  *  |power9   | 2     | 4/cycle  |
  *
- *  @param f128x a __float128 value containing the magnitude.
- *  @param f128y a __float128 value containing the sign bit.
- *  @return a __float128 value with magnitude from f128x and the
- *  sign of f128y.
+ *  @param f128x a __float128 value containing the sign bit.
+ *  @param f128y a __float128 value containing the magnitude.
+ *  @return a __float128 value with magnitude from f128y and the
+ *  sign of f128x.
  */
 static inline __binary128
 vec_copysignf128 (__binary128 f128x, __binary128 f128y)
@@ -3825,7 +3836,7 @@ vec_copysignf128 (__binary128 f128x, __binary128 f128y)
   __binary128 result;
 #if _ARCH_PWR9
   __asm__(
-      "xscpsgnqp %0,%2,%1;\n"
+      "xscpsgnqp %0,%1,%2;\n"
       : "=v" (result)
       : "v" (f128x), "v" (f128y)
       :);
@@ -3835,7 +3846,7 @@ vec_copysignf128 (__binary128 f128x, __binary128 f128y)
   tmpx = vec_xfer_bin128_2_vui32t (f128x);
   tmpy = vec_xfer_bin128_2_vui32t (f128y);
 
-  tmp = vec_sel (tmpx, tmpy, signmask);
+  tmp = vec_sel (tmpy, tmpx, signmask);
   result = vec_xfer_vui32t_2_bin128 (tmp);
 #endif
   return (result);
@@ -8006,7 +8017,7 @@ static inline vec_xscvsqqp (vi128_t int128)
   lo64 = int64[VEC_DW_L];
   result = (hi64 * two64) + lo64;
   // Copy the __int128's sign into the __binary128 result
-  result = vec_copysignf128 (result, i_sign);
+  result = vec_copysignf128 (i_sign, result);
 #elif  defined (_ARCH_PWR8)
   vui64_t q_exp;
   vui128_t q_sig;

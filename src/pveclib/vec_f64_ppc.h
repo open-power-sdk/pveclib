@@ -780,31 +780,53 @@ vec_any_iszerof64 (vf64_t vf64)
 #endif
 }
 
-/** \brief Copy the sign bit from vf64y merged with magnitude from
- *  vf64x and return the resulting vector double values.
+/** \brief Copy the sign bit from vf64x merged with magnitude from
+ *  vf64y and return the resulting vector double values.
+ *
+ *  \note This operation was patterned after the intrinsic vec_cpsgn
+ *  (altivec.h) introduced for POWER7 and VSX. It turns out the
+ *  original (GCC 4.9) compiler implementation reversed the operands
+ *  and does not match the PowerISA or the Vector Intrinsic Programming
+ *  Reference manuals. Subsequent compilers and PVECLIB
+ *  implementations replicated this (operand order) error.
+ *  This has now been reported as bug against the compilers, which are
+ *  in the process of applying fixes and distributing updates.
+ *  This version of PVECLIB is updated to match the Vector Intrinsic
+ *  Programming Reference. This implementation is independent of the
+ *  compilers update status.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
  *
- *  @param vf64x vector double values containing the magnitudes.
- *  @param vf64y vector double values containing the sign bits.
- *  @return vector double values with magnitude from vf64x and the
- *  sign of vf64y.
+ *  @param vf64x vector double values containing the sign bits.
+ *  @param vf64y vector double values containing the magnitudes.
+ *  @return vector double values with magnitude from vf64y and the
+ *  sign of vf64x.
  */
 static inline vf64_t
-vec_copysignf64 (vf64_t vf64x , vf64_t vf64y)
+vec_copysignf64 (vf64_t vf64x, vf64_t vf64y)
 {
 #if _ARCH_PWR7
   /* P9 has a 2 cycle xvcpsgndp and eliminates a const load. */
-	return (vec_cpsgn (vf64x, vf64y));
+#ifdef PVECLIB_CPSGN_FIXED
+  return (vec_cpsgn (vf64x, vf64y));
 #else
-	const vui32_t signmask  = CONST_VINT128_W(0x80000000, 0, 0x80000000, 0);
-	vf64_t result;
+  vf64_t result;
+  __asm__(
+      "xvcpsgndp %x0,%x1,%x2;\n"
+      : "=wa" (result)
+      : "wa" (vf64x), "wa" (vf64y)
+      :);
+  return (result);
+#endif
+#else
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0x80000000, 0);
+  vf64_t result;
 
-	result  = (vf64_t)vec_sel ((vui32_t)vf64x, (vui32_t)vf64y, signmask);
-	return (result);
+  result = (vf64_t) vec_sel ((vui32_t) vf64y, (vui32_t) vf64x, signmask);
+  return (result);
 #endif
 }
 

@@ -41,6 +41,12 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 __binary128
+test_negqp_PWR9 (__binary128 vfa)
+{
+  return vec_negf128 (vfa);
+}
+
+__binary128
 test_mulqpo_PWR9 (__binary128 vfa, __binary128 vfb)
 {
   __binary128 result;
@@ -247,7 +253,9 @@ test_convert_dpqp_PWR9 (vf64_t f64)
       : );
 #endif
 #else // likely call to libgcc concert.
+#ifndef __clang__
   result = f64[VEC_DW_H];
+#endif
 #endif
   return result;
 }
@@ -276,8 +284,8 @@ test_convert_qpdpo_PWR9 (__binary128 f128)
   vui128_t q_sig;
   vui32_t q_sign;
   const vui128_t q_zero = { 0 };
-  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
-  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
+//  const vui128_t q_ones = (vui128_t) vec_splat_s32 (-1);
+//  const vui64_t exp_low = (vui64_t) CONST_VINT64_DW( (0x3fff), 0 );
   const vui64_t exp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
   const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW( (0x3fff-1022), 0 );
   const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff+1023), 0 );
@@ -290,11 +298,13 @@ test_convert_qpdpo_PWR9 (__binary128 f128)
   q_sign = vec_and_bin128_2_vui32t (f128, signmask);
   if (__builtin_expect (!vec_cmpuq_all_eq ((vui128_t) q_exp, (vui128_t) q_naninf), 1))
     {
+      vui64_t d_X;
+
       if (vec_cmpuq_all_ge ((vui128_t) q_exp, (vui128_t) exp_tiny))
 	{ // Greater than or equal to 2**-1022
 	  if (vec_cmpuq_all_lt ((vui128_t) q_exp, (vui128_t) exp_high))
 	    { // Less than or equal to 2**+1023
-	      vui64_t d_X;
+	      // vui64_t d_X;
 	      // Convert the significand to double with left shift 4
 	      q_sig = vec_slqi ((vui128_t) q_sig, 4);
 	      // The GRX round bits are now in bits 64-127 (DW element 1)
@@ -313,7 +323,6 @@ test_convert_qpdpo_PWR9 (__binary128 f128)
 	}
       else
 	{ // tiny
-	  vui64_t d_X;
 	  q_delta = vec_subudm (exp_tiny, q_exp);
 	  // Convert the significand to double with left shift 4
 	  // The GRX round bits are now in bits 64-127 (DW element 1)
@@ -427,11 +436,11 @@ test_convert_uqqp_PWR9 (vui128_t int128)
   lo64 = int64[VEC_DW_L];
   result = (hi64 * two64) + lo64;
 #elif  defined (_ARCH_PWR8)
-  vui64_t d_exp, d_sig, q_exp;
+  vui64_t q_exp;
   vui128_t q_sig;
-  vui32_t q_sign;
+//  vui32_t q_sign;
   const vui128_t q_zero = (vui128_t) { 0 };
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+//  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
 
 //  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
   q_sig = int128;
@@ -450,7 +459,7 @@ test_convert_uqqp_PWR9 (vui128_t int128)
       q_sig = vec_slq (q_sig, (vui128_t) i64_clz);
       q_exp = vec_subudm (q_expm, i64_clz);
       // This is the part that might require rounding. As is we truncate.
-      q_sig = vec_srqi ((vui128_t) d_sig, 15);
+      q_sig = vec_srqi ((vui128_t) q_sig, 15);
       result = vec_xsiexpqp (q_sig, q_exp);
     }
 #else
@@ -477,7 +486,9 @@ test_convert_sdqp_PWR9 (vi64_t i64)
       : );
 #endif
 #else // likely call to libgcc concert.
+#ifndef __clang__
   result = i64[VEC_DW_H];
+#endif
 #endif
   return result;
 }
@@ -500,7 +511,9 @@ test_convert_udqp_PWR9 (vui64_t i64)
       : );
 #endif
 #else // likely call to libgcc concert.
+#ifndef __clang__
   result = i64[VEC_DW_H];
+#endif
 #endif
   return result;
 }
@@ -513,7 +526,7 @@ test_scalar_cmpto_exp_gt_PWR9 (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+//  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t expmask = CONST_VINT128_W(0x7fff0000, 0, 0, 0);
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
@@ -1952,7 +1965,7 @@ __test_scalar_test_data_class_f32 (float val)
 #ifdef scalar_test_neg
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 int
-__test_scalar_test_neg (__ieee128 val)
+__test_scalar_test_neg (__binary128 val)
 {
   return scalar_test_neg (val);
 }
@@ -1962,7 +1975,7 @@ __test_scalar_test_neg (__ieee128 val)
 #ifdef scalar_extract_exp
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 long long int
-__test_scalar_extract_exp_f128 (__ieee128 val)
+__test_scalar_extract_exp_f128 (__binary128 val)
 {
   return scalar_extract_exp (val);
 }
@@ -1977,7 +1990,7 @@ __test_scalar_extract_exp_f64 (double val)
 #ifdef scalar_extract_sig
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
 __int128
-__test_scalar_extract_sig_f128 (__ieee128 val)
+__test_scalar_extract_sig_f128 (__binary128 val)
 {
   return scalar_extract_sig (val);
 }
@@ -1991,8 +2004,8 @@ __test_scalar_extract_sig_f64 (double val)
 
 #ifdef scalar_insert_exp
 #if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 7)
-__ieee128
-__test_scalar_insert_exp_f128 (__ieee128 sig, unsigned long long int exp)
+__binary128
+__test_scalar_insert_exp_f128 (__binary128 sig, unsigned long long int exp)
 {
   return scalar_insert_exp (sig, exp);
 }
@@ -2009,7 +2022,7 @@ __test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
 /* there is an instruction for this, but is not supported in
    GCC (8.2) yet.  */
 int
-__test_scalar_cmp_exp_eq_f128 (__ieee128 vra, __ieee128 vrb)
+__test_scalar_cmp_exp_eq_f128 (__binary128 vra, __binary128 vrb)
 {
   return scalar_cmp_exp_eq (vra, vrb);
 }

@@ -211,6 +211,20 @@ test_gcc_mulqpo_f128 (__binary128 * vf128,
 		    __binary128 vf5, __binary128 vf6,
 		    __binary128 vf7, __binary128 vf8);
 
+extern void
+test_gcc_addqpn_f128 (__binary128 * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
+extern void
+test_gcc_subqpn_f128 (__binary128 * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
 extern vb128_t
 test_vec_cmpgtuqp (__binary128 vfa, __binary128 vfb);
 
@@ -346,6 +360,50 @@ test_lib_uqqp_f128 (__binary128 * vf128,
   vf128[7] = test_vec_xscvuqqp (vf8);
 }
 
+extern __binary128 test_vec_addqpo (__binary128 vfa, __binary128 vfb);
+
+
+void
+test_lib_addqpo_f128 (__binary128 * vf128,
+		      __binary128 vf1, __binary128 vf2,
+		      __binary128 vf3, __binary128 vf4,
+		      __binary128 vf5, __binary128 vf6,
+		      __binary128 vf7, __binary128 vf8)
+{
+  __binary128 result;
+  result = test_vec_addqpo (qpfact1, vf1);
+  result = test_vec_addqpo (result, vf2);
+  result = test_vec_addqpo (result, vf3);
+  result = test_vec_addqpo (result, vf4);
+  result = test_vec_addqpo (result, vf5);
+  result = test_vec_addqpo (result, vf6);
+  result = test_vec_addqpo (result, vf7);
+  result = test_vec_addqpo (result, vf8);
+  *vf128 = result;
+}
+
+extern __binary128 test_vec_subqpo (__binary128 vfa, __binary128 vfb);
+
+
+void
+test_lib_subqpo_f128 (__binary128 * vf128,
+		      __binary128 vf1, __binary128 vf2,
+		      __binary128 vf3, __binary128 vf4,
+		      __binary128 vf5, __binary128 vf6,
+		      __binary128 vf7, __binary128 vf8)
+{
+  __binary128 result;
+  result = test_vec_subqpo (qpfact1, vf1);
+  result = test_vec_subqpo (result, vf2);
+  result = test_vec_subqpo (result, vf3);
+  result = test_vec_subqpo (result, vf4);
+  result = test_vec_subqpo (result, vf5);
+  result = test_vec_subqpo (result, vf6);
+  result = test_vec_subqpo (result, vf7);
+  result = test_vec_subqpo (result, vf8);
+  *vf128 = result;
+}
+
 extern __binary128 test_vec_mulqpo (__binary128 vfa, __binary128 vfb);
 
 
@@ -390,6 +448,42 @@ test_lib_mulqpn_f128 (__binary128 * vf128,
   *vf128 = result;
 }
 
+int timed_lib_addqpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_addqpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_lib_subqpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_subqpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
 int timed_lib_mulqpo_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -417,6 +511,42 @@ int timed_lib_mulqpn_f128 (void)
   for (i=0; i<N; i++)
     {
       test_lib_mulqpn_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_addqpn_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_addqpn_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_subqpn_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_subqpn_f128 (tbl,
 			  qpfact1, qpfact2,
 			  qpfact3, qpfact4,
 			  qpfact5, qpfact6,

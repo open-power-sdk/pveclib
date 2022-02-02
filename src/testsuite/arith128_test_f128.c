@@ -4251,6 +4251,8 @@ test_copysignf128 (void)
 
   const __binary128 f128_snan = vec_xfer_vui64t_2_bin128 (
       CONST_VINT128_DW(0x7fff400000000000, 0));
+  const __binary128 f128_nsnan = vec_xfer_vui64t_2_bin128 (
+      CONST_VINT128_DW(0xffff400000000000, 0));
 
   __binary128 x, y, t, e;
   long tests_count = 0;
@@ -4277,185 +4279,34 @@ test_copysignf128 (void)
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__binary128) f128_zero;
+  e = (__binary128) f128_nzero;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_one;
+  y = (__binary128) f128_one;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_one;
+  e = f128_none;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_none;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_one;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_max;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_max;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_nmax;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_max;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_min;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_min;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_nmin;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_min;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_sub;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_sub;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_nsub;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_sub;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_inf;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_inf;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_ninf;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_inf;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_nan;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_nan;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_nnan;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_nan;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_snan;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_snan;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-
 #if 1
   tests_count++;
   x = (__binary128) f128_zero;
-  y = (__binary128) f128_nzero;
+  y = (__binary128) f128_none;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
-  print_vfloat128x(" y=  ", y);
 #endif
   t = vec_copysignf128 (x, y);
-  e = (__binary128) f128_nzero;
+  e = f128_one;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
   x = (__binary128) f128_nzero;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = (__binary128) f128_nzero;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_one;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_none;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_none;
-#ifdef __DEBUG_PRINT__
-  print_vfloat128x(" x=  ", x);
-#endif
-  t = vec_copysignf128 (x, y);
-  e = f128_none;
-  rc += check_f128 ("check vec_copysignf128", x, t, e);
-#endif
-#if 1
-  tests_count++;
-  x = (__binary128) f128_max;
+  y = (__binary128) f128_max;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4465,17 +4316,19 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_nmax;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nmax;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_nmax;
+  e = f128_max;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_min;
+  x = (__binary128) f128_nzero;
+  y = (__binary128) f128_min;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4485,17 +4338,19 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_nmin;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nmin;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_nmin;
+  e = f128_min;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_sub;
+  x = (__binary128) f128_nzero;
+  y = (__binary128) f128_sub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4505,17 +4360,19 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_nsub;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nsub;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_nsub;
+  e = f128_sub;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_inf;
+  x = (__binary128) f128_nzero;
+  y = (__binary128) f128_inf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4525,17 +4382,19 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_ninf;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_ninf;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_ninf;
+  e = f128_inf;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_nan;
+  x = (__binary128) f128_nzero;
+  y = (__binary128) f128_nan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
@@ -4545,12 +4404,35 @@ test_copysignf128 (void)
 #endif
 #if 1
   tests_count++;
-  x = (__binary128) f128_nnan;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nnan;
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
 #endif
   t = vec_copysignf128 (x, y);
-  e = f128_nnan;
+  e = f128_nan;
+  rc += check_f128 ("check vec_copysignf128", x, t, e);
+#endif
+#if 1
+  tests_count++;
+  x = (__binary128) f128_nzero;
+  y = (__binary128) f128_snan;
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+#endif
+  t = vec_copysignf128 (x, y);
+  e = f128_nsnan;
+  rc += check_f128 ("check vec_copysignf128", x, t, e);
+#endif
+#if 1
+  tests_count++;
+  x = (__binary128) f128_zero;
+  y = (__binary128) f128_nsnan;
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+#endif
+  t = vec_copysignf128 (x, y);
+  e = f128_snan;
   rc += check_f128 ("check vec_copysignf128", x, t, e);
 #endif
   /* accumulate the number of values tested, in case we are doing

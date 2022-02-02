@@ -35,6 +35,12 @@
 #include <testsuite/arith128_test_f32.h>
 
 vf32_t
+test_vec_copysignf32 (vf32_t x, vf32_t y)
+{
+  return vec_copysignf32 (x, y);
+}
+
+vf32_t
 test_vec_xviexpsp (vui32_t sig, vui32_t exp)
 {
   return vec_xviexpsp (sig, exp);

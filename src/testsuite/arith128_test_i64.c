@@ -12198,6 +12198,131 @@ test_setbd (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+int
+test_splatisd (void)
+{
+  vi64_t k;
+  vi64_t e;
+  int rc = 0;
+
+  printf ("\ntest_splatisd Vector Splat Immediate Signed Doubleword\n");
+
+  k = (vi64_t) vec_splat_s64 (0);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 0 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(0, 0);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (-16);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -16 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-16, -16);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (-128);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -128 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-128, -128);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (-129);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -129 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-129, -129);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (15);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 15 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(15, 15);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (127);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 127 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(127, 127);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (128);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 128 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(128, 128);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+int
+test_splatiud (void)
+{
+  vui64_t k;
+  vui64_t e;
+  int rc = 0;
+
+  printf ("\ntest_splatiud Vector Splat Immediate Unsigned Doubleword\n");
+
+  k = (vui64_t) vec_splat_s64 (0);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 0 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(0, 0);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (15);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 15 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(15, 15);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (127);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 127 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(127, 127);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (128);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 128 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(128, 128);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  return (rc);
+}
+
 int
 test_vec_i64 (void)
 {
@@ -12244,6 +12369,8 @@ test_vec_i64 (void)
   rc += test_lvgudx ();
   rc += test_stvgudx ();
   rc += test_setbd ();
+  rc += test_splatisd ();
+  rc += test_splatiud ();
 
   return (rc);
 }

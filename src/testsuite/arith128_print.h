@@ -319,6 +319,9 @@ extern int
 check_v2b64x_priv (char *prefix, vb64_t val128, vb64_t shouldbe);
 
 extern int
+check_v2ui64x_priv (char *prefix, vui64_t val128, vui64_t shouldbe);
+
+extern int
 check_v2f64_priv (char *prefix, vf64_t val128, vf64_t shouldbe);
 
 extern int
@@ -496,6 +499,19 @@ check_v2b64x (char *prefix, vb64_t val128, vb64_t shouldbe)
   if (vec_cmpud_any_ne((vui64_t )val128, (vui64_t )shouldbe))
     {
       rc = check_v2b64x_priv (prefix, val128, shouldbe);
+    }
+
+  return (rc);
+
+}
+
+static inline int
+check_v2ui64x (char *prefix, vui64_t val128, vui64_t shouldbe)
+{
+  int rc = 0;
+  if (vec_cmpud_any_ne((vui64_t )val128, (vui64_t )shouldbe))
+    {
+      rc = check_v2ui64x_priv (prefix, val128, shouldbe);
     }
 
   return (rc);

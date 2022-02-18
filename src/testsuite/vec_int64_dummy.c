@@ -22,6 +22,131 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vui64_t
+__test_shift_cse (vui64_t a)
+{
+  vui64_t r;
+  // Should generate the const vui64_t shift count once for both.
+  // With small shift count ( < 16) should generate vspltisw.
+  r = vec_srdi (a, 1);
+  return vec_sldi (r, 1);
+}
+
+// Attempts at better code to splat small DW constants.
+// Want to avoid addr calc and loads for what should be simple
+// splat immediate and unpack/extend.
+vi64_t
+__test_splatisd_16 (void)
+{
+  return vec_splat_s64 (-16);
+}
+
+vi64_t
+__test_splatisd_n1 (void)
+{
+  return vec_splat_s64 (-1);
+}
+
+vi64_t
+__test_splatisd_0 (void)
+{
+  return vec_splat_s64 (0);
+}
+
+vi64_t
+__test_splatisd_15 (void)
+{
+  return vec_splat_s64 (15);
+}
+
+vi64_t
+__test_splatisd_127 (void)
+{
+  return vec_splat_s64 (127);
+}
+
+vui64_t
+__test_splatiud_0 (void)
+{
+  return vec_splat_u64 (0);
+}
+
+vui64_t
+__test_splatiud_15 (void)
+{
+  return vec_splat_u64 (15);
+}
+
+vui64_t
+__test_splatiud_127 (void)
+{
+  return vec_splat_u64 (127);
+}
+
+#define COMPILE_FENCE __asm ("nop":::)
+#define COMPILE_FENCE1 __asm ("ori 1,1,0":::)
+// Avoid instructions that require power8
+// Or LE specific compiler support
+vui64_t
+__test_splatudi_12_V3 (void)
+{
+  vi32_t vwi = vec_splat_s32 (12);
+  // Unpack signed HW works here because the word immediate
+  // value fits in a signed HW and high HW of word will unpacked
+  // into 0's or 1's in the high word of DW.
+  // And uppack low/high (or endian) will not change result.
+  // COMPILE_FENCE1;
+  return (vui64_t) vec_vupklsh ((vi16_t) vwi);
+}
+// Requires power8 for vec_vupklsw
+#ifdef _ARCH_PWR8
+vui64_t
+__test_splatudi_12_V2 (void)
+{
+  vi32_t vwi = vec_splat_s32 (12);
+  // vi32_t vwi = vec_splats ((int) 12);
+  // Unpack signed Word expands two lower words to doublewords.
+  // And uppack low/high (or endian) will not change result.
+  return (vui64_t) vec_vupklsw (vwi);
+}
+#endif
+
+// Unpackl/h from word requires GCC 7 for LE and 9 for BE
+#if ((__GNUC__ > 6) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) \
+ || ((__GNUC__ > 8) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))
+vi64_t
+__test_splatudi_12_V1 (void)
+{
+  vi32_t vwi = vec_splat_s32 (12);
+  return vec_unpackl (vwi);
+}
+#endif
+
+vui64_t
+__test_splatudi_8_V0 (void)
+{
+  vi32_t vwi = vec_splat_s32 (8);
+  return (vui64_t) vwi;
+}
+
+vui64_t
+__test_splatudi_12_V0 (void)
+{
+  return vec_splats ((unsigned long long) 12);
+}
+
+vui64_t
+__test_splatudi_0_V0 (void)
+{
+  return vec_splats ((unsigned long long) 0);
+}
+
+vi64_t
+__test_splatudi_1_V0 (void)
+{
+  return vec_splats ((signed long long) -1);
+}
+
 vb64_t
 test_vec_setb_sd (vi64_t vra)
 {

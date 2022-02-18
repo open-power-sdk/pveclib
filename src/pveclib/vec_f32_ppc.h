@@ -200,7 +200,7 @@ test_vec_cosf32 (vf32_t value)
  */
 
 #include <pveclib/vec_common_ppc.h>
-#include <pveclib/vec_int64_ppc.h>
+#include <pveclib/vec_int128_ppc.h>
 
 ///@cond INTERNAL
 static inline vf64_t

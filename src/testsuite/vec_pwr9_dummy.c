@@ -40,6 +40,67 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+// Attempts at better code to splat small DW constants.
+// Want to avoid addr calc and loads for what should be simple
+// splat immediate and unpack.
+vi64_t
+__test_splatisd_12_PWR9 (void)
+{
+  return vec_splat_s64 (12);
+}
+vi64_t
+__test_splatisd_16_PWR9 (void)
+{
+  return vec_splat_s64 (-16);
+}
+
+vi64_t
+__test_splatisd_127_PWR9 (void)
+{
+  return vec_splat_s64 (127);
+}
+
+vi64_t
+__test_splatiud_128_PWR9 (void)
+{
+  return vec_splat_s64 (128);
+}
+
+vui64_t
+__test_splatiud_127_PWR9 (void)
+{
+  return vec_splat_u64 (127);
+}
+vui64_t
+__test_splatisd_128_PWR9 (void)
+{
+  return vec_splat_u64 (128);
+}
+
+vui64_t
+__test_splatudi_12_PWR9 (void)
+{
+  return vec_splats ((unsigned long long) 12);
+}
+
+vui64_t
+test_sldi_1_PWR9 (vui64_t a)
+{
+  return vec_sldi (a, 1);
+}
+
+vui64_t
+test_sldi_15_PWR9 (vui64_t a)
+{
+  return vec_sldi (a, 15);
+}
+
+vui64_t
+test_sldi_16_PWR9 (vui64_t a)
+{
+  return vec_sldi (a, 16);
+}
+
 __binary128
 test_negqp_PWR9 (__binary128 vfa)
 {

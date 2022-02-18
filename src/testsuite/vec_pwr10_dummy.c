@@ -38,6 +38,31 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+// Attempts at better code to splat small DW constants.
+// Want to avoid addr calc and loads for what should be simple
+// splat immediate and unpack/extend.
+vi64_t
+__test_splatisd_12_PWR10 (void)
+{
+  return vec_splat_s64 (12);
+}
+
+// vec_splati from word requires GCC 10 and PWR10
+#if ((__GNUC__ > 11) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__))
+vi64_t
+__test_splatudi_12_PWR10 (void)
+{
+  vi32_t vwi = vec_splati (12);
+  return vec_unpackl (vwi);
+}
+#endif
+
+vui64_t
+__test_splatudi_12_PWR10_v0 (void)
+{
+  return vec_splats ((unsigned long long) 12);
+}
+
 #if defined (_ARCH_PWR10) && (__GNUC__ > 11) \
     || ((__GNUC__ == 11) && (__GNUC_MINOR__ > 2))
 // New support defined in Power Vector Intrinsic Programming Reference.

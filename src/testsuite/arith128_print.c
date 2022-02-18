@@ -1212,6 +1212,22 @@ check_v2b64x_priv (char *prefix, vb64_t val128, vb64_t shouldbe)
 }
 
 int
+check_v2ui64x_priv (char *prefix, vui64_t val128, vui64_t shouldbe)
+{
+  int rc = 0;
+
+  if (vec_any_ne ((vui32_t) val128, (vui32_t) shouldbe))
+    {
+      rc = 1;
+      printf ("%s\n", prefix);
+      print_v2xint64 ("\tshould be: ", shouldbe);
+      print_v2xint64 ("\t       is: ", val128);
+    }
+
+  return (rc);
+}
+
+int
 check_vb128c_priv (char *prefix, vb128_t val128, vb128_t shouldbe)
 {
   int rc = 0;

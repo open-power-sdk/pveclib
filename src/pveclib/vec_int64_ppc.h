@@ -876,6 +876,7 @@ static inline vui64_t vec_popcntd (vui64_t vra);
 #undef vec_popcntd
 #define vec_popcntd __builtin_vec_vpopcntd
 #endif
+static inline vi64_t vec_splat_s64 (const int sim);
 static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
 static inline vui64_t
 vec_vlsidx (const signed long long a, const unsigned long long *b);
@@ -2978,6 +2979,46 @@ vec_sldi (vui64_t vra, const unsigned int shb)
   return (vui64_t) result;
 }
 
+/** \brief Vector Select Signed Doubleword.
+ *
+ *  Return the value, (vra & ~vrc) | (vrb & vrc).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  3    | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed long long int.
+ *  @param vrb a 128-bit vector treated as a vector signed long long int.
+ *  @param vrc a 128-bit vector treated as vector bool long long int.
+ *  @return The selected bits from vra and vrb
+ */
+static inline vi64_t
+vec_selsd (vi64_t vra, vi64_t vrb, vb64_t vrc)
+{
+  return (vi64_t) vec_sel ((vui32_t) vra, (vui32_t)vrb, (vui32_t)vrc);
+}
+
+/** \brief Vector Select Unsigned Doubleword.
+ *
+ *  Return the value, (vra & ~vrc) | (vrb & vrc).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  3    | 2/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned long long int.
+ *  @param vrb a 128-bit vector treated as a vector unsigned long long int.
+ *  @param vrc a 128-bit vector treated as vector bool long long int.
+ *  @return The selected bits from vra and vrb
+ */
+static inline vui64_t
+vec_selud (vui64_t vra, vui64_t vrb, vb64_t vrc)
+{
+  return (vui64_t) vec_sel ((vui32_t) vra, (vui32_t)vrb, (vui32_t)vrc);
+}
+
 /** \brief Vector splat doubleword.
  *  Duplicate the selected doubleword element across the doubleword
  *  elements of the result. This is effectively the
@@ -3022,6 +3063,138 @@ vec_splatd (vui64_t vra, const int ctl)
       break;
     }
 
+  return (result);
+}
+
+/** \brief Vector Splat Immediate Signed Doubleword.
+ *  Duplicate the signed integer constant across doubleword
+ *  elements of the result. This is the doubleword equivalent
+ *  Vector Splat Immediate Signed (Byte | Halfword |Word).
+ *
+ *  \note POWER9/10 will generate the 2 instruction sequence
+ *  xxspltib/vextsb2d for values -128 to 128. Larger values
+ *  will be loaded as a quadword constant from the read-only
+ *  data (.rodata) section.
+ *  POWER8 (and earlier) does not have vextsb2d instructions.
+ *  For a smaller range (-16 -> 15) POWER8 can use the sequence
+ *  vec_splat_s32/vec_unpackl but the latest compilers are too clever
+ *  for this and generate a load from .rodata anyway.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 9 | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param sim a small signed integer const.
+ *  @return Vector with sim value splatted to doublewords.
+ */
+static inline vi64_t
+vec_splat_s64 (const int sim)
+{
+  vi64_t result;
+#ifdef _ARCH_PWR9
+  result = vec_splats ((signed long long) sim);
+#else
+  if (__builtin_constant_p (sim) && ((sim >= -16) && (sim < 16)))
+    {
+      vi32_t vwi = vec_splat_s32 (sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_unpackl().
+	  result = (vi64_t) vwi;
+	} else {
+	  // For P8 can use either vupklsh or vupklsw but P7 only has
+	  // vupklsh. Given the reduced range, Either works here.
+	  // Unpack signed HW works here because immediate value fits
+	  // into the low HW and sign extends to high HW of each word.
+	  // Unpack will expand the low HW to low word and high HW
+	  // (sign extend) into the high word of each DW.
+	  // Unpack low/high (or endian) will not change the result.
+#if defined (__GNUC__) && (__GNUC__ == 8)
+	  // GCC 8 (AT12) handle this correctly.
+	  result = (vi64_t) vec_vupklsh ((vi16_t) vwi);
+#else
+	  // But GCC 9+ optimized the above to be load from .rodata.
+	  // With a little register pressure it adds some gratuitous store/reloads.
+	  // So the following work-around is required.
+	  __asm__(
+	      "vupklsh %0,%1;"
+	      : "=v" (result)
+	      : "v" (vwi)
+	      : );
+#endif
+	}
+    }
+  else
+    result = vec_splats ((signed long long) sim);
+#endif
+  return (result);
+}
+
+/** \brief Vector Splat Immediate Unsigned Doubleword.
+ *  Duplicate the unsigned integer constant across doubleword
+ *  elements of the result. This is the doubleword equivalent
+ *  Vector Splat Immediate Unsigned (Byte | Halfword |Word).
+ *
+ *  \note POWER9/10 will generate the 2 instruction sequence
+ *  xxspltib/vextsb2d for values -128 to 128. Larger values
+ *  will be loaded as a quadword constant from the read-only
+ *  data (.rodata) section.
+ *  POWER8 (and earlier) does not have vextsb2d instructions.
+ *  For a smaller range (-16 -> 15) POWER8 can use the sequence
+ *  vec_splat_s32/vec_unpackl but the latest compilers are too clever
+ *  for this and generate a load from .rodata anyway.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 9 | 2/cycle  |
+ *  |power9   |   5   | 2/cycle  |
+ *
+ *  @param sim a small signed integer const.
+ *  @return Vector with sim value splatted to doublewords.
+ */
+static inline vui64_t
+vec_splat_u64 (const int sim)
+{
+  vui64_t result;
+#ifdef _ARCH_PWR9
+  result = vec_splats ((unsigned long long) sim);
+#else
+  if (__builtin_constant_p (sim) && ((sim >= 0) && (sim < 16)))
+    {
+      vui32_t vwi = vec_splat_u32 (sim);
+
+      if (__builtin_constant_p (sim) && (sim == 0))
+	{
+	  // Special case for -1 and 0. Skip vec_unpackl().
+	  result = (vui64_t) vwi;
+	} else {
+	  // For P8 can use either vupklsh or vupklsw but P7 only has
+	  // vupklsh. Given the reduced range, Either works here.
+	  // Unpack unsigned HW works here because immediate value fits
+	  // into the low HW and zero extends to high HW of each word.
+	  // Unpack will expand the low HW to low word and high HW
+	  // (zero extended) into the high word of each DW.
+	  // Unpack low/high (or endian) will not change the result.
+#if defined (__GNUC__) && (__GNUC__ == 8)
+	  // GCC 8 (AT12) handle this correctly.
+	  result = (vui64_t) vec_vupklsh ((vi16_t) vwi);
+#else
+	  // But GCC 9+ optimized the above to be load from .rodata.
+	  // With a little register pressure it adds some gratuitous store/reloads.
+	  // So the following work-around is required.
+	  __asm__(
+	      "vupklsh %0,%1;"
+	      : "=v" (result)
+	      : "v" (vwi)
+	      : );
+#endif
+	}
+    }
+  else
+    result = vec_splats ((unsigned long long) sim);
+#endif
   return (result);
 }
 

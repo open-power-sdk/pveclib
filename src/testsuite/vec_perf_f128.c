@@ -205,7 +205,7 @@ test_gcc_qpdpo_f128 (vf64_t * vf128,
 		    __binary128 vf7, __binary128 vf8);
 
 extern void
-test_gcc_mulqpo_f128 (__binary128 * vf128,
+test_gcc_mulqpn_f128 (__binary128 * vf128,
 		    __binary128 vf1, __binary128 vf2,
 		    __binary128 vf3, __binary128 vf4,
 		    __binary128 vf5, __binary128 vf6,
@@ -556,7 +556,7 @@ int timed_gcc_subqpn_f128 (void)
    return 0;
 }
 
-int timed_gcc_mulqpo_f128 (void)
+int timed_gcc_mulqpn_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
   __binary128 tbl[10];
@@ -564,7 +564,7 @@ int timed_gcc_mulqpo_f128 (void)
 
   for (i=0; i<N; i++)
     {
-      test_gcc_mulqpo_f128 (tbl,
+      test_gcc_mulqpn_f128 (tbl,
 			  qpfact1, qpfact2,
 			  qpfact3, qpfact4,
 			  qpfact5, qpfact6,

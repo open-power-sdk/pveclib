@@ -826,6 +826,15 @@ test_xor_bin128_2_vui32t_PWR9 (__binary128 f128, vui32_t mask)
 }
 
 vui32_t
+test_xfer_bin128_2_vui32t_V0_PWR9 (__binary128 f128)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+  return vunion.vx4;
+}
+
+vui32_t
 test_xfer_bin128_2_vui32t_PWR9 (__binary128 f128)
 {
   return vec_xfer_bin128_2_vui32t (f128);

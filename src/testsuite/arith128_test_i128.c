@@ -6826,6 +6826,102 @@ test_setbq (void)
 
   return (rc);
 }
+int
+test_splat_128 (void)
+{
+  vui128_t ek, k;
+  vi128_t  el, l;
+  vui32_t e;
+  int rc = 0;
+
+  printf ("\ntest_splat_128 Vector Splat Immediate Signed/Unsigned Quadword\n");
+
+  l =  vec_splat_s128 (0);
+  el = (vi128_t) CONST_VINT128_DW128(0, 0);
+  rc += check_vuint128x ("vec_splat_s128(0):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (0);
+  ek = CONST_VINT128_DW128(0, 0);
+  rc += check_vuint128x ("vec_splat_u128(0):", k, ek);
+
+  l =  vec_splat_s128 (-1);
+  el = (vi128_t) CONST_VINT128_DW128(-1, -1);
+  rc += check_vuint128x ("vec_splat_s128(-1):", (vui128_t) l, (vui128_t) el);
+
+  l =  vec_splat_s128 (-16);
+  el = (vi128_t) CONST_VINT128_DW128(-1, -16);
+  rc += check_vuint128x ("vec_splat_s128(-16):", (vui128_t) l, (vui128_t) el);
+
+  l =  vec_splat_s128 (-128);
+  el = (vi128_t) CONST_VINT128_DW128(-1, -128);
+  rc += check_vuint128x ("vec_splat_s128(-128):", (vui128_t) l, (vui128_t) el);
+
+  l =  vec_splat_s128 (-255);
+  el = (vi128_t) CONST_VINT128_DW128(-1, -255);
+  rc += check_vuint128x ("vec_splat_s128(-255):", (vui128_t) l, (vui128_t) el);
+
+  l =  vec_splat_s128 (-256);
+  el = (vi128_t) CONST_VINT128_DW128(-1, -256);
+  rc += check_vuint128x ("vec_splat_s128(-256):", (vui128_t) l, (vui128_t) el);
+
+  l =  vec_splat_s128 (1);
+  el = (vi128_t) CONST_VINT128_DW128(0, 1);
+  rc += check_vuint128x ("vec_splat_s128(1):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (1);
+  ek = CONST_VINT128_DW128(0, 1);
+  rc += check_vuint128x ("vec_splat_u128(1):", k, ek);
+
+  l =  vec_splat_s128 (15);
+  el = (vi128_t) CONST_VINT128_DW128(0, 15);
+  rc += check_vuint128x ("vec_splat_s128(15):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (15);
+  ek = CONST_VINT128_DW128(0, 15);
+  rc += check_vuint128x ("vec_splat_u128(15):", k, ek);
+
+  l =  vec_splat_s128 (16);
+  el = (vi128_t) CONST_VINT128_DW128(0, 16);
+  rc += check_vuint128x ("vec_splat_s128(16):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (16);
+  ek = CONST_VINT128_DW128(0, 16);
+  rc += check_vuint128x ("vec_splat_u128(16):", k, ek);
+
+  l =  vec_splat_s128 (127);
+  el = (vi128_t) CONST_VINT128_DW128(0, 127);
+  rc += check_vuint128x ("vec_splat_s128(127):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (127);
+  ek = CONST_VINT128_DW128(0, 127);
+  rc += check_vuint128x ("vec_splat_u128(127):", k, ek);
+
+  l =  vec_splat_s128 (128);
+  el = (vi128_t) CONST_VINT128_DW128(0, 128);
+  rc += check_vuint128x ("vec_splat_s128(128):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (128);
+  ek = CONST_VINT128_DW128(0, 128);
+  rc += check_vuint128x ("vec_splat_u128(128):", k, ek);
+
+  l =  vec_splat_s128 (255);
+  el = (vi128_t) CONST_VINT128_DW128(0, 255);
+  rc += check_vuint128x ("vec_splat_s128(255):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (255);
+  ek = CONST_VINT128_DW128(0, 255);
+  rc += check_vuint128x ("vec_splat_u128(255):", k, ek);
+
+  l =  vec_splat_s128 (256);
+  el = (vi128_t) CONST_VINT128_DW128(0, 256);
+  rc += check_vuint128x ("vec_splat_s128(256):", (vui128_t) l, (vui128_t) el);
+
+  k =  vec_splat_u128 (256);
+  ek = CONST_VINT128_DW128(0, 256);
+  rc += check_vuint128x ("vec_splat_u128(256):", k, ek);
+
+  return (rc);
+}
 
 //#define __DEBUG_PRINT__ 1
 int
@@ -10166,6 +10262,7 @@ test_vec_i128 (void)
   printf ("\n%s\n", __FUNCTION__);
 #if 1
   rc += test_xfer_int128 ();
+  rc += test_splat_128 ();
   rc += test_revbq ();
   rc += test_clzq ();
   rc += test_ctzq ();

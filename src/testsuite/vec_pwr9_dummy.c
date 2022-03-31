@@ -83,6 +83,81 @@ __test_splatudi_12_PWR9 (void)
   return vec_splats ((unsigned long long) 12);
 }
 
+// Attempts at better code to splat small QW constants.
+// Want to avoid addr calc and loads for what should be simple
+// splat immediate and sld.
+vi128_t
+__test_splatisq_16_PWR9 (void)
+{
+  return vec_splat_s128 (-16);
+}
+
+vi128_t
+__test_splatisq_n1_PWR9 (void)
+{
+  return vec_splat_s128 (-1);
+}
+
+vi128_t
+__test_splatisq_0_PWR9 (void)
+{
+  return vec_splat_s128 (0);
+}
+
+vi128_t
+__test_splatisq_15_PWR9 (void)
+{
+  return vec_splat_s128 (15);
+}
+
+vi128_t
+__test_splatisq_127_PWR9 (void)
+{
+  return vec_splat_s128 (127);
+}
+
+vi128_t
+__test_splatisq_128_PWR9 (void)
+{
+  return vec_splat_s128 (128);
+}
+
+vui128_t
+__test_splatiuq_0_PWR9 (void)
+{
+  return vec_splat_u128 (0);
+}
+
+vui128_t
+__test_splatiuq_15_PWR9 (void)
+{
+  return vec_splat_u128 (15);
+}
+
+vui128_t
+__test_splatiuq_127_PWR9 (void)
+{
+  return vec_splat_u128 (127);
+}
+
+vui128_t
+__test_splatiuq_128_PWR9 (void)
+{
+  return vec_splat_u128 (128);
+}
+
+vui128_t
+__test_splatiuq_255_PWR9 (void)
+{
+  return vec_splat_u128 (255);
+}
+
+vui128_t
+__test_splatiuq_256_PWR9 (void)
+{
+  return vec_splat_u128 (256);
+}
+
 vui64_t
 test_sldi_1_PWR9 (vui64_t a)
 {

@@ -337,6 +337,394 @@
       7662477704329444291UL, 7917351357515459181UL);
  * \endcode
  *
+ * \subsection int128_const_0_0_3 Loading small Quadword constants
+ *
+ * Programming with quadword integers will need quadword constants
+ * for masking and arithmetic operations. In the sections above we
+ * provide means to define large and complex constants. But often there
+ * is need for small integer constants for use in boolean logic,
+ * masking/select operations, and simple arithmetic.
+ *
+ * The technique above can used for small integer constants as well.
+ * For example:
+ * \code
+   const vui128_t qw_one = CONST_VINT128_DW(0, 1);
+   const vui128_t qw_ten = CONST_VINT128_DW(0, 10);
+   const vui128_t qw_digit_mask = CONST_VINT128_DW(0, 0xf);
+ * \endcode
+ * In most cases this compiler will allocate these constant values to
+ * the read-only data (.rodata) section. When these constants are
+ * referenced in programming operations the compiler generates the
+ * appropriate vector loads.
+ * For example the GCC V11 generates the following for the
+ * <B>-mcpu=power8</B> target:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     addi    r9,r9,.rodata.cst16+0x30@toc@l
+     lvx     v2,0,r9
+ * \endcode
+ * And the following for the
+ * <B>-mcpu=power9</B> target:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     addi    r9,r9,.rodata.cst16+0x30@toc@l
+     lxv     v2,0(r9)
+ * \endcode
+ * This is expected for POWER8 as PowerISA 2.07B does not have any
+ * displacement form (D-Form) vector (VSX) loads/stores instructions.
+ * The compiler allocates constants to the .rodata sections and the
+ * linker collects .rodata from object files into a combined executable
+ * .rodata section. This is placed near the
+ * <I>Table of Contents (<B>TOC</B>)</I> section.
+ * The ABI dedicates R2 as the base address <B>.TOC.</B> for the TOC
+ * and adjacent sections.
+ *
+ * The <I>Add Immediate Shifted (addis)</I> <I>Add Immediate (addi)</I>
+ * sequence above computes a signed 32-bit <B>.TOC.</B>
+ * relative offset to a specific .rodata quadword. Two instructions are
+ * required as; <I>addis</I> provides the <I>high adjusted</I> 16-bits
+ * shifted left 16-bits, while <I>addi</I> provides the <I>low</I>
+ * 16-bits.
+ * The sum of R2 and these immediate values is the 64-bit effective
+ * address of a .rodata constant value.
+ * A signed 32-bit offset is large enough to
+ * support most program and library executables.
+ *
+ * The load itself has a 5-cycle latency assuming a L1 cache hit.
+ * The three instruction sequence is sequentially dependent
+ * and requires 9-cycles latency (minimum) to execute.
+ * A L1 cache miss will increase the latency by 7-28 cycles,
+ * assuming the data resides in the L2/L3 caches.
+ *
+ * However the compiler is not following the recommendations of
+ *
+ * <a href="https://ibm.ent.box.com/s/jd5w15gz301s5b5dt375mshpq9c3lh4u">
+ * PowerISA 2.07B</a>, <I>Book II,
+ * Chapter 2.1 Performance-Optimized Instruction Sequences</I>.
+ * This chapter recommends a specific pattern for the addi/lvx sequence.
+ * For example:
+ * \code
+     addis   rA,r2,.rodata.cst16+0x30@toc@ha
+     addi    rx,0,.rodata.cst16+0x30@toc@l
+     lvx     v2,rA,rx
+ * \endcode
+ * In this case rx can be any GPR (including r0) while RA must be a
+ * valid base (r1 <-> r31) register.
+ *
+ * The POWER8 implementation allows for <I>Instruction Funsion</I> combining
+ * information from two <I>adjacent</I>t instructions into one (internal)
+ * instruction so that it executes faster than the non-fused case.
+ * Effectively the addi/lvx combination above becomes a D-Form
+ * load vector instruction.
+ *
+ * There are additional restrictions on the definition of
+ * <I>adjacent</I>:
+ * - The instruction must be in the same dispatch group.
+ *   - In single-threaded mode, up to six non-branch and up to two
+ *     branch instructions (6/2 groups).
+ *   - In multi-threaded mode, up to three non-branch and up to one
+ *     branch instructions (3/1 groups).
+ * - Without any intervening branch instructions.
+ * - Instructions may span an I-cache line,
+ *   but with both fetched and residing in the i-buffer.
+ *
+ * This can reduce the latency from 9 to 7-cycles. This would be true
+ * even without <I>Instruction Funsion</I> as the addis/addi
+ * instructions are now independent and can execute in parallel.
+ *
+ * The sequence generated for POWER9 is even more disappointing.
+ * The lxv is a D-Form (DQ) instruction and the displacement operand
+ * could be used to replace the addi instruction.
+ * For example:
+ * <B>-mcpu=power9</B> target:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     lxv     v2,.rodata.cst16+0x30@toc@l(r9)
+ * \endcode
+ * This provides the equivalent 32-bit TOC relative displacement with
+ * one less instructions and reduced latency of 7-cycles.
+ *
+ * \subsubsection int128_const_0_0_3_1 Alternatives to loading from .rodata
+ * This is all a little cumbersome and it seems like there should be
+ * a better/faster way. Any instruction sequence that loads quadword
+ * integer constant in:
+ * - three instruction or less,
+ * - latency of 6 cycles or less,
+ * - and avoids cache misses
+ *
+ * is a good deal.
+ *
+ * The base (Altivec) vector ISA included
+ * Vector Splat Immediate Signed Byte/Halfword/Word instructions.
+ * These are fast (2-cycle latency) and convenient for small integer
+ * constants in the range -16 to 15.
+ * So far the ISA has not added doubleword or quadword forms for these.
+ *
+ * POWER9 added a VSX Vector Splat Immediate Byte (xxspltib) instruction.
+ * This expands the immediate range to -128 to 127 but does not include
+ * larger element sizes. POWER9 does provide
+ * Vector Extend Sign Byte To Word/Doubleword (vextsb2w/vextsb2d)
+ * instructions. For example the two instruction sequence:
+ * \code
+     xxspltib vs34,127
+     vextsb2d v2,v2
+ * \endcode
+ * can generate a doubleword splat immediate for integers in the
+ * range -128 to 127 with a cycle latency of 5-cycles.
+ * So far there is no extend sign byte/halfword/word to quadword.
+ * POWER10 does add
+ * Vector Extend Sign Doubleword To Quadword (vextsd2q).
+ *
+ * \note POWER10 does add the interesting
+ * <I>VSX Vector Splat Immediate Double-Precision</I> instruction.
+ * This is a 64-bit instruction with a 32-bit single precision
+ * immediate operand. Interesting but not helpful for quadword integer.
+ *
+ * \subsubsection int128_const_0_0_3_2 Some special quadword constants
+ * The GCC compiler does recognize some vector constants as special case.
+ * For example:
+ * \code
+vi128_t
+__test_splatisq_n1_V0 (void)
+{
+  const vui32_t q_ones = {-1, -1, -1, -1};
+  return (vi128_t) q_ones;
+}
+
+vi128_t
+__test_splatisq_0_V0 (void)
+{
+  const vui32_t q_zero = {0, 0, 0, 0};
+  return (vi128_t) q_zero;
+}
+ * \endcode
+ * will generate:
+ * \code
+0000000000000080 <__test_splatisq_n1_V0>:
+     vspltisw v2,-1
+     blr
+00000000000000a0 <__test_splatisq_0_V0>:
+     vspltisw v2,0
+     blr
+ * \endcode
+ *
+ * Another interesting example is the quadword sign mask.
+ * For example:
+ * \code
+vui32_t
+__test_splatisq_signmask_V0 (void)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  return signmask;
+}
+ * \endcode
+ * will generate:
+ * \code
+00000000000000c0 <__test_splatisq_signmask_V0>:
+     vspltisw v0,-1
+     vspltisw v2,0
+     vslw    v0,v0,v0
+     vsldoi  v2,v0,v2,12
+     blr
+ * \endcode
+ * The first 2 instructions generate vector constants of all zeros and
+ * all ones (same as above). The third instruction uses vector shift
+ * left word (vslw) to convert the word elements from 0xffffffff to
+ * 0x80000000. The final vector shift left double octet immediate
+ * shifts the last word of 0x80000000 in the high order word followed
+ * by three words of 0x00000000 (a 1 bit followed by 127 bits of 0).
+ * The equivalent C language with <altivec.h> intrinsics
+ * implementation is:
+ * \code
+static inline vui32_t
+vec_mask128_f128sign (void)
+{
+  const vui32_t q_zero = {0, 0, 0, 0};
+  const vui32_t q_ones = {-1, -1, -1, -1};
+  vui32_t signmask;
+  signmask = vec_sl (q_ones, q_ones);
+  return vec_sld (signmask, q_zero, 12);
+}
+ * \endcode
+ * This sequence is a little bigger (4 instructions) then we would like
+ * but should execute in 6-cycles. The first two instructions are
+ * independent and should execute in parallel. Also (as we will see)
+ * the all zero/ones constants are common building blocks.
+ * So the compiler should treat these as common sub expressions with
+ * across all operations using those constants.
+ *
+ * \subsubsection int128_const_0_0_3_3 Defining our own vec_splat_s128
+ * So the compiler can do clever things with vector constants.
+ * But so far these are the only examples I have found.
+ * Other cases that you might expect to be a special case are not.
+ * For example:
+ * \code
+vi128_t
+__test_splatisq_15_V1 (void)
+{
+  const vui128_t qw_15 = {15};
+  return (vi128_t) qw_15;
+}
+ * \endcode
+ * and
+ * \code
+vi128_t
+__test_splatisq_15_V0 (void)
+{
+  const vui32_t qw_15 = CONST_VINT128_W(0, 0, 0, 15);
+  return (vi128_t) qw_15;
+}
+ * \endcode
+ * generate the 3 instruction (9-cycle) load from .rodata sequence.
+ * also constants using the vector long long or __int128 types may
+ * fail to compile on older versions of the compiler.
+ *
+ * \note PVECLIB has found it best to consistently use vector unsigned
+ * int (<B>vui32_t</B>) internally for these operations. First older
+ * compiles may fail to compile specific combinations of
+ * vector long long or __int128 types and <altivec.h> intrinsics.
+ * Second the compiler may consider the vector long long constants as not
+ * quadword aligned and generate lxvd2x/xxswapd instead of lvx.
+ * Dumb and dumber.
+ *
+ * We can generate small constants in the range 1-15 with using the
+ * following pattern:
+ * \code
+vi128_t
+__test_splatisq_15_V2 (void)
+{
+  //  const vui32_t qw_15 = CONST_VINT128_W(0, 0, 0, 15);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t qw_15 = (vui32_t) vec_splat_s32(15);
+  return (vi128_t) vec_sld (q_zero, qw_15, 4);
+}
+ * \endcode
+ * Which generates:
+ * \code
+00000000000000e0 <__test_splatisq_15_V2>:
+     vspltisw v0,0
+     vspltisw v2,15
+     vsldoi  v2,v0,v2,4
+     blr
+ * \endcode
+ * Here we use the vec_splat_s32() intrinsic to generate the vspltisw
+ * instruction for the value 15.
+ *
+ * This sequence is only 3 instructions, which
+ * should execute in 4-cycles. The first two instructions are
+ * independent and should execute in parallel. Also
+ * the q_zero constant is commonly used and
+ * the compiler should treat it as a common sub expressions.
+ *
+ * For small (-16 to -1) negative constants we need to make one
+ * small change. We use the q_ones constant to propagate the sign
+ * across the quadword.
+ * \code
+vi128_t
+__test_splatisq_n16_V2 (void)
+{
+  //  const vui32_t qw_16 = CONST_VINT128_W(-1, -1, -1, -16);
+  const vui32_t q_ones = {-1, -1, -1, -1};
+  vui32_t qw_16 = (vui32_t) vec_splat_s32(-16);
+  return (vi128_t) vec_sld (q_ones, qw_16, 4);
+}
+ * \endcode
+ * The generated sequence is also  3 instructions and
+ * should execute in 4-cycles.
+ *
+ * Putting this all together we can create a static inline function
+ * to generate small quadword constants (in the range -16 to 15).
+ * For example:
+ * \code
+static inline vi128_t
+vec_splat_s128_PWR8 (const int sim)
+{
+  vi128_t result;
+  if (__builtin_constant_p (sim) && ((sim >= -16) && (sim < 16)))
+    {
+      vui32_t vwi = (vui32_t) vec_splat_s32(sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_sld().
+	  result = (vi128_t) vwi;
+	}
+      else
+	{
+	  if (__builtin_constant_p (sim) && (sim > 0))
+	    {
+	      const vui32_t q_zero = {0, 0, 0, 0};
+	      result = (vi128_t) vec_sld (q_zero, vwi, 4);
+	    }
+	  else
+	    {
+	      const vui32_t q_ones = {-1, -1, -1, -1};
+	      result = (vi128_t) vec_sld (q_ones, vwi, 4);
+	    }
+	}
+    }
+  else
+    result = vec_splats ((signed __int128) sim);
+
+  return (result);
+}
+ * \endcode
+ * This version uses only <altivec.h> intrinsics supported by POWER8
+ * and earlier.
+ * For constants in the range (-16 to 15) the range is divided into
+ * three groups:
+ * - Special values -1 and 0 that can be gnerated in a single instruction.
+ * - Values 1 to 15 that require the q_zero constant to sign extend.
+ * - Values -16 to -2 that require the q_ones constant to sign extend.
+ *
+ * Values outside this range use the vec_splats() intrinsic which will
+ * generate the appropriate quadword constant in .rodata and the load
+ * sequence to retrieve that value.
+ *
+ * For POWER9 and later we can use the VSX Vector Splat Immediate Byte
+ * (xxspltib) instruction and support the extended constant range
+ * of -128 to 127.
+ *
+ * \code
+static inline vi128_t
+vec_splat_s128_PWR9 (const int sim)
+{
+  vi128_t result;
+  if (__builtin_constant_p (sim) && ((sim >= -128) && (sim < 128)))
+    {
+      // Expect the compiler to generate a single xxspltib for this.
+      vi8_t vbi = vec_splats ((signed char) sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_sld().
+	  result = (vi128_t) vbi;
+	}
+      else
+	{
+	  if (__builtin_constant_p (sim) && (sim > 0))
+	    {
+	      const vui32_t q_zero = {0, 0, 0, 0};
+	      result = (vi128_t) vec_sld ((vi8_t) q_zero, vbi, 1);
+	    }
+	  else
+	    {
+	      const vui32_t q_ones = {-1, -1, -1, -1};
+	      result = (vi128_t) vec_sld ((vi8_t) q_ones, vbi, 1);
+	    }
+	}
+    }
+  else
+    result = vec_splats ((signed __int128) sim);
+
+  return (result);
+}
+ * \endcode
+ * Here we use the vec_splats() intrinsic to generate the xxspltib
+ * instruction. The rest follows the pattern we used for POWER8 but
+ * shift left is adjusted for the byte (vs word) element splat to
+ * be 1 octet.
+ *
  * \section int128_arith_facts_0 Some facts about fixed precision integers
  *
  * The transition from grade school math to computer programming
@@ -6393,6 +6781,173 @@ vec_slqi (vui128_t vra, const unsigned int shb)
       result = vec_xor ((vui8_t) vra, (vui8_t) vra);
     }
   return (vui128_t) result;
+}
+
+/** \brief Vector Splat Immediate Signed Quadword.
+ *  Extend a signed integer constant across the quadword
+ *  element of the result. This is the quadword equivalent of
+ *  Vector Splat Immediate Signed (Byte | Halfword |Word).
+ *
+ *  \note POWER9/10 will generate the instruction xxspltib
+ *  for byte values -128 to 128.
+ *  But the ISA does not have vextsb2q instructions (so far).
+ *  So we need to sign extent the byte value using a const quadword
+ *  (0/-1 depending on the sign) and vsldoi.
+ *  POWER8 (and earlier) does not have xxspltib but does have vspltisw.
+ *  For a smaller range (-16 -> 15) POWER8 can use the sequence
+ *  vec_splat_s8(sim)/vec_splat_s8(0/-1)/vec_sld.
+ *  Larger values will be loaded as a quadword constant from the
+ *  read-only data (.rodata) section.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 9 | 1/cycle  |
+ *  |power9   | 5 - 9 | 2/cycle  |
+ *
+ *  @param sim a small signed integer const.
+ *  @return Vector with sim value extended to quadword.
+ */
+static inline vi128_t
+vec_splat_s128 (const int sim)
+{
+  vi128_t result;
+#ifdef _ARCH_PWR9
+  // TBD! No Vector Extend Sign Byte To Qword
+  // But does have VSX Vector Splat Immediate Byte (-128 -> 127)
+  if (__builtin_constant_p (sim) && ((sim >= -128) && (sim < 128)))
+    {
+      // Expect the compiler to generate a single xxspltib for this.
+      vi8_t vbi = vec_splats ((signed char) sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_sld().
+	  result = (vi128_t) vbi;
+	}
+      else
+	{
+	  if (__builtin_constant_p (sim) && (sim > 0))
+	    {
+	      const vui32_t q_zero = {0, 0, 0, 0};
+	      result = (vi128_t) vec_sld ((vi8_t) q_zero, vbi, 1);
+	    }
+	  else
+	    {
+	      const vui32_t q_ones = {-1, -1, -1, -1};
+	      result = (vi128_t) vec_sld ((vi8_t) q_ones, vbi, 1);
+	    }
+	}
+    }
+  else
+    result = vec_splats ((signed __int128) sim);
+#else
+  if (__builtin_constant_p (sim) && ((sim >= -16) && (sim < 16)))
+    {
+      vui32_t vwi = (vui32_t) vec_splat_s32(sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_sld().
+	  result = (vi128_t) vwi;
+	}
+      else
+	{
+	  if (__builtin_constant_p (sim) && (sim > 0))
+	    {
+	      const vui32_t q_zero = {0, 0, 0, 0};
+	      result = (vi128_t) vec_sld (q_zero, vwi, 4);
+	    }
+	  else
+	    {
+	      const vui32_t q_ones = {-1, -1, -1, -1};
+	      result = (vi128_t) vec_sld (q_ones, vwi, 4);
+	    }
+	}
+    }
+  else
+    result = vec_splats ((signed __int128) sim);
+#endif
+  return (result);
+}
+
+/** \brief Vector Splat Immediate Unsigned Quadword.
+ *  Extend a unsigned integer constant across the quadword
+ *  element of the result. This is the quadword equivalent of
+ *  Vector Splat Immediate Unsigned (Byte | Halfword |Word).
+ *
+ *  \note POWER9/10 will generate the instruction xxspltib
+ *  for byte values 0 to 255. Then we need to sign extent the byte
+ *  value using a const quadword 0 and vsldoi.
+ *  POWER8 (and earlier) does not have xxspltib but does have vspltisw.
+ *  For a smaller range (0 -> 15) POWER8 can use the sequence
+ *  vec_splat_s8(sim)/vec_splat_s8(0)/vec_sld.
+ *  Larger values will be loaded as a quadword constant from the
+ *  read-only data (.rodata) section.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 9 | 1/cycle  |
+ *  |power9   | 5 - 9 | 2/cycle  |
+ *
+ *  @param sim a small unsigned integer const.
+ *  @return Vector with sim value extended to quadword.
+ */
+static inline vui128_t
+vec_splat_u128 (const int sim)
+{
+  vui128_t result;
+#ifdef _ARCH_PWR9
+  // No Vector Extend Sign Byte To Qword
+  // But does have VSX Vector Splat Immediate Byte (0 -> 255)
+  if (__builtin_constant_p (sim) && ((sim >= 0) && (sim < 256)))
+    {
+      // Expect the compiler to generate a single xxspltib for this.
+      vui8_t vbi = vec_splats ((unsigned char) sim);
+
+      if (__builtin_constant_p (sim) && (sim == 0))
+	{
+	  // Special case for 0. Skip vec_sld().
+	  result = (vui128_t) vbi;
+	}
+      else
+	{
+	  if (__builtin_constant_p (sim) && (sim < 256))
+	    {
+	      const vui32_t q_zero = {0, 0, 0, 0};
+	      result = (vui128_t) vec_sld ((vui8_t) q_zero, vbi, 1);
+	    }
+	  else
+	    result = vec_splats ((unsigned __int128) sim);
+	}
+    }
+  else
+    result = vec_splats ((unsigned __int128) sim);
+#else
+  if (__builtin_constant_p (sim) && ((sim >= 0) && (sim < 16)))
+    {
+      const vui32_t q_zero = {0, 0, 0, 0};
+      vui32_t vwi = vec_splat_u32 (sim);
+
+      if (__builtin_constant_p (sim) && (sim == 0))
+	{
+	  // Special case for -1 and 0. Skip vec_unpackl().
+	  result = (vui128_t) vwi;
+	} else {
+	  result = (vui128_t) vec_sld (q_zero, vwi, 4);
+	}
+    }
+  else if (__builtin_constant_p (sim) && (sim == 128))
+    {
+      // Expect the compiler to generate vspltisw/vslb here.
+      vui8_t vbi = vec_splats ((unsigned char) 128);
+      // Extent left with 120-bits of 0
+      const vui32_t q_zero = {0, 0, 0, 0};
+      result = (vui128_t) vec_sld ((vui8_t) q_zero, vbi, 1);
+    }
+  else
+    result = vec_splats ((unsigned __int128) sim);
+#endif
+  return (result);
 }
 
 /** \brief Vector Shift Right Algebraic Quadword.

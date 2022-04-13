@@ -26,6 +26,123 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+// Attempts at better code to splat small QW constants.
+// Want to avoid addr calc and loads for what should be simple
+// splat immediate and sld.
+vi128_t
+__test_splatisq_16 (void)
+{
+  return vec_splat_s128 (-16);
+}
+
+vi128_t
+__test_splatisq_n1 (void)
+{
+  return vec_splat_s128 (-1);
+}
+
+vi128_t
+__test_splatisq_0 (void)
+{
+  return vec_splat_s128 (0);
+}
+
+vi128_t
+__test_splatisq_n1_V1 (void)
+{
+  const vui64_t q_ones = {-1, -1};
+  return (vi128_t) q_ones;
+}
+
+vi128_t
+__test_splatisq_n1_V0 (void)
+{
+  const vui32_t q_ones = {-1, -1, -1, -1};
+  return (vi128_t) q_ones;
+}
+
+vi128_t
+__test_splatisq_0_V0 (void)
+{
+  const vui32_t q_zero = {0, 0, 0, 0};
+  return (vi128_t) q_zero;
+}
+
+vui32_t
+__test_splatisq_signmask_V0 (void)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  return signmask;
+}
+
+vi128_t
+__test_splatisq_15_V2 (void)
+{
+  //  const vui32_t qw_15 = CONST_VINT128_W(0, 0, 0, 15);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t qw_15 = (vui32_t) vec_splat_s32(15);
+  return (vi128_t) vec_sld (q_zero, qw_15, 4);
+}
+
+vi128_t
+__test_splatisq_15_V1 (void)
+{
+  const vui128_t qw_15 = {15};
+  return (vi128_t) qw_15;
+}
+
+vi128_t
+__test_splatisq_15_V0 (void)
+{
+  const vui32_t qw_15 = CONST_VINT128_W(0, 0, 0, 15);
+  return (vi128_t) qw_15;
+}
+
+vi128_t
+__test_splatisq_15 (void)
+{
+  return vec_splat_s128 (15);
+}
+
+vi128_t
+__test_splatisq_127 (void)
+{
+  return vec_splat_s128 (127);
+}
+
+vui128_t
+__test_splatiuq_0 (void)
+{
+  return vec_splat_u128 (0);
+}
+
+vui128_t
+__test_splatiuq_15 (void)
+{
+  return vec_splat_u128 (15);
+}
+
+vui128_t
+__test_splatiuq_127 (void)
+{
+  return vec_splat_u128 (127);
+}
+
+vui128_t
+__test_splatiuq_128 (void)
+{
+  return vec_splat_u128 (128);
+}
+
+vui128_t
+__test_splatiuq_128_V0 (void)
+{
+  // Expect the compiler to generate vspltisw/vslb here.
+  vui8_t vbi = vec_splats ((unsigned char) 128);
+  const vui32_t q_zero = {0, 0, 0, 0};
+  return (vui128_t) vec_sld ((vui8_t) q_zero, vbi, 1);;
+}
+
 vi128_t
 __test_vec_abssq (vi128_t vra)
 {

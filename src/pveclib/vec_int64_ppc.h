@@ -612,6 +612,343 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  * delayed.
  * This keeps the POWER8 latency in the 19-28 cycle range.
  *
+ * \subsection i64_missing_ops_0_2_0 Loading small Doubleword constants
+ *
+ * Programming with vector doubleword integers will need doubleword
+ * constants for masking and arithmetic operations.
+ * Doubleword <I>splat</I> constants are common in vectorized long
+ * integer code for arithmetic, comparison, and mask operations.
+ * For example:
+ * \code
+  vui64_t
+  __test_incud_V0 (vui64_t vra)
+  {
+    // increament unsigned doubleword elements
+    return vra + 1;
+  }
+ * \endcode
+ * The endian sensitive macros from vec_common_ppc.h can be used
+ * to construct doubleword integer constants.
+ * For example:
+ * \code
+   const vui64_t dw_one = CONST_VINT64_DW(1, 1);
+   const vui64_t dw_ten = CONST_VINT64_DW(10, 10);
+   const vui64_t dw_sign_mask = (vui64_t) CONST_VINT128_W(0x80000000, 0x0,
+                                                          0x80000000, 0x0);
+ * \endcode
+ *
+ * In most cases this compiler will allocate these constant values to
+ * the read-only data (.rodata) section. When these constants are
+ * referenced in programming operations the compiler generates the
+ * appropriate vector loads.
+ * For example the GCC V11 generates the following for the
+ * <B>-mcpu=power8</B> target:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     addi    r9,r9,.rodata.cst16+0x30@toc@l
+     lvx     v0,0,r9	# Load { 1, 1 }
+     vaddudm v2,v2,v0	# vra + 1
+ * \endcode
+ * The addis/addi/lvx pattern is common to loading most vector constants
+ * for POWER8 and earlier.
+ *
+ * For some odd reason the compiler might generate the sequence:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     addi    r9,r9,.rodata.cst16+0x30@toc@l
+     rldicr  r9,r9,0,59
+     lxvd2x  vs0,0,r9
+     xxswapd vs0,vs0
+ * \endcode
+ * for <B>-mcpu=power8</B> ppc64le targets.
+ *
+ * The <I>Load VSX Vector Dword*2 Indexed (<B>lxvd2x</B>)</I> would be
+ * required if the compiler could not know that the data was quadword
+ * aligned. The <B>lxvd2x</B> instruction handles unaligned access but
+ * requires the <I>little endian adjustment</I> (xxswapd).
+ * However the compiler controls the allocation and alignment of vector
+ * constants in .rodata and already insures quadword alignment.
+ *
+ * \note This is has the look of a compiler phase error bug where
+ * important information is lost between compiler phases.
+ *
+ * For the <B>-mcpu=power9</B> (and later) target
+ * GCC uses the <I>Load VXS Vector (<B>lxv</B>)</I> instruction:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     addi    r9,r9,.rodata.cst16+0x30@toc@l
+     lxv     v2,0(r9)
+ * \endcode
+ * The first sequence is expected for POWER8 as PowerISA 2.07B does not
+ * have any displacement form (D-Form) vector (VSX) load/store
+ * instructions. The compiler allocates constants to the .rodata
+ * sections and the linker collects .rodata from object files into a
+ * combined executable .rodata section. This section is placed near the
+ * <I>Table of Contents (<B>TOC</B>)</I> section.
+ * The ABI dedicates R2 as the base address <B>.TOC.</B> for the TOC
+ * and adjacent sections.
+ *
+ * The <I>Add Immediate Shifted (addis)</I> <I>Add Immediate (addi)</I>
+ * sequence above computes a signed 32-bit <B>.TOC.</B>
+ * relative offset to a specific .rodata quadword. Two instructions are
+ * required as; <I>addis</I> provides the
+ * <I>high adjusted (<B>\@ha</B>)</I> 16-bits
+ * shifted left 16-bits, while <I>addi</I> provides the
+ * <I>low (<B>\@l</B>)</I> 16-bits.
+ * The sum of R2 and these immediate values is the 64-bit effective
+ * address of a .rodata constant value.
+ * A signed 32-bit offset is large enough to support most
+ * (<I>-mcmodel=medium</I>) program and library executables.
+ *
+ * The load itself has a 5-cycle latency assuming a L1 cache hit.
+ * The three instruction sequence is sequentially dependent
+ * and requires 9-cycles latency (minimum) to execute.
+ * A L1 cache miss will increase the latency by 7-28 cycles,
+ * assuming the data resides in the L2/L3 caches.
+ *
+ * \subsubsection int64_const_0_2_0 Optimizing loads from .rodata
+ *
+ * However the compiler is not following the recommendations of
+ * <a href="https://ibm.ent.box.com/s/jd5w15gz301s5b5dt375mshpq9c3lh4u">
+ * PowerISA 2.07B</a>, <I>Book II,
+ * Chapter 2.1 Performance-Optimized Instruction Sequences</I>.
+ * This chapter recommends a specific pattern for the addi/lvx sequence.
+ * For example:
+ * \code
+     addis   rA,r2,.rodata.cst16+0x30@toc@ha
+     addi    rx,0,.rodata.cst16+0x30@toc@l
+     lvx     v2,rA,rx
+ * \endcode
+ * In this case rx can be any GPR (including r0) while RA must be a
+ * valid base (r1 <-> r31) register.
+ *
+ * The POWER8 implementation allows for <I>Instruction Funsion</I> combining
+ * information from two <I>adjacent</I>t instructions into one (internal)
+ * instruction so that it executes faster than the non-fused case.
+ * Effectively the addi/lvx combination above becomes a D-Form
+ * load vector instruction.
+ *
+ * There are additional restrictions on the definition of
+ * <I>adjacent</I>:
+ * - The instruction must be in the same dispatch group.
+ *   - In single-threaded mode, up to six non-branch and up to two
+ *     branch instructions (6/2 groups).
+ *   - In multi-threaded mode, up to three non-branch and up to one
+ *     branch instructions (3/1 groups).
+ * - Without any intervening branch instructions.
+ * - Instructions may span an I-cache line,
+ *   with both lines fetched and residing in the i-buffer.
+ *
+ * This can reduce the latency from 9 to 7-cycles. This would be true
+ * even without <I>Instruction Funsion</I> as the addis/addi
+ * instructions are now independent and can execute in parallel.
+ *
+ * The sequence generated for POWER9 is even more disappointing.
+ * The lxv is a D-Form (DQ) instruction and the displacement operand
+ * could be used to replace the addi instruction.
+ * For example:
+ * <B>-mcpu=power9</B> target:
+ * \code
+     addis   r9,r2,.rodata.cst16+0x30@toc@ha
+     lxv     v2,.rodata.cst16+0x30@toc@l(r9)
+ * \endcode
+ * This provides the equivalent 32-bit TOC relative displacement with
+ * one less instructions and reduced latency of 7-cycles.
+ *
+ * \subsubsection int64_const_0_2_1 Alternatives to loading from .rodata
+ * This is all a little cumbersome and it seems like there should be
+ * a better/faster way. Any instruction sequence that loads quadword
+ * integer constants in:
+ * - three instruction or less,
+ * - latency of 6 cycles or less,
+ * - and avoids cache misses
+ *
+ * is a good deal.
+ *
+ * The base (Altivec) vector ISA included
+ * Vector Splat Immediate Signed Byte/Halfword/Word instructions.
+ * These are fast (2-cycle latency) and convenient for small integer
+ * constants in the range -16 to 15.
+ * So far the ISA has not added doubleword or quadword forms
+ * of <i>splat immediate</I>.
+ *
+ * POWER9 added a VSX Vector Splat Immediate Byte (xxspltib) instruction.
+ * This expands the immediate range to -128 to 127 but does not include
+ * larger element sizes. POWER9 does provide
+ * Vector Extend Sign Byte To Word/Doubleword (vextsb2w/vextsb2d)
+ * instructions. For example the two instruction sequence:
+ * \code
+     xxspltib vs34,127
+     vextsb2d v2,v2
+ * \endcode
+ * can generate a doubleword splat immediate for integers in the
+ * range -128 to 127 with a cycle latency of 5-cycles.
+ *
+ * \note POWER10 does add the interesting
+ * <I>VSX Vector Splat Immediate Double-Precision</I> instruction.
+ * This is a 64-bit instruction with a 32-bit single precision
+ * immediate operand. Interesting but not helpful for doubleword
+ * integer.
+ *
+ * \subsubsection int64_const_0_2_2 Some special quadword constants
+ * The GCC compiler does recognize some vector constants as special case.
+ * For example:
+ * \code
+vi128_t
+__test_splatisq_n1_V0 (void)
+{
+  const vui32_t q_ones = {-1, -1, -1, -1};
+  return (vi128_t) q_ones;
+}
+
+vi128_t
+__test_splatisq_0_V0 (void)
+{
+  const vui32_t q_zero = {0, 0, 0, 0};
+  return (vi128_t) q_zero;
+}
+ * \endcode
+ * will generate:
+ * \code
+0000000000000080 <__test_splatisq_n1_V0>:
+     vspltisw v2,-1
+     blr
+00000000000000a0 <__test_splatisq_0_V0>:
+     vspltisw v2,0
+     blr
+ * \endcode
+ * As we will see
+ * the all zero/ones constants are common building blocks.
+ * So the compiler should treat these as common sub expressions
+ * across all operations using those constants.
+ *
+ * \subsubsection int64_const_0_2_3 Defining our own vec_splat_s64
+ * So the compiler can do clever things with vector constants.
+ * But so far these are the only examples I have found.
+ * Other cases that you might expect to be a special case are not.
+ * For example:
+ * \code
+  vui64_t
+  __test_splatudi_15_V1 (void)
+  {
+    return vec_splats ((unsigned long long) 12);
+  }
+
+  vui64_t
+  __test_splatudi_15_V0 (void)
+  {
+    const vui64_t dw_15 = CONST_VINT64_DW(15, 15);
+    return dw_15;
+  }
+ * \endcode
+ * both generate the 3 instruction (9-cycle) load from .rodata sequence.
+ * Also constants using the vector long long or __int128 types may
+ * fail to compile on older versions of the compiler.
+ *
+ * We can generate small constants in the range -16 <-> 15 with using the
+ * following pattern:
+ * \code
+vi64_t
+__test_splatsdi_15_V1 (void)
+{
+  vi32_t vwi = vec_splat_s32 (15);
+  return vec_unpackl (vwi);
+}
+ * \endcode
+ * Which should generate:
+ * \code
+0000000000000040 <__test_splatisd_15_v2>:
+      vspltisw v2,15
+      vupklsw v2,v2
+      blr
+ * \endcode
+ * Here we use the vec_splat_s32(15) intrinsic to generate
+ * <I>Vector Splat Immediate Signed Word (<B>vspltisw</B>)</I>
+ * to splat the value 15 across word elements of  <I>vwi</I>.
+ * Then vec_unpackl (vwi) to generate
+ * <I>Vector Unpack Low Signed Word <B>vupklsw</B></I> which
+ * sign extends the 2 low words of <I>vwi</I> to signed doubleword
+ * elements.
+ * This sequence is only 2 instructions and
+ * will execute with 4-cycle latency.
+ *
+ * \note unfortunately GCC compilers after GCC-8 will recognize this
+ * sequence and convert it back to the three instruction .rodata load
+ * sequence.
+ * See:
+ * <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104124">
+ * GCC PR 104124</a>
+ * Until PR 104124 is fixed the following work-around is used
+ * for the PVECLIB implementation.
+ *
+ * Putting this all together we can create a static inline function
+ * to generate small doubleword constants (in the range -16 to 15).
+ * For example:
+ * \code
+static inline vi64_t
+vec_splat_s64_PWR8 (const int sim)
+{
+  vi64_t result;
+  if (__builtin_constant_p (sim) && ((sim >= -16) && (sim < 16)))
+    {
+      vi32_t vwi = vec_splat_s32 (sim);
+
+      if (__builtin_constant_p (sim) && ((sim == 0) || (sim == -1)))
+	{
+	  // Special case for -1 and 0. Skip vec_unpackl().
+	  result = (vi64_t) vwi;
+	} else {
+	  // For P8 can use either vupklsh or vupklsw but P7 only has
+	  // vupklsh. Given the reduced range, Either works here.
+	  // Unpack signed HW works here because immediate value fits
+	  // into the low HW and sign extends to high HW of each word.
+	  // Unpack will expand the low HW to low word and high HW
+	  // (sign extend) into the high word of each DW.
+	  // Unpack low/high (or endian) will not change the result.
+#if defined (__GNUC__) && (__GNUC__ == 8)
+	  // GCC 8 (AT12) handle this correctly.
+	  result = (vi64_t) vec_vupklsh ((vi16_t) vwi);
+#else
+	  // But GCC 9+ optimized the above to be load from .rodata.
+	  // With a little register pressure it adds some gratuitous store/reloads.
+	  // So the following work-around is required.
+	  __asm__(
+	      "vupklsh %0,%1;"
+	      : "=v" (result)
+	      : "v" (vwi)
+	      : );
+#endif
+	}
+    }
+  else
+    result = vec_splats ((signed long long) sim);
+
+  return (result);
+}
+ * \endcode
+ * This version uses only <altivec.h> intrinsics supported by POWER8
+ * and earlier.
+ * For constants in the range (-16 to 15) the range is divided into
+ * two groups:
+ * - Special values -1 and 0 that can be generated in a single instruction.
+ * - Values -16 to 15 that require the vwi constant to sign extend.
+ *
+ * Values outside this range use the vec_splats() intrinsic which will
+ * generate the appropriate quadword constant in .rodata and the load
+ * sequence to retrieve that value.
+ *
+ * For POWER9 and later we can use the vec_splats() intrinsic
+ * which (so far) generates the xxspltib/vextsb2d sequence for the
+ * constant range -128 to 127.
+ *
+ * \code
+static inline vi64_t
+vec_splat_s64_PWR9 (const int sim)
+{
+  return vec_splats ((signed long long) sim);
+}
+ * \endcode
+ *
  * \section i64_endian_issues_0_0 Endian problems with doubleword operations
  *
  * From the examples above we see that the construction of higher

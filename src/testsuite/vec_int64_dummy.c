@@ -136,15 +136,95 @@ __test_splatudi_12_V0 (void)
 }
 
 vui64_t
+__test_splatudi_15_V1 (void)
+{
+  return vec_splats ((unsigned long long) 12);
+}
+
+vui64_t
+__test_splatudi_15_V0 (void)
+{
+  const vui64_t dw_15 = CONST_VINT64_DW(15, 15);
+  return dw_15;
+}
+
+vui64_t
+__test_splatudi_10_V0 (void)
+{
+  return vec_splats ((unsigned long long) 10);
+}
+
+vui64_t
 __test_splatudi_0_V0 (void)
 {
   return vec_splats ((unsigned long long) 0);
 }
 
-vi64_t
+vui64_t
+__test_splatudi_1_V1 (void)
+{
+
+  return vec_splats ((unsigned long long) 1);
+}
+
+vui64_t
 __test_splatudi_1_V0 (void)
 {
+  const vui64_t dw_one = CONST_VINT64_DW(1, 1);
+  return dw_one;
+}
+
+vui64_t
+__test_splatudi_128_V1 (void)
+{
+
+  return vec_splats ((unsigned long long) 128);
+}
+
+vui64_t
+__test_splatudi_128_V0 (void)
+{
+  const vui64_t dw_one = CONST_VINT64_DW(128, 128);
+  return dw_one;
+}
+
+vui64_t
+__test_splatudi_smask_V0 (void)
+{
+  const vui64_t dw_sign_mask = (vui64_t) CONST_VINT128_W(0x80000000, 0x0,
+                                                         0x80000000, 0x0);
+  return dw_sign_mask;
+}
+
+vi64_t
+__test_splatudi_n1_V1 (void)
+{
   return vec_splats ((signed long long) -1);
+}
+
+vi64_t
+__test_splatudi_n1_V0 (void)
+{
+  const vi64_t dw_one = CONST_VINT64_DW(-1, -1);
+  return dw_one;
+}
+
+vui64_t
+__test_incud_V0 (vui64_t vra)
+{
+  return vra + 1;
+}
+
+vui32_t
+__test_incuw_V0 (vui32_t vra)
+{
+  return vra + 1;
+}
+
+vi64_t
+__test_incsd_V0 (vi64_t vra)
+{
+  return vra + 1;
 }
 
 vb64_t

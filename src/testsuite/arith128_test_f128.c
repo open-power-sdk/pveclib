@@ -6159,6 +6159,66 @@ test_extract_insert_f128 ()
   xpt = vec_xfer_vui64t_2_bin128 ( vf128_nnan );
   rc += check_f128 ("check vec_xsiexpqp 12", x, xp, xpt);
 
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  xp = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x =  ", x);
+  print_vfloat128x(" xp=  ", xp);
+#endif
+  exp = vec_xxxexpqpp (x, xp);
+  expt =  CONST_VINT128_DW(0x0000000000003fff, 0x0000000000007fff);
+  rc += check_vuint128x ("check vec_xsxexpqp 13", (vui128_t) exp, (vui128_t) expt);
+
+  return (rc);
+}
+int
+test_mask_f128 ()
+{
+  vui32_t exp, expt;
+  int rc = 0;
+
+  printf ("\ntest_mask_f128 ...\n");
+
+  exp = (vui32_t) vec_const64_f128_128();
+  expt =  CONST_VINT128_W (0, 128, 0, 128);
+  rc += check_vuint128x ("check vec_const64_f128_128 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = (vui32_t) vec_mask64_f128exp();
+  expt =  CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  rc += check_vuint128x ("check vec_mask64_f128exp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128exp();
+  expt =  CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  rc += check_vuint128x ("check vec_mask128_f128exp 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128mag();
+  expt =  CONST_VINT128_W (0x7fffffff, -1, -1, -1);
+  rc += check_vuint128x ("check vec_mask128_f128mag 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128sig();
+  expt =  CONST_VINT128_W (0x0000ffff, -1, -1, -1);
+  rc += check_vuint128x ("check vec_mask128_f128sig 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128sign();
+  expt =  CONST_VINT128_W (0x80000000, 0, 0, 0);
+  rc += check_vuint128x ("check vec_mask128_f128sign 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128Cbit();
+  expt =  CONST_VINT128_W (0x00020000, 0, 0, 0);
+  rc += check_vuint128x ("check vec_mask128_f128Cbit 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128Lbit();
+  expt =  CONST_VINT128_W (0x00010000, 0, 0, 0);
+  rc += check_vuint128x ("check vec_mask128_f128Lbit 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_mask128_f128Qbit();
+  expt =  CONST_VINT128_W (0x00008000, 0, 0, 0);
+  rc += check_vuint128x ("check vec_mask128_f128Qbit 1", (vui128_t) exp, (vui128_t) expt);
+
+  exp = vec_const128_f128_128();
+  expt =  CONST_VINT128_W (0, 0, 0, 128);
+  rc += check_vuint128x ("check vec_const128_f128_128 1", (vui128_t) exp, (vui128_t) expt);
+
   return (rc);
 }
 
@@ -16459,6 +16519,7 @@ test_add_qpo_xtra (void)
   return (rc);
 }
 
+#undef __DEBUG_PRINT__
 //#define __DEBUG_PRINT__ 1
 #ifdef __DEBUG_PRINT__
 #define test_xssubqpo(_l,_k)	db_vec_xssubqpo(_l,_k)
@@ -17534,6 +17595,7 @@ test_vec_f128 (void)
 
   printf ("\n%s\n", __FUNCTION__);
 
+  rc += test_mask_f128 ();
   rc += test_const_f128 ();
   rc += test_all_is_f128 ();
   rc += test_vec_bool_f128 ();

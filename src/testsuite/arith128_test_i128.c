@@ -6831,7 +6831,6 @@ test_splat_128 (void)
 {
   vui128_t ek, k;
   vi128_t  el, l;
-  vui32_t e;
   int rc = 0;
 
   printf ("\ntest_splat_128 Vector Splat Immediate Signed/Unsigned Quadword\n");

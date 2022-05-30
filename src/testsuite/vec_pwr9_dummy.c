@@ -40,6 +40,19 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui32_t
+test_mask128_f128sign_PWR9(void)
+{
+  return vec_mask128_f128sign ();
+}
+
+vui32_t
+test_mask128_f128sign_V0_PWR9(void)
+{
+  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  return signmask;
+}
+
 // Attempts at better code to splat small DW constants.
 // Want to avoid addr calc and loads for what should be simple
 // splat immediate and unpack.
@@ -909,6 +922,18 @@ test_xfer_bin128_2_vui32t_V0_PWR9 (__binary128 f128)
   return vunion.vx4;
 }
 
+vui64_t
+test_mrgh_bin128_2_vui64t_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_mrgh_bin128_2_vui64t (vfa, vfb) ;
+}
+
+vui64_t
+test_mrgl_bin128_2_vui64t_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  return vec_mrgl_bin128_2_vui64t (vfa, vfb) ;
+}
+
 vui32_t
 test_xfer_bin128_2_vui32t_PWR9 (__binary128 f128)
 {
@@ -925,6 +950,12 @@ __binary128
 test_xfer_vui32t_2_bin128_PWR9 (vui32_t f128)
 {
   return vec_xfer_vui32t_2_bin128 (f128);
+}
+
+vui64_t
+test_vec_xxxexpqpp_PWR9 (__binary128 f128a, __binary128 f128b)
+{
+  return vec_xxxexpqpp (f128a, f128b);
 }
 
 __binary128

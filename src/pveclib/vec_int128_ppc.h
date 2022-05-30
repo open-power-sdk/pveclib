@@ -411,7 +411,7 @@
  * In this case rx can be any GPR (including r0) while RA must be a
  * valid base (r1 <-> r31) register.
  *
- * The POWER8 implementation allows for <I>Instruction Funsion</I> combining
+ * The POWER8 implementation allows for <I>Instruction Fusion</I> combining
  * information from two <I>adjacent</I>t instructions into one (internal)
  * instruction so that it executes faster than the non-fused case.
  * Effectively the addi/lvx combination above becomes a D-Form
@@ -527,12 +527,31 @@ __test_splatisq_signmask_V0 (void)
      vsldoi  v2,v0,v2,12
      blr
  * \endcode
- * The first 2 instructions generate vector constants of all zeros and
- * all ones (same as above). The third instruction uses vector shift
+ * The first 2 instructions generate vector constants of
+ * <I>all zeros</I> and <I>all ones</I> (same as above).
+ * The third instruction uses vector shift
  * left word (vslw) to convert the word elements from 0xffffffff to
- * 0x80000000. The final vector shift left double octet immediate
- * shifts the last word of 0x80000000 in the high order word followed
- * by three words of 0x00000000 (a 1 bit followed by 127 bits of 0).
+ * 0x80000000.
+ *
+ * The cleaver bit is shifting elements of the <I>all ones</I>
+ * (0xffffffff or -1) vector, left by 31-bits (0b11111),
+ * which is the value of low order 5-bits
+ * of the <I>all ones</I> element.
+ * Fortunately the <B>vsl[bhw]</B> instructions ignores all but the
+ * lower order bits needed for the element shift count.
+ *
+ * \note
+ * This applies for element sizes byte, halfword and word. It also
+ * applies to doubleword elements on POWER8/9 using <B>vsld</B>
+ * but the compiler does not the recognize this case. And with
+ * POWER10 this technique applies to quadwords using <B>vslq</B>.
+ *
+ * To convert a word sign mask to a quadword sign mask we need the
+ * <I>all zeros</I> vector and one additional instruction. The
+ * Vector Shift Left Double by Octet Immediate (<B>vsldoi</B>)
+ * rotates the low-order signmask word element to the high order word
+ * with  3 words of '0' concatenated on the right.
+ *
  * The equivalent C language with <altivec.h> intrinsics
  * implementation is:
  * \code
@@ -585,7 +604,6 @@ __test_splatisq_15_V0 (void)
  * vector long long or __int128 types and <altivec.h> intrinsics.
  * Second the compiler may consider the vector long long constants as not
  * quadword aligned and generate lxvd2x/xxswapd instead of lvx.
- * Dumb and dumber.
  *
  * We can generate small constants in the range 1-15 with using the
  * following pattern:

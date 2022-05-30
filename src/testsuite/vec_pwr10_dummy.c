@@ -64,7 +64,7 @@ __test_splatudi_12_PWR10_v0 (void)
 }
 
 #if defined (_ARCH_PWR10) && (__GNUC__ > 11) \
-    || ((__GNUC__ == 11) && (__GNUC_MINOR__ > 2))
+    || ((__GNUC__ == 11) && (__GNUC_MINOR__ > 3))
 // New support defined in Power Vector Intrinsic Programming Reference.
 // Waiting for GCC 11.3?
 int

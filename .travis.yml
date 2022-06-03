@@ -94,6 +94,7 @@ matrix:
 before_install:
   - sudo add-apt-repository universe
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - if [ $PKG_CC = advance-toolchain-at15.0-devel ]; then sudo add-apt-repository -y "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0"; fi
   - sudo apt-get update
   - travis_wait 45 sudo apt-get -y install ${PKG_CC} doxygen graphviz
 

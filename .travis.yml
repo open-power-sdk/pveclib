@@ -50,6 +50,22 @@ matrix:
       env:
         - CFLAGS="-O3 -g -mcpu=power9"
         - PKG_CC="gcc-11"
+    - name: "linux-ppc64le-at15.0"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: /opt/at15.0/bin/gcc
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="advance-toolchain-at15.0-devel"
+    - name: "linux-ppc64le-p9-at15.0"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: /opt/at15.0/bin/gcc
+      env:
+        - CFLAGS="-O3 -g -mcpu=power9"
+        - PKG_CC="advance-toolchain-at15.0-devel"
     - name: "linux-ppc64le-clang-8"
       os: linux
       dist: bionic

@@ -50,6 +50,22 @@ matrix:
       env:
         - CFLAGS="-O3 -g -mcpu=power9"
         - PKG_CC="gcc-11"
+    - name: "linux-ppc64le-at15.0"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: /opt/at15.0/bin/gcc
+      env:
+        - CFLAGS="-O3 -g"
+        - PKG_CC="advance-toolchain-at15.0-devel"
+    - name: "linux-ppc64le-p9-at15.0"
+      os: linux
+      dist: focal
+      arch: ppc64le
+      compiler: /opt/at15.0/bin/gcc
+      env:
+        - CFLAGS="-O3 -g -mcpu=power9"
+        - PKG_CC="advance-toolchain-at15.0-devel"
     - name: "linux-ppc64le-clang-8"
       os: linux
       dist: bionic
@@ -78,6 +94,7 @@ matrix:
 before_install:
   - sudo add-apt-repository universe
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - if [ $PKG_CC = advance-toolchain-at15.0-devel ]; then sudo add-apt-repository -y "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0"; fi
   - sudo apt-get update
   - travis_wait 45 sudo apt-get -y install ${PKG_CC} doxygen graphviz
 

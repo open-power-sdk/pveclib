@@ -3827,6 +3827,765 @@ test_vec_mulqpo (__binary128 vfa, __binary128 vfb)
       : "v" (vfa), "v" (vfb)
       : );
 #endif
+  return result;
+#elif  defined (_ARCH_PWR7)
+  vui64_t q_exp, a_exp, b_exp, x_exp;
+  vui128_t q_sig, a_sig, b_sig, p_sig_h, p_sig_l, p_odd;
+  vui32_t q_sign, a_sign, b_sign;
+  vui128_t a_mag, b_mag;
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  //const vui64_t exp_naninf = (vui64_t) { 0x7fff, 0x7fff };
+  const vui64_t exp_naninf = vec_mask64_f128exp();
+  const vui32_t magmask = vec_mask128_f128mag();
+
+  // Vector extract the exponents from vfa, vfb
+  x_exp = vec_xxxexpqpp (vfa, vfb);
+  // Mask off sign bits so can use integers for magnitude compare.
+  a_mag = (vui128_t) vec_and_bin128_2_vui32t (vfa, magmask);
+  b_mag = (vui128_t) vec_and_bin128_2_vui32t (vfb, magmask);
+  a_sign = vec_andc_bin128_2_vui32t (vfa, magmask);
+  b_sign = vec_andc_bin128_2_vui32t (vfb, magmask);
+  q_sign = vec_xor (a_sign, b_sign);
+
+//  if (vec_all_isfinitef128 (vfa) && vec_all_isfinitef128 (vfb))
+  if (__builtin_expect (vec_cmpud_all_lt (x_exp, exp_naninf), 1))
+    {
+      const vui64_t exp_dnrm = (vui64_t) q_zero;
+      vui64_t exp_min, exp_one, exp_bias;
+      vui128_t p_tmp;
+      // const vui64_t exp_min, exp_one = { 1, 1 };
+      // exp_min = exp_one = vec_splat_u64 (1);
+      { // Extract the significands and insert the Hidden bit
+	//const vui32_t q_zero = CONST_VINT128_W(0, 0, 0, 0);
+	const vui32_t sigmask = vec_mask128_f128sig ();
+	vui32_t a_s32, b_s32;
+	vui16_t a_e16, b_e16, x_hidden;
+	vb16_t a_norm, b_norm;
+
+	//const vui32_t hidden = vec_mask128_f128Lbit();
+	x_hidden = vec_splat_u16(1);
+	// Assume that the operands are finite magnitudes
+	// Mask off the significands
+	// Applying sigmask to orignal inputs can save 2 cycles here
+	a_s32 = vec_and_bin128_2_vui32t (vfa, sigmask);
+	b_s32 = vec_and_bin128_2_vui32t (vfb, sigmask);
+	// But still need a/b_mag for exp extract to clear sign-bit
+	// Mask off the exponents in high halfword
+	a_e16 = (vui16_t) vec_andc ((vui32_t) a_mag, sigmask);
+	b_e16 = (vui16_t) vec_andc ((vui32_t) b_mag, sigmask);
+	// Compare exponents for finite i.e. > denomal (q_zero)
+	a_norm = vec_cmpgt (a_e16, (vui16_t) q_zero);
+	b_norm = vec_cmpgt (b_e16, (vui16_t) q_zero);
+	// For Normal QP insert (hidden) L-bit into significand
+	a_sig = (vui128_t) vec_sel ((vui16_t) a_s32, x_hidden, a_norm);
+	b_sig = (vui128_t) vec_sel ((vui16_t) b_s32, x_hidden, b_norm);
+      }
+
+      // Precondition the significands before multiply so that the
+      // high-order 114-bits (C,L,FRACTION) of the product are right
+      // adjusted in p_sig_h. And the Low-order 112-bits are left
+      // justified in p_sig_l.
+      // Logically this (multiply) step could be moved after the zero
+      // test. But this uses a lot of registers and the compiler may
+      // see this as register pressure and decide to spill and reload
+      // unrelated data around this block.
+      // The zero multiply is rare so on average performance is better
+      // if we get this started now.
+      a_sig = vec_slqi (a_sig, 8);
+      b_sig = vec_slqi (b_sig, 8);
+      p_sig_l = vec_muludq (&p_sig_h, a_sig, b_sig);
+
+      // check for zero significands in multiply
+      if (__builtin_expect (
+	    (vec_all_eq((vui32_t ) a_sig, (vui32_t ) q_zero)
+	  || vec_all_eq((vui32_t ) b_sig, (vui32_t ) q_zero)),
+	  0))
+	{ // Multiply by zero, return QP signed zero
+	  result = vec_xfer_vui32t_2_bin128 (q_sign);
+	  return result;
+	}
+
+      // const vui64_t exp_min, exp_one = { 1, 1 };
+      exp_min = exp_one = vec_splat_u64 (1);
+      //const vui64_t exp_bias = (vui64_t) { 0x3fff, 0x3fff };
+      exp_bias = (vui64_t) vec_srhi ((vui16_t) exp_naninf, 1);
+	{ // Compute product exponent q_exp
+	  // Operand exponents should >= Emin for computation
+	  vb64_t exp_mask;
+	  exp_mask = vec_cmpequd (x_exp, exp_dnrm);
+	  x_exp = vec_selud (x_exp, exp_min, (vb64_t) exp_mask);
+	  // sum exponents across x_exp
+	  q_exp = vec_addudm (x_exp, vec_swapd (x_exp));
+	  // Sum includes 2 x exp_bias, So subtract 1 x exp_bias
+	  q_exp = vec_subudm (q_exp, exp_bias);
+	}
+
+      // Check for carry; shift right 1 and adjust exp +1
+	{
+	  vb128_t carry_mask;
+	  vui128_t sig_h, sig_l;
+	  // Test Carry-bit (greater than L-bit)
+	  vui16_t sig_l_mask = vec_splat_u16(1);
+	  vui16_t t_sig = vec_splat ((vui16_t) p_sig_h, VEC_HW_H);
+	  carry_mask = (vb128_t) vec_cmpgt (t_sig, sig_l_mask);
+	  // Shift double quadword right 1 bit
+	  p_tmp = vec_sldqi (p_sig_h, p_sig_l, 120);
+	  sig_h = vec_srqi (p_sig_h, 1);
+	  sig_l = vec_slqi (p_tmp, 7);
+	  // Increment the exponent
+	  x_exp = vec_addudm (q_exp, exp_one);
+	  // Select original or normalized exp/sig
+	  p_sig_h = vec_seluq (p_sig_h, sig_h, carry_mask);
+	  p_sig_l = vec_seluq (p_sig_l, sig_l, carry_mask);
+	  q_exp = vec_selud (q_exp, x_exp, (vb64_t) carry_mask);
+	}
+
+      // There are two cases for denormal
+      // 1) The sum of unbiased exponents is less the E_min (tiny).
+      // 2) The significand is less then 1.0 (C and L-bits are zero).
+      //  2a) The exponent is > E_min
+      //  2b) The exponent is == E_min
+      //
+      q_sig = p_sig_h;
+      // Check for Tiny exponent
+      if (__builtin_expect (
+	  (vec_cmpsd_all_lt ((vi64_t) q_exp, (vi64_t) exp_min)), 0))
+	{
+	  //const vui64_t exp_128 = (vui64_t) { 128, 128 };
+	  const vui64_t exp_128 = vec_const64_f128_128();
+	  const vui64_t too_tiny = (vui64_t) { 116, 116 };
+	  // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
+	  vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	  vui32_t tmp;
+
+	  // Intermediate result is tiny, unbiased exponent < -16382
+	  //x_exp = vec_subudm ((vui64_t) exp_tiny, q_exp);
+	  x_exp = vec_subudm (exp_min, q_exp);
+
+	  if (vec_cmpud_all_gt ((vui64_t) x_exp, too_tiny))
+	    {
+	      // Intermediate result is too tiny, the shift will
+	      // zero the fraction and the GR-bit leaving only the
+	      // Sticky bit. The X-bit needs to include all bits
+	      // from p_sig_h and p_sig_l
+	      p_sig_l = vec_srqi (p_sig_l, 8);
+	      p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l,
+					   (vui32_t) p_sig_h);
+	      // generate a carry into bit-2 for any nonzero bits 3-127
+	      p_sig_l = vec_adduqm (p_sig_l, (vui128_t) xmask);
+	      q_sig = (vui128_t) q_zero;
+	      p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+	    }
+	  else
+	    { // Normal tiny, right shift may loose low order bits
+	      // from p_sig_l. So collect any 1-bits below GRX and
+	      // OR them into the X-bit, before the right shift.
+	      vui64_t l_exp;
+
+	      // Propagate low order bits into the sticky bit
+	      // GRX left adjusted in p_sig_l
+	      // Issolate bits below GDX (bits 3-128).
+	      tmp = vec_and ((vui32_t) p_sig_l, xmask);
+	      // generate a carry into bit-2 for any nonzero bits 3-127
+	      tmp = (vui32_t) vec_adduqm ((vui128_t) tmp, (vui128_t) xmask);
+	      // Or this with the X-bit to propagate any sticky bits into X
+	      p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l, tmp);
+	      p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+
+	      l_exp = vec_subudm (exp_128, x_exp);
+	      p_sig_l = vec_sldq (p_sig_h, p_sig_l, (vui128_t) l_exp);
+	      p_sig_h = vec_srq (p_sig_h, (vui128_t) x_exp);
+	      q_sig = p_sig_h;
+	    }
+	  // Set the exponent for denormal
+	  q_exp = exp_dnrm;
+	}
+      // Exponent is not tiny but significand may be denormal
+      // Isolate sig CL bits and compare
+      vui16_t t_sig = vec_splat ((vui16_t) p_sig_h, VEC_HW_H);
+      if (__builtin_expect ((vec_all_eq(t_sig, (vui16_t ) q_zero)), 0))
+	{
+	  // Is below normal range. This can happen when
+	  // multiplying a denormal by a normal.
+	  // So try to normalize the significand.
+	  //const vui64_t exp_15 = { 15, 15 };
+	  const vui64_t exp_15 = vec_splat_u64 (15);
+	  vui64_t c_exp, d_exp;
+	  vui128_t c_sig;
+	  vb64_t exp_mask;
+	  c_sig = vec_clzq (p_sig_h);
+	  c_exp = vec_splatd ((vui64_t) c_sig, VEC_DW_L);
+	  c_exp = vec_subudm (c_exp, exp_15);
+	  d_exp = vec_subudm (q_exp, exp_min);
+	  d_exp = vec_minud (c_exp, d_exp);
+	  exp_mask = vec_cmpgtud (q_exp, c_exp);
+
+	  // Intermediate result <= tiny, unbiased exponent <= -16382
+	  if (vec_cmpsd_all_gt ((vi64_t) q_exp, (vi64_t) exp_min))
+	    {
+	      // Try to normalize the significand.
+	      p_sig_h = vec_sldq (p_sig_h, p_sig_l, (vui128_t) d_exp);
+	      p_sig_l = vec_slq (p_sig_l, (vui128_t) d_exp);
+	      q_sig = p_sig_h;
+	      // Compare computed exp to shift count to normalize.
+	      //exp_mask = vec_cmpgtud (q_exp, c_exp);
+	      q_exp = vec_subudm (q_exp, d_exp);
+	      q_exp = vec_selud (exp_dnrm, q_exp, exp_mask);
+	    }
+	  else
+	    { // sig is denormal range (L-bit is 0). Set exp to zero.
+	      q_exp = exp_dnrm;
+	    }
+	}
+      // Merge sign early will not effect rounding for this mode
+      // q_ssig = vec_or ((vui32_t) q_sig, q_sign);
+      // Round to odd from lower product bits
+      p_odd = vec_addcuq (p_sig_l, (vui128_t) q_ones);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) p_odd);
+
+      // Check for exponent overflow -> __FLT128_MAX__ (round to odd)
+      if (__builtin_expect ((vec_cmpud_all_ge ( q_exp, exp_naninf)), 0))
+	{
+	  // Intermediate result is huge, unbiased exponent > 16383
+	  // so return __FLT128_MAX__ with the appropriate sign.
+	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
+	  return vec_xfer_vui32t_2_bin128 (f128_smax);
+	}
+      else // combine sign, exp, and significand for return
+	{
+	  // Merge sign, significand, and exponent into final result
+	  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+	  vui32_t tmp, t128;
+	  // convert DW exp_naninf to QW expmask
+	  vui32_t expmask = vec_sld ((vui32_t) exp_naninf, q_zero, 14);
+	  // convert q_exp from DW to QW for QP format
+	  tmp = vec_sld ((vui32_t) q_exp, q_zero, 14);
+	  t128 = vec_sel ((vui32_t) q_sig, tmp, expmask);
+	  result = vec_xfer_vui32t_2_bin128 (t128);
+	  return result;
+	}
+    }
+  else
+    { // One or both operands are NaN or Infinity
+      //const vui32_t q_nan = CONST_VINT128_W(0x00008000, 0, 0, 0);
+      vui32_t q_nan = vec_mask128_f128Qbit ();
+      vui32_t q_inf = vec_mask128_f128exp ();
+      // One or both operands are NaN
+      if (vec_all_isnanf128 (vfa))
+	{
+	  // vfa is NaN, Convert vfa to QNaN and return
+	  vui32_t vf128 = vec_or_bin128_2_vui32t (vfa, q_nan);
+	  return vec_xfer_vui32t_2_bin128 (vf128);
+	}
+      else if (vec_all_isnanf128 (vfb))
+	{
+	  // vfb is NaN, Convert vfb to QNaN and return
+	  vui32_t vf128 = vec_or_bin128_2_vui32t (vfb, q_nan);
+	  return vec_xfer_vui32t_2_bin128 (vf128);
+	}
+      else  // Or one or both operands are Infinity
+	{
+	  if (vec_cmpud_all_eq (x_exp, (vui64_t) exp_naninf))
+	    {
+	      // Infinity x Infinity == signed Infinity
+	      q_sig = (vui128_t) q_inf;
+	    }
+	  else
+	    {
+	      // One each Infinity/Finite value, check for 0.0
+	      if (vec_cmpuq_all_eq (a_mag, (vui128_t) q_zero)
+		  || vec_cmpuq_all_eq (b_mag, (vui128_t) q_zero))
+		{
+		      // Inifinty x Zero is Default Quiet NaN
+		      return vec_const_nanf128 ();
+		}
+	      else // an Infinity and a Nonzero finite number
+		{
+		      // Return Infinity with product sign.
+		      q_sig = (vui128_t) q_inf;
+		}
+	    }
+	    // Merge sign, exp/sig into final result
+	    q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+	    return vec_xfer_vui128t_2_bin128 (q_sig);
+	}
+    }
+#else
+  result = vfa * vfb;
+#endif
+  return result;
+}
+
+__binary128
+test_vec_mulqpo_V7 (__binary128 vfa, __binary128 vfb)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  // earlier GCC versions generate extra data moves for this.
+  result = __builtin_mulf128_round_to_odd (vfa, vfb);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xsmulqpo %0,%1,%2"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#endif
+#elif  defined (_ARCH_PWR7)
+  vui64_t q_exp, a_exp, b_exp, x_exp;
+  vui128_t q_sig, a_sig, b_sig, p_sig_h, p_sig_l, p_odd;
+  vui32_t q_sign, a_sign, b_sign;
+  // const vui64_t q_zero = { 0, 0 };
+  // const vui64_t q_zero = vec_splat_u64 (0);
+  // const vui64_t q_ones = { -1, -1 };
+  // const vui64_t q_ones = (vui64_t) vec_splat_s64 (-1);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  //const vui64_t exp_naninf = (vui64_t) { 0x7fff, 0x7fff };
+  const vui64_t exp_naninf = vec_mask64_f128exp();
+  const vui32_t magmask = vec_mask128_f128mag();
+  //vui32_t sigmask = vec_mask128_f128sig();
+
+#if 1
+  // Vector extract the exponents from vfa, vfb
+  x_exp = vec_xxxexpqpp (vfa, vfb);
+#else
+  a_exp = vec_xsxexpqp (vfa);
+  b_exp = vec_xsxexpqp (vfb);
+  x_exp = vec_mrgahd ((vui128_t) a_exp, (vui128_t) b_exp);
+#endif
+#if 1
+  // Mask off sign bits so can use integers for magnitude compare.
+  vui128_t a_mag, b_mag;
+  a_mag = (vui128_t) vec_and_bin128_2_vui32t (vfa, magmask);
+  b_mag = (vui128_t) vec_and_bin128_2_vui32t (vfb, magmask);
+  a_sign = vec_andc_bin128_2_vui32t (vfa, magmask);
+  b_sign = vec_andc_bin128_2_vui32t (vfb, magmask);
+#else
+  // const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  // vui32_t signmask = vec_mask128_f128sign();
+  a_sig = vec_xsxsigqp (vfa);
+  b_sig = vec_xsxsigqp (vfb);
+  a_sign = vec_and_bin128_2_vui32t (vfa, signmask);
+  b_sign = vec_and_bin128_2_vui32t (vfb, signmask);
+#endif
+  q_sign = vec_xor (a_sign, b_sign);
+
+//  if (vec_all_isfinitef128 (vfa) && vec_all_isfinitef128 (vfb))
+  if (__builtin_expect (vec_cmpud_all_lt (x_exp, exp_naninf), 1))
+    {
+      //const vui64_t exp_max = (vui64_t) { 0x7ffe, 0x7ffe };
+      const vui64_t exp_dnrm = (vui64_t) q_zero;
+//      vui32_t hidden = vec_mask128_f128Lbit();
+//      vui32_t a_norm, b_norm, x_norm;
+//      vui32_t a_s32, b_s32;
+//      vui32_t q_ssig;
+      vui64_t exp_min, exp_one, exp_bias;
+      vui128_t p_tmp;
+      // const vui64_t exp_min, exp_one = { 1, 1 };
+      // exp_min = exp_one = vec_splat_u64 (1);
+#if 1
+    { // Extract the significands and insert the Hidden bit
+      //const vui32_t q_zero = CONST_VINT128_W(0, 0, 0, 0);
+      const vui32_t sigmask = vec_mask128_f128sig ();
+      vui32_t a_s32, b_s32;
+      vui16_t a_e16, b_e16, x_hidden;
+      vb16_t a_norm, b_norm;
+
+      //const vui32_t hidden = vec_mask128_f128Lbit();
+      x_hidden = vec_splat_u16(1);
+      // Assume that the operands are finite magnitudes
+      // Mask off the significands
+#if 1
+      // Applying sigmask to orignal inputs can save 2 cycles here
+      a_s32 = vec_and_bin128_2_vui32t (vfa, sigmask);
+      b_s32 = vec_and_bin128_2_vui32t (vfb, sigmask);
+      // But still need a/b_mag for exp extract to clear sign-bit
+#else
+      a_s32 = vec_and ((vui32_t) a_mag, sigmask);
+      b_s32 = vec_and ((vui32_t) b_mag, sigmask);
+#endif
+      // Mask off the exponents in high halfword
+      a_e16 = (vui16_t) vec_andc ((vui32_t) a_mag, sigmask);
+      b_e16 = (vui16_t) vec_andc ((vui32_t) b_mag, sigmask);
+      // Compare exponents for finite i.e. > denomal (q_zero)
+      a_norm = vec_cmpgt (a_e16, (vui16_t) q_zero);
+      b_norm = vec_cmpgt (b_e16, (vui16_t) q_zero);
+      // For Normal QP insert (hidden) L-bit into significand
+      a_sig = (vui128_t) vec_sel ((vui16_t) a_s32, x_hidden, a_norm);
+      b_sig = (vui128_t) vec_sel ((vui16_t) b_s32, x_hidden, b_norm);
+    }
+#if 1
+#else
+      { // Extract the significands
+	const vui32_t hidden = vec_mask128_f128Lbit();
+	const  vui32_t sigmask = vec_mask128_f128sig();
+	vui32_t a_norm, b_norm, x_norm;
+	vui32_t a_s32, b_s32;
+	// Assume that the operands are finite
+	// Mask off the significands
+	a_s32 = vec_and ((vui32_t) a_mag, sigmask);
+	b_s32 = vec_and ((vui32_t) b_mag, sigmask);
+	// Assume that exponents are already extracted and merged
+	// Compare exponents for denormal, assume finite
+	x_norm = (vui32_t) vec_cmpgt ((vui32_t) x_exp, q_zero);
+	a_norm = vec_splat (x_norm, VEC_WE_1);
+	b_norm = vec_splat (x_norm, VEC_WE_3);
+	// For Normal QP insert (hidden) L-bit into significand
+	a_sig =  (vui128_t) vec_sel (a_s32, a_norm, hidden);
+	b_sig =  (vui128_t) vec_sel (b_s32, b_norm, hidden);
+	// exponents should >= Emin for computation
+	//x_exp = vec_selud (x_exp, exp_min, (vb64_t) x_norm);
+      }
+#endif
+#else
+      a_sig = vec_xsxsigqp (vfa);
+      b_sig = vec_xsxsigqp (vfb);
+#endif
+#if 0
+      // check for zero significands in multiply
+      if (__builtin_expect (
+	    (vec_all_eq((vui32_t ) a_mag, (vui32_t ) q_zero)
+	  || vec_all_eq((vui32_t ) b_mag, (vui32_t ) q_zero)),
+	  0))
+	{ // Multiply by zero, return QP signed zero
+	  result = vec_xfer_vui32t_2_bin128 (q_sign);
+	  return result;
+	}
+#endif
+
+      // Precondition the significands before multiply so that the
+      // high-order 114-bits (C,L,FRACTION) of the product are right
+      // adjusted in p_sig_h. And the Low-order 112-bits are left
+      // justified in p_sig_l.
+      // Logically this (multiply) step could be moved after the zero
+      // test. But this uses a lot of registers and the compiler may
+      // see this as register pressure and decide to spill and reload
+      // unrelated data around this block.
+      // The zero multiply is rare so on average performance is better
+      // if we get this started now.
+      a_sig = vec_slqi (a_sig, 8);
+      b_sig = vec_slqi (b_sig, 8);
+      p_sig_l = vec_muludq (&p_sig_h, a_sig, b_sig);
+
+#if 1
+      // check for zero significands in multiply
+      if (__builtin_expect (
+	    (vec_all_eq((vui32_t ) a_sig, (vui32_t ) q_zero)
+	  || vec_all_eq((vui32_t ) b_sig, (vui32_t ) q_zero)),
+	  0))
+	{ // Multiply by zero, return QP signed zero
+	  result = vec_xfer_vui32t_2_bin128 (q_sign);
+	  return result;
+	}
+#endif
+      // const vui64_t exp_min, exp_one = { 1, 1 };
+      exp_min = exp_one = vec_splat_u64 (1);
+#if 1
+      //const vui64_t exp_bias = (vui64_t) { 0x3fff, 0x3fff };
+      exp_bias = (vui64_t) vec_srhi ((vui16_t) exp_naninf, 1);
+#else
+      const vui64_t exp_bias = (vui64_t) { 0x3fff, 0x3fff };
+#endif
+	{ // Compute product exponent q_exp
+	  // Operand exponents should >= Emin for computation
+#if 1
+	  vb64_t exp_mask;
+	  exp_mask = vec_cmpequd (x_exp, exp_dnrm);
+	  x_exp = vec_selud (x_exp, exp_min, (vb64_t) exp_mask);
+#endif
+#if 1
+	  // sum exponents across x_exp
+	  q_exp = vec_addudm (x_exp, vec_swapd (x_exp));
+#else
+	  a_exp = vec_splatd (x_exp, VEC_DW_H);
+	  b_exp = vec_splatd (x_exp, VEC_DW_L);
+	  // sum exponents
+	  q_exp = vec_addudm (a_exp, b_exp);
+#endif
+	  q_exp = vec_subudm (q_exp, exp_bias);
+	}
+
+      // Check for carry and adjust exp +1
+	{
+	  vb128_t carry_mask;
+	  vui128_t sig_h, sig_l;
+	  // Test Carry-bit (greater than L-bit)
+	  vui16_t sig_l_mask = vec_splat_u16(1);
+	  vui16_t t_sig = vec_splat ((vui16_t) p_sig_h, VEC_HW_H);
+	  carry_mask = (vb128_t) vec_cmpgt (t_sig, sig_l_mask);
+	  // Shift double quadword right 1 bit
+	  p_tmp = vec_sldqi (p_sig_h, p_sig_l, 120);
+	  sig_h = vec_srqi (p_sig_h, 1);
+	  sig_l = vec_slqi (p_tmp, 7);
+	  // Increment the exponent
+	  x_exp = vec_addudm (q_exp, exp_one);
+	  // Select original or normalized exp/sig
+	  p_sig_h = vec_seluq (p_sig_h, sig_h, carry_mask);
+	  p_sig_l = vec_seluq (p_sig_l, sig_l, carry_mask);
+	  q_exp = vec_selud (q_exp, x_exp, (vb64_t) carry_mask);
+	}
+      // There are two cases for denormal
+      // 1) The sum of unbiased exponents is less the E_min (tiny).
+      // 2) The significand is less then 1.0 (C and L-bits are zero).
+      //  2a) The exponent is > E_min
+      //  2b) The exponent is == E_min
+      //
+      q_sig = p_sig_h;
+      // Check for Tiny exponent
+      if (__builtin_expect (
+	  (vec_cmpsd_all_lt ((vi64_t) q_exp, (vi64_t) exp_min)), 0))
+	{
+	  //const vui64_t exp_128 = (vui64_t) { 128, 128 };
+	  const vui64_t exp_128 = vec_const64_f128_128();
+	  const vui64_t too_tiny = (vui64_t) { 116, 116 };
+	  // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
+	  vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	  vui32_t tmp;
+
+	  // Intermediate result is tiny, unbiased exponent < -16382
+	  //x_exp = vec_subudm ((vui64_t) exp_tiny, q_exp);
+	  x_exp = vec_subudm (exp_min, q_exp);
+
+	  if (vec_cmpud_all_gt ((vui64_t) x_exp, too_tiny))
+	    {
+	      // Intermediate result is too tiny, the shift will
+	      // zero the fraction and the GR-bit leaving only the
+	      // Sticky bit. The X-bit needs to include all bits
+	      // from p_sig_h and p_sig_l
+	      p_sig_l = vec_srqi (p_sig_l, 8);
+	      p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l,
+					   (vui32_t) p_sig_h);
+	      // generate a carry into bit-2 for any nonzero bits 3-127
+	      p_sig_l = vec_adduqm (p_sig_l, (vui128_t) xmask);
+	      q_sig = (vui128_t) q_zero;
+	      p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+	    }
+	  else
+	    { // Normal tiny, right shift may loose low order bits
+	      // from p_sig_l. So collect any 1-bits below GRX and
+	      // OR them into the X-bit, before the right shift.
+	      vui64_t l_exp;
+
+	      // Propagate low order bits into the sticky bit
+	      // GRX left adjusted in p_sig_l
+	      // Issolate bits below GDX (bits 3-128).
+	      tmp = vec_and ((vui32_t) p_sig_l, xmask);
+	      // generate a carry into bit-2 for any nonzero bits 3-127
+	      tmp = (vui32_t) vec_adduqm ((vui128_t) tmp, (vui128_t) xmask);
+	      // Or this with the X-bit to propagate any sticky bits into X
+	      p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l, tmp);
+	      p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+
+	      l_exp = vec_subudm (exp_128, x_exp);
+	      p_sig_l = vec_sldq (p_sig_h, p_sig_l, (vui128_t) l_exp);
+	      p_sig_h = vec_srq (p_sig_h, (vui128_t) x_exp);
+	      q_sig = p_sig_h;
+	    }
+	  // Set the exponent for denormal
+	  q_exp = exp_dnrm;
+	}
+      // Exponent is not tiny but significand may be denormal
+      // Isolate sig CL bits and compare
+      vui16_t t_sig = vec_splat ((vui16_t) p_sig_h, VEC_HW_H);
+      if (__builtin_expect ((vec_all_eq(t_sig, (vui16_t ) q_zero)), 0))
+	{
+	  // Is below normal range. This can happen when
+	  // multiplying a denormal by a normal.
+	  // So try to normalize the significand.
+	  //const vui64_t exp_15 = { 15, 15 };
+	  const vui64_t exp_15 = vec_splat_u64 (15);
+	  vui64_t c_exp, d_exp;
+	  vui128_t c_sig;
+	  vb64_t exp_mask;
+	  c_sig = vec_clzq (p_sig_h);
+	  c_exp = vec_splatd ((vui64_t) c_sig, VEC_DW_L);
+	  c_exp = vec_subudm (c_exp, exp_15);
+	  d_exp = vec_subudm (q_exp, exp_min);
+	  d_exp = vec_minud (c_exp, d_exp);
+	  exp_mask = vec_cmpgtud (q_exp, c_exp);
+
+	  // Intermediate result <= tiny, unbiased exponent <= -16382
+	  if (vec_cmpsd_all_gt ((vi64_t) q_exp, (vi64_t) exp_min))
+	    {
+	      // Try to normalize the significand.
+	      p_sig_h = vec_sldq (p_sig_h, p_sig_l, (vui128_t) d_exp);
+	      p_sig_l = vec_slq (p_sig_l, (vui128_t) d_exp);
+	      q_sig = p_sig_h;
+	      // Compare computed exp to shift count to normalize.
+	      //exp_mask = vec_cmpgtud (q_exp, c_exp);
+	      q_exp = vec_subudm (q_exp, d_exp);
+	      q_exp = vec_selud (exp_dnrm, q_exp, exp_mask);
+	    }
+	  else
+	    { // sig is denormal range (L-bit is 0). Set exp to zero.
+	      q_exp = exp_dnrm;
+	    }
+	}
+      // Merge sign early will not effect rounding for this mode
+      // q_ssig = vec_or ((vui32_t) q_sig, q_sign);
+      // Round to odd from lower product bits
+      p_odd = vec_addcuq (p_sig_l, (vui128_t) q_ones);
+      q_sig = (vui128_t) vec_or ((vui32_t) q_sig, (vui32_t) p_odd);
+
+      // Check for exponent overflow -> __FLT128_MAX__ (round to odd)
+#if 1
+      if (__builtin_expect ((vec_cmpud_all_ge ( q_exp, exp_naninf)), 0))
+#else
+      //if  (vec_cmpud_all_gt ( q_exp, exp_max))
+      if (__builtin_expect ((vec_cmpud_all_gt (q_exp, exp_max)), 0))
+#endif
+	{
+	  // Intermediate result is huge, unbiased exponent > 16383
+	  // so return __FLT128_MAX__ with the appropriate sign.
+	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
+	  return vec_xfer_vui32t_2_bin128 (f128_smax);
+	}
+      else
+	{
+	  // Merge sign, significand, and exponent into final result
+	  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+    #if 1
+	  vui32_t tmp, t128;
+	  // convert DW exp_naninf to QW expmask
+	  vui32_t expmask = vec_sld ((vui32_t) exp_naninf, q_zero, 14);
+	  // convert q_exp from DW to QW for QP format
+	  tmp = vec_sld ((vui32_t) q_exp, q_zero, 14);
+	  t128 = vec_sel ((vui32_t) q_sig, tmp, expmask);
+	  result = vec_xfer_vui32t_2_bin128 (t128);
+    #else
+	  result = vec_xsiexpqp (q_sig, q_exp);
+    #endif
+	  return result;
+	}
+    }
+  else
+    { // One or both operands are NaN or Infinity
+#if 1
+      //const vui32_t q_nan = CONST_VINT128_W(0x00008000, 0, 0, 0);
+      vui32_t q_nan = vec_mask128_f128Qbit ();
+      // One or both operands are NaN
+      if (vec_all_isnanf128 (vfa))
+	{
+	  // vfa is NaN, Convert vfa to QNaN and return
+	  vui32_t vf128 = vec_or_bin128_2_vui32t (vfa, q_nan);
+	  return vec_xfer_vui32t_2_bin128 (vf128);
+	}
+      else if (vec_all_isnanf128 (vfb))
+	{
+	  // vfb is NaN, Convert vfb to QNaN and return
+	  vui32_t vf128 = vec_or_bin128_2_vui32t (vfb, q_nan);
+	  return vec_xfer_vui32t_2_bin128 (vf128);
+	}
+      else  // Or one or both operands are Infinity
+	{
+	  vui128_t a_mag, b_mag;
+	  const vui32_t magmask = vec_mask128_f128mag();
+	  a_mag = (vui128_t) vec_and_bin128_2_vui32t (vfa, magmask);
+	  b_mag = (vui128_t) vec_and_bin128_2_vui32t (vfb, magmask);
+	  a_exp = vec_splatd (x_exp, VEC_DW_H);
+	  // b_exp = vec_splatd (x_exp, VEC_DW_L);
+	  if (vec_cmpud_all_eq (x_exp, (vui64_t) exp_naninf))
+	    {
+	      // Infinity x Infinity == signed Infinity
+	      //q_sign = vec_xor (a_sign, b_sign);
+	      q_exp = x_exp;
+	      q_sig = (vui128_t) q_zero;
+	    }
+	  else
+	    {
+	      // One Infinity and finite value, check for 0.0
+	      if (vec_cmpuq_all_eq (a_mag, (vui128_t) q_zero)
+		  || vec_cmpuq_all_eq (b_mag, (vui128_t) q_zero))
+		{
+		      // Inifinty x Zero is Default Quiet NaN
+		      return vec_const_nanf128 ();
+		}
+	      else // an Infinity and a Nonzero finite number
+		{
+		      // Return Infinity with product sign.
+		      q_exp = exp_naninf;
+		      //q_sign = vec_xor (a_sign, b_sign);
+		      q_sig = (vui128_t) q_zero;
+		}
+	    }
+	}
+#else
+      //const vui32_t q_nan = CONST_VINT128_W(0x00008000, 0, 0, 0);
+      const vui32_t q_nan = vec_mask128_f128Qbit ();
+      a_exp = vec_splatd (x_exp, VEC_DW_H);
+      //b_exp = vec_splatd (x_exp, VEC_DW_L);
+      if (vec_cmpuq_all_eq (a_sig, (vui128_t) q_zero)
+	  && vec_cmpuq_all_eq (b_sig, (vui128_t) q_zero))
+	{
+	  // Both operands either infinity or zero
+	  if (vec_cmpud_any_eq (x_exp, (vui64_t) q_zero))
+	    {
+	      // Inifinty x Zero is Default Quiet NaN
+	      return vec_const_nanf128 ();
+	    }
+	  else
+	    {
+	      // Infinity x Infinity == signed Infinity
+	      //q_sign = vec_xor (a_sign, b_sign);
+	      q_exp = a_exp;
+	      q_sig = a_sig;
+	    }
+	}
+      else
+	{
+	  // One or both operands are NaN
+	  if (vec_all_isnanf128 (vfa))
+	    {
+	      // vfa is NaN, Convert vfa to QNaN and return
+	      vui32_t vf128 = vec_or_bin128_2_vui32t (vfa, q_nan);
+	      return vec_xfer_vui32t_2_bin128 (vf128);
+	    }
+	  else if (vec_all_isnanf128 (vfb))
+	    {
+	      // vfb is NaN, Convert vfb to QNaN and return
+	      vui32_t vf128 = vec_or_bin128_2_vui32t (vfb, q_nan);
+	      return vec_xfer_vui32t_2_bin128 (vf128);
+	    }
+	  else  // OR an Infinity and a Nonzero finite number
+	    {
+	      // Return Infinity with product sign.
+	      q_exp = exp_naninf;
+	      //q_sign = vec_xor (a_sign, b_sign);
+	      q_sig = (vui128_t) q_zero;
+	    }
+	}
+#endif
+    }
+  // Merge sign, significand, and exponent into final result
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  result = vec_xsiexpqp (q_sig, q_exp);
+#else
+  result = vfa * vfb;
+#endif
+  return result;
+}
+
+__binary128
+test_vec_mulqpo_V6 (__binary128 vfa, __binary128 vfb)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  // earlier GCC versions generate extra data moves for this.
+  result = __builtin_mulf128_round_to_odd (vfa, vfb);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xsmulqpo %0,%1,%2"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#endif
 #elif  defined (_ARCH_PWR7)
   vui64_t q_exp, a_exp, b_exp, x_exp;
   vui128_t q_sig, a_sig, b_sig, p_sig_h, p_sig_l, p_odd;
@@ -7424,6 +8183,104 @@ test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
 }
 #endif
 #endif
+
+vui64_t
+test_vec_xxxsigqpp_V3 (vui128_t a_mag, vui128_t b_mag)
+{
+  vui128_t a_sig, b_sig;
+  { // Extract the significands and insert the Hidden bit
+        const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+	//const vui32_t hidden = vec_mask128_f128Lbit();
+	const  vui32_t sigmask = vec_mask128_f128sig();
+	vui32_t a_s32, b_s32;
+	vui16_t a_e16, b_e16, x_hidden;
+	vb16_t a_norm, b_norm;
+
+	x_hidden = vec_splat_u16 (1);
+	// Assume that the operands are finite magnitudes
+	// Mask off the significands
+	a_s32 = vec_and ((vui32_t) a_mag, sigmask);
+	b_s32 = vec_and ((vui32_t) b_mag, sigmask);
+	// Mask off the exponents in high halfword
+	a_e16 = (vui16_t) vec_andc ((vui32_t) a_mag, sigmask);
+	b_e16 = (vui16_t) vec_andc ((vui32_t) b_mag, sigmask);
+	// Compare exponents for finite i.e. > denomal (q_zero)
+	a_norm = vec_cmpgt (a_e16, (vui16_t) q_zero);
+	b_norm = vec_cmpgt (b_e16, (vui16_t) q_zero);
+	// For Normal QP insert (hidden) L-bit into significand
+	a_sig =  (vui128_t) vec_sel ((vui16_t) a_s32, x_hidden, a_norm);
+	b_sig =  (vui128_t) vec_sel ((vui16_t) b_s32, x_hidden, b_norm);
+  }
+  return vec_mrgahd (a_sig, b_sig);
+}
+
+vui64_t
+test_vec_xxxsigqpp_V2 (vui128_t a_mag, vui128_t b_mag)
+{
+  vui128_t a_sig, b_sig;
+  { // Extract the significands
+        const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+	const vui32_t hidden = vec_mask128_f128Lbit();
+	const  vui32_t sigmask = vec_mask128_f128sig();
+	vui32_t a_norm, b_norm, x_norm;
+	vui32_t a_s32, b_s32;
+	vui32_t a_e32, b_e32;
+	// Assume that the operands are finite
+	// Mask off the significands
+	a_s32 = vec_and ((vui32_t) a_mag, sigmask);
+	b_s32 = vec_and ((vui32_t) b_mag, sigmask);
+	// Mask off the exponents
+	a_e32 = vec_andc ((vui32_t) a_mag, sigmask);
+	b_e32 = vec_andc ((vui32_t) b_mag, sigmask);
+	// Assume that exponents are already extracted and merged
+	// Compare exponents for denormal, assume finite
+	a_norm = (vui32_t) vec_cmpgt (a_e32, q_zero);
+	b_norm = (vui32_t) vec_cmpgt (b_e32, q_zero);
+	// For Normal QP insert (hidden) L-bit into significand
+	a_sig =  (vui128_t) vec_sel (a_s32, a_norm, hidden);
+	b_sig =  (vui128_t) vec_sel (b_s32, b_norm, hidden);
+	// exponents should >= Emin for computation
+	//x_exp = vec_selud (x_exp, exp_min, (vb64_t) x_norm);
+  }
+  return vec_mrgahd (a_sig, b_sig);
+}
+
+vui64_t
+test_vec_xxxsigqpp_V1 (vui128_t a_mag, vui128_t b_mag, vui64_t x_exp)
+{
+  vui128_t a_sig, b_sig;
+  { // Extract the significands
+        const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+	const vui32_t hidden = vec_mask128_f128Lbit();
+	const  vui32_t sigmask = vec_mask128_f128sig();
+	vui32_t a_norm, b_norm, x_norm;
+	vui32_t a_s32, b_s32;
+	// Assume that the operands are finite
+	// Mask off the significands
+	a_s32 = vec_and ((vui32_t) a_mag, sigmask);
+	b_s32 = vec_and ((vui32_t) b_mag, sigmask);
+	// Assume that exponents are already extracted and merged
+	// Compare exponents for denormal, assume finite
+	x_norm = (vui32_t) vec_cmpgt ((vui32_t) x_exp, q_zero);
+	a_norm = vec_splat (x_norm, VEC_WE_1);
+	b_norm = vec_splat (x_norm, VEC_WE_3);
+	// For Normal QP insert (hidden) L-bit into significand
+	a_sig =  (vui128_t) vec_sel (a_s32, a_norm, hidden);
+	b_sig =  (vui128_t) vec_sel (b_s32, b_norm, hidden);
+	// exponents should >= Emin for computation
+	//x_exp = vec_selud (x_exp, exp_min, (vb64_t) x_norm);
+  }
+  return vec_mrgahd (a_sig, b_sig);
+}
+
+vui64_t
+test_vec_xxxsigqpp_V0 (__binary128 f128a, __binary128 f128b)
+{
+  vui128_t a_sig, b_sig;
+  a_sig = vec_xsxsigqp (f128a);
+  b_sig = vec_xsxsigqp (f128b);
+  return vec_mrgahd (a_sig, b_sig);
+}
 
 vui64_t
 test_vec_xxxexpqpp (__binary128 f128a, __binary128 f128b)

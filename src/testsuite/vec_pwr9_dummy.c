@@ -1507,6 +1507,65 @@ __test_mulhuq2_PWR9 (vui128_t a, vui128_t b)
 }
 
 vui128_t
+__test_muludq_karatsuba_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui64_t tax, tbx;
+  vui128_t thq, tlq, tx;
+  vui128_t t0l, tc1;
+  vui128_t thh, thl, tlh, tll;
+  vui128_t t, tmq;
+#if 1
+  // Karatsuba Step A, B, C
+  thh = vec_vmuleud ((vui64_t) a, (vui64_t) b);
+  tll = vec_vmuloud ((vui64_t) a, (vui64_t) b);
+  // Step D add a/b across
+  tax = vec_swapd ((vui64_t) a);
+  tbx = vec_swapd ((vui64_t) b);
+  tax = vec_addudm ((vui64_t) a, tax);
+  tbx = vec_addudm ((vui64_t) b, tbx);
+  // Step E
+  thl = vec_vmuloud (tax, tbx);
+  // Step F
+  tlh = vec_adduqm (thh, tll);
+  tlh = vec_subuqm (thl, tlh);
+  // Step G
+  t = vec_srqi (tlh, 64);
+  tmq = vec_slqi (tlh, 64);
+  tc1 = vec_addcuq (tmq, tll);
+  tmq = vec_adduqm (tmq, tll);
+  t = vec_addeuqm (t, thh, tc1);
+
+#else
+  /* multiply the low 64-bits of a and b.  For PWR9 this is just
+   * vmsumudm with conditioned inputs.  */
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  thl = vec_vmuloud (a_swap, (vui64_t)b);
+  tlh = vec_vmuleud (a_swap, (vui64_t)b);
+  /* sum the two middle products (plus the high 64-bits of the low
+   * product.  This will generate a carry that we need to capture.  */
+  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  tc1 = vec_addcuq (thl, tlh);
+  tx   = vec_adduqm (thl, tlh);
+  tx   = vec_adduqm (tx, t0l);
+  /* result = t[l] || tll[l].  */
+  tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
+  /* Sum the high product plus the high sum (with carry) of middle
+   * partial products.  This can't overflow.  */
+  thq = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) tx, 2);
+  thq = vec_adduqm ( thh, thq);
+
+  t = (vui32_t) thq;
+  tmq = (vui32_t) tlq;
+#endif
+
+  *mulu = (vui128_t) t;
+  return ((vui128_t) tmq);
+}
+
+vui128_t
 test_vec_cmul10cuq_256_PWR9 (vui128_t *p, vui128_t a, vui128_t a2, vui128_t cin)
 {
   vui128_t k, j;

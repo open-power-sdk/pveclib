@@ -224,37 +224,37 @@ test_cosf128 (__binary128 value)
 #endif
 
 vb128_t
-_test_f128_isinff128 (__Float128 value)
+_test_f128_isinff128 (__binary128 value)
 {
   return (vec_isinff128 (value));
 }
 
 int
-_test_f128_isinf_sign (__Float128 value)
+_test_f128_isinf_sign (__binary128 value)
 {
   return (vec_isinf_signf128 (value));
 }
 
 vb128_t
-_test_f128_isnan (__Float128 value)
+_test_f128_isnan (__binary128 value)
 {
   return (vec_isnanf128 (value));
 }
 
 vb128_t
-_test_pred_f128_finite (__Float128 value)
+_test_pred_f128_finite (__binary128 value)
 {
   return (vec_isfinitef128 (value));
 }
 
 vb128_t
-_test_pred_f128_normal (__Float128 value)
+_test_pred_f128_normal (__binary128 value)
 {
   return (vec_isnormalf128 (value));
 }
 
 vb128_t
-_test_pred_f128_subnormal (__Float128 value)
+_test_pred_f128_subnormal (__binary128 value)
 {
   return (vec_issubnormalf128 (value));
 }
@@ -274,31 +274,31 @@ _test_xfer_bin128_2_vui16t (__binary128 f128)
 // __clang__ has a bug whenever -mfloat128 is enabled, maybe clang 10.0.1
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 int
-test_gcc_f128_signbit (__Float128 value)
+test_gcc_f128_signbit (__binary128 value)
   {
     return (signbit(value));
   }
 
 int
-test_gcc_f128_isinf (__Float128 value)
+test_gcc_f128_isinf (__binary128 value)
   {
     return (isinf(value));
   }
 
 int
-test_gcc_float128_isnan (__Float128 value)
+test_gcc_float128_isnan (__binary128 value)
   {
     return (isnan(value));
   }
 
-__Float128
-test_gcc_f128_copysign (__Float128 valx, __Float128 valy)
+__binary128
+test_gcc_f128_copysign (__binary128 valx, __binary128 valy)
   {
     return (__builtin_copysignf128(valx, valy));
   }
 
 int
-test_glibc_f128_classify (__Float128 value)
+test_glibc_f128_classify (__binary128 value)
   {
     if (isfinite(value))
     return 1;

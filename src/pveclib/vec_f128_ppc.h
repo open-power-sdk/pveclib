@@ -195,12 +195,31 @@ test_cosf128 (__binary128 value)
    -mcu=power9 and -mfloat128.
    So far clang does not support/define the __ibm128 type. */
 #ifdef __FLOAT128__
-typedef __float128 __Float128;
+#ifndef __clang__
+// For now assume the not __clang__ implies GCC
+// Can't just #ifdef __GNUC__ as Clang defined it
+#ifdef __float128
+// Can assume GCC 7 or later so ...
+// That version defines __ieee128 internally and
+// #defines __float128 to __ieee128, so both are defined
+// Define __binary128 so both GCC and CLang can use a single type
+#define __binary128 __ieee128
+#else
+// Assume GCC 6 or earlier
+// So the compiler defines __float128 only
 typedef __float128 __binary128;
 typedef __float128 __ieee128;
-#ifndef __clang__
+#endif
+#if (__GNUC__ < 7)
+typedef __float128 _Float128;
+#endif
 typedef __ibm128 __IBM128;
 #else
+/* Clang started defining __FLOAT128__ and does not allow redefining
+   __float128 or __ieee128. Worse it will give errors if you try to
+   use either type. So define __binary128 as if __FLOAT128__ is not
+   defined. */
+typedef vui128_t __binary128;
 /* Clang does not define __ibm128 over IBM long double.
    So defined it here. */
 typedef long double __IBM128;

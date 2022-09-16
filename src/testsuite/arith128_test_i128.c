@@ -2308,7 +2308,8 @@ test_msumudm (void)
 int
 test_muludq (void)
 {
-  vui32_t i, j, k, l /*, m*/;
+  vui32_t i, j, k/*, l , m*/;
+  vui128_t l;
   vui32_t e, ec;
   int rc = 0;
 
@@ -2383,7 +2384,8 @@ test_muludq (void)
 int
 test_madduq (void)
 {
-  vui32_t i, j, k, l, m, n;
+  vui32_t i, j, k, m, n;
+  vui128_t l;
   vui32_t e, ec;
   int rc = 0;
 

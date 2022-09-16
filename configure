@@ -13430,7 +13430,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
+# remove AC_PROG_LIBTOOL for autotools 2.71
 
 # This directive is to avoid buggy libtool that doesn't add the '-Wl,--no-as-needed'
 # directive in the correct position of LDFLAGS

@@ -1186,7 +1186,7 @@ test_float_cpsgn (void)
 
   i = (vf32_t) { 0.0, -0.0, 0.0, -0.0 };
   j = (vf32_t) {-0.0, 0.0, -0.0, 0.0 };
-  e = (vf32_t) {-0.0, 0.0, -0.0, 0.0 };
+  e = (vf32_t) { 0.0, -0.0, 0.0, -0.0 };
   k = vec_copysignf32 (i, j);
 
 #ifdef __DEBUG_PRINT__
@@ -1196,9 +1196,9 @@ test_float_cpsgn (void)
 #endif
   rc += check_v4f32x ("vec_copysignf32 1:", k, e);
 
-  i = (vf32_t) { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
+  i = (vf32_t) {-0.0, 0.0, -0.0, 0.0 };
+  j = (vf32_t) { __FLT_MAX__, __FLT_MIN__, __FLT_EPSILON__,
 		  __FLT_DENORM_MIN__ };
-  j = (vf32_t) {-0.0, 0.0, -0.0, 0.0 };
   e = (vf32_t) { -(__FLT_MAX__), __FLT_MIN__, -(__FLT_EPSILON__),
 		  __FLT_DENORM_MIN__ };
   k = vec_copysignf32 (i, j);
@@ -1210,9 +1210,9 @@ test_float_cpsgn (void)
 #endif
   rc += check_v4f32x ("vec_copysignf32 2:", k, e);
 
-  i = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
+  i = (vf32_t) CONST_VINT32_W(0.0, -0.0, 0.0, -0.0);
+  j = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
 			       __FLOAT_NINF);
-  j = (vf32_t) CONST_VINT32_W(0.0, -0.0, 0.0, -0.0);
   e = (vf32_t) CONST_VINT128_W(__FLOAT_INF, __FLOAT_NINF, __FLOAT_INF,
 			       __FLOAT_NINF);
   k = vec_copysignf32 (i, j);
@@ -1224,9 +1224,9 @@ test_float_cpsgn (void)
 #endif
   rc += check_v4f32x ("vec_copysignf32 3:", k, e);
 
-  i = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NNAN, __FLOAT_NSNAN,
+  i = (vf32_t) {-0.0, 0.0, 0.0, -0.0 };
+  j = (vf32_t) CONST_VINT128_W(__FLOAT_NAN, __FLOAT_NNAN, __FLOAT_NSNAN,
 			       __FLOAT_SNAN);
-  j = (vf32_t) {-0.0, 0.0, 0.0, -0.0 };
   e = (vf32_t) CONST_VINT128_W(__FLOAT_NNAN, __FLOAT_NAN, __FLOAT_SNAN,
 			       __FLOAT_NSNAN);
   k = vec_copysignf32 (i, j);

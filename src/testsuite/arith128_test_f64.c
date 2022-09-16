@@ -1596,7 +1596,7 @@ test_double_cpsgn (void)
 
   i = (vf64_t) { 0.0, -0.0 };
   j = (vf64_t) { -0.0, 0.0 };
-  e = (vf64_t) { -0.0, 0.0 };
+  e = (vf64_t) { 0.0, -0.0 };
   k = vec_copysignf64 (i, j);
 
 #ifdef __DEBUG_PRINT__
@@ -1606,8 +1606,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 1:", k, e);
 
-  i = (vf64_t) { __DBL_MAX__, __DBL_MIN__ };
-  j = (vf64_t) { -0.0, 0.0 };
+  i = (vf64_t) { -0.0, 0.0 };
+  j = (vf64_t) { __DBL_MAX__, __DBL_MIN__ };
   e = (vf64_t) { -(__DBL_MAX__), __DBL_MIN__ };
   k = vec_copysignf64 (i, j);
 
@@ -1618,8 +1618,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 2:", k, e);
 
-  i = (vf64_t) { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
-  j = (vf64_t) { -0.0, 0.0 };
+  i = (vf64_t) { -0.0, 0.0 };
+  j = (vf64_t) { __DBL_EPSILON__, __DBL_DENORM_MIN__ };
   e = (vf64_t) { -(__DBL_EPSILON__), __DBL_DENORM_MIN__ };
   k = vec_copysignf64 (i, j);
 
@@ -1630,8 +1630,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 3:", k, e);
 
-  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
-  j = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
+  i = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
+  j = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
   k = vec_copysignf64 (i, j);
 
@@ -1642,8 +1642,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 4:", k, e);
 
-  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
-  j = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
+  i = (vf64_t) CONST_VINT64_DW(0.0, -0.0);
+  j = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_INF, __DOUBLE_NINF);
   k = vec_copysignf64 (i, j);
 
@@ -1654,8 +1654,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 5:", k, e);
 
-  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NNAN);
-  j = (vf64_t) CONST_VINT64_DW( -0.0, 0.0 );
+  i = (vf64_t) CONST_VINT64_DW( -0.0, 0.0 );
+  j = (vf64_t) CONST_VINT128_DW(__DOUBLE_NAN, __DOUBLE_NNAN);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_NNAN, __DOUBLE_NAN);
   k = vec_copysignf64 (i, j);
 
@@ -1666,8 +1666,8 @@ test_double_cpsgn (void)
 #endif
   rc += check_v2f64x ("vec_copysignf64 6:", k, e);
 
-  i = (vf64_t) CONST_VINT128_DW(__DOUBLE_NSNAN, __DOUBLE_SNAN);
-  j = (vf64_t) CONST_VINT64_DW ( 0.0, -0.0 );
+  i = (vf64_t) CONST_VINT64_DW ( 0.0, -0.0 );
+  j = (vf64_t) CONST_VINT128_DW(__DOUBLE_NSNAN, __DOUBLE_SNAN);
   e = (vf64_t) CONST_VINT128_DW(__DOUBLE_SNAN, __DOUBLE_NSNAN);
   k = vec_copysignf64 (i, j);
 

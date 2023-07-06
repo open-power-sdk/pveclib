@@ -912,7 +912,8 @@ db_example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
 int
 test_addcq (void)
 {
-  vui32_t i, j, k, l;
+  vui32_t i, j, k;
+  vui128_t l;
   vui32_t e, ec;
   int rc = 0;
 
@@ -1018,7 +1019,8 @@ test_addcq (void)
 int
 test_addeq (void)
 {
-  vui32_t i, j, k, l, m;
+  vui32_t i, j, k, l;
+  vui128_t m;
   vui32_t e, ec;
   int rc = 0;
 
@@ -2354,15 +2356,25 @@ test_msumudm (void)
 }
 
 #ifdef __DEBUG_PRINT__
+#if __DEBUG_PRINT__ == 2
+// Use local debug code.
 #define test_vec_muludq(_l, _i, _j)	db_vec_muluq(_l, _i, _j)
 #else
+// Use out of line code from vec_int128_dummy.c compile test.
+extern vui128_t
+__test_muludq (vui128_t *mulu, vui128_t a, vui128_t b);
+#define test_vec_muludq(_l, _i, _j)	__test_muludq(_l, _i, _j)
+#endif
+#else
+// Use inline code from vec_int128_ppch.
 #define test_vec_muludq(_l, _i, _j)	vec_muludq(_l, _i, _j)
 #endif
 
 int
 test_muludq (void)
 {
-  vui32_t i, j, k, l /*, m*/;
+  vui32_t i, j, k/*, l , m*/;
+  vui128_t l;
   vui32_t e, ec;
   int rc = 0;
 
@@ -2431,13 +2443,26 @@ test_muludq (void)
   return (rc);
 }
 
+
+#ifdef __DEBUG_PRINT__
+// Use out of line code from vec_int128_dummy.c compile test.
+extern vui128_t
+__test_madd2uq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c, vui128_t d);
+extern vui128_t
+__test_madduq (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c);
+#define test_vec_madduq(_l, _i, _j, _m)	__test_madduq(_l, _i, _j, _m)
+#define test_vec_madd2uq(_l, _i, _j, _m, _n)	__test_madd2uq(_l, _i, _j, _m, _n)
+#else
+// Use inline code from vec_int128_ppch.
 #define test_vec_madduq(_l, _i, _j, _m)	vec_madduq(_l, _i, _j, _m)
 #define test_vec_madd2uq(_l, _i, _j, _m, _n)	vec_madd2uq(_l, _i, _j, _m, _n)
+#endif
 
 int
 test_madduq (void)
 {
-  vui32_t i, j, k, l, m, n;
+  vui32_t i, j, k, m, n;
+  vui128_t l;
   vui32_t e, ec;
   int rc = 0;
 

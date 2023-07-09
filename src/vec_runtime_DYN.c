@@ -36,7 +36,7 @@
  *
  * The base platform for Little Endian is POWER8 as the first
  * officially supported LE platform for POWER. The highest supported
- * platform is is currently POWER9.  All the latest Distros are
+ * platform is is currently POWER10.  All the latest Distros are
  * Little Endian.
  *
  * We depend on the compiler and runtime (GLIBC 2.23) to support

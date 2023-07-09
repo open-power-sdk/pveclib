@@ -40,6 +40,58 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+//const __float128 f128_e = 2.71828182845904523536028747135266249775724709369996Q;
+
+__float128
+test_scalarLib_exp_128_PWR9 (__float128 term1st, __float128 f128_fact[])
+{
+  const __float128 f128_one = 1.0Q;
+#if 0
+  const __float128 f128_fact0 = (1.0Q / 1.0Q);
+  const __float128 f128_fact1 = (1.0Q / 2.0Q);
+  const __float128 f128_fact2 = (1.0Q / 6.0Q);
+  const __float128 f128_fact3 = (1.0Q / 24.0Q);
+  const __float128 f128_fact4 = (1.0Q / 120.0Q);
+  const __float128 f128_fact5 = (1.0Q / 720.0Q);
+  const __float128 f128_fact6 = (1.0Q / 5040.0Q);
+  const __float128 f128_fact7 = (1.0Q / 40320.0Q);
+#endif
+  __float128 term;
+
+#if (__GNUC__ > 6)
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  term = __builtin_fmaf128 (f128_one, f128_fact[0], term1st);
+  term = __builtin_fmaf128 (f128_one, f128_fact[1], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[2], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[3], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[4], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[5], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[6], term);
+
+  return __builtin_fmaf128 (f128_one, f128_fact[7], term);
+#else
+  __float128 infrac;
+
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  infrac = term1st * f128_fact[0];
+  term =   term1st + infrac;
+  infrac = term1st * f128_fact[1];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[2];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[3];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[4];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[5];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[6];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[7];
+  return term + infrac;
+#endif
+}
+
 vui32_t
 test_mask128_f128sign_PWR9(void)
 {
@@ -193,6 +245,30 @@ __binary128
 test_negqp_PWR9 (__binary128 vfa)
 {
   return vec_negf128 (vfa);
+}
+
+__binary128
+test_vec_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  // earlier GCC versions generate extra data moves for this.
+  result = __builtin_fmaf128_round_to_odd (vfa, vfb, vfc);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xsmaddqpo %0,%1,%2"
+      : "+v" (vfc)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = vfc;
+#endif
+  return result;
+#else
+  result = vfa * vfb + vfc;
+#endif
+  return result;
 }
 
 __binary128
@@ -1509,11 +1585,8 @@ __test_mulhuq2_PWR9 (vui128_t a, vui128_t b)
 vui128_t
 __test_muludq_karatsuba_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b)
 {
-  const vui64_t zero = { 0, 0 };
-  vui64_t a_swap = vec_swapd ((vui64_t) a);
   vui64_t tax, tbx;
-  vui128_t thq, tlq, tx;
-  vui128_t t0l, tc1;
+  vui128_t tc1;
   vui128_t thh, thl, tlh, tll;
   vui128_t t, tmq;
 #if 1

@@ -27,6 +27,8 @@ extern int timed_expxsuba_v1_f128 (void);
 extern int timed_expxsuba_v2_f128 (void);
 #endif
 
+extern __binary128 f128_invfact[];
+
 extern int timed_gcc_max8_f128 (void);
 extern int timed_lib_max8_f128 (void);
 extern int timed_vec_max8_f128 (void);
@@ -57,5 +59,8 @@ extern int timed_lib_addqpo_f128 (void);
 
 extern int timed_gcc_subqpn_f128 (void);
 extern int timed_lib_subqpo_f128 (void);
+
+extern int timed_gcc_maddqpn_f128 (void);
+extern int timed_lib_maddqpo_f128 (void);
 
 #endif /* SRC_TESTSUITE_VEC_PERF_F128_H_ */

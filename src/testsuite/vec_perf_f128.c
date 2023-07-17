@@ -84,6 +84,26 @@ const __float128 qpfact6 = 720.0Q;
 const __float128 qpfact7 = 5040.0Q;
 const __float128 qpfact8 = 40320.0Q;
 
+const __float128 f128_fact1 = (1.0Q / 1.0Q);
+const __float128 f128_fact2 = (1.0Q / 2.0Q);
+const __float128 f128_fact3 = (1.0Q / 6.0Q);
+const __float128 f128_fact4 = (1.0Q / 24.0Q);
+const __float128 f128_fact5 = (1.0Q / 120.0Q);
+const __float128 f128_fact6 = (1.0Q / 720.0Q);
+const __float128 f128_fact7 = (1.0Q / 5040.0Q);
+const __float128 f128_fact8 = (1.0Q / 40320.0Q);
+
+__float128 f128_invfact[] = {
+    (1.0Q / 1.0Q),
+    (1.0Q / 2.0Q),
+    (1.0Q / 6.0Q),
+    (1.0Q / 24.0Q),
+    (1.0Q / 120.0Q),
+    (1.0Q / 720.0Q),
+    (1.0Q / 5040.0Q),
+    (1.0Q / 40320.0Q)
+};
+
 const vui128_t i128fact1 = {1};
 const vui128_t i128fact2 = {2};
 const vui128_t i128fact3 = {6};
@@ -92,6 +112,27 @@ const vui128_t i128fact5 = {120};
 const vui128_t i128fact6 = {720};
 const vui128_t i128fact7 = {5040};
 const vui128_t i128fact8 = {40320};
+
+#if 1 // turn off until Round-to-odd implementation is ready
+extern __binary128 test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+
+__float128
+test_scalarLib_exp_128 (__float128 x, __float128 a, __float128 expa)
+{
+  __float128 term;
+
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  term = test_vec_maddqpo (f128_one, f128_fact1, f128_one);
+  term = test_vec_maddqpo (f128_one, f128_fact2, term);
+  term = test_vec_maddqpo (f128_one, f128_fact3, term);
+  term = test_vec_maddqpo (f128_one, f128_fact4, term);
+  term = test_vec_maddqpo (f128_one, f128_fact5, term);
+  term = test_vec_maddqpo (f128_one, f128_fact6, term);
+  term = test_vec_maddqpo (f128_one, f128_fact7, term);
+
+  return test_vec_maddqpo (f128_one, f128_fact8, term);
+}
+#endif
 
 #if 0 // turn off until Round-to-odd implementation is ready
 __float128
@@ -102,30 +143,30 @@ test_scalarLib_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
   __float128 xma6, xmaf6, xma7, xmaf7, xma8, xmaf8;
 
   // 1st 8 terms of e**x = e**a * taylor( x-a )
-  xma = test_scalar_sub128 (x, a);
-  term = test_scalar_add128 (f128_one, xma);
-  xma2 = test_scalar_mul128 (xma, xma);
-  xmaf2 = test_scalar_mul128 (xma2, inv_fact2);
-  term = test_scalar_add128 (term, xmaf2);
-  xma3 = test_scalar_mul128 (xma2, xma);
-  xmaf3 = test_scalar_mul128 (xma3, inv_fact3);
-  term = test_scalar_add128 (term, xmaf3);
-  xma4 = test_scalar_mul128 (xma3, xma);
-  xmaf4 = test_scalar_mul128 (xma4, inv_fact4);
-  term = test_scalar_add128 (term, xmaf4);
-  xma5 = test_scalar_mul128 (xma4, xma);
-  xmaf5 = test_scalar_mul128 (xma5, inv_fact5);
-  term = test_scalar_add128 (term, xmaf5);
-  xma6 = test_scalar_mul128 (xma5, xma);
-  xmaf6 = test_scalar_mul128 (xma6, inv_fact6);
-  term = test_scalar_add128 (term, xmaf6);
-  xma7 = test_scalar_mul128 (xma6, xma);
-  xmaf7 = test_scalar_mul128 (xma7, inv_fact7);
-  term = test_scalar_add128 (term, xmaf7);
-  xma8 = test_scalar_mul128 (xma7, xma);
-  xmaf8 = test_scalar_mul128 (xma8, inv_fact8);
-  term = test_scalar_add128 (term, xmaf8);
-  return test_scalar_mul128(expa, term);;
+  xma = test_gcc_subqpn_f128 (x, a);
+  term = test_gcc_addqpn_f128 (f128_one, xma);
+  xma2 = test_gcc_mulqpn_f128 (xma, xma);
+  xmaf2 = test_gcc_mulqpn_f128 (xma2, inv_fact2);
+  term = test_gcc_addqpn_f128 (term, xmaf2);
+  xma3 = test_gcc_mulqpn_f128 (xma2, xma);
+  xmaf3 = test_gcc_mulqpn_f128 (xma3, inv_fact3);
+  term = test_gcc_addqpn_f128 (term, xmaf3);
+  xma4 = test_gcc_mulqpn_f128 (xma3, xma);
+  xmaf4 = test_gcc_mulqpn_f128 (xma4, inv_fact4);
+  term = test_gcc_addqpn_f128 (term, xmaf4);
+  xma5 = test_gcc_mulqpn_f128 (xma4, xma);
+  xmaf5 = test_gcc_mulqpn_f128 (xma5, inv_fact5);
+  term = test_gcc_addqpn_f128 (term, xmaf5);
+  xma6 = test_gcc_mulqpn_f128 (xma5, xma);
+  xmaf6 = test_gcc_mulqpn_f128 (xma6, inv_fact6);
+  term = test_gcc_addqpn_f128 (term, xmaf6);
+  xma7 = test_gcc_mulqpn_f128 (xma6, xma);
+  xmaf7 = test_gcc_mulqpn_f128 (xma7, inv_fact7);
+  term = test_gcc_addqpn_f128 (term, xmaf7);
+  xma8 = test_gcc_mulqpn_f128 (xma7, xma);
+  xmaf8 = test_gcc_mulqpn_f128 (xma8, inv_fact8);
+  term = test_gcc_addqpn_f128 (term, xmaf8);
+  return test_gcc_mulqpn_f128(expa, term);;
 }
 #endif
 
@@ -448,6 +489,82 @@ test_lib_mulqpn_f128 (__binary128 * vf128,
   *vf128 = result;
 }
 
+extern __binary128
+test_vec_maddqpo (__binary128, __binary128, __binary128);
+
+// term1st == const __float128 f128_one = 1.0Q;
+// f128_fact[] ==
+#if 0
+  const __float128 f128_fact0 = (1.0Q / 1.0Q);
+  const __float128 f128_fact1 = (1.0Q / 2.0Q);
+  const __float128 f128_fact2 = (1.0Q / 6.0Q);
+  const __float128 f128_fact3 = (1.0Q / 24.0Q);
+  const __float128 f128_fact4 = (1.0Q / 120.0Q);
+  const __float128 f128_fact5 = (1.0Q / 720.0Q);
+  const __float128 f128_fact6 = (1.0Q / 5040.0Q);
+  const __float128 f128_fact7 = (1.0Q / 40320.0Q);
+#endif
+
+__float128
+test_lib_maddqpo_f128 (__float128 term1st, __float128 f128_fact[])
+{
+  const __float128 f128_one = 1.0Q;
+  //const __float128 f128_e = 2.71828182845904523536028747135266249775724709369996Q;
+  __float128 term;
+
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  term = test_vec_maddqpo (term1st, f128_fact[0], term1st);
+  term = test_vec_maddqpo (term1st, f128_fact[1], term);
+  term = test_vec_maddqpo (term1st, f128_fact[2], term);
+  term = test_vec_maddqpo (term1st, f128_fact[3], term);
+  term = test_vec_maddqpo (term1st, f128_fact[4], term);
+  term = test_vec_maddqpo (term1st, f128_fact[5], term);
+  term = test_vec_maddqpo (term1st, f128_fact[6], term);
+
+  return test_vec_maddqpo (f128_one, f128_fact[7], term);
+}
+
+__float128
+test_gcc_maddqpn_f128 (__float128 term1st, __float128 f128_fact[])
+{
+  //const __float128 f128_one = 1.0Q;
+  //const __float128 f128_e = 2.71828182845904523536028747135266249775724709369996Q;
+  __float128 term;
+
+#if defined (_ARCH_PWR9)
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  term = __builtin_fmaf128 (f128_one, f128_fact[0], term1st);
+  term = __builtin_fmaf128 (f128_one, f128_fact[1], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[2], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[3], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[4], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[5], term);
+  term = __builtin_fmaf128 (f128_one, f128_fact[6], term);
+
+  return __builtin_fmaf128 (f128_one, f128_fact[7], term);
+#else
+  __float128 infrac;
+
+  // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
+  infrac = term1st * f128_fact[0];
+  term =   term1st + infrac;
+  infrac = term1st * f128_fact[1];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[2];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[3];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[4];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[5];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[6];
+  term =   term + infrac;
+  infrac = term1st * f128_fact[7];
+  return term + infrac;
+#endif
+}
+
 int timed_lib_addqpo_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -520,6 +637,23 @@ int timed_lib_mulqpn_f128 (void)
    return 0;
 }
 
+// Use static extern to avoid "set but not used" warning
+__binary128 stbl[10];
+
+int timed_lib_maddqpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      stbl[i] = test_lib_maddqpo_f128 (f128_one,
+			     f128_invfact);
+    }
+#endif
+   return 0;
+}
+
 int timed_gcc_addqpn_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -569,6 +703,28 @@ int timed_gcc_mulqpn_f128 (void)
 			  qpfact3, qpfact4,
 			  qpfact5, qpfact6,
 			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+extern __float128
+test_scalargcc_exp_f128 (__float128 term1st, __float128 f128_fact[]);
+
+int timed_gcc_maddqpn_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+#if 0
+      stbl[i] = test_gcc_maddqpn_f128 (f128_one,
+			     f128_invfact);
+#else
+      stbl[i] = test_scalargcc_exp_f128 (f128_one,
+			     f128_invfact);
+#endif
     }
 #endif
    return 0;

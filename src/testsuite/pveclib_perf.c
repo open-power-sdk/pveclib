@@ -906,6 +906,34 @@ test_time_f128 (void)
   printf ("\n%s subqpo_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
+  printf ("\n%s maddqpn_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_maddqpn_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s maddqpn_gcc end", __FUNCTION__);
+  printf ("\n%s maddqpn_gcc tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s maddqpo_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_lib_maddqpo_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s maddqpo_lib end", __FUNCTION__);
+  printf ("\n%s maddqpo_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
   return (rc);
 }
 #endif

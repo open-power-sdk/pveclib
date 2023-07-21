@@ -97,6 +97,7 @@ test_scalargcc_exp_f128 (__float128 term1st, __float128 f128_fact[])
   __float128 term;
 
 #if defined (_ARCH_PWR9)
+  const __float128 f128_one = 1.0Q;
   // 1st 8 terms of e = 1 + 1/1! + 1/2!+ 1/3! ...
   term = __builtin_fmaf128 (f128_one, f128_fact[0], term1st);
   term = __builtin_fmaf128 (f128_one, f128_fact[1], term);
@@ -3983,6 +3984,12 @@ test_vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
   return vec_xsmaddqpo (vfa, vfb, vfc);
 }
 
+__binary128
+test_vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  return vec_xsmsubqpo (vfa, vfb, vfc);
+}
+
 int
 test_check_sig_ovf (vui128_t q_sig)
 {
@@ -4000,6 +4007,33 @@ test_check_sig_ovf_V0 (vui128_t q_sig)
   vui16_t t_sig = vec_splat ((vui16_t) q_sig, VEC_HW_H);
   t_sig = vec_and (t_sig, sig_cl_mask);
   return vec_all_gt (t_sig, sig_l_mask);
+}
+
+
+__binary128
+test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  /* There is no __builtin for msubqpo, but the compiler should convert
+   * this fmaf128 to xsmsubqpo */
+  result = __builtin_fmaf128_round_to_odd (vfa, vfb, vec_negf128 (vfc));
+#else
+  __asm__(
+      "xsmsubqpo %0,%1,%2"
+      : "+v" (vfc)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = vfc;
+#endif
+  return result;
+#else
+  __binary128 nsrc3;
+
+  nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
+  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+#endif
 }
 
 
@@ -4273,11 +4307,15 @@ test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
       // If magnitude(prod) >  magnitude(c) will need to swap prod/c, later
       // a_lt_b = vec_cmpltuq (q_sig, c_sig);
       diff_sign = (vui32_t) vec_cmpneuq ((vui128_t) q_sign, (vui128_t) c_sign);
-      if (vec_cmpud_all_eq (q_exp, c_exp))
+      // Simply vfc == +-0.0. Treat as p_exp == c_exp
+      if (vec_cmpud_all_eq (q_exp, c_exp)
+       || vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
 	{
-	  vui128_t /*add_sig, sub_sig, s_sig,*/ carry;
+	  vui128_t carry;
 
-	  if (vec_all_eq (q_sign, c_sign))
+	  // Simply vfc == +-0.0. Treat as p_sign == c_sign
+	  if (vec_all_eq (q_sign, c_sign)
+	   || vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
 	    { // Same sign, simple add
 	      q_sig = vec_adduqm (p_sig_h, c_sig);
 	      p_sig_h = q_sig;
@@ -4469,22 +4507,26 @@ test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		    }
 
 		  c_sig_l = (vui128_t) q_zero;
-		  if (vec_all_eq(q_sign, c_sign))
-		    { // Same sign, simple add
-		      carry = vec_addcuq (c_sig_l, p_sig_l);
-		      p_sig_l = vec_adduqm (c_sig_l, p_sig_l);
-		      p_sig_h = vec_addeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
-		      q_sign = c_sign;
-		    }
-		  else
+		  //if (vec_cmpuq_all_ne (c_sig, (vui128_t) q_zero))
 		    {
-		      carry = vec_subcuq (c_sig_l, p_sig_l);
-		      p_sig_l = vec_subuqm (c_sig_l, p_sig_l);
-		      p_sig_h = vec_subeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
-		      q_sign = c_sign;
+		      if (vec_all_eq(q_sign, c_sign))
+			{ // Same sign, simple add
+			  carry = vec_addcuq (c_sig_l, p_sig_l);
+			  p_sig_l = vec_adduqm (c_sig_l, p_sig_l);
+			  p_sig_h = vec_addeuqm (c_sig, p_sig_h, carry);
+			  //q_sig = p_sig_h;
+			  q_sign = c_sign;
+			}
+		      else
+			{
+			  carry = vec_subcuq (c_sig_l, p_sig_l);
+			  p_sig_l = vec_subuqm (c_sig_l, p_sig_l);
+			  p_sig_h = vec_subeuqm (c_sig, p_sig_h, carry);
+			  //q_sig = p_sig_h;
+			  q_sign = c_sign;
+			}
 		    }
+		  q_sig = p_sig_h;
 		  q_exp = c_exp;
 		}
 	    }

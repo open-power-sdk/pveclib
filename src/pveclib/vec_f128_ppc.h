@@ -3391,7 +3391,6 @@ test_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
       // We have the product in q_sign, q_exp, p_sig_h/p_sig_l
       // And the addend (vfc) in c_sign, c_exp,  c_sig/c_sig_l
       c_sig_l = (vui128_t) q_zero;
-      q_sig = p_sig_h;
       // Generation sign difference for signed 0.0
 
       // If sign(vfa) != sign(vfb) will need to:
@@ -3432,6 +3431,12 @@ test_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  * In this case the result sign is the addend's sign.
  *
  * \code
+      // Simply vfc == +-0.0. Just normalize p_sig_h/p_sig_l
+      if (vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
+	{
+	   q_sig = p_sig_h;
+	}
+      else
       if (vec_cmpud_all_eq (q_exp, c_exp))
 	{
 	  vui128_t add_sig, sub_sig, s_sig, carry;
@@ -3980,6 +3985,43 @@ test_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		}
 	}
  * \endcode
+ * \subsubsection f128_softfloat_0_0_3_5 Multiply-Sub Quad-Precision with Round-to-Odd.
+ *
+ * The PVECLIB implementation of
+ * <B>Multiply-Sub Quad-Precision with Round-to-Odd</B>
+ * will use the POWER9 xsmsubqpo instruction if the compile target
+ * supports it. Otherwise provide a POWER8 VSX implementation leveraging
+ * the vec_xsmaddqpo operation.
+ * For example:
+ * \code
+__binary128
+test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  // There is no __builtin for msubqpo, but the compiler should convert
+  // this fmaf128 to xsmsubqpo
+  result = __builtin_fmaf128_round_to_odd (vfa, vfb, vec_negf128 (vfc));
+#else
+  __asm__(
+      "xsmsubqpo %0,%1,%2"
+      : "+v" (vfc)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = vfc;
+#endif
+  return result;
+#else
+  __binary128 nsrc3;
+
+  nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
+  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+#endif
+}
+ * \endcode
+ * We prefer use a compiler built-in for POWER9 but only
+ * __builtin_fmaf128_round_to_odd() is currently provided.
  *
  * \subsubsection f128_softfloat_0_0_4_1 Special Constants for Quad-Precision Soft-float
  *
@@ -4593,7 +4635,12 @@ typedef __ibm128 __IBM128;
    __float128 or __ieee128. Worse it will give errors if you try to
    use either type. So define __binary128 as if __FLOAT128__ is not
    defined. */
+
+#if __clang_major__ >= 15
+#define __binary128 __ieee128
+#else
 typedef vui128_t __binary128;
+#endif
 /* Clang does not define __ibm128 over IBM long double.
    So defined it here. */
 typedef long double __IBM128;
@@ -10341,7 +10388,8 @@ static inline vec_xscvuqqp (vui128_t int128)
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
- *  @return a vector unsigned __int128 value.
+ *  @param vfc 128-bit vector treated as a scalar __binary128.
+ *  @return The __binary128 result of  vfa * vfb + vfc
  */
 static inline __binary128
 vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
@@ -10532,10 +10580,14 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
       // If magnitude(prod) >  magnitude(c) will need to swap prod/c, later
       // a_lt_b = vec_cmpltuq (q_sig, c_sig);
       diff_sign = (vui32_t) vec_cmpneuq ((vui128_t) q_sign, (vui128_t) c_sign);
+      // Simply vfc == +-0.0. Just normalize p_sig_h/p_sig_l
+      if (vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
+	{
+	   q_sig = p_sig_h;
+	}
+      else
       if (vec_cmpud_all_eq (q_exp, c_exp))
 	{
-	  vui128_t /*add_sig, sub_sig, s_sig,*/ carry;
-
 	  if (vec_all_eq (q_sign, c_sign))
 	    { // Same sign, simple add
 	      q_sig = vec_adduqm (p_sig_h, c_sig);
@@ -10545,6 +10597,7 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 	  else
 	    { // different sign, subtract smallest from largest magnitude
 	      const vui64_t exp_112 = vec_const64_f128_112();
+	      vui128_t carry;
 
 	      if (vec_cmpuq_all_lt (q_sig, c_sig))
 		{
@@ -10733,18 +10786,16 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		      carry = vec_addcuq (c_sig_l, p_sig_l);
 		      p_sig_l = vec_adduqm (c_sig_l, p_sig_l);
 		      p_sig_h = vec_addeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
-		      q_sign = c_sign;
 		    }
 		  else
 		    {
 		      carry = vec_subcuq (c_sig_l, p_sig_l);
 		      p_sig_l = vec_subuqm (c_sig_l, p_sig_l);
 		      p_sig_h = vec_subeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
-		      q_sign = c_sign;
 		    }
+		  q_sign = c_sign;
 		  q_exp = c_exp;
+		  q_sig = p_sig_h;
 		}
 	    }
 
@@ -10996,6 +11047,58 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
     }
 #endif
   return result;
+}
+
+/** \brief VSX Scalar Multiply-Sub Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vectors vfa * vfb - vfc
+ *  produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
+ *  For POWER9 use the xsmsubqpo instruction.
+ *  For POWER8 use this soft-float implementation using
+ *  vector instruction generated by PVECLIB operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsmaddqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ??  | 1/cycle  |
+ *  |power9   |   24  |1/12 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @param vfc 128-bit vector treated as a scalar __binary128.
+ *  @return The __binary128 result of  vfa * vfb - vfc
+ */
+
+static inline __binary128
+vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  /* There is no __builtin for msubqpo, but the compiler should convert
+   * this fmaf128 to xsmsubqpo */
+  result = __builtin_fmaf128_round_to_odd (vfa, vfb, vec_negf128 (vfc));
+#else
+  __asm__(
+      "xsmsubqpo %0,%1,%2"
+      : "+v" (vfc)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = vfc;
+#endif
+  return result;
+#else
+  __binary128 nsrc3;
+
+  nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
+  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+#endif
 }
 
 /** \brief VSX Scalar Multiply Quad-Precision using round to Odd.

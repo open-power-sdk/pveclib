@@ -270,6 +270,31 @@ test_vec_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 #endif
   return result;
 }
+__binary128
+test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  /* There is no __builtin for msubqpo, but the compiler should convert
+   * this fmaf128 to xsmsubqpo */
+  result = __builtin_fmaf128_round_to_odd (vfa, vfb, vec_negf128 (vfc));
+#else
+  __asm__(
+      "xsmsubqpo %0,%1,%2"
+      : "+v" (vfc)
+      : "v" (vfa), "v" (vfb)
+      : );
+  result = vfc;
+#endif
+  return result;
+#else
+  __binary128 nsrc3;
+
+  nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
+  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+#endif
+}
 
 __binary128
 test_mulqpo_PWR9 (__binary128 vfa, __binary128 vfb)

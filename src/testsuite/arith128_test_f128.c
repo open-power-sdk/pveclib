@@ -2114,13 +2114,17 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
       diff_sign = (vui32_t) vec_cmpneuq ((vui128_t) q_sign, (vui128_t) c_sign);
       print_vint128x (" sign(diff):", (vui128_t) diff_sign);
       print_vint128x (" sig ( lt ):", (vui128_t) a_lt_b);
-      if (vec_cmpud_all_eq (q_exp, c_exp))
+      // Simply vfc == +-0.0. Treat as p_exp == c_exp
+      if (vec_cmpud_all_eq (q_exp, c_exp)
+       || vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
 	{
 	  //vui128_t add_sig, sub_sig, s_sig;
 	  vui128_t carry;
 	  print_vint128x (" exp ( = ):", (vui128_t) q_exp);
 
-	  if (vec_all_eq (q_sign, c_sign))
+	  // Simply vfc == +-0.0. Treat as p_sign == c_sign
+	  if (vec_all_eq (q_sign, c_sign)
+	   || vec_all_eq((vui32_t ) c_sig, (vui32_t ) q_zero))
 	    { // Same sign, simple add
 	      q_sig = vec_adduqm (p_sig_h, c_sig);
 	      p_sig_h = q_sig;
@@ -2205,8 +2209,8 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 
 		  d_exp = vec_subudm (q_exp, c_exp);
 		  exp_mask = (vb128_t) vec_cmpltud (d_exp, exp_128);
-		  print_vint128x (" exp (diff):", (vui128_t) d_exp);
-		  print_vint128x (" exp (mask):", (vui128_t) exp_mask);
+		  print_vint128x (" exp2a(diff):", (vui128_t) d_exp);
+		  print_vint128x (" exp2a(mask):", (vui128_t) exp_mask);
 		  if (vec_cmpud_all_lt (d_exp, exp_128))
 		    {
 		      l_exp = vec_subudm (exp_128, d_exp);
@@ -2256,6 +2260,8 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		  print_vint128x (" sig (shift):", (vui128_t) t_sig);
 		  print_vint128x ("     (shift):", (vui128_t) c_sig_l);
 
+		  //if (vec_cmpuq_all_ne (c_sig, (vui128_t) q_zero))
+		    {
 		  if (vec_all_eq(q_sign, c_sign))
 		    { // Same sign, simple add
 		      carry = vec_addcuq (c_sig_l, p_sig_l);
@@ -2276,6 +2282,7 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		      print_vint128x (" sig (sub):", (vui128_t) p_sig_h);
 		      print_vint128x ("     (sub):", (vui128_t) p_sig_l);
 		    }
+		    }
 
 		}
 	      else
@@ -2290,8 +2297,8 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 
 		  d_exp = vec_subudm (c_exp, q_exp);
 		  exp_mask = (vb128_t) vec_cmpltud (d_exp, exp_128);
-		  print_vint128x (" exp (diff):", (vui128_t) d_exp);
-		  print_vint128x (" exp (mask):", (vui128_t) exp_mask);
+		  print_vint128x (" exp2b(diff):", (vui128_t) d_exp);
+		  print_vint128x (" exp2b(mask):", (vui128_t) exp_mask);
 		  if (vec_cmpud_all_lt (d_exp, exp_128))
 		    {
 		      // if (d_exp < 128) then shift right 1-127 bits
@@ -2358,12 +2365,14 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		  print_vint128x ("     (shift):", (vui128_t) p_sig_l);
 
 		  c_sig_l = (vui128_t) q_zero;
+		 // if (vec_cmpuq_all_ne (c_sig, (vui128_t) q_zero))
+		    {
 		  if (vec_all_eq(q_sign, c_sign))
 		    { // Same sign, simple add
 		      carry = vec_addcuq (c_sig_l, p_sig_l);
 		      p_sig_l = vec_adduqm (c_sig_l, p_sig_l);
 		      p_sig_h = vec_addeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
+		      //q_sig = p_sig_h;
 		      q_sign = c_sign;
 		      print_vint128x (" sig (add):", (vui128_t) p_sig_h);
 		      print_vint128x ("     (add):", (vui128_t) p_sig_l);
@@ -2373,11 +2382,13 @@ db_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 		      carry = vec_subcuq (c_sig_l, p_sig_l);
 		      p_sig_l = vec_subuqm (c_sig_l, p_sig_l);
 		      p_sig_h = vec_subeuqm (c_sig, p_sig_h, carry);
-		      q_sig = p_sig_h;
+		      //q_sig = p_sig_h;
 		      q_sign = c_sign;
 		      print_vint128x (" sig (sub):", (vui128_t) p_sig_h);
 		      print_vint128x ("     (sub):", (vui128_t) p_sig_l);
 		    }
+		    }
+		  q_sig = p_sig_h;
 		  q_exp = c_exp;
 		}
 	    }
@@ -18368,7 +18379,8 @@ test_sub_qpo_xtra (void)
   return (rc);
 }
 
-// #define __DEBUG_PRINT__ 1
+//#define __DEBUG_PRINT__ 1
+//#define __DEBUG_PRINT__ 2
 #ifdef __DEBUG_PRINT__
 #if (__DEBUG_PRINT__ == 2)
 #define test_xsmaddqpo(_l,_k,_j)	db_vec_maddqpo(_l,_k,_j)
@@ -18378,12 +18390,10 @@ extern __binary128 test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary1
 #define test_xsmaddqpo(_l,_k,_j)	test_vec_maddqpo(_l,_k,_j)
 #endif
 #else
-// Test implementation expanded from vec)f128_ppc.h
+// Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
 #define test_xsmaddqpo(_l,_k,_j)	test_vec_xsmaddqpo(_l,_k,_j)
 #endif
-
-//#define __DEBUG_PRINT__
 
 int
 test_madd_qpo_xtra_c1 (void)
@@ -23967,7 +23977,7 @@ test_madd_qpo_xtra (void)
 int
 test_madd_qpo_zero_c (void)
 {
-  __binary128 x, y, z;
+  __binary128 x, y, z, nz;
   __binary128 t, e;
   vui64_t xui;
   int rc = 0;
@@ -23976,6 +23986,7 @@ test_madd_qpo_zero_c (void)
   x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
   y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
   z = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  nz = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
 
 #ifdef __DEBUG_PRINT__
   print_vfloat128x(" x=  ", x);
@@ -24081,6 +24092,15 @@ test_madd_qpo_zero_c (void)
   print_vfloat128x(" y=  ", y);
 #endif
   t = test_xsmaddqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000800000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmaddqpo", e, t, e);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmaddqpo (x, y,nz);
   xui = CONST_VINT128_DW (0x0000800000000000, 0x0000000000000000);
   e = vec_xfer_vui64t_2_bin128 ( xui );
   rc += check_f128 ("check vec_xsmaddqpo", e, t, e);
@@ -24939,13 +24959,6592 @@ test_madd_qpo (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#if (__DEBUG_PRINT__ == 2)
+//TODO Debug not implemented
+#define test_xsmsubqpo(_l,_k)	db_vec_xsmsubqpo(_l,_k)
+#else
+// Test implementation from vec_f128_dummy.c
+extern __binary128 test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+#define test_xsmsubqpo(_l,_k,_m)	test_vec_msubqpo(_l,_k,_m)
+#endif
+#else
+// Test implementation expanded from vec_f128_ppc.h
+extern __binary128 test_vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+#define test_xsmsubqpo(_l,_k,_m)	test_vec_xsmsubqpo(_l,_k,_m)
+#endif
+
+int
+test_msub_qpo_xtra_c1 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c2 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -1.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_two );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_two );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c3 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c4 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = 0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c5 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = 1.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ntwo );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ntwo );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+// #undef __DEBUG_PRINT__
+
+int
+test_msub_qpo_xtra_c6 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c7 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan);
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+//  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+//  e = vec_xfer_vui64t_2_bin128 ( xui );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra_c8 (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // PowerISA 3.0 Table 80 Actions for xsmsubqp[o], VTR = -0.0
+  // Line -infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" z=  ", z);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_none );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line -zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +zero
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +NZF
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line +infinity
+  x = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line QNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  // Line SNaN
+  x = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  y = vec_xfer_vui64t_2_bin128 ( vf128_snan );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, z);
+  xui = CONST_VINT128_DW ( 0x7fffc00000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
+int
+test_msub_qpo_xtra (void)
+{
+  int rc = 0;
+
+  printf ("\n%s\n", __FUNCTION__);
+
+  rc += test_msub_qpo_xtra_c1 ();
+
+  rc += test_msub_qpo_xtra_c2 ();
+
+  rc += test_msub_qpo_xtra_c3 ();
+
+  rc += test_msub_qpo_xtra_c4 ();
+
+  rc += test_msub_qpo_xtra_c5 ();
+
+  rc += test_msub_qpo_xtra_c6 ();
+
+  rc += test_msub_qpo_xtra_c7 ();
+
+  rc += test_msub_qpo_xtra_c8 ();
+
+  return (rc);
+}
+
+int
+test_msub_qpo_zero_c (void)
+{
+  __binary128 x, y, z, nz;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  nz = vec_xfer_vui64t_2_bin128 ( vf128_nzero );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_zero );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+//  x = 3.0Q;
+  xui = CONST_VINT128_DW ( 0x4000800000000000, 0 );
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+//  y = 3.0Q;
+  xui = CONST_VINT128_DW ( 0x4000800000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+
+//  e = 9.0Q;
+  xui = CONST_VINT128_DW ( 0x4002200000000000, 0 );
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  x = 3.0Q;
+    xui = CONST_VINT128_DW ( 0x4000800000000000, 1 );
+    x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 3.0Q;
+    xui = CONST_VINT128_DW ( 0x4000800000000000, 0 );
+    y = vec_xfer_vui64t_2_bin128 ( xui );
+
+  #ifdef __DEBUG_PRINT__
+    print_vfloat128x(" x=  ", x);
+    print_vfloat128x(" y=  ", y);
+  #endif
+    t = test_xsmsubqpo (x, y,z);
+
+  //  e = 9.0Q;
+    xui = CONST_VINT128_DW ( 0x4002200000000000, 1 );
+    e = vec_xfer_vui64t_2_bin128 ( xui );
+    rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+  //  x = 1.0p-8192Q;
+  xui = CONST_VINT128_DW ( 0x1fff000000000000, 0 );
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.0p-8192Q;
+  xui = CONST_VINT128_DW ( 0x1fff000000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000400000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  x = 1.0p-8191Q;
+  xui = CONST_VINT128_DW ( 0x2000000000000000, 0 );
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.0p-8192Q;
+  xui = CONST_VINT128_DW ( 0x1fff000000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000800000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y, nz);
+  xui = CONST_VINT128_DW (0x0000800000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.5Q;
+  xui = CONST_VINT128_DW ( 0x3ffe000000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x00007fffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 1.0p-111Q;
+  xui = CONST_VINT128_DW ( 0x3f90000000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0, 1);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 1.5Q;
+  xui = CONST_VINT128_DW ( 0x3fff800000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x00017fffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.75Q;
+  xui = CONST_VINT128_DW ( 0x3ffe800000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000bfffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 1.999999Q;
+  xui = CONST_VINT128_DW ( 0x3fffffffffffffff, 0xffffffffffffffff );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0001ffffffffffff, 0xfffffffffffffffd);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.75Q;
+  xui = CONST_VINT128_DW ( 0x3ffeffffffffffff, 0xffffffffffffffff );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000ffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.75Q;
+  xui = CONST_VINT128_DW ( 0x3f8fffffffffffff, 0xffffffffffffffff );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0, 1);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.75Q;
+  xui = CONST_VINT128_DW ( 0x3f8effffffffffff, 0xffffffffffffffff );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0, 1);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_sub );
+  //  x = 0.75Q;
+  xui = CONST_VINT128_DW ( 0x3f87ffffffffffff, 0xffffffffffffffff );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0, 1);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  //  x = 1.5Q;
+  xui = CONST_VINT128_DW ( 0x3fff800000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  //  x = 2.0Q;
+  xui = CONST_VINT128_DW ( 0x4000000000000000, 0 );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_inf );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_max );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_ninf );
+  e = vec_xfer_vui64t_2_bin128 ( vf128_nmax );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+int
+test_msub_qpo (void)
+{
+  __binary128 x, y, z;
+  __binary128 t, e;
+  vui64_t xui;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_two );
+  y = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 3.0Q;
+  xui = CONST_VINT128_DW (0x4000800000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-111;
+  xui = CONST_VINT128_DW (0xbf90000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-112;
+  xui = CONST_VINT128_DW (0xbf8f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-127;
+  xui = CONST_VINT128_DW (0xbf80000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-128;
+  xui = CONST_VINT128_DW (0xbf7f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-239;
+  xui = CONST_VINT128_DW (0xbf10000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-240;
+  xui = CONST_VINT128_DW (0xbf0f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-241;
+  xui = CONST_VINT128_DW (0xbf0e000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x4000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  z = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  e = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-111;
+  xui = CONST_VINT128_DW (0x3f90000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xfffffffffffffffe);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-112;
+  xui = CONST_VINT128_DW (0x3f8f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-127;
+  xui = CONST_VINT128_DW (0x3f80000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-128;
+  xui = CONST_VINT128_DW (0x3f7f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-239;
+  xui = CONST_VINT128_DW (0x3f10000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-240;
+  xui = CONST_VINT128_DW (0x3f0f000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = -1.0p-241;
+  xui = CONST_VINT128_DW (0x3f0e000000000000, 0x0000000000000000);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  //  y = 0.5Q;
+  xui = CONST_VINT128_DW (0x3ffe000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_none );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff800000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-112;
+  xui = CONST_VINT128_DW (0x3f8f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-113;
+  xui = CONST_VINT128_DW (0x3f8e000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-127;
+  xui = CONST_VINT128_DW (0x3f80000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-128;
+  xui = CONST_VINT128_DW (0x3f7f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-240;
+  xui = CONST_VINT128_DW (0x3f0f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-241;
+  xui = CONST_VINT128_DW (0x3f0e000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-256;
+  xui = CONST_VINT128_DW (0x3eff000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0x3fff000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  x = vec_xfer_vui64t_2_bin128 ( vf128_one );
+  //  y = 0.5Q;
+  xui = CONST_VINT128_DW (0x3ffe000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  z = vec_xfer_vui64t_2_bin128 ( vf128_one );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffe000000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-112;
+  xui = CONST_VINT128_DW (0x3f8f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xfffffffffffffffe);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-113;
+  xui = CONST_VINT128_DW (0x3f8e000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-127;
+  xui = CONST_VINT128_DW (0x3f80000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.0p-128;
+  xui = CONST_VINT128_DW (0x3f7f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-240;
+  xui = CONST_VINT128_DW (0x3f0f000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-241;
+  xui = CONST_VINT128_DW (0x3f0e000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  z = 1.0p-256;
+  xui = CONST_VINT128_DW (0x3eff000000000000, 0x0000000000000000);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  //  e = 1.5Q;
+  xui = CONST_VINT128_DW (0xbffeffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  xui = CONST_VINT128_DW (0x4000ffffffffffff, 0xfffffffffffffffe);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  // z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3f1f000000000000, 0x0000000000000000);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  xui = CONST_VINT128_DW (0x4000ffffffffffff, 0xffffffffffffffff);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  // z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0xbf8fffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.99999999999998p-16271Q;
+  xui = CONST_VINT128_DW (0x0070ffffffffffff, 0xffffffffffffffff);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999998p-16272Q;
+  xui = CONST_VINT128_DW (0x0071ffffffffffff, 0xfffffffffffffffe);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  //z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.99999999999998p-16271Q;
+  xui = CONST_VINT128_DW (0x0070ffffffffffff, 0xffffffffffffffff);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999999p-16272Q;
+  xui = CONST_VINT128_DW (0x0071ffffffffffff, 0xffffffffffffffff);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  //z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x8000ffffffffffff, 0xffffffffffffffff);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.99999999999998p-16273Q;
+  xui = CONST_VINT128_DW (0x006fffffffffffff, 0xffffffffffffffff);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999998p-16272Q;
+  xui = CONST_VINT128_DW (0x0070ffffffffffff, 0xfffffffffffffffe);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  y = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 1.99999999999998p-16272Q;
+  xui = CONST_VINT128_DW (0x006effffffffffff, 0xffffffffffffffff);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999998p-16273Q;
+  xui = CONST_VINT128_DW (0x006fffffffffffff, 0xfffffffffffffffe);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x0000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  // e = vec_xfer_vui64t_2_bin128 ( vf128_three );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //  x = 1.99999999999998Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //  y = 0.99999999999998p-16382Q;
+  xui = CONST_VINT128_DW (0x0000ffffffffffff, 0xffffffffffffffff);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999998p-16382Q;
+  xui = CONST_VINT128_DW (0x0001ffffffffffff, 0xfffffffffffffffe);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  //z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x8000000000000000, 0x0000000000000001);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //x = 1.41421356237309504880168872420969807856967187537695Q;
+  xui = CONST_VINT128_DW (0x3fff6a09e667f3bc, 0xc908b2fb1366ea96);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //y = 1.41421356237309504880168872420969807856967187537695Q;
+  xui = CONST_VINT128_DW (0x3fff6a09e667f3bc, 0xc908b2fb1366ea96);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -1.99999999999999Q;
+  xui = CONST_VINT128_DW (0x3fffffffffffffff, 0xffffffffffffffff);
+  z = vec_xfer_vui64t_2_bin128 ( xui );
+  //z = vec_xfer_vui64t_2_bin128 ( vf128_zero);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3f9038eb0f40202c, 0x3070852b053f47f2);
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  //x = 1.41421356237309504880168872420969807856967187537695Q;
+  xui = CONST_VINT128_DW (0x3fff6a09e667f3bc, 0xc908b2fb1366ea96);
+  x = vec_xfer_vui64t_2_bin128 ( xui );
+  //y = 1.41421356237309504880168872420969807856967187537695Q;
+  xui = CONST_VINT128_DW (0x3fff6a09e667f3bc, 0xc908b2fb1366ea96);
+  y = vec_xfer_vui64t_2_bin128 ( xui );
+  //  z = -2.0Q;
+  z = vec_xfer_vui64t_2_bin128 ( vf128_two);
+
+#ifdef __DEBUG_PRINT__
+  print_vfloat128x(" x=  ", x);
+  print_vfloat128x(" y=  ", y);
+  print_vfloat128x(" z=  ", z);
+#endif
+  t = test_xsmsubqpo (x, y,z);
+  xui = CONST_VINT128_DW (0x3f8f71d61e804058, 0x60e10a560a7e8fe4);
+
+  e = vec_xfer_vui64t_2_bin128 ( xui );
+  rc += check_f128 ("check vec_xsmsubqpo", e, t, e);
+
+  return (rc);
+}
+
 int
 test_vec_f128 (void)
 {
   int rc = 0;
 
   printf ("\n%s\n", __FUNCTION__);
-
+#if 1
   rc += test_mask_f128 ();
   rc += test_const_f128 ();
   rc += test_all_is_f128 ();
@@ -24985,9 +31584,16 @@ test_vec_f128 (void)
 
   rc += test_sub_qpo ();
   rc += test_sub_qpo_xtra ();
+#endif
 
   rc += test_madd_qpo ();
   rc += test_madd_qpo_zero_c ();
   rc += test_madd_qpo_xtra ();
+
+#if 1
+  rc += test_msub_qpo ();
+  rc += test_msub_qpo_zero_c ();
+  rc += test_msub_qpo_xtra ();
+#endif
   return (rc);
 }

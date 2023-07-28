@@ -228,6 +228,7 @@ TESTS += pveclib_test
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
+	testsuite/arith128_test_qpo.c \
 	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
@@ -242,6 +243,7 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_print.h \
 	testsuite/arith128_test_bcd.h \
 	testsuite/arith128_test_char.h \
+	testsuite/arith128_test_qpo.h \
 	testsuite/arith128_test_f128.h \
 	testsuite/arith128_test_f32.h \
 	testsuite/arith128_test_f64.h \

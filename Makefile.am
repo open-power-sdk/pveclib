@@ -2,7 +2,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 #@INC_AMINCLUDE@ is recommented for automake and doxygen
-#but there is an naming comflict. So we rename aminclude.am to
+#but there is a naming conflict. So we rename aminclude.am to
 #doxygen.am from srcdir with allows INC_AMINCLUDE to generate 
 #aminclude.am to blddir.
 @INC_AMINCLUDE@

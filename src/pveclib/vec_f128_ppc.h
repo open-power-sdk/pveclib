@@ -11078,8 +11078,8 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 static inline __binary128
 vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
-  __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+  __binary128 result;
 #if defined (__FLOAT128__) && (__GNUC__ > 8)
   /* There is no __builtin for msubqpo, but the compiler should convert
    * this fmaf128 to xsmsubqpo */

@@ -210,6 +210,7 @@ pveclib_perf_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_pveclib_test_OBJECTS =  \
 	testsuite/pveclib_test-pveclib_test.$(OBJEXT) \
 	testsuite/pveclib_test-arith128_print.$(OBJEXT) \
+	testsuite/pveclib_test-arith128_test_qpo.$(OBJEXT) \
 	testsuite/pveclib_test-arith128_test_f128.$(OBJEXT) \
 	testsuite/pveclib_test-arith128_test_f64.$(OBJEXT) \
 	testsuite/pveclib_test-arith128_test_f32.$(OBJEXT) \
@@ -280,6 +281,7 @@ am__depfiles_remade = ./$(DEPDIR)/libpvec_la-vec_runtime_DYN.Plo \
 	testsuite/$(DEPDIR)/pveclib_test-arith128_test_i32.Po \
 	testsuite/$(DEPDIR)/pveclib_test-arith128_test_i512.Po \
 	testsuite/$(DEPDIR)/pveclib_test-arith128_test_i64.Po \
+	testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po \
 	testsuite/$(DEPDIR)/pveclib_test-pveclib_test.Po \
 	testsuite/$(DEPDIR)/vec_dummy-vec_dummy_main.Po
 am__mv = mv -f
@@ -762,6 +764,7 @@ pveclib_test_la_INCLUDES = $(pveclibinclude_HEADERS)
 pveclib_test_SOURCES = \
 	testsuite/pveclib_test.c \
 	testsuite/arith128_print.c \
+	testsuite/arith128_test_qpo.c \
 	testsuite/arith128_test_f128.c \
 	testsuite/arith128_test_f64.c \
 	testsuite/arith128_test_f32.c \
@@ -776,6 +779,7 @@ pveclib_test_SOURCES = \
 	testsuite/arith128_print.h \
 	testsuite/arith128_test_bcd.h \
 	testsuite/arith128_test_char.h \
+	testsuite/arith128_test_qpo.h \
 	testsuite/arith128_test_f128.h \
 	testsuite/arith128_test_f32.h \
 	testsuite/arith128_test_f64.h \
@@ -965,6 +969,8 @@ testsuite/pveclib_test-pveclib_test.$(OBJEXT):  \
 	testsuite/$(am__dirstamp) testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/pveclib_test-arith128_print.$(OBJEXT):  \
 	testsuite/$(am__dirstamp) testsuite/$(DEPDIR)/$(am__dirstamp)
+testsuite/pveclib_test-arith128_test_qpo.$(OBJEXT):  \
+	testsuite/$(am__dirstamp) testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/pveclib_test-arith128_test_f128.$(OBJEXT):  \
 	testsuite/$(am__dirstamp) testsuite/$(DEPDIR)/$(am__dirstamp)
 testsuite/pveclib_test-arith128_test_f64.$(OBJEXT):  \
@@ -1037,6 +1043,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test-arith128_test_i32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test-arith128_test_i512.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test-arith128_test_i64.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/pveclib_test-pveclib_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@testsuite/$(DEPDIR)/vec_dummy-vec_dummy_main.Po@am__quote@ # am--include-marker
 
@@ -1300,6 +1307,20 @@ testsuite/pveclib_test-arith128_print.obj: testsuite/arith128_print.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='testsuite/arith128_print.c' object='testsuite/pveclib_test-arith128_print.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -c -o testsuite/pveclib_test-arith128_print.obj `if test -f 'testsuite/arith128_print.c'; then $(CYGPATH_W) 'testsuite/arith128_print.c'; else $(CYGPATH_W) '$(srcdir)/testsuite/arith128_print.c'; fi`
+
+testsuite/pveclib_test-arith128_test_qpo.o: testsuite/arith128_test_qpo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -MT testsuite/pveclib_test-arith128_test_qpo.o -MD -MP -MF testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Tpo -c -o testsuite/pveclib_test-arith128_test_qpo.o `test -f 'testsuite/arith128_test_qpo.c' || echo '$(srcdir)/'`testsuite/arith128_test_qpo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Tpo testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='testsuite/arith128_test_qpo.c' object='testsuite/pveclib_test-arith128_test_qpo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -c -o testsuite/pveclib_test-arith128_test_qpo.o `test -f 'testsuite/arith128_test_qpo.c' || echo '$(srcdir)/'`testsuite/arith128_test_qpo.c
+
+testsuite/pveclib_test-arith128_test_qpo.obj: testsuite/arith128_test_qpo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -MT testsuite/pveclib_test-arith128_test_qpo.obj -MD -MP -MF testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Tpo -c -o testsuite/pveclib_test-arith128_test_qpo.obj `if test -f 'testsuite/arith128_test_qpo.c'; then $(CYGPATH_W) 'testsuite/arith128_test_qpo.c'; else $(CYGPATH_W) '$(srcdir)/testsuite/arith128_test_qpo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Tpo testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='testsuite/arith128_test_qpo.c' object='testsuite/pveclib_test-arith128_test_qpo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -c -o testsuite/pveclib_test-arith128_test_qpo.obj `if test -f 'testsuite/arith128_test_qpo.c'; then $(CYGPATH_W) 'testsuite/arith128_test_qpo.c'; else $(CYGPATH_W) '$(srcdir)/testsuite/arith128_test_qpo.c'; fi`
 
 testsuite/pveclib_test-arith128_test_f128.o: testsuite/arith128_test_f128.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pveclib_test_CFLAGS) $(CFLAGS) -MT testsuite/pveclib_test-arith128_test_f128.o -MD -MP -MF testsuite/$(DEPDIR)/pveclib_test-arith128_test_f128.Tpo -c -o testsuite/pveclib_test-arith128_test_f128.o `test -f 'testsuite/arith128_test_f128.c' || echo '$(srcdir)/'`testsuite/arith128_test_f128.c
@@ -1828,6 +1849,7 @@ distclean: distclean-am
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i32.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i512.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i64.Po
+	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-pveclib_test.Po
 	-rm -f testsuite/$(DEPDIR)/vec_dummy-vec_dummy_main.Po
 	-rm -f Makefile
@@ -1908,6 +1930,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i32.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i512.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_i64.Po
+	-rm -f testsuite/$(DEPDIR)/pveclib_test-arith128_test_qpo.Po
 	-rm -f testsuite/$(DEPDIR)/pveclib_test-pveclib_test.Po
 	-rm -f testsuite/$(DEPDIR)/vec_dummy-vec_dummy_main.Po
 	-rm -f Makefile

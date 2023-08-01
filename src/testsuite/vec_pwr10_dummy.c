@@ -48,7 +48,8 @@ __test_splatisd_12_PWR10 (void)
 }
 
 // vec_splati from word requires GCC 10 and PWR10
-#if ((__GNUC__ > 11) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__))
+#if defined (_ARCH_PWR10) && ((__GNUC__ > 11) \
+    && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__))
 vi64_t
 __test_splatudi_12_PWR10 (void)
 {

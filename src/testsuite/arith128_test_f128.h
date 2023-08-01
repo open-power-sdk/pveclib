@@ -21,4 +21,27 @@
  */
 
 /* Collection function for all f128 unit tests.  */
+
+// Already defined in arith128_test_f128.c
+extern const vui64_t vf128_zero;
+extern const vui64_t vf128_nzero;
+
+extern const vui64_t vf128_one;
+extern const vui64_t vf128_none;
+
+extern const vui64_t vf128_two;
+extern const vui64_t vf128_ntwo;
+
+extern const vui64_t vf128_max;
+extern const vui64_t vf128_nmax;
+
+extern const vui64_t vf128_sub;
+extern const vui64_t vf128_nsub;
+
+extern const vui64_t vf128_inf;
+extern const vui64_t vf128_ninf;
+
+extern const vui64_t vf128_nan;
+extern const vui64_t vf128_snan;
+
 int test_vec_f128 (void);

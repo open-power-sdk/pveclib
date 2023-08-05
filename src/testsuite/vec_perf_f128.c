@@ -401,8 +401,14 @@ test_lib_uqqp_f128 (__binary128 * vf128,
   vf128[7] = test_vec_xscvuqqp (vf8);
 }
 
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsaddqpo) (__binary128 vfa, __binary128 vfb);
+#define test_vec_addqpo(_l,_k)	__VEC_PWR_IMP (vec_xsaddqpo)(_l,_k)
+#else
+// Test implementation from vec_f128_dummy.c
 extern __binary128 test_vec_addqpo (__binary128 vfa, __binary128 vfb);
-
+#endif
 
 void
 test_lib_addqpo_f128 (__binary128 * vf128,
@@ -423,7 +429,15 @@ test_lib_addqpo_f128 (__binary128 * vf128,
   *vf128 = result;
 }
 
+
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsaddqpo) (__binary128 vfa, __binary128 vfb);
+#define test_vec_subqpo(_l,_k)	__VEC_PWR_IMP (vec_xsaddqpo)(_l,_k)
+#else
+// Test implementation from vec_f128_dummy.c
 extern __binary128 test_vec_subqpo (__binary128 vfa, __binary128 vfb);
+#endif
 
 
 void
@@ -445,8 +459,14 @@ test_lib_subqpo_f128 (__binary128 * vf128,
   *vf128 = result;
 }
 
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsmulqpo) (__binary128 vfa, __binary128 vfb);
+#define test_vec_mulqpo(_l,_k)	__VEC_PWR_IMP (vec_xsmulqpo)(_l,_k)
+#else
+// Test implementation from vec_f128_dummy.c
 extern __binary128 test_vec_mulqpo (__binary128 vfa, __binary128 vfb);
-
+#endif
 
 void
 test_lib_mulqpo_f128 (__binary128 * vf128,
@@ -489,8 +509,6 @@ test_lib_mulqpn_f128 (__binary128 * vf128,
   *vf128 = result;
 }
 
-extern __binary128
-test_vec_maddqpo (__binary128, __binary128, __binary128);
 
 // term1st == const __float128 f128_one = 1.0Q;
 // f128_fact[] ==
@@ -503,6 +521,16 @@ test_vec_maddqpo (__binary128, __binary128, __binary128);
   const __float128 f128_fact5 = (1.0Q / 720.0Q);
   const __float128 f128_fact6 = (1.0Q / 5040.0Q);
   const __float128 f128_fact7 = (1.0Q / 40320.0Q);
+#endif
+
+#if 1
+  // Test implementation from libpvecstatic
+  extern __binary128 __VEC_PWR_IMP (vec_xsmaddqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+  #define test_vec_maddqpo(_l,_k,_j)	__VEC_PWR_IMP (vec_xsmaddqpo)(_l,_k,_j)
+#else
+  // Test implementation from vec_f128_dummy.c
+  extern __binary128
+  test_vec_maddqpo (__binary128, __binary128, __binary128);
 #endif
 
 __float128

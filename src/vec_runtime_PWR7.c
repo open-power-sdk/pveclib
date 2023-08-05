@@ -24,4 +24,5 @@
 // POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
 
 #include "vec_int512_runtime.c"
+#include "vec_f128_runtime.c"
 #endif

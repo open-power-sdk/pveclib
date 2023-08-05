@@ -198,6 +198,23 @@
  * \sa \ref mainpage_endian_issues_1_1
  */
 
+/*! \brief Macro to add platform suffix for static calls.
+ * \sa \ref main_libary_issues_0_0_0_2
+ * \sa \ref main_libary_issues_0_0 */
+#ifdef _ARCH_PWR10
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR10
+#else
+#ifdef _ARCH_PWR9
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
+#else
+#ifdef _ARCH_PWR8
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
+#else
+#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
+#endif
+#endif
+#endif
+
 /*! \brief vector of 8-bit unsigned char elements. */
 typedef __vector unsigned char vui8_t;
 /*! \brief vector of 16-bit unsigned short elements. */

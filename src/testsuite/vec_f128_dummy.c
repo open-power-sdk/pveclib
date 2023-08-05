@@ -159,13 +159,13 @@ force_eMin_V0 (vui64_t x_exp)
 __binary128
 test_vec_xsaddqpo (__binary128 vfa, __binary128 vfb)
 {
-  return vec_xsaddqpo (vfa, vfb);
+  return vec_xsaddqpo_inline (vfa, vfb);
 }
 
 __binary128
 test_vec_xssubqpo (__binary128 vfa, __binary128 vfb)
 {
-  return vec_xssubqpo (vfa, vfb);
+  return vec_xssubqpo_inline (vfa, vfb);
 }
 
 vui64_t
@@ -3975,19 +3975,19 @@ test_vec_mulqpn_V1 (__binary128 vfa, __binary128 vfb)
 __binary128
 test_vec_xsmulqpo (__binary128 vfa, __binary128 vfb)
 {
-  return vec_xsmulqpo (vfa, vfb);
+  return vec_xsmulqpo_inline (vfa, vfb);
 }
 
 __binary128
 test_vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
-  return vec_xsmaddqpo (vfa, vfb, vfc);
+  return vec_xsmaddqpo_inline (vfa, vfb, vfc);
 }
 
 __binary128
 test_vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
-  return vec_xsmsubqpo (vfa, vfb, vfc);
+  return vec_xsmsubqpo_inline (vfa, vfb, vfc);
 }
 
 int
@@ -4032,7 +4032,7 @@ test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
   __binary128 nsrc3;
 
   nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
-  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+  return vec_xsmaddqpo_inline (vfa, vfb, nsrc3);
 #endif
 }
 

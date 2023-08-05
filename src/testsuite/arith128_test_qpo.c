@@ -1847,9 +1847,15 @@ extern __binary128 test_vec_addqpo (__binary128 vfa, __binary128 vfb);
 #define test_xsaddqpo(_l,_k)	test_vec_addqpo(_l,_k)
 #endif
 #else
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsaddqpo) (__binary128 vfa, __binary128 vfb);
+#define test_xsaddqpo(_l,_k)	__VEC_PWR_IMP (vec_xsaddqpo)(_l,_k)
+#else
 // Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xsaddqpo (__binary128 vfa, __binary128 vfb);
 #define test_xsaddqpo(_l,_k)	test_vec_xsaddqpo(_l,_k)
+#endif
 #endif
 
 int
@@ -3048,9 +3054,15 @@ extern __binary128 test_vec_mulqpo (__binary128 vfa, __binary128 vfb);
 #define test_xsmulqpo(_l,_k)	test_vec_mulqpo(_l,_k)
 #endif
 #else
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsmulqpo) (__binary128 vfa, __binary128 vfb);
+#define test_xsmulqpo(_l,_k)	__VEC_PWR_IMP (vec_xsmulqpo)(_l,_k)
+#else
 // Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xsmulqpo (__binary128 vfa, __binary128 vfb);
 #define test_xsmulqpo(_l,_k)	test_vec_xsmulqpo(_l,_k)
+#endif
 #endif
 
 int
@@ -4047,9 +4059,15 @@ extern __binary128 test_vec_subqpo (__binary128 vfa, __binary128 vfb);
 #define test_xssubqpo(_l,_k)	test_vec_subqpo(_l,_k)
 #endif
 #else
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xssubqpo) (__binary128 vfa, __binary128 vfb);
+#define test_xssubqpo(_l,_k)	__VEC_PWR_IMP (vec_xssubqpo)(_l,_k)
+#else
 // Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xssubqpo (__binary128 vfa, __binary128 vfb);
 #define test_xssubqpo(_l,_k)	test_vec_xssubqpo(_l,_k)
+#endif
 #endif
 
 int
@@ -5121,9 +5139,15 @@ extern __binary128 test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary1
 #define test_xsmaddqpo(_l,_k,_j)	test_vec_maddqpo(_l,_k,_j)
 #endif
 #else
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsmaddqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+#define test_xsmaddqpo(_l,_k,_j)	__VEC_PWR_IMP (vec_xsmaddqpo)(_l,_k,_j)
+#else
 // Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
 #define test_xsmaddqpo(_l,_k,_j)	test_vec_xsmaddqpo(_l,_k,_j)
+#endif
 #endif
 
 int
@@ -11701,9 +11725,15 @@ extern __binary128 test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary1
 #define test_xsmsubqpo(_l,_k,_m)	test_vec_msubqpo(_l,_k,_m)
 #endif
 #else
+#if 1
+// Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsmsubqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+#define test_xsmsubqpo(_l,_k,_j)	__VEC_PWR_IMP (vec_xsmsubqpo)(_l,_k,_j)
+#else
 // Test implementation expanded from vec_f128_ppc.h
 extern __binary128 test_vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
 #define test_xsmsubqpo(_l,_k,_m)	test_vec_xsmsubqpo(_l,_k,_m)
+#endif
 #endif
 
 int

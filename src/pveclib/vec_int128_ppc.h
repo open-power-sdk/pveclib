@@ -3615,7 +3615,7 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
 #if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
-  return vec_all_ge (vra, vrb);
+  return vec_all_gt (vra, vrb);
 #else
   vb128_t vrt;
   int u, r;
@@ -3893,7 +3893,7 @@ vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
 {
 #if defined (_ARCH_PWR10) && defined (__VSX__)  && (__GNUC__ >= 10)
 #if (__GNUC__ > 11) || ((__GNUC__ == 11) && (__GNUC_MINOR__ >= 2))
-  return vec_all_ge (vra, vrb);
+  return vec_all_gt (vra, vrb);
 #else
   vb128_t vrt;
   int u, r;

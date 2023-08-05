@@ -4699,6 +4699,17 @@ static inline __binary128 vec_xsiexpqp (vui128_t sig, vui64_t exp);
 static inline vui64_t vec_xsxexpqp (__binary128 f128);
 static inline vui128_t vec_xsxsigqp (__binary128 f128);
 static inline vui64_t vec_xxxexpqpp (__binary128 vfa, __binary128 vfb);
+
+extern __binary128
+__VEC_PWR_IMP (vec_xsaddqpo) (__binary128 vfa, __binary128 vfb);
+extern __binary128
+__VEC_PWR_IMP (vec_xsmaddqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+extern __binary128
+__VEC_PWR_IMP (vec_xsmsubqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+extern __binary128
+__VEC_PWR_IMP (vec_xsmulqpo) (__binary128 vfa, __binary128 vfb);
+extern __binary128
+__VEC_PWR_IMP (vec_xssubqpo) (__binary128 vfa, __binary128 vfb);
 ///@endcond
 
 /** \brief Generate doubleword splat constant 112.
@@ -6055,6 +6066,7 @@ vec_const_nansf128 ()
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6110,6 +6122,7 @@ vec_cmpeqtoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10    | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6173,6 +6186,7 @@ vec_cmpequzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 18-30 | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6239,6 +6253,8 @@ vec_cmpequqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 26-35 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
+ *
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6308,6 +6324,7 @@ vec_cmpgetoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6382,6 +6399,7 @@ vec_cmpgeuzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6459,6 +6477,7 @@ vec_cmpgeuqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 26-35 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6528,6 +6547,7 @@ vec_cmpgttoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6602,6 +6622,7 @@ vec_cmpgtuzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6679,6 +6700,7 @@ vec_cmpgtuqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 26-35 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6748,6 +6770,7 @@ vec_cmpletoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6822,6 +6845,7 @@ vec_cmpleuzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6899,6 +6923,7 @@ vec_cmpleuqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 26-35 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -6968,6 +6993,7 @@ vec_cmplttoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -7042,6 +7068,7 @@ vec_cmpltuzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-37 | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4-5   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -7117,6 +7144,7 @@ vec_cmpltuqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 5-8   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -7173,6 +7201,7 @@ vec_cmpnetoqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10    | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 5-8   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -7237,6 +7266,7 @@ vec_cmpneuzqp (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 18-30 | 1/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 5-8   | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -8958,6 +8988,7 @@ vec_self128 (__binary128 vfa, __binary128 vfb, vb128_t mask)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
  *  |power9   |   6   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param f128 a 128-bit vector treated a signed __int128.
  *  @return a 128-bit vector bool of all '1's if the sign bit is '1'.
@@ -9026,6 +9057,54 @@ vec_signbitf128 (__binary128 f128)
  *  to produce the quad-precision result.
  *  The rounding mode is round to odd.
  *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xsaddqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xsaddqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xsaddqpo_PWR7 (BE only),
+ *  vec_xsaddqpo_PWR8, vec_xsaddqpo_PWR9 and vec_xsaddqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsaddqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsaddqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 54-71 | 1/cycle  |
+ *  |power9   |   12  |1/12 cycle|
+ *  |power10  | 12-13 | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return a scalar __binary128 value.
+ */
+extern __binary128
+vec_xsaddqpo (__binary128 vfa, __binary128 vfb);
+
+/** \brief VSX Scalar Add Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vectors vfa and vfb are added
+ *  to produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
  *  For POWER9 use the xsaddqpo instruction.
  *  For POWER8 use this soft-float implementation using
  *  vector instruction generated by PVECLIB operations.
@@ -9040,13 +9119,14 @@ vec_signbitf128 (__binary128 f128)
  *  |--------:|:-----:|:---------|
  *  |power8   | 54-71 | 1/cycle  |
  *  |power9   |   12  |1/12 cycle|
+ *  |power10  | 12-13 | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
- *  @return a vector unsigned __int128 value.
+ *  @return a scalar __binary128 value.
  */
 static inline __binary128
-vec_xsaddqpo (__binary128 vfa, __binary128 vfb)
+vec_xsaddqpo_inline (__binary128 vfa, __binary128 vfb)
 {
   __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)
@@ -9294,6 +9374,54 @@ vec_xsaddqpo (__binary128 vfa, __binary128 vfb)
  *  to produce the quad-precision result.
  *  The rounding mode is round to odd.
  *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xssubqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xssubqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xssubqpo_PWR7 (BE only),
+ *  vec_xssubqpo_PWR8, vec_xssubqpo_PWR9 and vec_xssubqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsaddqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xssubqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 54-71 | 1/cycle  |
+ *  |power9   |   12  |1/12 cycle|
+ *  |power10  | 12-13 | 2/cycle  |
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return a scalar __binary128 value.
+ */
+extern __binary128
+vec_xssubqpo (__binary128 vfa, __binary128 vfb);
+
+/** \brief VSX Scalar Subtract Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vector vfb is subtracted from vfa
+ *  to produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
  *  For POWER9 use the xssubqpo instruction.
  *  For POWER8 use this soft-float implementation using
  *  vector instruction generated by PVECLIB operations.
@@ -9308,13 +9436,14 @@ vec_xsaddqpo (__binary128 vfa, __binary128 vfb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 51-70 | 1/cycle  |
  *  |power9   |   12  |1/12 cycle|
+ *  |power10  | 12-13 | 2/cycle  |
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
- *  @return a vector unsigned __int128 value.
+ *  @return a scalar __binary128 value.
  */
 static inline __binary128
-vec_xssubqpo (__binary128 vfa, __binary128 vfb)
+vec_xssubqpo_inline (__binary128 vfa, __binary128 vfb)
 {
   __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)
@@ -9897,6 +10026,7 @@ vec_xscvqpudz (__binary128 f128)
  *  |--------:|:-----:|:---------|
  *  |power8   |   ?   | 2/cycle  |
  *  |power9   |   ?   | 2/cycle  |
+ *  |power10  | 12-13 | 2/cycles |
  *
  *  @param f128 128-bit vector treated as a scalar __binary128.
  *  @return a vector unsigned __int128 value.
@@ -9979,7 +10109,8 @@ vec_xscvqpuqz (__binary128 f128)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   |   ?   | 2/cycle  |
- *  |power9   |   3   | 2/cycle  |
+ *  |power9   |   12  | 1/cycle  |
+ *  |power10  | 12-13 | 2/cycles |
  *
  *  @param int64 a vector signed long long. The left most element is converted.
  *  @return a __binary128 value.
@@ -10059,7 +10190,8 @@ static inline vec_xscvsdqp (vi64_t int64)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   |   ?   | 2/cycle  |
- *  |power9   |   3   | 2/cycle  |
+ *  |power9   |   12  | 1/cycle  |
+ *  |power10  | 12-13 | 2/cycles |
  *
  *  @param int64 a vector unsigned long long. The left most element is converted.
  *  @return a __binary128 value.
@@ -10134,8 +10266,9 @@ static inline vec_xscvudqp (vui64_t int64)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ?   | 2/cycle  |
- *  |power9   | 44-53 |1/13cycles|
+ *  |power8   |   ?   |  NA      |
+ *  |power9   | 38-47 |1/13cycles|
+ *  |power10  | 12-13 | 2/cycles |
  *
  *  @param int128 a vector signed __int128 which is converted to QP format.
  *  @return a __binary128 value.
@@ -10275,8 +10408,9 @@ static inline vec_xscvsqqp (vi128_t int128)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ?   | 2/cycle  |
+ *  |power8   |   ?   |  NA      |
  *  |power9   | 38-47 |1/13cycles|
+ *  |power10  | 12-13 | 2/cycles |
  *
  *  @param int128 a vector unsigned __int128 which is converted to QP format.
  *  @return a __binary128 value.
@@ -10371,6 +10505,55 @@ static inline vec_xscvuqqp (vui128_t int128)
  *  produce the quad-precision result.
  *  The rounding mode is round to odd.
  *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xsmaddqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xsmaddqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xsmaddqpo_PWR7 (BE only),
+ *  vec_xsmaddqpo_PWR8, vec_xsmaddqpo_PWR9 and vec_xsmaddqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsmaddqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsmaddqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ??  | 1/cycle  |
+ *  |power9   |   12  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @param vfc 128-bit vector treated as a scalar __binary128.
+ *  @return The __binary128 result of  vfa * vfb + vfc
+ */
+extern __binary128
+vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+
+/** \brief VSX Scalar Multiply-Add Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vectors vfa * vfb + vfc
+ *  produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
  *  For POWER9 use the xsmaddqpo instruction.
  *  For POWER8 use this soft-float implementation using
  *  vector instruction generated by PVECLIB operations.
@@ -10385,6 +10568,7 @@ static inline vec_xscvuqqp (vui128_t int128)
  *  |--------:|:-----:|:---------|
  *  |power8   |   ??  | 1/cycle  |
  *  |power9   |   24  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
@@ -10392,7 +10576,7 @@ static inline vec_xscvuqqp (vui128_t int128)
  *  @return The __binary128 result of  vfa * vfb + vfc
  */
 static inline __binary128
-vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+vec_xsmaddqpo_inline (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
   __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)
@@ -11055,13 +11239,62 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  *  produce the quad-precision result.
  *  The rounding mode is round to odd.
  *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xsmsubqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xsmsubqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xsmsubqpo_PWR7 (BE only),
+ *  vec_xsmsubqpo_PWR8, vec_xsmsubqpo_PWR9 and vec_xsmsubqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsmsubqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsmsubqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   ??  | 1/cycle  |
+ *  |power9   |   12  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @param vfc 128-bit vector treated as a scalar __binary128.
+ *  @return The __binary128 result of  vfa * vfb + vfc
+ */
+extern __binary128
+vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
+
+/** \brief VSX Scalar Multiply-Sub Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vectors vfa * vfb - vfc
+ *  produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
  *  For POWER9 use the xsmsubqpo instruction.
  *  For POWER8 use this soft-float implementation using
  *  vector instruction generated by PVECLIB operations.
  *
  *  \note This operation <I>may not</I> follow the PowerISA
  *  relative to setting the FPSCR.
- *  However if the hardware target includes the xsmaddqpo instruction,
+ *  However if the hardware target includes the xsmsubqpo instruction,
  *  the implementation may use that.
  *
  *  |processor|Latency|Throughput|
@@ -11076,7 +11309,7 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  */
 
 static inline __binary128
-vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
+vec_xsmsubqpo_inline (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)
   __binary128 result;
@@ -11097,9 +11330,57 @@ vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
   __binary128 nsrc3;
 
   nsrc3 = vec_self128 (vec_negf128 (vfc), vfc, vec_isnanf128(vfc));
-  return vec_xsmaddqpo (vfa, vfb, nsrc3);
+  return vec_xsmaddqpo_inline (vfa, vfb, nsrc3);
 #endif
 }
+
+/** \brief VSX Scalar Multiply Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vectors vfa and vfb are multiplied
+ *  to produce the quad-precision result.
+ *  The rounding mode is round to odd.
+ *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xsmulqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xsmulqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xsmulqpo_PWR7 (BE only),
+ *  vec_xsmulqpo_PWR8, vec_xsmulqpo_PWR9 and vec_xsmulqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsmulqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsmulqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 54-71 | 1/cycle  |
+ *  |power9   |   12  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return a scalar __binary128 value.
+ */
+extern __binary128
+vec_xsmulqpo (__binary128 vfa, __binary128 vfb);
 
 /** \brief VSX Scalar Multiply Quad-Precision using round to Odd.
  *
@@ -11121,13 +11402,14 @@ vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  *  |--------:|:-----:|:---------|
  *  |power8   | 78-84 | 1/cycle  |
  *  |power9   |   24  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.
- *  @return a vector unsigned __int128 value.
+ *  @return a scalar __binary128 value.
  */
 static inline __binary128
-vec_xsmulqpo (__binary128 vfa, __binary128 vfb)
+vec_xsmulqpo_inline (__binary128 vfa, __binary128 vfb)
 {
   __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 7)

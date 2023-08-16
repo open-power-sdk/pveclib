@@ -1344,21 +1344,6 @@ typedef union
 #define COMPILE_FENCE __asm (";":::)
 #endif
 
-/*! \brief Macro to add platform suffix for static calls. */
-#ifdef _ARCH_PWR10
-#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR10
-#else
-#ifdef _ARCH_PWR9
-#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR9
-#else
-#ifdef _ARCH_PWR8
-#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR8
-#else
-#define __VEC_PWR_IMP(FNAME) FNAME ## _PWR7
-#endif
-#endif
-#endif
-
 /** \brief Vector Add 512-bit Unsigned Integer & Write Carry.
  *
  *  Compute the 512 bit sum of two 512 bit values a, b and

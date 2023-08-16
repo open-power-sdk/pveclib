@@ -51,8 +51,11 @@
  */
 
 #include <pveclib/vec_int512_ppc.h>
-
-/*! \brief Macro to expand the parameterize resolver. */
+#include <pveclib/vec_f128_ppc.h>
+#if 1
+/*! \brief Macro to expand the parameterize resolver.
+ * \sa \ref main_libary_issues_0_0_2
+ * \sa \ref main_libary_issues_0_0 */
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #ifdef __BUILTIN_CPU_SUPPORTS__
 #ifdef PVECLIB_DISABLE_POWER9
@@ -96,146 +99,97 @@
    return FNAME ## _PWR8;
 #endif
 #endif
+#endif
 
+
+/*! \brief Macros paste resolver_ prefix on function names. */
+#define RESPASTE(_XF) resolve_ ## _XF
+
+/*! \brief Macros to generate the static resolver function and
+ * ifunc alias. These have to be defined in matched pairs linked by a
+ * common <B>resolver name</B>.
+ * We use multiple macros to address the varying number of function
+ * parameters.
+ * \sa \ref main_libary_issues_0_0_2
+ * \sa \ref main_libary_issues_0_0 */
+#define VEC_RESOLVER_2(_VT,_FUNC,_VA,_VB) \
+static _VT \
+(* RESPASTE(_FUNC) (void))(_VA, _VB) \
+{ \
+  VEC_DYN_RESOLVER(_FUNC); \
+} \
+_VT _FUNC (_VA, _VB) \
+__attribute__ ((ifunc ("resolve_" #_FUNC )));
+
+#define VEC_RESOLVER_3(_VT,_FUNC,_VA,_VB,_VC) \
+static _VT \
+(* RESPASTE(_FUNC) (void))(_VA, _VB, _VC) \
+{ \
+  VEC_DYN_RESOLVER(_FUNC); \
+} \
+_VT _FUNC (_VA, _VB, _VC) \
+__attribute__ ((ifunc ("resolve_" #_FUNC )));
+
+/*! \brief Macros listing externs for CPU specific runtime library
+ * functions.
+ * These will be expanded multiple time, once for each supported
+ * -mcpu target.*/
+#define VEC_F128_LIB_LIST(_TARGET) \
+extern __binary128 vec_xsaddqpo ## _TARGET (__binary128, __binary128); \
+extern __binary128 vec_xssubqpo ## _TARGET (__binary128, __binary128); \
+extern __binary128 vec_xsmulqpo ## _TARGET (__binary128, __binary128); \
+extern __binary128 vec_xsmaddqpo ## _TARGET (__binary128, __binary128, __binary128); \
+extern __binary128 vec_xsmsubqpo ## _TARGET (__binary128, __binary128, __binary128);
+
+#define VEC_INT512_LIB_LIST(_TARGET) \
+extern __VEC_U_256 vec_mul128x128 ## _TARGET (vui128_t, vui128_t); \
+extern __VEC_U_512 vec_mul256x256 ## _TARGET (__VEC_U_256, __VEC_U_256); \
+extern __VEC_U_640 vec_mul512x128 ## _TARGET (__VEC_U_512, vui128_t); \
+extern __VEC_U_640 vec_madd512x128a512 ## _TARGET (__VEC_U_512, vui128_t, __VEC_U_512); \
+extern __VEC_U_1024 vec_mul512x512 ## _TARGET (__VEC_U_512, __VEC_U_512); \
+extern void vec_mul1024x1024 ## _TARGET (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *); \
+extern void vec_mul2048x2048 ## _TARGET (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *); \
+extern void vec_mul128_byMN ## _TARGET (vui128_t *p, \
+		  vui128_t *m1, vui128_t *m2, \
+		  unsigned long M, unsigned long N); \
+extern void vec_mul512_byMN ## _TARGET (__VEC_U_512 *p, \
+                  __VEC_U_512 *m1, __VEC_U_512 *m2, \
+		  unsigned long M, unsigned long N);
 
 #ifndef PVECLIB_DISABLE_POWER7
 // POWER7 supports only BIG Endian. So declare PWR7 externs only for BE.
+VEC_INT512_LIB_LIST (_PWR7)
 
-extern __VEC_U_256
-vec_mul128x128_PWR7 (vui128_t, vui128_t);
-
-extern __VEC_U_512
-vec_mul256x256_PWR7 (__VEC_U_256, __VEC_U_256);
-
-extern __VEC_U_640
-vec_mul512x128_PWR7 (__VEC_U_512, vui128_t);
-
-extern __VEC_U_640
-vec_madd512x128a512_PWR7 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
-
-extern __VEC_U_1024
-vec_mul512x512_PWR7 (__VEC_U_512, __VEC_U_512);
-
-extern void
-vec_mul1024x1024_PWR7 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
-
-extern void
-vec_mul2048x2048_PWR7 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
-
-extern void
-vec_mul128_byMN_PWR7 (vui128_t *p,
-		  vui128_t *m1, vui128_t *m2,
-		  unsigned long M, unsigned long N);
-
-extern void
-vec_mul512_byMN_PWR7 (__VEC_U_512 *p,
-                  __VEC_U_512 *m1, __VEC_U_512 *m2,
-		  unsigned long M, unsigned long N);
+VEC_F128_LIB_LIST (_PWR7)
 #endif
 
-extern __VEC_U_256
-vec_mul128x128_PWR8 (vui128_t, vui128_t);
+// POWER8 supports both Endians. So declare PWR8 externs unconditionally.
+VEC_INT512_LIB_LIST (_PWR8)
 
-extern __VEC_U_512
-vec_mul256x256_PWR8 (__VEC_U_256, __VEC_U_256);
-
-extern __VEC_U_640
-vec_mul512x128_PWR8 (__VEC_U_512, vui128_t);
-
-extern __VEC_U_640
-vec_madd512x128a512_PWR8 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
-
-extern __VEC_U_1024
-vec_mul512x512_PWR8 (__VEC_U_512, __VEC_U_512);
-
-extern void
-vec_mul1024x1024_PWR8 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
-
-extern void
-vec_mul2048x2048_PWR8 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
-
-extern void
-vec_mul128_byMN_PWR8 (vui128_t *p,
-		  vui128_t *m1, vui128_t *m2,
-		  unsigned long M, unsigned long N);
-
-extern void
-vec_mul512_byMN_PWR8 (__VEC_U_512 *p,
-                  __VEC_U_512 *m1, __VEC_U_512 *m2,
-		  unsigned long M, unsigned long N);
+VEC_F128_LIB_LIST (_PWR8)
 
 #ifndef PVECLIB_DISABLE_POWER9
 /* Older distros running Big Endian are unlikely to support PWR9.
  * So declare PWR9 externs only for LE.  */
 
-extern __VEC_U_256
-vec_mul128x128_PWR9 (vui128_t, vui128_t);
+VEC_INT512_LIB_LIST (_PWR9)
 
-extern __VEC_U_640
-vec_mul512x128_PWR9 (__VEC_U_512, vui128_t);
-
-extern __VEC_U_512
-vec_mul256x256_PWR9 (__VEC_U_256, __VEC_U_256);
-
-extern __VEC_U_640
-vec_madd512x128a512_PWR9 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
-
-extern __VEC_U_1024
-vec_mul512x512_PWR9 (__VEC_U_512, __VEC_U_512);
-
-extern void
-vec_mul1024x1024_PWR9 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
-
-extern void
-vec_mul2048x2048_PWR9 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
-
-extern void
-vec_mul128_byMN_PWR9 (vui128_t *p,
-		  vui128_t *m1, vui128_t *m2,
-		  unsigned long M, unsigned long N);
-
-extern void
-vec_mul512_byMN_PWR9 (__VEC_U_512 *p,
-                  __VEC_U_512 *m1, __VEC_U_512 *m2,
-		  unsigned long M, unsigned long N);
+VEC_F128_LIB_LIST (_PWR9)
 #endif
 
 #ifndef PVECLIB_DISABLE_POWER10
-/* Older distros running Big Endian are unlikely to support PWR9.
+/* Older distros running Big Endian are unlikely to support PWR10.
  * So declare PWR9 externs only for LE.  */
 
-extern __VEC_U_256
-vec_mul128x128_PWR10 (vui128_t, vui128_t);
+VEC_INT512_LIB_LIST (_PWR10)
 
-extern __VEC_U_640
-vec_mul512x128_PWR10 (__VEC_U_512, vui128_t);
-
-extern __VEC_U_512
-vec_mul256x256_PWR10 (__VEC_U_256, __VEC_U_256);
-
-extern __VEC_U_640
-vec_madd512x128a512_PWR10 (__VEC_U_512 m1, vui128_t m2, __VEC_U_512 a2);
-
-extern __VEC_U_1024
-vec_mul512x512_PWR10 (__VEC_U_512, __VEC_U_512);
-
-extern void
-vec_mul1024x1024_PWR10 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *);
-
-extern void
-vec_mul2048x2048_PWR10 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *);
-
-extern void
-vec_mul128_byMN_PWR10 (vui128_t *p,
-		  vui128_t *m1, vui128_t *m2,
-		  unsigned long M, unsigned long N);
-
-extern void
-vec_mul512_byMN_PWR10 (__VEC_U_512 *p,
-                  __VEC_U_512 *m1, __VEC_U_512 *m2,
-		  unsigned long M, unsigned long N);
+VEC_F128_LIB_LIST (_PWR10)
 #endif
 
+/* Declare the required static resolvers and ifunc aliases.
+ * For example:
+ *
+ * \code
 static
 __VEC_U_256
 (*resolve_vec_mul128x128 (void))(vui128_t, vui128_t)
@@ -246,74 +200,28 @@ __VEC_U_256
 __VEC_U_256
 vec_mul128x128 (vui128_t, vui128_t)
 __attribute__ ((ifunc ("resolve_vec_mul128x128")));
+ * \endcode
+ *
+ * Here we can use the macros VEC_RESOLVER_2() and VEC_RESOLVER_3()
+ * */
 
-static
-__VEC_U_512
-(*resolve_vec_mul256x256 (void))(__VEC_U_256, __VEC_U_256)
-{
-  VEC_DYN_RESOLVER(vec_mul256x256);
-}
+/* Declare the required static resolvers and ifunc aliases for dynamic
+ * selection of CPU specific implementations supporting
+ * vec_int512_ppc.h
+ * */
+VEC_RESOLVER_2 (__VEC_U_256, vec_mul128x128, vui128_t, vui128_t);
 
-__VEC_U_512
-vec_mul256x256 (__VEC_U_256, __VEC_U_256)
-__attribute__ ((ifunc ("resolve_vec_mul256x256")));
+VEC_RESOLVER_2 (__VEC_U_512, vec_mul256x256, __VEC_U_256, __VEC_U_256);
 
-static
-__VEC_U_640
-(*resolve_vec_mul512x128 (void))(__VEC_U_512, vui128_t)
-{
-  VEC_DYN_RESOLVER(vec_mul512x128);
-}
+VEC_RESOLVER_2 (__VEC_U_640, vec_mul512x128, __VEC_U_512, vui128_t);
 
-__VEC_U_640
-vec_mul512x128 (__VEC_U_512, vui128_t)
-__attribute__ ((ifunc ("resolve_vec_mul512x128")));
+VEC_RESOLVER_3 (__VEC_U_640, vec_madd512x128a512, __VEC_U_512, vui128_t, __VEC_U_512);
 
-static
-__VEC_U_640
-(*resolve_vec_madd512x128a512 (void))(__VEC_U_512, vui128_t, __VEC_U_512)
-{
-  VEC_DYN_RESOLVER(vec_madd512x128a512);
-}
+VEC_RESOLVER_2 (__VEC_U_1024, vec_mul512x512, __VEC_U_512, __VEC_U_512);
 
-__VEC_U_640
-vec_madd512x128a512 (__VEC_U_512, vui128_t, __VEC_U_512)
-__attribute__ ((ifunc ("resolve_vec_madd512x128a512")));
+VEC_RESOLVER_3 (void, vec_mul1024x1024, __VEC_U_2048*, __VEC_U_1024*, __VEC_U_1024*);
 
-static
-__VEC_U_1024
-(*resolve_vec_mul512x512 (void))(__VEC_U_512, __VEC_U_512)
-{
-  VEC_DYN_RESOLVER(vec_mul512x512);
-}
-
-__VEC_U_1024
-vec_mul512x512 (__VEC_U_512, __VEC_U_512)
-__attribute__ ((ifunc ("resolve_vec_mul512x512")));
-
-static
-void
-(*resolve_vec_mul1024x1024 (void))
-(__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *)
-{
-  VEC_DYN_RESOLVER(vec_mul1024x1024);
-}
-
-void
-vec_mul1024x1024 (__VEC_U_2048 *, __VEC_U_1024 *, __VEC_U_1024 *)
-__attribute__ ((ifunc ("resolve_vec_mul1024x1024")));
-
-static
-void
-(*resolve_vec_mul2048x2048 (void))
-(__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *)
-{
-  VEC_DYN_RESOLVER(vec_mul2048x2048);
-}
-
-void
-vec_mul2048x2048 (__VEC_U_4096 *, __VEC_U_2048 *, __VEC_U_2048 *)
-__attribute__ ((ifunc ("resolve_vec_mul2048x2048")));
+VEC_RESOLVER_3 (void, vec_mul2048x2048, __VEC_U_4096*, __VEC_U_2048*, __VEC_U_2048*);
 
 static
 void
@@ -343,3 +251,12 @@ vec_mul512_byMN (__VEC_U_512 *p, __VEC_U_512 *m1, __VEC_U_512 *m2,
 		  unsigned long M, unsigned long N)
 __attribute__ ((ifunc ("resolve_vec_mul512_byMN")));
 
+/* Declare the required static resolvers and ifunc aliases for dynamic
+ * selection of CPU specific implementations supporting
+ * vec_f128_ppc.h
+ * */
+VEC_RESOLVER_2 (__binary128, vec_xsaddqpo, __binary128, __binary128);
+VEC_RESOLVER_2 (__binary128, vec_xsmulqpo, __binary128, __binary128);
+VEC_RESOLVER_2 (__binary128, vec_xssubqpo, __binary128, __binary128);
+VEC_RESOLVER_3 (__binary128, vec_xsmaddqpo, __binary128, __binary128, __binary128);
+VEC_RESOLVER_3 (__binary128, vec_xsmsubqpo, __binary128, __binary128, __binary128);

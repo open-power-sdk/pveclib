@@ -5146,11 +5146,15 @@ vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
 #if defined (_ARCH_PWR10) && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+  res = vec_msumc (a, b, c);
+#else
   __asm__(
       "vmsumcud %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b), "v" (c)
       : );
+#endif
 #else
   vui128_t p_even, p_odd, p_sum1, p_cry1, p_cry2;
   // Generate separate 128-bit even/odd products to isolate the carries
@@ -5203,11 +5207,15 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
 #if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if (__GNUC__ >= 12)
+  res = vec_msum (a, b, c);
+#else
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b), "v" (c)
       : );
+#endif
 #else
   vui128_t p_even, p_odd, p_sum;
 
@@ -5278,11 +5286,15 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mulh (vra, vrb);
+#else
   __asm__(
       "vmulhud %0,%1,%2;\n"
       : "=v" (res)
       : "v" (vra), "v" (vrb)
       : );
+#endif
   return res;
 #else
   return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
@@ -5332,6 +5344,7 @@ vec_muloud (vui64_t a, vui64_t b)
  *  |--------:|:-----:|:---------|
  *  |power8   | 19-28 | 1/cycle  |
  *  |power9   | 11-16 | 1/cycle  |
+ *  |power10  |  4-5  | 4/cycle  |
  *
  *
  *  @param vra 128-bit vector unsigned long long.
@@ -5345,11 +5358,15 @@ vec_muludm (vui64_t vra, vui64_t vrb)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mul (vra, vrb);
+#else
   __asm__(
       "vmulld %0,%1,%2;\n"
       : "=v" (res)
       : "v" (vra), "v" (vrb)
       : );
+#endif
   return res;
 #elif defined (_ARCH_PWR9)
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
@@ -6379,11 +6396,15 @@ vec_rlq (vui128_t vra, vui128_t vrb)
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   // vrlq takes the shift count from bits 57:63
   vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
+#if (__GNUC__ >= 12)
+  result = vec_rl (vra, vrb);
+#else
   __asm__(
       "vrlq %0,%1,%2;\n"
       : "=v" (result)
       : "v" (vra), "v" (vrb)
       : );
+#endif
 #else
   result = vec_sldq (vra, vra, vrb);
 #endif
@@ -6419,11 +6440,15 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
   else
     {
       vui32_t lshift = vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_rl (vra, (vui128_t) lshift);
+#else
       __asm__(
     	  "vrlq %0,%1,%2;\n"
     	  : "=v" (result)
     	  : "v" (vra), "v" (lshift)
     	  : );
+#endif
     }
 #else
   if (__builtin_constant_p (shb) && ((shb % 8) == 0))
@@ -6578,11 +6603,15 @@ vec_setb_sq (vi128_t vra)
   vb128_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      result = (vb128_t) vec_expandm ((vui128_t) vra);
+#else
   __asm__(
       "vexpandqm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );
+#endif
 #else
   const vui8_t shift = vec_splat_u8 (7);
   vui8_t splat = vec_splat ((vui8_t) vra, VEC_BYTE_H);
@@ -6711,11 +6740,15 @@ vec_slq (vui128_t vra, vui128_t vrb)
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   // vslq takes the shift count from bits 57:63
   vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
+#if (__GNUC__ >= 12)
+  result = (vui8_t) vec_sl (vra, vrb);
+#else
   __asm__(
       "vslq %0,%1,%2;\n"
       : "=v" (result)
       : "v" (vra), "v" (vrb)
       : );
+#endif
 #else
   vui8_t vshift_splat;
   /* For some reason, the vsl instruction only works
@@ -6754,11 +6787,15 @@ vec_slqi (vui128_t vra, const unsigned int shb)
       vui8_t lshift;
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
       lshift = (vui8_t) vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_sl (vra, (vui128_t) lshift);
+#else
       __asm__(
 	  "vslq %0,%1,%2;\n"
 	  : "=v" (result)
 	  : "v" (vra), "v" (lshift)
 	  : );
+#endif
 #else
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
@@ -6989,11 +7026,15 @@ vec_sraq (vi128_t vra, vui128_t vrb)
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   // vsraq takes the shift count from bits 57:63
   vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_sra (vra, vrb);
+#else
   __asm__(
       "vsraq %0,%1,%2;\n"
       : "=v" (result)
       : "v" (vra), "v" (vrb)
       : );
+#endif
 #else
   vui8_t vsht;
   vui128_t vsgn;
@@ -7041,11 +7082,15 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
     {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui32_t rshift = vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_sra (vra, (vui128_t) rshift);
+#else
   __asm__(
 	  "vsraq %0,%1,%2;\n"
 	  : "=v" (result)
 	  : "v" (vra), "v" (rshift)
 	  : );
+#endif
 #else
       vui8_t lshift;
       vui128_t vsgn;
@@ -7117,11 +7162,15 @@ vec_srq (vui128_t vra, vui128_t vrb)
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   // vsrq takes the shift count from bits 57:63
   vrb = (vui128_t) vec_splatd ((vui64_t) vrb, VEC_DW_L);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_sr (vra, vrb);
+#else
   __asm__(
       "vsrq %0,%1,%2;\n"
       : "=v" (result)
       : "v" (vra), "v" (vrb)
       : );
+#endif
 #else
   vui8_t vsht_splat;
   /* For some reason the vsr instruction only works
@@ -7159,11 +7208,15 @@ vec_srqi (vui128_t vra, const unsigned int shb)
     {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui32_t rshift = vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+      result = (vui8_t) vec_sr (vra, (vui128_t) rshift);
+#else
   __asm__(
 	  "vsrq %0,%1,%2;\n"
 	  : "=v" (result)
 	  : "v" (vra), "v" (rshift)
 	  : );
+#endif
 #else
       vui8_t lshift;
       if (__builtin_constant_p (shb) && ((shb % 8)) == 0)
@@ -7320,7 +7373,7 @@ vec_subcuq (vui128_t vra, vui128_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vsubcuq)
   t = (vui32_t) vec_vsubcuq (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 12)
   t = (vui32_t) vec_subc (vra, vrb);
 # else
   __asm__(
@@ -7361,7 +7414,7 @@ vec_subecuq (vui128_t vra, vui128_t vrb, vui128_t vrc)
 #ifdef _ARCH_PWR8
 #if defined (vec_vsubecuq)
   t = (vui32_t) vec_vsubecuq (vra, vrb, vrc);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 12)
   t = (vui32_t) vec_subec (vra, vrb, vrc);
 # else
   __asm__(
@@ -7402,7 +7455,7 @@ vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc)
 #ifdef _ARCH_PWR8
 #if defined (vec_vsubeuqm)
   t = (vui32_t) vec_vsubeuqm (vra, vrb, vrc);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 12)
   t = (vui32_t) vec_sube (vra, vrb, vrc);
 # else
   __asm__(
@@ -7442,8 +7495,9 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vsubuqm)
   t = (vui32_t) vec_vsubuqm (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 12)
   t = (vui32_t) vec_sub (vra, vrb);
+#else
   __asm__(
       "vsubuqm %0,%1,%2;"
       : "=v" (t)
@@ -7489,19 +7543,31 @@ vec_vmuleud (vui64_t a, vui64_t b)
   vui64_t res;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  res = (vui64_t) vec_mulo (a, b);
+#else
+  res = (vui64_t) vec_mule (a, b);
+#endif
+#else
   __asm__(
       "vmuleud %0,%1,%2;\n"
       : "=v" (res)
       : "v" (a), "v" (b)
       : );
+#endif
 #elif defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+#if (__GNUC__ >= 12)
+  res = (vui64_t) vec_msum (a, b_eud, (vui128_t) zero);
+#else
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b_eud), "v" (zero)
       : );
+#endif
 #elif defined (_ARCH_PWR8)
   const vui64_t zero = { 0, 0 };
   vui64_t p0, p1, pp10, pp01;
@@ -7735,19 +7801,31 @@ vec_vmuloud (vui64_t a, vui64_t b)
   vui64_t res;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  res = (vui64_t) vec_mule (a, b);
+#else
+  res = (vui64_t) vec_mulo (a, b);
+#endif
+#else
   __asm__(
       "vmuloud %0,%1,%2;\n"
       : "=v" (res)
       : "v" (a), "v" (b)
       : );
+#endif
 #elif defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_oud = vec_mrgald ((vui128_t) zero, (vui128_t)b);
+#if (__GNUC__ >= 12)
+  res = (vui64_t) vec_msum (a, b_oud, (vui128_t) zero);
+#else
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b_oud), "v" (zero)
       : );
+#endif
 #elif defined (_ARCH_PWR8)
   const vui64_t zero = { 0, 0 };
   vui64_t p0, p1, pp10, pp01;
@@ -8057,11 +8135,16 @@ vec_vsldbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
   if (__builtin_constant_p (shb) && (shb < 8))
     {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      // GCC PR 111645
+      result = (vui128_t) vec_sldb ((vui64_t) vra, (vui64_t) vrb, shb);
+#else
       __asm__(
 	  "vsldbi %0,%1,%2,%3;\n"
 	  : "=v" (result)
 	  : "v" (vra), "v" (vrb), "K" (shb)
 	  : );
+#endif
 #else
       /* For Power7/8/9 the quadword bit shift left/right instructions
        * only handle 128-bits.
@@ -8122,11 +8205,16 @@ vec_vsrdbi (vui128_t vra, vui128_t vrb, const unsigned int shb)
   if (__builtin_constant_p (shb) && (shb < 8))
     {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      // GCC PR 111645
+      result = (vui128_t) vec_srdb ((vui64_t) vra, (vui64_t) vrb, shb);
+#else
       __asm__(
 	  "vsrdbi %0,%1,%2,%3;\n"
 	  : "=v" (result)
 	  : "v" (vra), "v" (vrb), "K" (shb)
 	  : );
+#endif
 #else
       /* For Power7/8/9 the quadword bit shift left/right instructions
        * only handle 128-bits.

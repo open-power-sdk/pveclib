@@ -1013,11 +1013,15 @@ vec_setb_sh (vi16_t vra)
   vb16_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      result = (vb16_t) vec_expandm ((vui16_t) vra);
+#else
   __asm__(
       "vexpandhm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );
+#endif
 #else
   const vui16_t rshift =  vec_splat_u16( 15 );
   // Vector Shift Right Algebraic Halfwords 15-bits.

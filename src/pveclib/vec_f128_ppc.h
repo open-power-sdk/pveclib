@@ -10536,7 +10536,7 @@ static inline vec_xscvuqqp (vui128_t int128)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ??  | 1/cycle  |
+ *  |power8   | ~128  | 1/cycle  |
  *  |power9   |   12  |1/12 cycle|
  *  |power10  |   25  |1/18 cycle|
  *
@@ -10566,7 +10566,7 @@ vec_xsmaddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ??  | 1/cycle  |
+ *  |power8   | ~128  | 1/cycle  |
  *  |power9   |   24  |1/12 cycle|
  *  |power10  |   25  |1/18 cycle|
  *
@@ -11270,7 +11270,7 @@ vec_xsmaddqpo_inline (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ??  | 1/cycle  |
+ *  |power8   | ~128  | 1/cycle  |
  *  |power9   |   12  |1/12 cycle|
  *  |power10  |   25  |1/18 cycle|
  *
@@ -11299,8 +11299,9 @@ vec_xsmsubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |   ??  | 1/cycle  |
+ *  |power8   | ~128  | 1/cycle  |
  *  |power9   |   24  |1/12 cycle|
+ *  |power10  |   25  |1/18 cycle|
  *
  *  @param vfa 128-bit vector treated as a scalar __binary128.
  *  @param vfb 128-bit vector treated as a scalar __binary128.

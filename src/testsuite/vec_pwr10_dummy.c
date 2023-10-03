@@ -660,4 +660,146 @@ test_vec_srqi_0_PWR10  (vui128_t a)
 {
   return (vec_srqi (a, 0));
 }
+
+vui64_t test_divmodud_PWR10 (vui64_t *r, vui64_t y, vui64_t z)
+{
+  *r = vec_vmodud_inline (y, z);
+  return vec_vdivud_inline (y, z);
+}
+
+vui64_t
+test_divqud_PWR10 (vui128_t x_y, vui64_t z)
+{
+  return vec_divqud_inline (x_y, z);
+}
+
+vui64_t test_vec_divud_PWR10 (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  __VEC_U_128 qu, yu, zu;
+#if 1
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower / zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper / zu.ulong.upper;
+
+  return qu.vx2;
+#endif
+}
+
+vui64_t test_vec_divude_PWR10 (vui64_t x, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  yu.vx2 = x;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = __builtin_divdeu (yu.ulong.lower, zu.ulong.lower);
+  qu.ulong.upper = __builtin_divdeu (yu.ulong.upper, zu.ulong.upper);
+
+  return qu.vx2;
+#endif
+}
+
+vui64_t test_vec_modud_PWR10 (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  return qu.vx2;
+#endif
+}
+
+vui64_t test_vec_divdud_PWR10 (vui64_t x, vui64_t y, vui64_t z)
+{
+  vui64_t Q, R, Qt /*, Rt*/;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  q1 = test_vec_divude_PWR10 (x, z);
+  r1 = vec_muludm (q1, z);
+  q2 = test_vec_divud_PWR10 (y, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+#if 0 // Corrected Remainder not returned
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+#endif
+  return Q;
+}
 #endif

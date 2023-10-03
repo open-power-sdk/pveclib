@@ -23,6 +23,9 @@
 #ifndef TESTSUITE_VEC_PERF_I128_H_
 #define TESTSUITE_VEC_PERF_I128_H_
 
+extern int timed_divqud (void);
+extern int timed_divmodud (void);
+extern int timed_lib_divmodud (void);
 extern int timed_mul10uq (void);
 extern int timed_mul10uq2x (void);
 extern int timed_cmul10ecuq (void);

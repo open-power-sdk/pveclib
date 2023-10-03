@@ -1385,3 +1385,945 @@ __test_vmuludm_PWR7 (vui64_t vra, vui64_t vrb)
 #endif
 #endif
 #endif
+
+vui64_t test_divdud (vui64_t x, vui64_t y, vui64_t z)
+{
+  return vec_divdud_inline (x, y, z);
+}
+
+vui64_t test_moddud (vui64_t x, vui64_t y, vui64_t z)
+{
+  return vec_moddud_inline (x, y, z);
+}
+
+vui64_t test_divqud (vui128_t x_y, vui64_t z)
+{
+  return vec_divqud_inline (x_y, z);
+}
+
+vui64_t test_divud (vui64_t y, vui64_t z)
+{
+  return vec_vdivud_inline (y, z);
+}
+
+vui64_t test_divude (vui64_t x, vui64_t z)
+{
+  return vec_vdiveud_inline (x, z);
+}
+
+vui64_t test_modud (vui64_t y, vui64_t z)
+{
+  return vec_vmodud_inline (y, z);
+}
+
+vui64_t test_divmodud (vui64_t *r, vui64_t y, vui64_t z)
+{
+  *r = vec_vmodud_inline (y, z);
+  return vec_vdivud_inline (y, z);
+}
+
+vui64_t test_divmoddud (vui64_t *r, vui64_t x, vui64_t y, vui64_t z)
+{
+  *r = vec_moddud_inline (x, y, z);
+  return vec_divdud_inline (x, y, z);
+}
+
+vui64_t test_vec_divud (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower / zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper / zu.ulong.upper;
+
+  return qu.vx2;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  vui64_t x = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+#if 1
+#if 1
+      c = vec_vrld (y, ones);
+#else
+      c = vec_rldi (y, 1);
+#endif
+#else
+      c = vec_srdi (y, 63);
+#endif
+#if 0
+      /* capture high bit of x as bool */
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+#if 1
+      x = vec_selud (x, c, (vb64_t) ones);
+#else
+      x = vec_addudm (x, c);
+#endif
+
+      // deconstruct ((t || x) >= z)
+      ge = vec_cmpgeud (x, z);
+#if 0
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+      // Convert bool to carry-bit for conditional y+1
+#if 0
+      t  = vec_srdi ((vui64_t)ge, 63);
+#endif
+#endif
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+#if 1
+      /* Instead of add, OR the boolean ge into bit_0 of y */
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+#else
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+#endif
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+vui64_t test_vec_divude (vui64_t x, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  yu.vx2 = x;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = __builtin_divdeu (yu.ulong.lower, zu.ulong.lower);
+  qu.ulong.upper = __builtin_divdeu (yu.ulong.upper, zu.ulong.upper);
+
+  return qu.vx2;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t t, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+  vui64_t y = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+#if 0
+#if 1
+      c = vec_rldi (y, 1);
+#else
+      c = vec_srdi (y, 63);
+#endif
+#endif
+      /* capture high bit of x as bool */
+#if defined (_ARCH_PWR8)
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+#else
+      /* P7 vec_cmpltsd is complicated, vec_setb_sd() is simpler */
+      t = (vui64_t) vec_setb_sd ((vi64_t) x);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+#if 0
+#if 1
+      x = vec_sel (x, c, ones);
+#else
+      x = vec_add (x, c); /* Propagate carry from y to x */
+#endif
+#endif
+
+      // deconstruct ((t || x) >= z)
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#if 0
+      // Convert bool to carry-bit for conditional y+1
+      t  = vec_srdi ((vui64_t)ge, 63);
+#endif
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+#if 1
+      /* Instead of add, OR the boolean ge into bit_0 of y */
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+#else
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+#endif
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+vui64_t test_vec_modud (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR8)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  return qu.vx2;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  vui64_t x = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+#if 1
+#if 1
+      c = vec_vrld (y, ones);
+#else
+      c = vec_rldi (y, 1);
+#endif
+#else
+      c = vec_srdi (y, 63);
+#endif
+#if 0
+      /* capture high bit of x as bool */
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+#if 1
+      x = vec_selud (x, c, (vb64_t) ones);
+#else
+      x = vec_addudm (x, c);
+#endif
+
+      // deconstruct ((t || x) >= z)
+      ge = vec_cmpgeud (x, z);
+#if 0
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+      // Convert bool to carry-bit for conditional y+1
+#if 0
+      t  = vec_srdi ((vui64_t)ge, 63);
+#endif
+#endif
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+#if 1
+      /* Instead of add, OR the boolean ge into bit_0 of y */
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+#else
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+#endif
+      x = vec_selud (x, xt, ge);
+    }
+  return x;
+#endif
+}
+
+vui64_t test_vec_divmodud_V1 (vui64_t *r, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res, rem;
+#if (__GNUC__ >= 13)
+  res = vec_div (y, z);
+  rem = vec_div (y, z);
+#else
+  __asm__(
+      "vdivud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (rem)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  *r = rem;
+  return res;
+#elif defined (_ARCH_PWR8)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 ru, qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower / zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper / zu.ulong.upper;
+
+  ru.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  ru.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  *r = ru.vx2;
+  return qu.vx2;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  vui64_t x = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+#if 1
+#if 1
+      c = vec_vrld (y, ones);
+#else
+      c = vec_rldi (y, 1);
+#endif
+#else
+      c = vec_srdi (y, 63);
+#endif
+#if 0
+      /* capture high bit of x as bool */
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+#if 1
+      x = vec_selud (x, c, (vb64_t) ones);
+#else
+      x = vec_addudm (x, c);
+#endif
+
+      // deconstruct ((t || x) >= z)
+      ge = vec_cmpgeud (x, z);
+#if 0
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+      // Convert bool to carry-bit for conditional y+1
+#if 0
+      t  = vec_srdi ((vui64_t)ge, 63);
+#endif
+#endif
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+#if 1
+      /* Instead of add, OR the boolean ge into bit_0 of y */
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+#else
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+#endif
+      x = vec_selud (x, xt, ge);
+    }
+  *r = x;
+  return y;
+#endif
+}
+
+vui64_t test_vec_divmodud_V0 (vui64_t *r, vui64_t y, vui64_t z)
+{
+  vui64_t Q;
+  vui64_t R;
+
+  Q = test_vec_divud (y, z);
+  R = test_vec_modud (y, z);
+
+  *r = R;
+  return Q;
+}
+
+vui64_t test_vec_divdud (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R, Qt /*, Rt*/;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = test_vec_divude (x, z);
+  q2 = test_vec_divud  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+#if 1
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+#else // Corrected Remainder not returned for divdud.
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+#endif
+  return Q;
+#elif defined (_ARCH_PWR7)
+  // P7 Missing some DW operations, so use divqud to avoid them.
+  vui128_t xy_h, xy_l;
+  vui64_t QQ, RQ_h, RQ_l, z_l;
+
+  xy_h = (vui128_t) vec_mrghd (x, y);
+  xy_l = (vui128_t) vec_mrgld (x, y);
+  z_l  = vec_swapd (z);
+  RQ_h = test_divqud (xy_h, z);
+  RQ_l = test_divqud (xy_l, z_l);
+  QQ   = vec_mrgld (RQ_h, RQ_l);
+  return QQ;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Vector Divide unsigned doubleword, using shift-and-subtract algorithm."
+   * Converted to use vector unsigned long long and PVEClIB
+   * operations.
+   * Requires a 129-bit shift left (((x || y) << 1) -> (t || x || y))
+   * and 65-bit compare (t || x) > z).
+   * */
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+      c = vec_vrld (y, ones);
+      /* capture high bit of x as bool t */
+#if defined (_ARCH_PWR8)
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+#else
+      /* P7 vec_cmpltsd is complicated, vec_setb_sd() is simpler */
+      t = (vui64_t) vec_setb_sd ((vi64_t) x);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+      x = vec_selud (x, c, (vb64_t) ones);
+
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x_y)
+      ge = (vui64_t) vec_cmpgtud (z, (vui64_t)x_y);
+      // Combine t with (x >= z) for 129-bit compare
+      ge = (vui64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      // Instead of add, OR the boolean ge into bit_0 of y
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+      // Select next x value
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+vui64_t test_vec_moddud (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R, Qt, Rt;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = test_vec_divude (x, z);
+  q2 = test_vec_divud  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+
+  return R;
+#elif defined (_ARCH_PWR7)
+  // P7 Missing some DW operations, so use divqud to avoid them.
+  vui128_t xy_h, xy_l;
+  vui64_t RR, RQ_h, RQ_l, z_l;
+
+  xy_h = (vui128_t) vec_mrghd (x, y);
+  xy_l = (vui128_t) vec_mrgld (x, y);
+  z_l  = vec_swapd (z);
+  RQ_h = test_divqud (xy_h, z);
+  RQ_l = test_divqud (xy_l, z_l);
+  RR   = vec_mrghd (RQ_h, RQ_l);
+  return RR;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Vector Divide unsigned doubleword, using shift-and-subtract algorithm."
+   * Converted to use vector unsigned long long and PVEClIB
+   * operations.
+   * Requires a 129-bit shift left (((x || y) << 1) -> (t || x || y))
+   * and 65-bit compare (t || x) > z).
+   * */
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+      c = vec_vrld (y, ones);
+      /* capture high bit of x as bool t */
+#if defined (_ARCH_PWR8)
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+#else
+      /* P7 vec_cmpltsd is complicated, vec_setb_sd() is simpler */
+      t = (vui64_t) vec_setb_sd ((vi64_t) x);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+      x = vec_selud (x, c, (vb64_t) ones);
+
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)ge, (vui32_t)t);
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      // Instead of add, OR the boolean ge into bit_0 of y
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+      // Select next x value
+      x = vec_selud (x, xt, ge);
+    }
+  return x;
+#endif
+}
+
+vui64_t test_vec_divdud_V1 (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR9)
+  vui64_t Q, R, Qt /*, Rt*/;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = test_vec_divude (x, z);
+  q2 = test_vec_divud  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+#if 0 // Corrected Remainder not returned
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+#endif
+  return Q;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+      c = vec_vrld (y, ones);
+#if defined (_ARCH_PWR8)
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+#else
+      t = (vui64_t) vec_setb_sd ((vi64_t) x);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+      x = vec_selud (x, c, (vb64_t) ones);
+
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x)
+      ge = vec_cmpgtud (z, x);
+      // Combine t with (x >= z) for 129-bit compare
+      ge = (vb64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      // Instead of add, OR the boolean ge into bit_0 of y
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+      // Select next x value
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+/* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+ * "Vector Divide unsigned doubleword, using shift-and-subtract algorithm."
+ * Converted to use vector unsigned long long and PVEClIB
+ * operations.
+ * Requires a 129-bit shift left (((x || y) << 1) -> (t || x || y))
+ * and 65-bit compare (t || x) > z).
+ * */
+vui64_t test_vec_divdud_V0 (vui64_t x, vui64_t y, vui64_t z)
+{
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  //const vui64_t ones = vec_splat_u64(1);
+  //const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+      c = vec_srdi (y, 63);
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+      x = vec_addudm (x, c);
+
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+      // Convert bool to carry-bit for conditional y+1
+      t  = vec_srdi ((vui64_t)ge, 63);
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+}
+
+vui64_t test_vec_divqud (vui128_t x_y, vui64_t z)
+{
+#if defined (_ARCH_PWR7)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide/divide extended
+  __VEC_U_128 qu, xy, zu;
+#if (__GNUC__ <= 10)
+  xy.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x_y, 1);
+  xy.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x_y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  xy.vx1 = x_y;
+  zu.vx2 = z;
+#endif
+  unsigned long long Dh = xy.ulong.upper;
+  unsigned long long Dl = xy.ulong.lower;
+  unsigned long long Dv = zu.ulong.upper;
+  unsigned long long q1, q2, Q;
+  unsigned long long r1, r2, R;
+
+  // Transfer to GPUs and use scalar divide/divide extended
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned]
+  q1 = __builtin_divdeu (Dh, Dv);
+  //r1 = -(q1 * Dv);
+  r1 = (q1 * Dv);
+  q2 = Dl / Dv;
+  r2 = Dl - (q2 * Dv);
+  Q = q1 + q2;
+  //R = r1 + r2;
+  R = r2 - r1;
+  if ((R < r2) | (R >= Dv))
+    {
+      Q++;
+      R = R - Dv;
+    }
+
+  // Transfer R|Q back to VRs and return
+  qu.ulong.upper = R;
+  qu.ulong.lower = Q;
+  return qu.vx2;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vui64_t ge;
+  //vui128_t cc, c;
+  vui64_t t, xt, mone;
+  const vui64_t zeros = vec_splat_u64(0);
+  // t = (vui64_t) CONST_VINT128_DW (0, 0);
+  mone = (vui64_t) CONST_VINT128_DW (-1, -1);
+  /* Here only using the high DW of z, generated z as {z'', -1} */
+  z = vec_pasted (z, mone);
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, is (t || x || y)
+      /* capture high bit of x_y as bool t */
+#if defined (_ARCH_PWR8)
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x_y, (vi64_t) zeros);
+#else
+      { // P7 and earlier did not support DW int.
+	// But only need to convert the sign-bit into a bool
+	vui32_t lts;
+	lts = (vui32_t) vec_cmplt ((vi32_t) x_y, (vi32_t) zeros);
+	t = (vui64_t) vec_splat (lts, VEC_W_H);
+      }
+#endif
+      // Then shift left Quadword x_y by 1 bit;
+      x_y = vec_slqi (x_y, 1);
+      /* We only need the high DW of t and ge */
+      /* deconstruct ((t || x) >= z) to (t || (x >= z)) */
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x_y)
+      ge = (vui64_t) vec_cmpgtud (z, (vui64_t)x_y);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else // P7 and earlier did not support OR Complement
+      ge = (vui64_t) vec_cmpgeud ((vui64_t)x_y, z);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+      /* Splat the high ge DW to both DWs for select */
+      ge = vec_splatd (ge, VEC_DW_H);
+
+      /* xt <- {(x - z), (y - ( -1)} */
+      xt = vec_subudm ((vui64_t)x_y, z);
+      x_y = (vui128_t)vec_selud ((vui64_t)x_y, xt, (vb64_t)ge);
+    }
+  return (vui64_t)x_y;
+#endif
+}
+
+vui64_t test_vec_divmoddud (vui64_t *r, vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R, Qt, Rt;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = test_vec_divude (x, z);
+  q2 = test_vec_divud  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+  *r = R;
+  return Q;
+
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Vector Divide unsigned doubleword, using shift-and-subtract algorithm."
+   * Converted to use vector unsigned long long and PVEClIB
+   * operations.
+   * Requires a 129-bit shift left (((x || y) << 1) -> (t || x || y))
+   * and 65-bit compare (t || x) > z).
+   * */
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+      c = vec_vrld (y, ones);
+      /* capture high bit of x as bool t */
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+      x = vec_selud (x, c, (vb64_t) ones);
+
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      // Instead of add, OR the boolean ge into bit_0 of y
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+      // Select next x value
+      x = vec_selud (x, xt, ge);
+    }
+  *r = x;
+  return y;
+#endif
+}
+
+vui64_t test_vec_divmoddud_V0 (vui64_t *r, vui64_t x, vui64_t y, vui64_t z)
+{
+  vui64_t Q;
+  vui64_t R;
+
+  Q = test_vec_divdud (x, y, z);
+  R = test_vec_moddud (x, y, z);
+
+  *r = R;
+  return Q;
+}

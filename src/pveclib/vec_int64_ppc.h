@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 
- vec_int32_ppc.h
+ vec_int64_ppc.h
 
  Contributors:
       IBM Corporation, Steven Munroe
@@ -148,7 +148,8 @@
  * \note The full title in PowerISA 2.06 is <B>Vector-Scalar
  * Floating-Point Operations [Category: VSX]</B>.
  *
- * PowerISA 2.07 (POWER8) did add a significant number of doubleword
+ * \subsection i64_missing_ops_0_0_PWR8 POWER8
+ * PowerISA 2.07 did add a significant number of doubleword
  * (64-bit) integer operations. Including;
  * - Add and subtract modulo
  * - Signed and unsigned compare, maximum, minimum,
@@ -176,7 +177,8 @@
  * - Direct move between GPRs and VSRs
  * - Logical operations; equivalence, not and, or compliment
  *
- * PowerISA 3.0 (POWER9) adds a few more doubleword
+ * \subsection i64_missing_ops_0_0_PWR9 POWER9
+ * PowerISA 3.0 adds a few more doubleword
  * (64-bit) integer operations. Including;
  * - Compare not equal
  * - Count trailing zeros and parity
@@ -203,24 +205,47 @@
  * - Scalar and Vector test data class
  * - Permute and Permute right index
  *
+ * \subsection i64_missing_ops_0_0_PWR10 POWER10
+ * PowerISA 3.1 adds a few more doubleword
+ * (64-bit) integer operations. Including:
+ * - Vector Multiply/Divide/Modulo instructions.
+ *   - Signed/Unsigned
+ *   - Multiply Even/Odd
+ *   - Multiply High/Low
+ *   - Divide Extended
+ * - Load/Store Rightmost Doubleword Indexed.
+ * - Extend Sign Doubleword to Quadword.
+ * - Generate Permute Control Vector
+ *
+ * Also added Halfword/Word/Quadword operations to compliment
+ * some of the new doubleWord operations.
+ * There are additional Quad-Precision instructions in support of
+ * IEEE128 floating point.
+ *
+ * \subsection i64_missing_ops_0_1 Challenges and opportunities
+ *
  * An impressive list of operations that can be used for;
  * - Vectorizing long integer loops
  * - Implementing useful quadword integer operations which do not have
- * corresponding PowerISA instructions
- * - implementing extended precision multiply and multiplicative
- * inverse operations
+ * corresponding PowerISA instructions (before POWER9/POWER10).
+ * - implementing extended precision multiply, multiplicative
+ * inverse, divide and modulo operations
  *
- * The challenge is that useful operations available for POWER9 will
- * need equivalent implementations for POWER8 and POWER7.  Similarly
- * for operations introduced for POWER8 will need POWER7
- * implementations.  Also there are some obvious missing operations;
+ * The challenge is that useful operations available for POWER10 will
+ * need equivalent implementations for POWER9, POWER8 and POWER7.
+ * Similarly for operations introduced for POWER9/POWER8.
+ * Also there are some obvious missing operations;
  * - Absolute Difference Doubleword (we have byte, halfword, and word)
  * - Average Doubleword (we have byte, halfword, and word)
- * - Extend Sign Doubleword to quadword (we have byte, halfword, and word)
+ * - Extend Sign Doubleword to quadword (we have byte, halfword,
+ *   and word).
  * - Multiply-sum Word (we have byte, halfword, and doubleword)
- * - Multiply Even/Odd Doublewords (we have byte, halfword, and word)
+ * - Multiply Even/Odd Doublewords (we have byte, halfword,
+ *   and word).
+ * - Multiply High/low Doublewords.
+ * - Divide/Modulo Double Doubleword (dividing 128-bit by 64-bit).
  *
- * \subsection i64_missing_ops_0_1 Challenges and opportunities
+ * \note Some of these are now instructions on POWER10.
  *
  * The stated goals for pveclib are:
  *  - Provide equivalent functions across versions of the compiler.
@@ -315,6 +340,8 @@ vec_absdud (vui64_t vra, vui64_t vrb)
  * and sub operations that work across GCC versions and provide
  * processor specific implementations for POWER8/9 and POWER7.
  *
+ * \subsubsection i64_missing_ops_0_2_1 Doubleword integer multiplies
+ *
  * Now we need to look at the multiply doubleword situation. We need
  * implementations for vec_msumudm(), vec_muleud(), vec_mulhud(),
  * vec_muloud(), and vec_muludm(). We saw in the implementations of
@@ -356,11 +383,15 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
   vui128_t res;
 #if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if (__GNUC__ >= 12)
+  res = vec_msum (a, b, c);
+#else
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b), "v" (c)
       : );
+#endif
 #else
   vui128_t p_even, p_odd, p_sum;
 
@@ -417,14 +448,32 @@ static inline vui128_t
 vec_vmuleud (vui64_t a, vui64_t b)
 {
   vui64_t res;
-#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  res = (vui64_t) vec_mulo (a, b);
+#else
+  res = (vui64_t) vec_mule (a, b);
+#endif
+#else
+  __asm__(
+      "vmuleud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b)
+      : );
+#endif
+#elif defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
   const vui64_t zero = { 0, 0 };
   vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+#if (__GNUC__ >= 12)
+  res = vec_msum (a, b_eud, (vui128_t) zero)
+#else
   __asm__(
       "vmsumudm %0,%1,%2,%3;\n"
       : "=v" (res)
       : "v" (a), "v" (b_eud), "v" (zero)
       : );
+#endif
 #else
 #ifdef _ARCH_PWR8
   const vui64_t zero = { 0, 0 };
@@ -470,10 +519,12 @@ vec_vmuleud (vui64_t a, vui64_t b)
   return ((vui128_t) res);
 }
  * \endcode
+ * The _ARCH_PWR10 implementation used the Multiply Even Unsigned
+ * Doublewords instruction directly.
  * The _ARCH_PWR9 implementation uses the multiply-sum doubleword
  * operation but implements the multiply even behavior by forcing the
  * contents of doubleword element 1 of [VRB] and the contents of
- * [VRC] to 0.
+ * [VRC] to 0. Similarly for vec_vmuloud().
  *
  * The _ARCH_PWR8 implementation looks ugly but it works. It starts
  * with some merges and splats to get inputs columns lined up for the
@@ -565,11 +616,26 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
  * 32-bits (discarding the unneeded high order 32-bits).
  * Finally sum the low and middle order partial doubleword products
  * to produce the multiply-low doubleword result.
- * For example, this POWER8 only implementation:
+ * For example, this implementation:
  * \code
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb)
 {
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_mul (vra, vrb);
+#else
+  __asm__(
+      "vmulld %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR9) // Effectively use vmsumudm for P9
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
+#elif defined (_ARCH_PWR8)
   vui64_t s32 = { 32, 32 }; // shift / rotate amount.
   vui64_t z = { 0, 0 };
   vui64_t t2, t3, t4;
@@ -585,9 +651,25 @@ vec_muludm (vui64_t vra, vui64_t vrb)
   t3 = vec_vmsumuwm ((vui32_t) vra, t1, z);
   t4 = vec_vsld (t3, s32);
   return (vui64_t) vec_vaddudm (t4, t2);
+#else
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
+#endif
 }
  * \endcode
- * Which generates the following for POWER8:
+ * Which generates the following for POWER10:
+ * \code
+     vmulld v2,v2,v3
+ * \endcode
+ * And generates the following for POWER9:
+ * \code
+     xxspltib v0,0
+     xxmrghd v1,v3,v0
+     xxmrgld v3,v0,v3
+     vmsumudm v1,v2,v1,v0
+     vmsumudm v2,v2,v3,v0
+     xxmrgld v2,v1,v2
+ * \endcode
+ * And generates the following for POWER8:
  * \code
 	addis   r9,r2,.rodata.cst16+0x60@ha
 	addi    r9,r9,.rodata.cst16+0x60@l
@@ -600,17 +682,639 @@ vec_muludm (vui64_t vra, vui64_t vrb)
 	vsld    v2,v2,v1
 	vaddudm v2,v13,v2
  * \endcode
- * \note The addition of <I>zeros</I> to the final sum of
- * vec_vmsumuwm() (<I>vec_addudm (psum, vrc)</I>)has been optimized
- * away by the compiler.
- * This eliminates the xxspltib and one vaddudm instruction from the
- * final code sequence.
- *
- * And we can assume that the constant load of <I>{ 32, 32 }</I>
+ * We can assume that the constant load of <I>{ 32, 32 }</I>
  * will be common-ed with other operations or hoisted out of
  * loops. So the shift constant can be loaded early and vrld is not
  * delayed.
  * This keeps the POWER8 latency in the 19-28 cycle range.
+ *
+ * \subsubsection i64_missing_ops_0_2_2 Doubleword Integer Divide/Modulo
+ *
+ * Vector Divide for integer elements is a recent addition to the
+ * PowerISA. The original Altivec<SUP>TM</SUP> did not provide any
+ * divide operations, even for float elements. Instead it provided a
+ * <B>Vector Reciprocal Estimate Floating-Point</B> instruction.
+ * This required the <I>Newton-Raphson method</I> to complete the
+ * reciprocal to full precision, then a multiply to complete a
+ * division.
+ *
+ * It was not until PowerISA 2.06 (POWER7/VSX) that vector divide
+ * was provided for float and double precision. Still no vector divide
+ * operations for integer elements. This was the status quo before
+ * PowerISA 3.1 (POWER10).
+ *
+ * POWER10 added vector Divide/Divide-Extend/Modulo (signed/unsigned)
+ * over Word/Doubleword/Quadword integer elements.
+ * This is now within PVECLIBs mission to provide functionally
+ * equivalent vector operations for previous PowerISA (VSX POWER7/8/9)
+ * processors.
+ * For completeness implement the integer operations across the element
+ * sizes (including Halfword and Byte).
+ *
+ * \note Divide Extended Quadword will be extremely useful in the
+ * soft-float implementation of
+ * <B>VSX Scalar Divide Quad-Precision [using round to Odd]</B>
+ * for POWER7/8.
+ *
+ * \paragraph i64_missing_ops_0_2_2_0 Vectorizable Divide implementations
+ *
+ * The trick is to use vector registers and existing instructions to
+ * implement division without native vector divide instructions.
+ * There are a few ways this can be done:
+ * - Vectorize the shift-and-subtract algorithm
+ * - Transfer the elements to GPU registers and use scalar divide
+ *   instructions (for each element).
+ * - Use long division based on a narrower (smaller word) divide
+ *   operations.
+ * - Or some clever combinations of the above.
+ *
+ * The selection for best implementation (smallest average cycle time)
+ * will depend on a number of factors:
+ * - The number of element bits (a quadword shift-subtract algorithm
+ *   requires up to 128 iterations).
+ * - The cost of transferring vector elements to/from GPRs
+ *   (POWER8 and later include Move From/To VSR instructions.
+ *   POWER7 does not).
+ * - The cycle latency and throughput (IPC) of the scalar divide,
+ *   for the platform.
+ *
+ * \paragraph i64_missing_ops_0_2_2_1 Vectorized Shift-Subtract Divide
+ *
+ * Consider the algorithm from Hacker's Delight (2nd Edition) Figure 9-2.
+ * This is an example of bit-by-bit long division which only requires
+ * shift, add/subtract, and compare.
+ * It is simple to vectorize by converting the if/then logic into vector
+ * compares returning vector bool and vector select.
+ * This algorithm requires a double-wide (x || y) dividend/shifter,
+ * plus 1-bit (or bool variable) (t) for the carry-out.
+ * So for 64-bit doublewords this is logically 129-bits (t || x || y).
+ * The result is division of a 2x-bit dividend by x-bit divisor.
+ * returning the quotient (in y) and the remainder (in x).
+ * \see "Hacker's Delight, 2nd Edition,"
+ * Henry S. Warren, Jr, Addison Wesley, 2013.
+ * Chapter 9, Integer Divide.
+ *
+ * For example:
+ * \code
+vui64_t test_vec_divdud_V0 (vui64_t x, vui64_t y, vui64_t z)
+{
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, -> (t || x || y)
+      // capture high bits of x and y into t and c.
+      c = vec_srdi (y, 63);
+      // capture high bit of x as bool t
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+      y = vec_addudm (y, y); // Shift left 1, x and y
+      x = vec_addudm (x, x);
+      // Propagate carry from y to x
+      x = vec_addudm (x, c);
+
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)ge, (vui32_t)t);
+      // Convert bool to carry-bit for conditional y+1
+      t  = vec_srdi ((vui64_t)ge, 63);
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+}
+ * \endcode
+ * The code above leaves some opportunities for additional optimizations.
+ * - The 63-bit shifts require a vector load of the vector constant
+ *   {63, 63} under the covers.
+ *   Constants like {0, 0} and {1, 1} simpler and faster to generate.
+ * - The vec_srdi (y, 63) reduces the sign-bit to simple 1b/0b values as carry-bit c.
+ * It is simpler to use rotate-left of 1 and use vec_selud with mask of constant {1, 1}
+ * to replace vec_addudm (x, c).
+ * to merge the y carry into the left-shifted x value
+ * The constant {1, 1} can be shared across the vec_vrld() and the vec_selud().
+ * - The vec_sradi(x, 63) creates vector 64-bit bool from the sign bit.
+ * This bool is used to generate the bool (t || (x >= z)) -> ge.
+ * Then vector t needs to be converted (again) to simple 1b/0b values
+ * for the left shifted quotient (vec_or (y, t) -> y).
+ * It is simpler to use a signed compare less than 0 to
+ * generate the vector bool t.
+ * then use vec_sel with mask of constant {1, 1} to replace vec_or(y, t).
+ * - Using the bool generating compares allows the compiler to optimize
+ *   the vector bool value ge.
+ *   It optimizes too vec_orc (vec_cmpgtsd (zero, x), vec_cmpgtud (z, x)).
+ *
+ * For example:
+ * \code
+vui64_t test_vec_divdud_V1 (vui64_t x, vui64_t y, vui64_t z)
+{
+  int i;
+  vb64_t ge;
+  vui64_t t, c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  const vui64_t zeros = vec_splat_u64(0);
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, -> (t || x || y)
+      // capture high bits of x and y into t and c.
+#if defined (_ARCH_PWR8)
+      c = vec_vrld (y, ones);
+#else
+      c = vec_rldi (y, 1);
+#endif
+      // capture high bit of x as bool t
+#if defined (_ARCH_PWR8)
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x, (vi64_t) zeros);
+#else
+      // P7 and earlier did not support DW int.
+      // Simpler to convert the sign-bit into a bool
+      t = (vui64_t) vec_setb_sd ((vi64_t) x);
+#endif
+      // Shift left 1, x and y
+      y = vec_addudm (y, y);
+      x = vec_addudm (x, x);
+      // Propagate carry from y to x
+      x = vec_selud (x, c, (vb64_t) ones);
+
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+      ge = vec_cmpgeud (x, z);
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)ge, (vui32_t)t);
+
+      // if (x >= z) x = x - z ; y++
+      xt = vec_subudm (x, z);
+      // if ((t || x) >= z) {x = xt; y++}
+      // Instead of add, OR the boolean ge into bit_0 of y
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+      // Select next x value
+      x = vec_selud (x, xt, ge);
+    }
+  return y;
+}
+ * \endcode
+ * This algorithm is simple to adjust for:
+ * - Simple (single wide) divide (initial x = 0),
+ * - Extended divide ( (x || <SUP>64</SUP>0b), initial y = 0),
+ * - Simple (single wide) modulo (initial x = 0, return x, not y).
+ *
+ * The single wide divide/modulo can be further simplified because
+ * shifting <I>x</I> left can not generate a carry.
+ * Thus we can eliminate the special carry <I>t</I> and simplify
+ * the compare to just (x >= z).
+ * The extended divide can also be simplified because
+ * shifting <I>y</I> left can not generate a carry.
+ *
+ * The same algorithm also works for other element sizes by
+ * appropriate type and operation suffix changes.
+ *
+ * \note Word and Quadword variants can also be optimized to take
+ * advantage of instructions that generate the carry directly
+ * (vec_addc()).
+ *
+ * Another optimization is to leverage the 128-bit vector and use
+ * the next larger element size to concatenate the dividend (x_y) into a
+ * single integer element. For doubleword divide use a quadword
+ * dividend (<I>x_y</I>) while the divisor (<I>z</I>) is the single
+ * high doubleword. The result combines the remainder and quotient as
+ * doublewords in a single vector.
+ * For example;
+ * \code
+vui64_t test_vec_divqud_V0 (vui128_t x_y, vui64_t z)
+{
+  int i;
+  vui64_t ge;
+  //vui128_t cc, c;
+  vui64_t t, xt, mone;
+  const vui64_t zeros = vec_splat_u64(0);
+  mone = (vui64_t) CONST_VINT128_DW (-1, -1);
+  // Here only using the high DW of z, generate z as {z, -1}
+  z = vec_pasted (z, mone);
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, is (t || x || y)
+      // capture high bit of x_y as bool t
+#if defined (_ARCH_PWR8)
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x_y, (vi64_t) zeros);
+#else
+      { // P7 and earlier did not support DW int compare.
+	// But only need to convert the sign-bit into a bool
+	vui32_t lts;
+	lts = (vui32_t) vec_cmplt ((vi32_t) x_y, (vi32_t) zeros);
+	t = (vui64_t) vec_splat (lts, VEC_W_H);
+      }
+#endif
+      // Then shift left Quadword x_y by 1 bit;
+      x_y = vec_slqi (x_y, 1);
+      // We only need the high DW of t and ge
+      // deconstruct ((t || x) >= z) to (t || (x >= z))
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x_y)
+      ge = (vui64_t) vec_cmpgtud (z, (vui64_t)x_y);
+      // Combine t with (x >= z) for 129-bit compare
+      ge = (vui64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else // P7 and earlier did not support OR Complement
+      ge = (vui64_t) vec_cmpgeud ((vui64_t)x_y, z);
+      // Combine t with (x >= z) for 129-bit compare
+      ge = (vui64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+      // Splat the high ge DW to both DWs for select
+      ge = vec_splatd (ge, VEC_DW_H);
+
+      // xt <- {(x - z), (y - ( -1)}
+      xt = vec_subudm ((vui64_t)x_y, z);
+      x_y = (vui128_t)vec_selud ((vui64_t)x_y, xt, (vb64_t)ge);
+    }
+  return (vui64_t)x_y;
+}
+ * \endcode
+ * This implementation uses vectors to produce a single 128-bit by
+ * 64-bit divide that returns 64-bit remainders and quotients.
+ * Here we can use a quadword shift left (vec_slqi()) and avoid
+ * the intermediate y to x carry.
+ * Also initialize the low doubleword of <I>z</I> as -1. This allows
+ * a single vec_subudm() to generate the provisional vector <I>xt</I>
+ * as {(x - z), (y - ( -1)} which is effectively {(x - z), (y + 1)}.
+ * The final select (vec_selud(x_y, xt, ge)) either; updates the
+ * shifted <I>x_y</I> (if bool <I>ge</I> is true),
+ * or leaves it unchanged.
+ *
+ * \note This function form is useful for implementing double element
+ * division from long division, for example quadword division.
+ * \see "Hacker's Delight, 2nd Edition,"
+ * Henry S. Warren, Jr, Addison Wesley, 2013.
+ * Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ *
+ * This reduces the number of instruction within the loop to 8
+ * (vs 10-11 for divdud()) instructions.
+ * The complex compare (t || (x >= z))
+ * generates a serial dependent sequence of three instructions
+ * (6 cycles on POWER8).
+ * Finally this requires 64 iterations of the inner loop to
+ * complete a single divide. The expectations for this sequence
+ * is 10-14 cycles per iteration (order of 640-896 cycles total).
+ *
+ * \note This timing is clearly not acceptable for a single doubleword
+ * (or a vector doubleword) result. The scalar fixed-point doubleword
+ * divide is 12-23 (14-41 for extended) cycles with a throughput of 2.
+ * However when we implement the halfword and byte vector divides the
+ * numbers look better for this implementation.
+ * Basically the number of iterations is reduced while the number of
+ * results per vector increases. For example a vector char divide
+ * requires only 8 iterations (~80-112 cycles) while delivering
+ * 16 x 8-bit divide results. The scalar (fixed-point) divide
+ * (<B>divwu</B>) still runs 12-15 cycles with a throughput of 2.
+ * This gives a best case of ((16 / 2) * latency) for rough estimate
+ * of 96-120 cycles.
+ * This does not include the cost of byte level move from/to VSRs.
+ * This can add 5-7 cycles per-byte each way.
+ *
+ * \paragraph i64_missing_ops_0_2_2_2 Transfer Vector elements for scalar divide
+ * The bit-wise long division (above) is disappointing from a
+ * performance perspective.
+ * One alternative is to use the scalar (fixed-point Unit (FXU)) instructions.
+ * These instructions are fast (for a integer divide).
+ * For example Power8:
+ *  |instruction |Latency|Throughput|
+ *  |-----------:|:-----:|:---------|
+ *  |divd/divdu  | 12-23 | 2/12-23 cycles |
+ *  |divde/divdeu| 14-41 | 2/14-41 cycles |
+ * But we need to transfer doublewords from VRs to GPRs to use the
+ * scalar divide then transfer the results back to VRs. For example:
+ * \code
+vui64_t test_vec_divud (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR7)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  // For older GCC force use of mfvsrd
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Use __VEC_U_128 union for transfer
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower / zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper / zu.ulong.upper;
+
+  return qu.vx2;
+#else
+// Default implementation for POWER7 and earlier.
+#endif
+}
+ * \endcode
+ * Which should generate:
+ * \code
+ <test_vec_divud>:
+     xxspltd vs11,vs34,1
+     xxspltd vs12,vs35,1
+     mfvsrd  r9,vs11
+     mfvsrd  r8,vs12
+     divdu   r10,r9,r8
+     mfvsrd  r9,vs34
+     mfvsrd  r8,vs35
+     divdu   r11,r9,r8
+     mtvsrd  vs1,r10
+     mtvsrd  vs0,r11
+     xxmrghd vs34,vs0,vs1
+     blr
+ * \endcode
+ * The Move From/To VSR Doubleword instruction only transfers the high
+ * doubleword. So the sequence requires xxpermdi (xxspltd/xxmrghd)
+ * instructions to access the low doubleword.
+ *  |instruction |Latency|Throughput|
+ *  |-----------:|:-----:|:---------|
+ *  |mfvsrd      |  4-5  | 1/cycle  |
+ *  |mtvsrd      | 5     | 1/cycle  |
+ *  |xxpermdi    | 3     | 2/cycle  |
+ * The good news is the transfers are ~8 cycles and the divides are
+ * super-scalar dual-issue (i.e. two divides can overlap in the
+ * pipeline). So ball-park 8+23+8 = 39 cycles.
+ *
+ * \note This timing assumes the processor is running in SMT modes 1-2.
+ * Higher (4-8) SMT threading levels split pipelines across thread
+ * groups and reduce the instruction dispatch/completion group size
+ * (per thread). The programmers mileage will vary.
+ *
+ * This is close enough to the POWER10 vdivud instruction nominal
+ * 28-43 cycles to be acceptable.
+ *
+ * Power8 does not have FXU modulo instructions but this can be
+ * implemented with additional multiply and subtract per doubleword.
+ *  |instruction |Latency|Throughput|
+ *  |-----------:|:-----:|:---------|
+ *  |mulld       |  4-5  | 2/cycle  |
+ *  |subf        |  1-2  | 6/cycle  |
+ * The compiler will generate this for us.
+ * For example:
+ * \code
+vui64_t test_vec_modud (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR7)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  return qu.vx2;
+#else
+// Default implementation for POWER7 and earlier.
+#endif
+}
+ * \endcode
+ * Which should generate:
+ * \code
+ <test_vec_modud>:
+     xxspltd vs0,vs34,1
+     xxspltd vs1,vs35,1
+     mfvsrd  r4,vs0
+     mfvsrd  r3,vs1
+     divdu   r5,r4,r3
+     mfvsrd  r9,vs34
+     mfvsrd  r10,vs35
+     divdu   r8,r9,r10
+     mulld   r5,r5,r3
+     subf    r6,r5,r4
+     mulld   r10,r8,r10
+     subf    r7,r10,r9
+     mtvsrd  vs1,r6
+     mtvsrd  vs0,r7
+     xxmrghd vs34,vs0,vs1
+     blr
+ * \endcode
+ * POWER9 adds the <I>Modulo Unsigned Doubleword</I> and
+ * <I>Move To VSR Double Doubleword</I> instructions and the
+ * compiler should generate:
+ * \code
+ <test_vec_modud_PWR9>:
+     xxspltd vs11,vs34,1
+     xxspltd vs12,vs35,1
+     mfvsrd  r9,vs11
+     mfvsrd  r8,vs12
+     moddu   r10,r9,r8
+     mfvsrd  r9,vs34
+     mfvsrd  r8,vs35
+     moddu   r11,r9,r8
+     mtvsrdd vs34,r11,r10
+     blr
+ * \endcode
+ *
+ * The C language does not provide an operator for divide extended.
+ * So we need to use the GCC built-in <B>__builtin_divdeu()</B> to generate
+ * the instruction. For example:
+ * \code
+  qu.ulong.lower = __builtin_divdeu (yu.ulong.lower, zu.ulong.lower);
+  qu.ulong.upper = __builtin_divdeu (yu.ulong.upper, zu.ulong.upper);
+ * \endcode
+ *
+ * The examples above provide functionally equivalent POWER8/9
+ * implementations for divide/modulo instructions introduced in
+ * POWER10. Now we should look at better implementations of the double
+ * doubleword operations <I>test_vec_divdud_V0</I> and
+ * <I>test_vec_divqud_V0</I> described in \ref i64_missing_ops_0_2_2_1.
+ * While these operations are not defined in the PowerISA they can be
+ * useful in the implementation of long division of quadword and
+ * multiple quadword divisors.
+ *
+ * This requires dividing 128-bit (quadwords) dividends by 64-bit
+ * divisors. The PowerISA provides divide extended instructions and a
+ * Programming Note as an example of how it used.
+ * (following the description of Divide Word Extended).
+ * This describes the
+ * algorithm and example instruction sequence for an implementation.
+ * This algorithm applies directly to a scalar based implementation of
+ * vec_divqud(). For example:
+ * \code
+vui64_t test_vec_divqud_V2 (vui128_t x_y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide/divide extended
+  __VEC_U_128 qu, xy, zu;
+#if (__GNUC__ <= 10)
+  xy.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x_y, 1);
+  xy.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x_y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  xy.vx1 = x_y;
+  zu.vx2 = z;
+#endif
+  // Transfer to GPUs and use scalar divide/divide extended
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned]
+  unsigned long long Dh = xy.ulong.upper;
+  unsigned long long Dl = xy.ulong.lower;
+  unsigned long long Dv = zu.ulong.upper;
+  unsigned long long q1, q2, Q;
+  unsigned long long r1, r2, R;
+
+  q1 = __builtin_divdeu (Dh, Dv);
+  // r1 = -(q1 * Dv);
+  r1 = (q1 * Dv);
+  q2 = Dl / Dv;
+  r2 = Dl - (q2 * Dv);
+  Q = q1 + q2;
+  // R = r1 + r2;
+  R = r2 - r1;
+  if ((R < r2) | (R >= Dv))
+    {
+      Q++;
+      R = R - Dv;
+    }
+  // Transfer R|Q back to VRs and return
+  qu.ulong.upper = R;
+  qu.ulong.lower = Q;
+  return qu.vx2;
+}
+ * \endcode
+ *
+ * For the vec_divdud() implementation we need to vectorize the
+ * algorithm above. For example:
+ * \code
+vui64_t test_vec_divdud_V2 (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R, Qt, Rt;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = vec_vdiveud_inline (x, z);
+  q2 = vec_vdivud_inline  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+#if 1 // Corrected Quotient returned for divdud.
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+  return Q;
+#else // Corrected Remainder returned for moddud.
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+  return R;
+#endif
+#else
+  // P7 Missing some vector DW operations, so use divqud to avoid them.
+  vui128_t xy_h, xy_l;
+  vui64_t QQ, RQ_h, RQ_l, z_l;
+
+  // merge high x, y into quadword xy_h
+  xy_h = (vui128_t) vec_mrghd (x, y);
+  // merge low x, y into quadword xy_l
+  xy_l = (vui128_t) vec_mrgld (x, y);
+  z_l  = vec_swapd (z);
+  RQ_h = vec_divqud_inline (xy_h, z);
+  RQ_l = vec_divqud_inline (xy_l, z_l);
+  // Merge DW Quotients into vector DW int.
+  QQ   = vec_mrgld (RQ_h, RQ_l);
+  return QQ;
+#endif
+}
+ * \endcode
+ * As we are using the PVECLiB doubleword operations from
+ * vec_int64_ppc.h this implementation will generate new vector divide
+ * instructions for POWER10 and functionally equivalent scalar/vector
+ * based code for POWER9/8.
+ *
+ * \paragraph i64_missing_ops_0_2_2_3 Special consideration for POWER7 and earlier
+ *
+ * The questions remains which implementation should we use for POWER7
+ * and earlier:
+ * - \ref i64_missing_ops_0_2_2_1 or
+ * - \ref i64_missing_ops_0_2_2_2
+ *
+ * This early PowerISA implementation does not have the
+ * vector doubleword integer instructions that arrived with POWER8.
+ * Especially the Move From/To VSR Doubleword instructions and so the
+ * generated code has to use store/load sequences to transfer the
+ * doublewords.
+ * For POWER7 this usually implies Load-Hit-Store reject and pipeline
+ * stalls until the store completes into the L2 Cache.
+ * This can add many 10s of cycles to the execution for these operations.
+ *
+ * On the other hand POWER7 includes all the Fixed-point Unit
+ * scalar operations and dual-issue capabilities.
+ * This is an attractive alternative given the lack of vector
+ * doubleword integer instructions for add/subtract/shift/compare.
+ *
+ * PVECLIB does provide the equivalent vector doubleword
+ * operations for POWER7.
+ * This is best-effort using vector word add/subtract
+ * (with carry) and compare word operations.
+ * These expand into significant (2-3X) code
+ * for the loop body of \ref i64_missing_ops_0_2_2_1.
+ * Given that the \ref i64_missing_ops_0_2_2_1 implementation
+ * is already an order of magnitude slower then
+ * \ref i64_missing_ops_0_2_2_2, even an additional 100 cycles
+ * for load-hit-store is a net win for doubleword divide on POWER7.
+ *
+ * \note The relative merits for implementation of the other
+ * (quadword, word, halfword, byte) element divides, will different,
+ * and should be evaluated on a case-by-case basis.
  *
  * \subsection i64_missing_ops_0_2_0 Loading small Doubleword constants
  *
@@ -1202,10 +1906,15 @@ static inline vb64_t vec_cmpequd (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgeud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpgtud (vui64_t a, vui64_t b);
 static inline vb64_t vec_cmpneud (vui64_t a, vui64_t b);
-static inline vui64_t vec_sldi (vui64_t vra, const unsigned int shb);
+static inline vui64_t vec_divqud_inline (vui128_t x_y, vui64_t z);
 static inline vui64_t vec_maxud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_minud (vui64_t vra, vui64_t vrb);
+static inline vui64_t vec_muludm (vui64_t vra, vui64_t vrb);
+static inline vui64_t vec_pasted (vui64_t __VH, vui64_t __VL);
 static inline vui64_t vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
+static inline vui64_t vec_mrghd (vui64_t __VA, vui64_t __VB);
+static inline vui64_t vec_mrgld (vui64_t __VA, vui64_t __VB);
+static inline vui64_t vec_swapd (vui64_t vra);
 #ifndef vec_popcntd
 static inline vui64_t vec_popcntd (vui64_t vra);
 #else
@@ -1213,8 +1922,16 @@ static inline vui64_t vec_popcntd (vui64_t vra);
 #undef vec_popcntd
 #define vec_popcntd __builtin_vec_vpopcntd
 #endif
+static inline vui64_t vec_rldi (vui64_t vra, const unsigned int shb);
+static inline vui64_t vec_selud (vui64_t vra, vui64_t vrb, vb64_t vrc);
+static inline vb64_t vec_setb_sd (vi64_t vra);
+static inline vui64_t vec_sldi (vui64_t vra, const unsigned int shb);
 static inline vi64_t vec_splat_s64 (const int sim);
+static inline vui64_t vec_splat_u64 (const int sim);
+static inline vui64_t vec_splatd (vui64_t vra, const int ctl);
 static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
+static inline vui64_t vec_vdiveud_inline (vui64_t x, vui64_t z);
+static inline vui64_t vec_vdivud_inline (vui64_t y, vui64_t z);
 static inline vui64_t
 vec_vlsidx (const signed long long a, const unsigned long long *b);
 static inline void
@@ -2518,6 +3235,216 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
   return (result);
 }
 
+/** \brief Vector Divide Double Unsigned Doubleword.
+ *
+ *  A vectorized 128-bit by 64=bit divide returning two 64-bit
+ *  Unsigned Doubleword quotients.
+ *  The corresponding Doubleword elements of vectors x and y are
+ *  concatenated to from the 128-bit dividends.
+ *  For integer value i from 0 to 1 over doubleword elements:
+ *  quotient[i] = (x[i] || y[i]) / z[i].
+ *  The quotients of are returned as a
+ *  vector unsigned long long int.
+ *
+ *  \note The quotient element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | ~78   |1/40 cycle|
+ *  |power9   | 67-72 |1/9 cycle |
+ *  |power10  | 38-88 |2/22 cycle|
+ *
+ *  @param x 128-bit vector of the high 64-bit elements of the 128-bit dividends.
+ *  @param y 128-bit vector of the low 64-bit elements of the 128-bit dividends.
+ *  @param z 128-bit vector of 64-bit elements for the divisor.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_divdud_inline (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = vec_vdiveud_inline (x, z);
+  q2 = vec_vdivud_inline  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+#if 1
+  vui64_t Qt;
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+  return Q;
+#else // Corrected Remainder not returned for divdud.
+  vui64_t Rt;
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+  return R;
+#endif
+#else // defined (_ARCH_PWR7)
+  // P7 Missing some DW operations, so use divqud to avoid them.
+  vui128_t xy_h, xy_l;
+  vui64_t QQ, RQ_h, RQ_l, z_l;
+
+  xy_h = (vui128_t) vec_mrghd (x, y);
+  xy_l = (vui128_t) vec_mrgld (x, y);
+  z_l  = vec_swapd (z);
+  RQ_h = vec_divqud_inline (xy_h, z);
+  RQ_l = vec_divqud_inline (xy_l, z_l);
+  QQ   = vec_mrgld (RQ_h, RQ_l);
+  return QQ;
+#endif
+}
+
+/** \brief Vector Divide Quadword Unsigned by Doubleword.
+ *
+ *  A vector implementation of a 128-bit by 64-bit divide returning
+ *  64-bit remainder and quotient.
+ *  The quadword element x_y is the 128-bit dividend.
+ *  The high-order doubleword element of z is the divisor
+ *  (the low-order element of z is not used).
+ *  The 64-bit remainder/quotient are returned as the
+ *  high/low order elements of a vector unsigned long long int.
+ *
+ *  \note The quotient element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 30-41 |1/23 cycle|
+ *  |power9   | 35-63 |1/9 cycle |
+ *  |power10  | 36-64 |1/11 cycle|
+ *
+ *  @param x_y 128-bit vector 128-bit dividend.
+ *  @param z 128-bit vector of 64-bit elements. The high doubleword is the divisor.
+ *  @return The remainder/quotient in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_divqud_inline (vui128_t x_y, vui64_t z)
+{
+#if defined (_ARCH_PWR7)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide/divide extended
+  __VEC_U_128 qu, xy, zu;
+#if (__GNUC__ <= 10) &&  defined (_ARCH_PWR8)
+  xy.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x_y, 1);
+  xy.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x_y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT15/16 handles this but what about AT14 ...
+  // AT10 does not.
+  xy.vx1 = x_y;
+  zu.vx2 = z;
+#endif
+  unsigned long long Dh = xy.ulong.upper;
+  unsigned long long Dl = xy.ulong.lower;
+  unsigned long long Dv = zu.ulong.upper;
+  unsigned long long q1, q2, Q;
+  unsigned long long r1, r2, R;
+
+  // Transfer to GPUs and use scalar divide/divide extended
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned]
+  q1 = __builtin_divdeu (Dh, Dv);
+  //r1 = -(q1 * Dv);
+  r1 = (q1 * Dv);
+  q2 = Dl / Dv;
+  r2 = Dl - (q2 * Dv);
+  Q = q1 + q2;
+  //R = r1 + r2;
+  R = r2 - r1;
+  if ((R < r2) | (R >= Dv))
+    {
+      Q++;
+      R = R - Dv;
+    }
+
+  // Transfer R|Q back to VRs and return
+  qu.ulong.upper = R;
+  qu.ulong.lower = Q;
+  return qu.vx2;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vui64_t ge;
+  //vui128_t cc, c;
+  vui64_t t, xt, mone;
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui8_t ones8 = vec_splat_u8(1);
+  // t = (vui64_t) CONST_VINT128_DW (0, 0);
+  mone = (vui64_t) CONST_VINT128_DW (-1, -1);
+  /* Here only using the high DW of z, generated z as {z'', -1} */
+  z = vec_pasted (z, mone);
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, is (t || x || y)
+      /* capture high bit of x_y as bool t */
+#if defined (_ARCH_PWR8)
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x_y, (vi64_t) zeros);
+#else
+      { // P7 and earlier did not support DW int.
+	// But only need to convert the sign-bit into a bool
+	vui32_t lts;
+	lts = (vui32_t) vec_cmplt ((vi32_t) x_y, (vi32_t) zeros);
+	t = (vui64_t) vec_splat (lts, VEC_W_H);
+      }
+#endif
+      // Then shift left Quadword x_y by 1 bit;
+      //x_y = vec_slqi (x_y, 1);
+      // Can't user slqi here, forward dependency to vec_int128_ppc.h
+      x_y = (vui128_t) vec_sll ((vui32_t) x_y, (vui32_t)ones8);
+      /* We only need the high DW of t and ge */
+      /* deconstruct ((t || x) >= z) to (t || (x >= z)) */
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x_y)
+      ge = (vui64_t) vec_cmpgtud (z, (vui64_t)x_y);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else // P7 and earlier did not support OR Complement
+      ge = (vui64_t) vec_cmpgeud ((vui64_t)x_y, z);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+      /* Splat the high ge DW to both DWs for select */
+      ge = vec_splatd (ge, VEC_DW_H);
+
+      /* xt <- {(x - z), (y - ( -1)} */
+      xt = vec_subudm ((vui64_t)x_y, z);
+      x_y = (vui128_t)vec_selud ((vui64_t)x_y, xt, (vb64_t)ge);
+    }
+  return (vui64_t)x_y;
+#endif
+}
+
 /** \brief Vector Maximum Signed Doubleword.
  *
  *  For each doubleword element [0|1] of vra and vrb compare as
@@ -2541,7 +3468,7 @@ vec_maxsd (vi64_t vra, vi64_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vmaxsd)
   r = vec_vmaxsd (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 10)
   r = vec_max (vra, vrb);
 #else
   __asm__(
@@ -2583,7 +3510,7 @@ vec_maxud (vui64_t vra, vui64_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vmaxud)
   r = vec_vmaxud (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 10)
   r = vec_max (vra, vrb);
 #else
   __asm__(
@@ -2625,7 +3552,7 @@ vec_minsd (vi64_t vra, vi64_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vminsd)
   r = vec_vminsd (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 10)
   r = vec_min (vra, vrb);
 #else
   __asm__(
@@ -2667,7 +3594,7 @@ vec_minud (vui64_t vra, vui64_t vrb)
 #ifdef _ARCH_PWR8
 #if defined (vec_vminud)
   r = vec_vminud (vra, vrb);
-#elif defined (__clang__)
+#elif defined (__clang__) || (__GNUC__ >= 10)
   r = vec_min (vra, vrb);
 #else
   __asm__(
@@ -2684,6 +3611,82 @@ vec_minud (vui64_t vra, vui64_t vrb)
   r = vec_sel (vrb, vra, minmask);
 #endif
   return r;
+}
+
+/** \brief Vector Modulo Double Unsigned Doubleword.
+ *
+ *  A vectorized 128-bit by 64=bit modulo divide returning
+ *  two 64-bit Unsigned Doubleword remainders.
+ *  The corresponding Doubleword elements of vectors x and y are
+ *  concatenated to from the 128-bit dividends.
+ *  For integer value i from 0 to 1 over doubleword elements:
+ *  remainder[i] = (x[i] || y[i]) % z[i].
+ *  The remainders of are returned as a
+ *  vector unsigned long long int.
+ *
+ *  \note The remainder element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  ~38  |1/40 cycle|
+ *  |power9   | 67-72 |1/9 cycle |
+ *  |power10  | 38-88 |2/22 cycle|
+ *
+ *  @param x 128-bit vector of the high 64-bit elements of the 128-bit dividends.
+ *  @param y 128-bit vector of the low 64-bit elements of the 128-bit dividends.
+ *  @param z 128-bit vector of 64-bit elements for the divisor.
+ *  @return The remainders in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_moddud_inline (vui64_t x, vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui64_t Q, R;
+  vui64_t r1, r2, q1, q2;
+  vb64_t CC, c1, c2;
+  const vui64_t ones = vec_splat_u64(1);
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector long long int
+  q1 = vec_vdiveud_inline (x, z);
+  q2 = vec_vdivud_inline  (y, z);
+  r1 = vec_muludm (q1, z);
+
+  r2 = vec_muludm (q2, z);
+  r2 = vec_subudm (y, r2);
+  Q  = vec_addudm (q1, q2);
+  R  = vec_subudm (r2, r1);
+
+  c1 = vec_cmpltud (R, r2);
+  c2 = vec_cmpgeud (R, z);
+  CC = vec_or (c1, c2);
+#if 0
+  vui64_t Qt;
+  Qt = vec_addudm (Q, ones);
+  Q = vec_selud (Q, Qt, CC);
+  return Q;
+#else // Corrected Remainder not returned for divdud.
+  vui64_t Rt;
+  Rt = vec_subudm (R, z);
+  R = vec_selud (R, Rt, CC);
+  return R;
+#endif
+#else // defined (_ARCH_PWR7)
+  // P7 Missing some DW operations, so use divqud to avoid them.
+  vui128_t xy_h, xy_l;
+  vui64_t RR, RQ_h, RQ_l, z_l;
+
+  xy_h = (vui128_t) vec_mrghd (x, y);
+  xy_l = (vui128_t) vec_mrgld (x, y);
+  z_l  = vec_swapd (z);
+  RQ_h = vec_divqud_inline (xy_h, z);
+  RQ_l = vec_divqud_inline (xy_l, z_l);
+  RR   = vec_mrghd (RQ_h, RQ_l);
+  return RR;
+#endif
 }
 
 /** \brief Vector Merge Algebraic High Doublewords.
@@ -2872,47 +3875,47 @@ vec_mrgod (vui64_t __VA, vui64_t __VB)
   return (result);
 }
 
-/** \brief \copybrief vec_int128_ppc.h::vec_msumudm()
+/** \brief \copybrief vec_msumudm()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_msumudm()
- * as it requires vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_adduqm().
+ * See \ref vec_msumudm() for full description.
  */
 static inline vui128_t
 vec_msumudm (vui64_t a, vui64_t b, vui128_t c);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_muleud()
+/** \brief \copybrief vec_muleud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_muleud()
- * as it requires vec_vmuleud and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_vmuleud and vec_adduqm().
+ * See \ref vec_muleud() for full description.
  */
 static inline vui128_t
 vec_muleud (vui64_t a, vui64_t b);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_mulhud()
+/** \brief \copybrief vec_mulhud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_mulhud()
- * as it requires vec_vmuleud() and vec_vmuloud().
+ * vec_int128_ppc.h as it requires vec_vmuleud() and vec_vmuloud().
+ * See \ref vec_mulhud() for full description.
  */
 static inline vui64_t
 vec_mulhud (vui64_t vra, vui64_t vrb);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_muloud()
+/** \brief \copybrief vec_muloud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_muloud()
- * as it requires vec_vmuloud() and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_vmuloud() and vec_adduqm().
+ * See \ref vec_muloud() for full description.
  */
 static inline vui128_t
 vec_muloud (vui64_t a, vui64_t b);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_muludm()
+/** \brief \copybrief vec_muludm()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_muludm()
- * as it requires vec_vmuleud() and vec_vmuloud().
+ * vec_int128_ppc.h as it requires vec_vmuleud() and vec_vmuloud().
+ * See \ref vec_muludm() for full description.
  */
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb);
@@ -3166,11 +4169,15 @@ vec_setb_sd (vi64_t vra)
   vb64_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      result = (vb64_t) vec_expandm ((vui64_t) vra);
+#else
   __asm__(
       "vexpanddm %0,%1;\n"
       : "=v" (result)
       : "v" (vra)
       : );
+#endif
 #elif defined (_ARCH_PWR8)
   // Compare signed doubleword less than zero
   const vi64_t zero = {0, 0};
@@ -3798,6 +4805,133 @@ vec_swapd (vui64_t vra)
   return (result);
 }
 
+/** \brief Vector Divide Extended Unsigned Doubleword.
+ *
+ *  Divide the [zero] extended doubleword elements x by the
+ *  corresponding doubleword elements of z. The extended dividend is
+ *  the 64-bit element from x extended to the right with 64-bits of 0b.
+ *  This is effectively a vectorized 128x64 bit unsigned divide
+ *  returning 64-bit quotients.
+ *  The quotients of the extended divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note The element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   54  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-75 |2/22 cycle|
+ *
+ *
+ *  @param x 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_vdiveud_inline (vui64_t x, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#else // defined (_ARCH_PWR7)
+  // POWER7/8/9 Do not have vector integer divide, but does have
+  // Fixed-point (FXU) Divide and Divide-Extended Doubleword.
+  // POWER8/9 also have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10) &&  defined (_ARCH_PWR8)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  yu.vx2 = x;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = __builtin_divdeu (yu.ulong.lower, zu.ulong.lower);
+  qu.ulong.upper = __builtin_divdeu (yu.ulong.upper, zu.ulong.upper);
+
+  return qu.vx2;
+#endif
+}
+
+/** \brief Vector Divide Unsigned Doubleword.
+ *
+ *  Divide the doubleword elements y by the
+ *  corresponding doubleword elements of z.
+ *  This is effectively a vectorized 64x64 bit unsigned divide
+ *  returning 64-bit quotients.
+ *  The quotients of the divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   54  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-43 |2/22 cycle|
+ *
+ *  @param y 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_vdivud_inline (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // defined (_ARCH_PWR7)
+  // POWER7/8/9 Do not have vector integer divide, but does have
+  // Fixed-point (FXU) Divide Doubleword.
+  // POWER8/9 also have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10) &&  defined (_ARCH_PWR8)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower / zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper / zu.ulong.upper;
+
+  return qu.vx2;
+#endif
+}
+
 /** \brief Vector Gather-Load Integer Doublewords from Vector Doubleword Offsets.
  *
  *  For each doubleword element [i] of vra, load the doubleword
@@ -4042,74 +5176,137 @@ vec_vlsidx (const signed long long ra, const unsigned long long *rb)
   return xt;
 }
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmadd2eud()
+/** \brief \copybrief vec_vmadd2eud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmadd2eud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
+ * See \ref vec_vmadd2eud() for full description.
  */
 static inline vui128_t
 vec_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmaddeud()
+/** \brief \copybrief vec_vmaddeud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmaddeud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
+ * See \ref vec_vmaddeud() for full description.
  */
 static inline vui128_t
 vec_vmaddeud (vui64_t a, vui64_t b, vui64_t c);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmadd2oud()
+/** \brief \copybrief vec_vmadd2oud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmadd2oud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
+ * See \ref vec_vmadd2oud() for full description.
  */
 static inline vui128_t
 vec_vmadd2oud (vui64_t a, vui64_t b, vui64_t c, vui64_t d);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmaddoud()
+/** \brief \copybrief vec_vmaddoud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmaddoud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
+ * See \ref vec_vmaddoud() for full description.
  */
 static inline vui128_t
 vec_vmaddoud (vui64_t a, vui64_t b, vui64_t c);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmuleud()
+/** \brief Vector Modulo Unsigned Doubleword.
+ *
+ *  Divide the doubleword elements y by the
+ *  corresponding doubleword elements of z
+ *  and return the remainder.
+ *  This is effectively a vectorized 64x64 bit unsigned modulo
+ *  returning 64-bit remainders.
+ *  The remainders of the divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   62  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-47 |2/22 cycle|
+ *
+ *  @param y 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The remainders in a vector unsigned long long int.
+ */
+static inline vui64_t
+vec_vmodud_inline (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // defined (_ARCH_PWR7, _ARCH_PWR8, _ARCH_PWR9)
+  // POWER7/8/9 Do not have vector integer modulo, but does have
+  // Fixed-point (FXU) Divide/Muliply Doubleword and
+  // POWER9 also has FXU Modulo Doubleword.
+  // POWER8/9 also have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10) &&  defined (_ARCH_PWR8)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  return qu.vx2;
+#endif
+}
+
+/** \brief \copybrief vec_vmuleud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmuleud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * \ref vec_vmuleud()
+ * in vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
  */
 static inline vui128_t
 vec_vmuleud (vui64_t a, vui64_t b);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmuloud()
+/** \brief \copybrief vec_vmuloud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmuloud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * \ref vec_vmuloud()
+ * in vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
  */
 static inline vui128_t
 vec_vmuloud (vui64_t a, vui64_t b);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmsumeud()
+/** \brief \copybrief vec_vmsumeud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmsumeud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * \ref vec_vmsumeud()
+ * in vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
  */
 static inline vui128_t
 vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c);
 
-/** \brief \copybrief vec_int128_ppc.h::vec_vmsumoud()
+/** \brief \copybrief vec_vmsumoud()
  *
  * \note this implementation exists in
- * \ref vec_int128_ppc.h::vec_vmsumoud()
- * as it requires vec_msumudm() and vec_adduqm().
+ * \ref vec_vmsumoud()
+ * in vec_int128_ppc.h as it requires vec_msumudm() and vec_adduqm().
  */
 static inline vui128_t
 vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);

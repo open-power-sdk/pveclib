@@ -189,7 +189,230 @@ db_vec_vsrad (vi64_t vra, vui64_t vrb)
 #endif
   return ((vi64_t) result);
 }
+
+vui64_t db_vec_modud (vui64_t y, vui64_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 13)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmodud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
 #endif
+  return res;
+#elif defined (_ARCH_PWR9)
+  __VEC_U_128 qu, yu, zu;
+#if (__GNUC__ <= 10)
+  yu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) y, 1);
+  yu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  yu.vx2 = y;
+  zu.vx2 = z;
+#endif
+
+  qu.ulong.lower = yu.ulong.lower % zu.ulong.lower;
+  qu.ulong.upper = yu.ulong.upper % zu.ulong.upper;
+
+  return qu.vx2;
+#else
+  int i;
+  vb64_t ge;
+  vui64_t c, xt;
+  const vui64_t ones = vec_splat_u64(1);
+  vui64_t x = vec_splat_u64(0);
+
+  print_v2xint64 ("db_vec_modud (", y);
+  print_v2xint64 ("              ", z);
+
+  for (i = 1; i <= 64; i++)
+    {
+      /* Left shift (x || y) requires 129-bits, -> (t || x || y) */
+      /* capture high bits of x and y into t and c. */
+#if 1
+#if 1
+      c = vec_vrld (y, ones);
+#else
+      c = vec_rldi (y, 1);
+#endif
+#else
+      c = vec_srdi (y, 63);
+#endif
+#if 0
+      /* capture high bit of x as bool */
+      t = (vui64_t) vec_sradi ((vi64_t)x, 63);
+#endif
+      y = vec_addudm (y, y); /* Shift left 1, x and y */
+      x = vec_addudm (x, x);
+      /* Propagate carry from y to x */
+#if 1
+      x = vec_selud (x, c, (vb64_t) ones);
+#else
+      x = vec_addudm (x, c);
+#endif
+
+      // deconstruct ((t || x) >= z)
+      ge = vec_cmpgeud (x, z);
+#if 0
+      // Combine t with (x >= z) for 65-bit compare
+      ge = (vb64_t) vec_or ((vui32_t)ge, (vui32_t)t);
+      // Convert bool to carry-bit for conditional y+1
+#if 0
+      t  = vec_srdi ((vui64_t)ge, 63);
+#endif
+#endif
+
+      /* if (x >= z) x = x - z ; y++ */
+      xt = vec_subudm (x, z);
+      /* if ((t || x) >= z) {x = xt; y++} */
+      print_v2xint64 ("           ge ", (vui64_t) ge);
+      print_v2xint64 ("           xt ", xt);
+#if 1
+      /* Instead of add, OR the boolean ge into bit_0 of y */
+      y = vec_selud (y, (vui64_t) ge, (vb64_t) ones);
+#else
+      y = (vui64_t) vec_or ((vui32_t)y, (vui32_t)t);
+#endif
+      x = vec_selud (x, xt, ge);
+
+      print_v2xint64 ("            x ", x);
+      print_v2xint64 ("            y ", y);
+    }
+  return x;
+#endif
+}
+#endif
+
+vui64_t db_vec_divqud (vui128_t x_y, vui64_t z)
+{
+#if defined (_ARCH_PWR9)
+  // POWER8/9 Do not have vector integer divide, but do have
+  // Move To/From Vector-Scalar Register Instructions
+  // So we can use the scalar hardware divide instructions
+  __VEC_U_128 qu, xy, zu;
+#if (__GNUC__ <= 10)
+  xy.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) x_y, 1);
+  xy.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) x_y, 0);
+  zu.ulong.lower = __builtin_unpack_vector_int128 ((vi128_t) z, 1);
+  zu.ulong.upper = __builtin_unpack_vector_int128 ((vi128_t) z, 0);
+#else
+  // Looks like AT16 handles this but what about 15/14 ...
+  // AT10 does not.
+  xy.vx1 = x_y;
+  zu.vx2 = z;
+#endif
+  unsigned long long Dh = xy.ulong.upper;
+  unsigned long long Dl = xy.ulong.lower;
+  unsigned long long Dv = zu.ulong.upper;
+  unsigned long long q1, q2, Q;
+  unsigned long long r1, r2, R;
+
+  // Transfer to GPUs and use scalar divide/divide extended
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned]
+  q1 = __builtin_divdeu (Dh, Dv);
+  //r1 = -(q1 * Dv);
+  r1 = (q1 * Dv);
+  q2 = Dl / Dv;
+  r2 = Dl - (q2 * Dv);
+  Q = q1 + q2;
+  //R = r1 + r2;
+  R = r2 - r1;
+  if ((R < r2) | (R >= Dv))
+    {
+      Q++;
+      R = R - Dv;
+    }
+
+  // Transfer R|Q back to VRs and return
+  qu.ulong.upper = R;
+  qu.ulong.lower = Q;
+  return qu.vx2;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vui64_t ge;
+  //vui128_t cc, c;
+  vui64_t t, xt, mone;
+  const vui64_t zeros = vec_splat_u64(0);
+  // t = (vui64_t) CONST_VINT128_DW (0, 0);
+  mone = (vui64_t) CONST_VINT128_DW (-1, -1);
+  /* Here only using the high DW of z, generated z as {z'', -1} */
+  z = vec_pasted (z, mone);
+
+  print_v2xint64 ("db_vec_divqud (", (vui64_t) x_y);
+  print_v2xint64 ("           , z)", z);
+
+  for (i = 1; i <= 64; i++)
+    {
+      // Left shift (x || y) requires 129-bits, is (t || x || y)
+      /* capture high bit of x_y as bool t */
+#if defined (_ARCH_PWR8)
+      t = (vui64_t) vec_cmpltsd ((vi64_t) x_y, (vi64_t) zeros);
+#else
+      { // P7 and earlier did not support DW int.
+	// But only need to convert the sign-bit into a bool
+	vui32_t lts;
+	lts = (vui32_t) vec_cmplt ((vi32_t) x_y, (vi32_t) zeros);
+	t = (vui64_t) vec_splat (lts, VEC_W_H);
+      }
+#endif
+      // Then shift left Quadword x_y by 1 bit;
+      x_y = vec_slqi (x_y, 1);
+#if (__DEBUG_PRINT__ > 1)
+      print_v2xint64 ("             t ", t);
+      print_v2xint64 ("      slqi x_y ", (vui64_t) x_y);
+#endif
+      /* We only need the high DW of t and ge */
+      /* deconstruct ((t || x) >= z) to (t || (x >= z)) */
+#if defined (_ARCH_PWR8)
+      // vec_cmpge (x_y,z) is NOT vec_cmpgt (z, x_y)
+      ge = (vui64_t) vec_cmpgtud (z, (vui64_t)x_y);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_orc ((vui32_t)t, (vui32_t)ge);
+#else
+      ge = (vui64_t) vec_cmpgeud ((vui64_t)x_y, z);
+      /* Combine t with (x >= z) for 129-bit compare */
+      ge = (vui64_t) vec_or ((vui32_t)t, (vui32_t)ge);
+#endif
+
+#if (__DEBUG_PRINT__ > 1)
+      print_v2xint64 ("            ge ", ge);
+#endif
+      /* Splat the high ge DW to both DWs for select */
+      ge = vec_splatd (ge, VEC_DW_H);
+#if (__DEBUG_PRINT__ > 1)
+      print_v2xint64 ("           'ge ", ge);
+#endif
+
+      /* xt <- {(x - z), (y - ( -1)} */
+      xt = vec_subudm ((vui64_t)x_y, z);
+
+#if (__DEBUG_PRINT__ > 1)
+      print_v2xint64 ("            xt ", xt);
+#endif
+      x_y = (vui128_t)vec_selud ((vui64_t)x_y, xt, (vb64_t)ge);
+    }
+
+  print_v2xint64 ("   return  x_y ", (vui64_t) x_y);
+  return (vui64_t)x_y;
+#endif
+}
 
 int
 test_vrld (void)
@@ -12323,6 +12546,384 @@ test_splatiud (void)
   return (rc);
 }
 
+#if 0
+extern vui64_t test_vec_divud (vui64_t y, vui64_t z);
+extern vui64_t test_vec_divude (vui64_t x, vui64_t z);
+#define test_divud test_vec_divud
+#define test_divude test_vec_divude
+#if 0
+extern vui64_t test_vec_divdud (vui64_t x, vui64_t y, vui64_t z);
+#define test_divdud test_vec_divdud
+#else
+#if 0
+extern vui64_t test_vec_divdud_V0 (vui64_t x, vui64_t y, vui64_t z);
+#define test_divdud test_vec_divdud_V0
+#else
+extern vui64_t test_vec_divdud_V1 (vui64_t x, vui64_t y, vui64_t z);
+#define test_divdud test_vec_divdud_V1
+#endif
+#endif
+#else
+extern vui64_t test_divdud (vui64_t x, vui64_t y, vui64_t z);
+extern vui64_t test_divud (vui64_t y, vui64_t z);
+extern vui64_t test_divude (vui64_t x, vui64_t z);
+#endif
+
+int
+test_vec_divide_dw (void)
+{
+
+  vui64_t ix[4];
+  vui64_t er;
+  vui64_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Unsigned Doubleword\n");
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1);
+
+  rq = test_divdud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divdud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divdud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1);
+
+  rq = test_divud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divud:", rq, er);
+
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1000000000000000000UL);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000000000000UL,
+				    1000000000000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(18UL, 1UL);
+
+  rq = test_divud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divud:", rq, er);
+
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1000000000000000000UL);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000UL,
+				    1000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(0x44b82fa09UL, 1000000000UL);
+
+  rq = test_divud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+  ix[1] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[2] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+
+  rq = test_divdud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divdud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divdud:", rq, er);
+
+  rq = test_divude (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divude ", ix[0]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divude:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+  ix[1] = (vui64_t)CONST_VINT128_DW(1, 1);
+  ix[2] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, (__UINT64_MAX__-2));
+
+  rq = test_divdud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divdud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divdud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0x00c097ce7bc90715UL,
+				    0x00c097ce7bc90715UL ); /* 10**36 */
+  ix[1] = (vui64_t)CONST_VINT128_DW(0xb34b9f1000000000UL,
+				    0xC12C55C3A763ffffUL); /* +10**18 -1 */
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000000000000UL,
+				    1000000000000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(1000000000000000000UL,
+				    1000000000000000000UL);
+
+  rq = test_divdud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divdud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divdud:", rq, er);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_modud db_vec_modud
+#else
+#if 0
+extern vui64_t test_vec_modud (vui64_t y, vui64_t z);
+extern vui64_t test_vec_moddud (vui64_t x, vui64_t y, vui64_t z);
+#define test_modud test_vec_modud
+#define test_moddud test_vec_moddud
+#else
+extern vui64_t test_modud (vui64_t y, vui64_t z);
+extern vui64_t test_moddud (vui64_t x, vui64_t y, vui64_t z);
+#endif
+#endif
+
+int
+test_vec_modulo_dw (void)
+{
+
+  vui64_t ix[4];
+  vui64_t er;
+  vui64_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector modulo Unsigned Doubleword\n");
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+  ix[1] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[2] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+
+  rq = test_moddud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" moddud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("moddud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), (__UINT64_MAX__-2));
+  ix[1] = (vui64_t)CONST_VINT128_DW(1, 1);
+  ix[2] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui64_t)CONST_VINT128_DW(0, (__UINT64_MAX__-1));
+
+  rq = test_moddud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" moddud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("moddud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0x00c097ce7bc90715UL,
+				    0x00c097ce7bc90715UL ); /* 10**36 */
+  ix[1] = (vui64_t)CONST_VINT128_DW(0xb34b9f1000000000UL,
+				    0xC12C55C3A763ffffUL); /* +10**18 -1 */
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000000000000UL,
+				    1000000000000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(0UL, 999999999999999999UL);
+
+  rq = test_moddud (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" moddud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("moddud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui64_t)CONST_VINT128_DW(16UL, 100UL);
+  er = (vui64_t)CONST_VINT128_DW(0xfUL, 15UL);
+
+  rq = test_modud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" modud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("modud:", rq, er);
+
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1000000000000000000UL);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000000000000UL,
+				    1000000000000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(0x633275e3af7ffffUL,0000000000000000UL);
+
+  rq = test_modud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" modud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("modud:", rq, er);
+
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 1000000000000000000UL);
+  ix[2] = (vui64_t)CONST_VINT128_DW(1000000000UL,
+				    1000000000UL);
+  er =    (vui64_t)CONST_VINT128_DW(0x44b82fa09UL, 1000000000UL);
+
+  rq = test_modud (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" modud  ", ix[1]);
+  print_v2xint64 ("        ", ix[2]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+#define test_divqud db_vec_divqud
+#else
+#if 0
+extern vui64_t test_vec_divqud (vui128_t x_y, vui64_t z);
+#define test_divqud test_vec_divqud
+#else
+extern vui64_t test_divqud (vui128_t x_y, vui64_t z);
+#endif
+#endif
+
+int
+test_vec_divide_qud (void)
+{
+  vui64_t ix[4];
+  vui64_t er;
+  vui64_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Unsigned quadword by doubleword\n");
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0, 0);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 0UL);
+  er = (vui64_t)CONST_VINT128_DW(0, 0);
+
+  rq = test_divqud ((vui128_t) ix[0], ix[1]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divqud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divqud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW(0, __UINT64_MAX__);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 0UL);
+  er = (vui64_t)CONST_VINT128_DW(0, 1);
+
+  rq = test_divqud ((vui128_t) ix[0], ix[1]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divqud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divqud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), 1);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 0UL);
+  er = (vui64_t)CONST_VINT128_DW(0, __UINT64_MAX__);
+
+  rq = test_divqud ((vui128_t) ix[0], ix[1]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divqud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divqud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), 2);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 0UL);
+  er = (vui64_t)CONST_VINT128_DW(1, __UINT64_MAX__);
+
+  rq = test_divqud ((vui128_t) ix[0], ix[1]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divqud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divqud:", rq, er);
+
+  ix[0] = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), __UINT64_MAX__);
+  ix[1] = (vui64_t)CONST_VINT128_DW(__UINT64_MAX__, 0UL);
+  er = (vui64_t)CONST_VINT128_DW((__UINT64_MAX__-1), __UINT64_MAX__);
+
+  rq = test_divqud ((vui128_t) ix[0], ix[1]);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 (" divqud ", ix[0]);
+  print_v2xint64 ("        ", ix[1]);
+  print_v2xint64 ("     rq=", rq);
+#endif
+
+  rc += check_v2ui64x ("divqud:", rq, er);
+
+  return (rc);
+}
+
 int
 test_vec_i64 (void)
 {
@@ -12371,6 +12972,9 @@ test_vec_i64 (void)
   rc += test_setbd ();
   rc += test_splatisd ();
   rc += test_splatiud ();
+  rc += test_vec_divide_dw ();
+  rc += test_vec_modulo_dw ();
+  rc += test_vec_divide_qud ();
 
   return (rc);
 }

@@ -50,6 +50,165 @@ static const vui32_t ten_64h =
 static const vui32_t ten_64l =
     CONST_VINT32_W(0x6e38ed64, 0xbf6a1f01, 0x00000000, 0x00000000);
 
+#if 0
+#else
+extern vui64_t test_divdud (vui64_t x, vui64_t y, vui64_t z);
+extern vui64_t test_moddud (vui64_t x, vui64_t y, vui64_t z);
+extern vui64_t test_divud (vui64_t y, vui64_t z);
+extern vui64_t test_modud (vui64_t y, vui64_t z);
+extern vui64_t test_divmodud (vui64_t *r, vui64_t y, vui64_t z);
+#endif
+
+vui64_t dummy_x2;
+
+int timed_divmodud (void)
+{
+  int ii;
+  int rc = 0;
+
+  vui64_t ix[4], hx, lx, dx, dy, dz, dq, dr;
+  vui64_t rq, qq, rr;
+
+  const vui64_t c32_9s =(vui64_t)CONST_VINT128_DW(0x000004ee2d6d415bUL,
+						  0x85acef80ffffffffUL);
+  const vui64_t ten16th = (vui64_t)CONST_VINT128_DW(10000000000000000UL,
+						    0UL);
+  const vui64_t ten2 = (vui64_t)CONST_VINT128_DW(100UL,
+						 0UL);
+  const vui64_t zero = vec_splat_u64(0);
+
+  dx = vec_mrgahd ((vui128_t) c32_9s, (vui128_t) c32_9s);
+  dy = vec_mrgald ((vui128_t) c32_9s, (vui128_t) c32_9s);
+  dz = vec_mrgahd ((vui128_t) ten16th, (vui128_t) ten16th);
+#if 0
+  dq = test_divdud (dx, dy, dz);
+  dr = test_moddud (dx, dy, dz);
+#else
+  dq = vec_divdud_inline (dx, dy, dz);
+  dr = vec_moddud_inline (dx, dy, dz);
+#endif
+  lx = vec_mrgahd ((vui128_t) dq, (vui128_t) dr);
+
+  ix[2] = zero;
+
+  // Convert low 16-digit binary values to 100s digits
+  for (ii = 1; ii < 9; ii++)
+    {
+#if 1
+#if 1
+      qq = test_divmodud (&rr, lx, ten2);
+#else
+      qq = test_divud (lx, ten2);
+      rr = test_modud (lx, ten2);
+#endif
+#else
+      qq = vec_vdivud_inline (lx, ten2);
+      rr = vec_vmodud_inline (lx, ten2);
+#endif
+      lx = vec_mrgald ((vui128_t) zero, (vui128_t) rq); // move Q to dividend
+      // Collect digits from remainder, rotate bytes into ix[2]
+      ix[2] = (vui64_t) vec_sld ((vui8_t) ix[2], (vui8_t) zero, 1);
+      ix[2] = (vui64_t) vec_or ((vui8_t) ix[2], (vui8_t) rr);
+      lx = qq;
+    }
+  dummy_x2 = ix[2];
+  return rc;
+}
+
+int timed_lib_divmodud (void)
+{
+  int ii;
+  int rc = 0;
+
+  vui64_t ix[4], hx, lx, dx, dy, dz, dq, dr;
+  vui64_t rq, qq, rr;
+
+  const vui64_t c32_9s =(vui64_t)CONST_VINT128_DW(0x000004ee2d6d415bUL,
+						  0x85acef80ffffffffUL);
+  const vui64_t ten16th = (vui64_t)CONST_VINT128_DW(10000000000000000UL,
+						    0UL);
+  const vui64_t ten2 = (vui64_t)CONST_VINT128_DW(100UL,
+						 0UL);
+  const vui64_t zero = vec_splat_u64(0);
+
+  dx = vec_mrgahd ((vui128_t) c32_9s, (vui128_t) c32_9s);
+  dy = vec_mrgald ((vui128_t) c32_9s, (vui128_t) c32_9s);
+  dz = vec_mrgahd ((vui128_t) ten16th, (vui128_t) ten16th);
+
+  dq = test_divdud (dx, dy, dz);
+  dr = test_moddud (dx, dy, dz);
+  lx = vec_mrgahd ((vui128_t) dq, (vui128_t) dr);
+
+  ix[2] = zero;
+
+  // Convert low 16-digit binary values to 100s digits
+  for (ii = 1; ii < 9; ii++)
+    {
+      qq = test_divud (lx, ten2);
+      rr = test_modud (lx, ten2);
+      lx = vec_mrgald ((vui128_t) zero, (vui128_t) rq); // move Q to dividend
+      // Collect digits from remainder, rotate bytes into ix[2]
+      ix[2] = (vui64_t) vec_sld ((vui8_t) ix[2], (vui8_t) zero, 1);
+      ix[2] = (vui64_t) vec_or ((vui8_t) ix[2], (vui8_t) rr);
+      lx = qq;
+    }
+  dummy_x2 = ix[2];
+  return rc;
+}
+
+#if 0
+extern vui64_t test_vec_divqud (vui128_t x_y, vui64_t z);
+#define test_divqud test_vec_divqud
+#else
+extern vui64_t test_divqud (vui128_t x_y, vui64_t z);
+#endif
+int timed_divqud (void)
+{
+  int ii;
+  int rc = 0;
+
+  vui64_t ix[4], hx, lx;
+  vui64_t rq;
+
+  const vui64_t c32_9s =(vui64_t)CONST_VINT128_DW(0x000004ee2d6d415bUL,
+						  0x85acef80ffffffffUL);
+  const vui64_t ten16th = (vui64_t)CONST_VINT128_DW(10000000000000000UL,
+						    0UL);
+  const vui64_t ten2 = (vui64_t)CONST_VINT128_DW(100UL,
+						 0UL);
+  const vui64_t zero = vec_splat_u64(0);
+
+  // Split QW into high/low 16 digits
+  rq = test_divqud ((vui128_t) c32_9s, ten16th);
+  // Extend Q as high digits
+  hx = vec_mrgald ((vui128_t) zero, (vui128_t) rq);
+  // Extend R as low digits
+  lx = vec_mrgahd ((vui128_t) zero, (vui128_t) rq);
+
+  ix[2] = zero;
+
+  // Convert high 16-digit binary values to 100s digits
+  for (ii = 1; ii < 9; ii++)
+    {
+      rq = test_divqud ((vui128_t) hx, ten2);
+      hx = vec_mrgald ((vui128_t) zero, (vui128_t) rq); // move Q to dividend
+      // Collect digits from remainder, rotate bytes into ix[2]
+      ix[3] = (vui64_t) vec_sld ((vui8_t) rq, (vui8_t) rq, 7);
+      ix[2] = (vui64_t) vec_sld ((vui8_t) ix[2], (vui8_t) ix[3], 1);
+    }
+
+  // Convert low 16-digit binary values to 100s digits
+  for (ii = 1; ii < 9; ii++)
+    {
+      rq = test_divqud ((vui128_t) lx, ten2);
+      lx = vec_mrgald ((vui128_t) zero, (vui128_t) rq); // move Q to dividend
+      // Collect digits from remainder, rotate bytes into ix[2]
+      ix[3] = (vui64_t) vec_sld ((vui8_t) rq, (vui8_t) rq, 7);
+      ix[2] = (vui64_t) vec_sld ((vui8_t) ix[2], (vui8_t) ix[3], 1);
+    }
+  dummy_x2 = ix[2];
+  return rc;
+}
 
 int timed_mul10uq (void)
 {

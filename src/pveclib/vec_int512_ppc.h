@@ -639,11 +639,9 @@ extern __VEC_U_256
 __VEC_PWR_IMP (vec_mul128x128) (vui128_t m1l, vui128_t m2l);
  ...
  * \endcode
- * \note Doxygen does not tolerate attributes or macros in function
- * prototypes. So these externs are guarded by a
- * \@cond INTERNAL ... \@endcond" block. The \\brief and \@param
- * descriptions are provided for the unqualified dynamic function
- * symbol and apply to the corresponding qualified function symbols.
+ *
+ * \note Doxygen does not tolerate attributes or macros within
+ * function prototypes.
  *
  * \code
 //  \file  vec_int512_runtime.c

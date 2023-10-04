@@ -168,11 +168,15 @@ vec_absdub (vui8_t vra, vui8_t vrb)
 {
   vui8_t result;
 #ifdef _ARCH_PWR9
-        __asm__(
-            "vabsdub %0,%1,%2;"
-            : "=v" (result)
-            : "v" (vra), "v" (vrb)
-            : );
+#ifdef vec_absdb
+  result = vec_absdb (vra, vrb);
+#else
+  __asm__(
+      "vabsdub %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
 #else
   vui8_t a, b;
   vui8_t vmin, vmax;
@@ -775,11 +779,15 @@ vec_setb_sb (vi8_t vra)
   vb8_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      result = (vb8_t) vec_expandm ((vui8_t) vra);
+#else
   __asm__(
       "vexpandbm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );
+#endif
 #else
   const vui8_t rshift =  vec_splat_u8( 7 );
   // Vector Shift Right Algebraic Bytes 7-bits.

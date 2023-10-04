@@ -1275,11 +1275,15 @@ vec_setb_sw (vi32_t vra)
   vb32_t result;
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+      result = (vb32_t) vec_expandm ((vui32_t) vra);
+#else
   __asm__(
       "vexpandwm %0,%1"
       : "=v" (result)
       : "v" (vra)
       : );
+#endif
 #else
   // Compare signed word less than zero
   const vi32_t zero = {0, 0, 0, 0};
@@ -2159,47 +2163,47 @@ vec_vlxsiwzx (const signed long long ra, const unsigned int *rb)
   return xt;
 }
 
-/** \brief \copybrief vec_int64_ppc.h::vec_vmadd2euw()
+/** \brief \copybrief vec_vmadd2euw()
  *
  * \note this implementation exists in
- * \ref vec_int64_ppc.h::vec_vmadd2euw()
- * as it requires vec_addudm().
+ * vec_int64_ppc.h as it requires vec_addudm().
+ * See \ref vec_vmadd2euw() for full description.
  */
 static inline vui64_t
 vec_vmadd2euw (vui32_t a, vui32_t b, vui32_t c, vui32_t d);
 
-/** \brief \copybrief vec_int64_ppc.h::vec_vmadd2ouw()
+/** \brief \copybrief vec_vmadd2ouw()
  *
  * \note this implementation exists in
- * \ref vec_int64_ppc.h::vec_vmadd2ouw()
- * as it requires vec_addudm().
+ * vec_int64_ppc.h as it requires vec_addudm().
+ * See \ref vec_vmadd2ouw() for full description.
  */
 static inline vui64_t
 vec_vmadd2ouw (vui32_t a, vui32_t b, vui32_t c, vui32_t d);
 
-/** \brief \copybrief vec_int64_ppc.h::vec_vmaddeuw()
+/** \brief \copybrief vec_vmaddeuw()
  *
  * \note this implementation exists in
- * \ref vec_int64_ppc.h::vec_vmaddeuw()
- * as it requires vec_addudm().
+ * vec_int64_ppc.h as it requires vec_addudm().
+ * See \ref vec_vmaddeuw() for full description.
  */
 static inline vui64_t
 vec_vmaddeuw (vui32_t a, vui32_t b, vui32_t c);
 
-/** \brief \copybrief vec_int64_ppc.h::vec_vmaddouw()
+/** \brief \copybrief vec_vmaddouw()
  *
  * \note this implementation exists in
- * \ref vec_int64_ppc.h::vec_vmaddouw()
- * as it requires vec_addudm().
+ * vec_int64_ppc.h as it requires vec_addudm().
+ * See \ref vec_vmaddouw() for full description.
  */
 static inline vui64_t
 vec_vmaddouw (vui32_t a, vui32_t b, vui32_t c);
 
-/** \brief \copybrief vec_int64_ppc.h::vec_vmsumuwm()
+/** \brief \copybrief vec_vmsumuwm()
  *
  * \note this implementation exists in
- * \ref vec_int64_ppc.h::vec_vmsumuwm()
- * as it requires vec_addudm().
+ * vec_int64_ppc.h as it requires vec_addudm().
+ * See \ref vec_vmsumuwm() for full description.
  */
 static inline vui64_t
 vec_vmsumuwm (vui32_t a, vui32_t b, vui64_t c);

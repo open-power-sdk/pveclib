@@ -26,6 +26,1032 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+
+vui128_t test_divuqe (vui128_t x, vui128_t z)
+{
+  return vec_vdivuqe_inline (x, z);
+}
+
+vui128_t test_divuq (vui128_t y, vui128_t z)
+{
+  return vec_vdivuq_inline (y, z);
+}
+
+vui128_t test_moduq (vui128_t y, vui128_t z)
+{
+  return vec_vmoduq_inline (y, z);
+}
+
+vui128_t
+test_divduq (vui128_t x, vui128_t y, vui128_t z)
+{
+  return vec_divduq (x, y, z);
+}
+
+vui128_t
+test_modduq (vui128_t x, vui128_t y, vui128_t z)
+{
+  return vec_modduq (x, y, z);
+}
+
+__VEC_U_128P
+test_divdqu (vui128_t x, vui128_t y, vui128_t z)
+{
+  return vec_divdqu_inline (x, y, z);
+}
+
+vui128_t
+test_vec_mulqud (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  vui128_t l128, h128;
+  /* compute the 256 bit product of two 128 bit values a, b.
+   * The low order DW of b are assumed 0 and ignored.
+   * So effectively a 128x64-bit multiply shifted left 64-bits.
+   * The high 128 bits are accumulated in t and the low 128-bits
+   * in tmq. The high 128-bits of the product are returned to the
+   * address of the 1st parm. The low 128-bits are the return
+   * value.
+   */
+  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t)b);
+  l128 = vec_vmuloud ((vui64_t ) a, b_eud);
+  h128 = vec_vmaddeud ((vui64_t ) a, b_eud, (vui64_t ) l128);
+  l128 = vec_slqi (l128, 64);
+
+  *mulu = (vui128_t) h128;
+  return ((vui128_t) l128);
+}
+
+  // The double QW {k || k1} is the produce of QWs estimated
+  // Quotient (q0) and divisor (v1).
+  // If Double QW {k || k1} is greater than {u1 || 0} then the
+  // estimated quotient is high and should be reduced by 1
+  // the remainder should be recomputed for the next step.
+  // So the QW compare is (k > u1) || ((k == u1) && (k1 != 0))
+  // The following is study in simplifying this compare
+
+vui128_t test_vec_xxx (vui128_t k, vui128_t k1, vui128_t u1, vui128_t vdh, vui128_t q0)
+{
+  vui128_t q2, t2, t3;
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vb128_t CCgt;
+  //
+  // If a remainder is needed would like to integrate the compare into
+  // remainder calculation.
+  // double QW remainder is {u1 || 0} - {k || k1} which is:
+  t3 = vec_subcuq ((vui128_t) zeros, k1);
+  // u3 = vec_subuqm ((vui128_t) zeros, k1);
+  t2 = vec_subecuq (u1, k, t3);
+  // u2 = vec_subeuqm (u1, k, t3);
+  // Technically we don't need the vec_subecuq() but the carry can be
+  // used for the compare. The boolean compare vec_cmpgtuq (k, u1)
+  // generates:
+  //   t2 = vec_subcuq (u1, k);
+  //   return vec_setb_ncq (t2);
+  // So we can use the result of t2 = vec_subecuq (u1, k, t3) to set
+  // the boolean CCgt via vec_setb_ncq (t2).
+  // This provides a select boolean from double QW compare greater then
+  // in addition to the remainder.
+  // And if we only need the double QW compare,
+  // the subuqm/subeuqm can be eliminated.
+
+  // NOT carry of (u - k) -> k gt u
+  CCgt = vec_setb_ncq (t2);
+  // q0 = q0 -1
+  q2 = vec_adduqm (q0, mone);
+  q0 = vec_seluq (q0, q2, CCgt);
+  // adjust remainder
+  //u2 = vec_subuqm (u2, (vui128_t) vdh);
+  //u1 = vec_seluq (u1, u2, CCgt);
+
+  return q0;
+}
+
+vui128_t test_vec_xxx_V2 (vui128_t k, vui128_t k1, vui128_t u1, vui128_t q0)
+{
+  vui128_t q2, kc, k2;
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vb128_t CCk;
+  //
+  // Would like to reduce this test to a single QW compare.
+  // Observe that for max unsigned QW * QW the produce is:
+  // double QW {(UINT128_MAX-1), 1}
+  // So, for any double QW product, we can add 0 or 1 to the high QW,
+  // without overflow.
+  // So a generated carry from a nonzero k1 (carry (k1+UINT128_MAX))
+  // can be safely add to k without overflow.
+  // And the sum of k + carry (k1+UINT128_MAX) will test greater than
+  // divisor (u1), If and only if the product {k || k1} is greater than
+  // the dividend {u1 || 0}
+  kc = vec_addcuq (k1, mone);
+  k2 = vec_adduqm (k, kc);
+  CCk = vec_cmpgtuq (k2, u1);
+
+  q2 = vec_adduqm (q0, mone);
+  q0 = vec_seluq (q0, q2, CCk);
+
+  return q0;
+}
+
+vui128_t test_vec_xxx_V1 (vui128_t k, vui128_t k1, vui128_t u1, vui128_t q0)
+{
+  vui128_t q2;
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vb128_t CCk, CCke, CCk1;
+
+  CCk = vec_cmpgtuq (k, u1);
+  CCke = vec_cmpequq (k, u1);
+  CCk1 = vec_cmpequq (k1, (vui128_t) zeros);
+  CCk1 = (vb128_t) vec_andc ((vui32_t) CCke, (vui32_t) CCk1);
+  CCk = (vb128_t) vec_or ((vui32_t) CCk, (vui32_t) CCk1);
+
+  q2 = vec_adduqm (q0, mone);
+  q0 = vec_seluq (q0, q2, CCk);
+
+  return q0;
+}
+
+vui128_t test_vec_xxx_V0 (vui128_t k, vui128_t k1, vui128_t u1, vui128_t q0)
+{
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  if (vec_cmpuq_all_gt (k, u1)
+	  || (vec_cmpuq_all_eq (k, u1)
+	      && vec_cmpuq_all_ne (k1, (vui128_t) zeros)))
+	{
+	  q0 = vec_adduqm (q0, mone);
+	}
+  return q0;
+}
+
+vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  // See "Hacker's Delight, 2nd Edition,"
+  // Henry S. Warren, Jr, Addison Wesley, 2013.
+  // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+  //
+  // Here we will use long division by doubleword to compute the
+  // quadword division. We use the 128 by 64 division operation
+  // vec_divqud_inline() for 2 cases.
+  // - divisor < 2**64
+  // - divisor >= 2**64
+  // This also allows the use of doubleword operations for permutes,
+  // compares, and count leading zeros.
+  // It does require some quadword shifts, add/subtract, and  multiply.
+  // TBD explain diff from divuq and clean up if/then/else where possible
+  // The difference from divuq is:
+  // - The dividend is really 256-bits
+  //   - with x as the high order 128-bits
+  //   - with 0s implied for the low order 128-bits.
+  // - The divisor is 128-bits
+  // - We treat this like a 4-digit by 2 digit long division,
+  //   where a digit is a 64-bit DW.
+  // - Use vec_divqud_inline() to do the 2-digit by 1-digit divide step
+  //   to generate a provisional quotient digit.
+  // - First check for overflow (x >= z) and zero divide (z == 0).
+  //   - return __UINT128_MAX__
+  // - For the case; divisor < 2**64
+  //   - Divide x by zdl, the 1st quotient digit (qdh) is exact.
+  //   - Shift the remainder left 64-bits and divide again by zdl,
+  //     the 2nd quotient digit is exact.
+  //   - Combine 1st/2nd quotient digits and return the 128-bit result.
+  // - For the case divisor >= 2**64
+  //   - So check for z == 0 first and return 0 as the quotient
+  //   - We know that x < z, but we don't know if x < {zdh || 0},
+  //     vec_divqud_inline can only divide by one digit (zdh) to
+  //     compute 1st quotient digit estimate.
+  //     - We can normalize the dividend and divisor by shifting
+  //       left by vec_clzd ((vui64_t) z). This makes zdh a more
+  //       reasonable divisor.
+  //     - Then we use vec_divqud_inline to compute the 1st quotient
+  //       digit estimate (DW qdh).
+  //     - if (xdh >= zdh) the quotient (qdh) will overflow, which
+  //       looks like quotient of 0 but is really (vui64_t) {1, 0}
+  //     - For this case we force qdh to __UINT64_MAX__, which a
+  //       reasonable estimate for the 1st quotient digit.
+  //   - Use the 1st quotient digit estimate to compute the
+  //     1st quotient remainder. For divide extended this requires
+  //     a full QW x QW multiply (vec_muludq()) returning a double
+  //     QW product (vui128_t) {k, k1} and double QW subtract from
+  //     (vui128_t) {x1, 0} to generate the remainder.
+  //     - We use subtract QW with carry/extent.
+  //     - The double QW carry/borrow can used to effect the compare
+  //       {k,k1} gt {x1.0}.
+  //     - if ({k,k1} gt {x1.0}) then the quotient estimate was too
+  //       and we need to reduce the quotient by 1 and adjust the
+  //       remainder by subtracting zdh.
+  //     - The resulting remainder has a DW of leading zeros,
+  //       2 x DWs of remainder, followed another DW or zeros.
+  //     - For the next step we need to normalize this by shifting this
+  //       double QW left 64-bits for 2nd stage QW dividend
+  //       (using vec_sldqi()).
+  //   - Now we have the corrected 1st quotient digit and the corrected
+  //     remainder.
+  //     - Use vec_divqud_inline to compute the 2nd digit estimate.
+  //     - Then combine the 1st and 2nd quotient digits to form the
+  //       QW quotient estimate q0.
+  //     - Multiply QW divisor by the QW quotient estimate and compute
+  //       the double QW remainder.
+  //       - Here We dont really need the remainder but we do need to
+  //         verify the q0 guess is correct.
+  //       - If ({k,k1} gt {x0.0}) then subtract 1 from q0 before
+  //         returning the quotient.
+
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t x0, x1, z1, q0, k, t, zn;
+  vui64_t zdh, zdl, qdl, qdh;
+
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  zdh = vec_splatd ((vui64_t) z, VEC_DW_H);
+	  zdl = vec_splatd ((vui64_t) z, VEC_DW_L);
+
+          // (z < 2**64) simplifies to z >> 64 == 0UL
+	  if (vec_cmpud_all_eq (zdh, zeros))
+	    {
+	      x0 = (vui128_t) vec_swapd ((vui64_t) x);
+	      qdh = vec_divqud_inline (x0, zdl);
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = x1 - q1*z; ((k << 64) + x0);
+	      // Simplifies to:
+	      x1 = (vui128_t) vec_pasted (qdh, (vui64_t) x0);
+	      qdl = vec_divqud_inline (x1, zdl);
+	      //return (vui128_t) {qlh, qdl};
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	  else
+	    {
+	      const vui64_t ones = vec_splat_u64 (1);
+	      vui128_t k1, x2, t2, q2;
+	      vb128_t Bgt;
+	      vb64_t Beq;
+	      // Here z >= 2**64, Normalize the divisor so MSB is 1
+	      // Could use vec_clzq(), but we know  z >= 2**64, So:
+	      zn = (vui128_t) vec_clzd ((vui64_t) z);
+	      // zn = zn >> 64;, So we can use it with vec_slq ()
+	      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+
+	      // Normalize dividend and divisor
+	      x1 = vec_slq (x, zn);
+	      z1 = vec_slq (z, zn);
+#if 1
+#else
+	      xdh = vec_mrgahd ((vui128_t) zeros, x1); // !!
+	      zdh = vec_mrgahd ((vui128_t) zeros, z1); // !!
+#endif
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+#if 1
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+#else
+	      // divqud might overflow the estimated quotient
+	      // If X != 0 then quotient == 0 implies overflow
+	      // If so use UINT64_MAX as the estimated quotient
+	      Beq = vec_cmpequd (qdh, zeros);
+	      Beq2 = vec_cmpequd (xdh, zdh); // !!
+	      Beq = (vb64_t) vec_and ((vui32_t) Beq, (vui32_t) Beq2);  // !!
+	      qdh = vec_selud (qdh, (vui64_t) mone, Beq);
+#endif
+	      // q0 = qdh << 64
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+
+	      // Compute 1st digit remainder
+	      // {k, k1}  = vec_muludq (z1, q0);
+#if 1
+	      {
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * q-estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+#else
+	      k1 = vec_muludq (&k, z1, q0);
+#endif
+	      // Also a double QW compare for {x1 || 0} > {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+
+	      x0 = vec_sldqi (x0, x2, 64);
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      //t2 = vec_subuqm (x0, (vui128_t) zdh);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+	      qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+	      //x0 = vec_sldqi (x0, x2, 64);
+
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      k1 = vec_muludq (&k, q0, z1);
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      //x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      //x0 = vec_subeuqm (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      return q0;
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made divide any value by 0
+      // then the results are undefined. We use __UINT128_MAX__.
+      return mone;
+    }
+#else
+/* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+ * "Divide long unsigned shift-and-subtract algorithm."
+ * Simplified for y = 0 case. Carry from y to x
+ * is not possible so; eliminate the vec_addcuq (y, y) and replace
+ * vec_addeuqm (x, x, c) with vec_adduqm (x, x).
+ * As cmpgeuq is based on detecting the carry-out of (x - z) and
+ * setting the bool via setb_cyq, we can use this carry (variable t)
+ * to generate quotient bits.
+ * */
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, xt;
+  vui128_t y = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || 0) requires 129-bits, is (t || x || 0 )
+      t = vec_addcuq (x, x);
+      x = vec_adduqm (x, x);
+
+      // deconstruct ((t || x) >= z)
+      // Carry from subcuq == 1 for x >= z
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert to a bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+/* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+ * "Divide long unsigned shift-and-subtract algorithm."
+ * Simplified for x = 0 case. Carry out of high order (257th bit)
+ * is not possible so the compare becomes x >= z.
+ * As cmpgeuq is based on detecting the carry-out of (x -z) and
+ * setting the bool via setb_cyq, we can use this carry (variable t)
+ * to generate quotient bits (variable y).
+ * */
+vui128_t test_vec_divuq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif (_ARCH_PWR8)
+ // See "Hacker's Delight, 2nd Edition,"
+ // Henry S. Warren, Jr, Addison Wesley, 2013.
+ // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ //
+ // Here we will use long division by doubleword to compute the
+ // quadword division. We use the 128 by 64 division operation
+ // vec_divqud_inline() for 3 distinct cases.
+ // - divisor < 2**64 and
+ //   - dividend < 2**64
+ //   - dividend >= 2**64
+ // - divisor >= 2**64
+ // This also allows the use of doubleword operations for permutes,
+ // compares, and count leading zeros.
+ // It does require some quadword shifts, add/subtract, and in one case
+ // multiply.
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t y0, y1, z1, q0, q1, k, t, zn;
+  vui64_t zdh, zdl, ydh, qdl, qdh;
+
+  ydh = vec_splatd((vui64_t)y, VEC_DW_H);
+  zdh = vec_splatd((vui64_t)z, VEC_DW_H);
+  zdl = vec_splatd((vui64_t)z, VEC_DW_L);
+
+  if (vec_cmpud_all_eq (zdh, zeros)) // (z >> 64) == 0UL
+    {
+      if (vec_cmpud_all_lt (ydh, zdl)) // (y >> 64) < z
+	{
+	  // Here qdl = {(y % z) || (y / z)}
+	  qdl = vec_divqud_inline (y, zdl);
+	  // return the quotient
+	  return (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+	}
+      else
+	{
+	  //y1 = y >> 64;
+	  y1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, y);
+	  // y0 = y & lmask;
+	  y0 = (vui128_t) vec_mrgald ((vui128_t) zeros, y);
+	  //q1 = scalar_divqud (y1, (unsigned long long) z) & lmask;
+	  // Here qdh = {(y1 % z) || (y1 / z)}
+	  qdh = vec_divqud_inline (y1, zdl);
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // So; k = y1 - q1*z; ((k << 64) + y0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) y0);
+	  // q0 = scalar_divqud ((k << 64) + y0, (unsigned long long) z) & lmask;
+	  // Here qdl = (vui64_t) {(k % z) || (k / z)}
+	  qdl = vec_divqud_inline (k, zdl);
+	  //return (q1 << 64) + q0;
+	  return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	}
+    }
+  else
+    {
+      // Here z >= 2**64, Normalize the divisor so MSB is 1
+      // Could use vec_clzq(), but we know  z >= 2**64, So:
+      zn = (vui128_t) vec_clzd ((vui64_t) z);
+      // zn = zn >> 64, So we can use it with vec_slq ()
+      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+      //z1 = (z << n) >> 64;
+      z1 = vec_slq (z, zn);
+
+      //y1 = y >> 1; 	// to insure no overflow
+      y1 = vec_srqi (y, 1);
+      // q1 = scalar_divdud (y1, (unsigned long long) z1) & lmask;
+      qdl = vec_divqud_inline (y1, (vui64_t) z1);
+      q1 = (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+      // Undo normalization and y/2.
+      //q0 = (q1 << n) >> 63;
+      q0 = vec_slq (q1, zn);
+      q0 = vec_srqi (q0, 63);
+
+      // if (q0 != 0) q0 = q0 - 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpequq (q0, (vui128_t) zeros);
+	  q1 = vec_adduqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      t = vec_mulluq (q0, z);
+      t = vec_subuqm (y, t);
+      // if ((y - q0*z) >= z) q0 = q0 + 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpgtuq (z, t);
+	  q1 = vec_subuqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      return q0;
+    }
+#else
+  int i;
+  vb128_t ge;
+  vui128_t c, t, xt;
+  vui128_t x = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // 256-bit shift left
+      c = vec_addcuq (y, y);
+      x = vec_addeuqm (x, x, c);
+
+      // Deconstruct QW cmpge to extract the carry
+      t  = vec_subcuq (x, z);
+      ge = vec_cmpgeuq (x, z);
+
+      // xt = x - z, for select x >= z
+      xt = vec_subuqm (x, z);
+      // left shift y || t
+      y = vec_addeuqm (y, y, t);
+      // if (x >= z) x = x - z
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+vui128_t test_vec_divduq (vui128_t x, vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui128_t Q, R;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = test_vec_divuqe (x, z);
+  q2 = test_vec_divuq  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+#if 1 // Corrected Quotient returned for divduq.
+#if 1
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+#else
+  vui128_t Qt;
+  Qt = vec_adduqm (Q, ones);
+  Q = vec_seluq (Q, Qt, CC);
+#endif
+  return Q;
+#else // Corrected Remainder not returned for divduq.
+  vui128_t Rt;
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  return R;
+#endif
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, c, xt;
+  //t = (vui128_t) CONST_VINT128_W (0, 0, 0, 0);
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || y) requires 257-bits, is (t || x || y)
+      c = vec_addcuq (y, y);
+      t = vec_addcuq (x, x);
+      x = vec_addeuqm (x, x, c);
+
+      // deconstruct ((t || x) >= z) to ((x >= z) || t), then
+      // deconstruct vec_cmpgeuq() to vec_subcuq and vec_setb_cyq ()
+      // If (x >= z) cc == 1
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert t to a 128-bit bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      // Delay the shift left of y to here so we can conveniently shift
+      // t into the low order bits to accumulate the quotient.
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+__VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result;
+#if defined (_ARCH_PWR8)
+  vui128_t Q, R;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+  const vui128_t ones = {(__int128) 1};
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = test_vec_divuqe (x, z);
+  q2 = test_vec_divuq  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+// Corrected Quotient returned for divduq.
+  vui128_t Qt;
+  Qt = vec_adduqm (Q, ones);
+  Q = vec_seluq (Q, Qt, CC);
+  result.vx0 = Q;
+// Corrected Remainder not returned for divduq.
+  vui128_t Rt;
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  result.vx1 = R;
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, c, xt;
+  //t = (vui128_t) CONST_VINT128_W (0, 0, 0, 0);
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || y) requires 257-bits, is (t || x || y)
+      // t from previous iteration generates to 0/1 for low order y-bits.
+      c = vec_addcuq (y, y);
+      t = vec_addcuq (x, x);
+      x = vec_addeuqm (x, x, c);
+
+      // deconstruct ((t || x) >= z)
+      // Carry from subcuq == 1 for x >= z
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert to a bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  result.vx0 = y; // Q
+  result.vx1 = x; // R
+#endif
+  return result;
+}
+
+/*
+ * Here we will use long division by doubleword to compute the
+ * quadword division. We use the 128 by 64 division operation
+ * vec_divqud_inline() for 3 distinct cases.
+ * - divisor < 2**64 and
+ *   - dividend < 2**64
+ *   - dividend >= 2**64
+ * - divisor >= 2**64
+ * This also allows the use of doubleword operations for permutes,
+ * compares, and count leading zeros.
+ * I does require some quadword shifts, add/subtrac, and in one case
+ * multiply.
+* \see "Hacker's Delight, 2nd Edition,"
+* Henry S. Warren, Jr, Addison Wesley, 2013.
+* Chapter 9, Section 9-5 Doubleword Division from Long Division.
+*/
+//#define __DEBUG_PRINT__
+vui128_t test_vec_udivqi3 (vui128_t u, vui128_t v)
+{
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t u0, u1, v1, q0, q1, k, t, vn;
+  vui64_t vdh, vdl, udh, qdl, qdh;
+
+  udh = vec_splatd((vui64_t)u, VEC_DW_H);
+  vdh = vec_splatd((vui64_t)v, VEC_DW_H);
+  vdl = vec_splatd((vui64_t)v, VEC_DW_L);
+
+  if (/*v >> 64 == 0UL*/ vec_cmpud_all_eq(vdh, zeros))
+    {
+      if (/*u >> 64 < v*/ vec_cmpud_all_lt(udh, vdl))
+	{
+
+	  qdl = vec_divqud_inline (u, vdl);
+	  return (vui128_t) vec_mrgald((vui128_t)zeros, (vui128_t)qdl);
+	}
+      else {
+	  //u1 = u >> 64;
+	  u1 = (vui128_t) vec_mrgahd ((vui128_t)zeros, u);
+	  // u0 = u & lmask;
+	  u0 = (vui128_t) vec_mrgald ((vui128_t)zeros, u);
+	  //q1 = scalar_divdud (u1, (unsigned long long) v) & lmask;
+	  qdh = vec_divqud_inline (u1, vdl);
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // So; k = u1 - q1*v; ((k << 64) + u0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+	  // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
+	  qdl = vec_divqud_inline (k, vdl);
+	  //return (q1 << 64) + q0;
+	  return (vui128_t) vec_mrgald((vui128_t) qdh, (vui128_t) qdl);
+      }
+    }
+  // Here v >= 2**64, Normalize the divisor so MSB is 1
+  //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
+#if 1
+  // Could use vec_clzq(), but we know  v >= 2**64, So:
+  vn = (vui128_t) vec_clzd((vui64_t) v);
+  // vn = vn >> 64, So we can use it with vec_slq ()
+  vn = (vui128_t) vec_mrgahd ((vui128_t)zeros, vn);
+#else
+#endif
+  //v1 = (v << n) >> 64;
+  v1 = vec_slq (v, vn);
+
+  //u1 = u >> 1; 	// to insure no overflow
+  u1 = vec_srqi (u, 1);
+  // q1 = scalar_divdud (u1, (unsigned long long) v1) & lmask;
+  qdl = vec_divqud_inline (u1, (vui64_t) v1);
+  q1  = (vui128_t) vec_mrgald((vui128_t)zeros, (vui128_t)qdl);
+  // Undo normalization and u/2.
+  //q0 = (q1 << n) >> 63;
+  q0  = vec_slq (q1, vn);
+  q0  = vec_srqi(q0, 63);
+
+  if (/*q0 != 0*/ vec_cmpuq_all_ne(q0, (vui128_t)zeros))
+    {
+      //q0 = q0 - 1;
+      q0 = vec_adduqm (q0, mone);
+    }
+  t = vec_mulluq(q0, v);
+  t = vec_subuqm (u, t);
+  /* (u - q0*v) >= v */
+  if (vec_cmpuq_all_ge(t, v))
+    {
+      //q0 = q0 + 1;
+      q0 = vec_subuqm (q0, mone);
+    }
+  return q0;
+}
+
+/* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+ * "Divide long unsigned shift-and-subtract algorithm."
+ * Simplified for x = 0 case. Carry out of high order (257th bit)
+ * is not possible so the compare becomes x >= z.
+ * As cmpgeuq is based on detecting the carry-out of (x -z) and
+ * setting the bool via setb_cyq. But we don't return the quotient and
+ * so don't need to shift t into low order y.
+ * */
+vui128_t test_vec_moduq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmoduq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR7)
+#if 1
+  // inspired by:
+  // See "Hacker's Delight, 2nd Edition,"
+  // Henry S. Warren, Jr, Addison Wesley, 2013.
+  // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+  // basically perform the long division as in vec_divuq but return
+  // the remainder.
+   const vui64_t zeros = vec_splat_u64(0);
+   const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+   vui128_t y0, y1, z1, r0, q0, q1, k, t, zn;
+   vui64_t zdh, zdl, ydh, qdl, qdh;
+
+   ydh = vec_splatd((vui64_t)y, VEC_DW_H);
+   zdh = vec_splatd((vui64_t)z, VEC_DW_H);
+   zdl = vec_splatd((vui64_t)z, VEC_DW_L);
+
+   if (vec_cmpud_all_eq (zdh, zeros)) // (z >> 64) == 0UL
+     {
+       if (vec_cmpud_all_lt (ydh, zdl)) // (y >> 64) < z
+ 	{
+ 	  // Here qdl = {(y % z) || (y / z)}
+ 	  qdl = vec_divqud_inline (y, zdl);
+ 	  // return the quotient
+ 	  //return (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+ 	  // return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ 	}
+       else
+ 	{
+ 	  //y1 = y >> 64;
+ 	  y1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, y);
+ 	  // y0 = y & lmask;
+ 	  y0 = (vui128_t) vec_mrgald ((vui128_t) zeros, y);
+ 	  //q1 = scalar_divqud (y1, (unsigned long long) z) & lmask;
+ 	  // Here qdh = {(y1 % z) || (y1 / z)}
+ 	  qdh = vec_divqud_inline (y1, zdl);
+ 	  // vec_divqud already provides the remainder in qdh[1]
+ 	  // So; k = y1 - q1*z; ((k << 64) + y0);
+ 	  // Simplifies to:
+ 	  k = (vui128_t) vec_pasted (qdh, (vui64_t) y0);
+ 	  // q0 = scalar_divqud ((k << 64) + y0, (unsigned long long) z) & lmask;
+ 	  // Here qdl = (vui64_t) {(k % z) || (k / z)}
+ 	  qdl = vec_divqud_inline (k, zdl);
+ 	  //return (q1 << 64) + q0;
+ 	  //return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+ 	  // return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ 	}
+     }
+   else
+     {
+       // Here z >= 2**64, Normalize the divisor so MSB is 1
+       // Could use vec_clzq(), but we know  z >= 2**64, So:
+       zn = (vui128_t) vec_clzd ((vui64_t) z);
+       // zn = zn >> 64, So we can use it with vec_slq ()
+       zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+       //z1 = (z << n) >> 64;
+       z1 = vec_slq (z, zn);
+
+       //y1 = y >> 1; 	// to insure no overflow
+       y1 = vec_srqi (y, 1);
+       // q1 = scalar_divdud (y1, (unsigned long long) z1) & lmask;
+       qdl = vec_divqud_inline (y1, (vui64_t) z1);
+       q1 = (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+       // Undo normalization and y/2.
+       //q0 = (q1 << n) >> 63;
+       q0 = vec_slq (q1, zn);
+       q0 = vec_srqi (q0, 63);
+
+       // if (q0 != 0) q0 = q0 - 1;
+ 	{
+ 	  vb128_t QB;
+ 	  QB = vec_cmpequq (q0, (vui128_t) zeros);
+ 	  q1 = vec_adduqm (q0, mone);
+ 	  q0 = vec_seluq (q1, q0, QB);
+ 	}
+       t = vec_mulluq (q0, z);
+       r0 = vec_subuqm (y, t);
+       // if ((y - q0*z) >= z) q0 = q0 + 1;
+ 	{
+ 	  vb128_t QB;
+ 	  QB = vec_cmpgtuq (z, r0);
+ 	  //q1 = vec_subuqm (q0, mone);
+ 	  //q0 = vec_seluq (q1, q0, QB);
+ 	  t  = vec_subuqm (r0, z);
+ 	  r0 = vec_seluq (t, r0, QB);
+ 	}
+       return r0;
+     }
+#else
+  vui128_t R;
+  vui128_t r2, q2;
+  const vui128_t ones = {(__int128) 1};
+  q2 = test_vec_divuq  (y, z);
+
+  r2 = vec_mulluq (q2, z);
+  R  = vec_subuqm (y, r2);
+  return R;
+#endif
+#else
+  int i;
+  vb128_t ge;
+  vui128_t c, xt;
+  vui128_t x = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // 256-bit shift left
+      c = vec_addcuq (y, y);
+      y = vec_adduqm (y, y);
+      x = vec_addeuqm (x, x, c);
+      ge = vec_cmpgeuq (x, z);
+
+      // xt = x - z, for select x >= z
+      xt = vec_subuqm (x, z);
+      // if (x >= z) x = x - z
+      x = vec_seluq (x, xt, ge);
+    }
+  return x;
+#endif
+}
+
+vui128_t test_vec_modduq (vui128_t x, vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR8)
+  vui128_t R;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector  __int128
+  q1 = test_vec_divuqe (x, z);
+  q2 = test_vec_divuq  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+#if 0 // Corrected Quotient not returned for modduq.
+  vui128_t Q, Qt;
+  const vui128_t ones = {(__int128) 1};
+  Q  = vec_adduqm (q1, q2);
+  Qt = vec_adduqm (Q, ones);
+  Q = vec_seluq (Q, Qt, CC);
+  return Q;
+#else // Corrected Remainder returned for modduq.
+  vui128_t Rt;
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  return R;
+#endif
+#else // defined (_ARCH_PWR7)
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, c, xt;
+  //t = (vui128_t) CONST_VINT128_W (0, 0, 0, 0);
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || y) requires 257-bits, is (t || x || y)
+      // t from previous iteration generates to 0/1 for low order y-bits.
+      c = vec_addcuq (y, y);
+      t = vec_addcuq (x, x);
+      x = vec_addeuqm (x, x, c);
+
+      // deconstruct ((t || x) >= z)
+      // Carry from subcuq == 1 for x >= z
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert to a bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  return x;
+#endif
+}
+
 // Attempts at better code to splat small QW constants.
 // Want to avoid addr calc and loads for what should be simple
 // splat immediate and sld.
@@ -172,6 +1198,13 @@ __test_cmsumudm (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 {
   *carry = vec_msumcud ( a, b, c);
   return vec_msumudm ( a, b, c);
+}
+
+vui128_t
+__test_cmsumudm_V2 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
+{
+  *carry = vec_vmsumcud_inline ( a, b, c);
+  return vec_vmsumudm_inline ( a, b, c);
 }
 
 vui128_t

@@ -38,6 +38,8 @@
 
 extern const vui128_t vtipowof10 [];
 
+
+#ifdef __DEBUG_PRINT__
 vui128_t
 db_shift_rightq (vui128_t vra, vui128_t vrb)
 {
@@ -58,7 +60,6 @@ db_shift_leftq (vui128_t vra, vui128_t vrb)
   return (result);
 }
 
-#ifdef __DEBUG_PRINT__
 #ifdef _ARCH_PWR8
 vui128_t
 db_vec_clzq (vui128_t vra)
@@ -731,9 +732,6 @@ db_vec_mul10cuq (vui128_t a)
   return ((vui128_t) t_carry);
 }
 
-#endif
-
-//#define __DEBUG_PRINT__ 1
 vui128_t
 db_vec_divudq_10e31 (vui128_t *qh, vui128_t vra, vui128_t vrb)
 {
@@ -866,7 +864,6 @@ db_vec_modudq_10e31 (vui128_t vra, vui128_t vrb, vui128_t *ql)
   return result;
 }
 
-//#define __DEBUG_PRINT__ 1
 vui128_t
 db_example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
 {
@@ -907,7 +904,840 @@ db_example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
 #endif
   return rh;
 }
+
+
+//#define __DEBUG_PRINT__ 1
+vui128_t db_vec_divuqe (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  vui128_t u = x;
+  vui128_t v = z;
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t u0, u1, v0, v1, q0, q1, k, t, vn;
+  vui64_t vdh, vdl, udh, qdl, qdh;
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("db_vec_divuqe u ", (vui128_t) u);
+  print_vint128x ("              v ", (vui128_t) v);
+#endif
+
+  if (vec_cmpuq_all_ge (x,z) || vec_cmpuq_all_eq (z , (vui128_t) zeros))
+    {
+      printf (" undef -- overlow or zero divide\n");
+      return mone;
+    }
+  else
+    {
+      udh = vec_splatd ((vui64_t) u, 1);
+      vdh = vec_splatd ((vui64_t) v, 1);
+      vdl = vec_splatd ((vui64_t) v, 0);
+
+      if (/*v >> 64 == 0UL*/vec_cmpud_all_eq (vdh, zeros))
+	{
+	  if (/*u >> 64 < v*/vec_cmpud_all_lt (udh, vdl))
+	    {
+	      u0 = (vui128_t) vec_swapd ((vui64_t) u);
+	      qdh = vec_divqud_inline (u0, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x (" (udh < vdl) u0  ", (vui128_t) u0);
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+#endif
+#if 1
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = u1 - q1*v; ((k << 64) + u0);
+	      // Simplifies to:
+	      u1 = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+#else
+	      k = vec_muleud (qdh, vdl);
+	      //u1 = (vui128_t) vec_mrgahd ((vui128_t)zeros, k);
+	      u1 = vec_subuqm (u0, k);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             u0  ", (vui128_t) u0);
+	      print_vint128x ("             vd1 ", (vui128_t) vdl);
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+	      print_vint128x ("             k   ", (vui128_t) k);
+	      print_vint128x ("             u1  ", (vui128_t) u1);
+#endif
+	      u1 = (vui128_t) vec_mrgald (u1, (vui128_t)zeros);
+#endif
+	      qdl = vec_divqud_inline (u1, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             u1  ", (vui128_t) u1);
+	      print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	      //return (vui128_t) qdl;
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	  else
+	    {
+	      // TODO 1st test for overflow means this can not happen?!
+	      //u1 = u >> 64;
+	      u1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, u);
+	      // u0 = u & lmask;
+	      u0 = (vui128_t) vec_mrgald ((vui128_t) zeros, u);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x (" (udh >= vdl) u0 ", (vui128_t) u0);
+	      print_vint128x ("             u1  ", (vui128_t) u1);
+	      print_vint128x ("             vd1 ", (vui128_t) vdl);
+#endif
+	      //q1 = scalar_divdud (u1, (unsigned long long) v) & lmask;
+	      qdh = vec_divqud_inline (u1, vdl);
+	      //k = u1 - q1*v;
+#if 1
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = u1 - q1*v; ((k << 64) + u0);
+	      // Simplifies to:
+	      k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+#else
+	      t = vec_muleud (qdh, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+	      print_vint128x ("             t   ", (vui128_t) t);
+#endif
+	      k = vec_subuqm (u1, t);
+	      // ((k << 64) + u0)
+	      k = (vui128_t) vec_mrgald (k, u0);
+#endif
+	      // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
+	      qdl = vec_divqud_inline (k, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+	      print_vint128x ("             k   ", (vui128_t) k);
+	      print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	      //return (q1 << 64) + q0;
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	}
+      else
+      //if (/*vec_cmpuq_all_ge (u1, (vui128_t) vdh)*/ 1)
+	{
+	  vui128_t u2, k1, t2;
+	  vb128_t B0, Bgt;
+      // Here v >= 2**64, Normalize the divisor so MSB is 1
+      //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
+#if 1
+      // Could use vec_clzq(), but we know  v >= 2**64, So:
+      vn = (vui128_t) vec_clzd ((vui64_t) v);
+      // vn = vn >> 64;, So we can use it with vec_slq ()
+      vn = (vui128_t) vec_mrgahd ((vui128_t) zeros, vn);
+#else
+      vn = vec_clzq(v);
+#endif
+      //v1 = (v << n) >> 64;
+      //v1 = vec_slq (v, vn);
+
+      //u1 = u >> 1; 	// to insure no overflow
+      //u1 = vec_srqi (u, 1);
+      v1 = v;
+      u1 = u;
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("             vn ", (vui128_t) vn);
+      print_vint128x ("             v1 ", (vui128_t) v1);
+      print_vint128x ("             u1 ", (vui128_t) u1);
+#endif
+//#if 1
+      vdh = vec_mrgahd (v1, (vui128_t) zeros);
+      if (vec_cmpuq_all_eq (u1, (vui128_t) zeros))
+	{
+	  return ((vui128_t) zeros);
+	}
+	  const vui64_t ones = vec_splat_u64 (1);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("        ovf vdh ", (vui128_t) vdh);
+	  print_vint128x ("            u1  ", (vui128_t) u1);
+#endif
+	  u1 = vec_slq (u1, vn);
+	  v1 = vec_slq (v1, vn);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("         u1<<vn ", (vui128_t) u1);
+	  print_vint128x ("         v1<<vn ", (vui128_t) v1);
+#endif
+	  //u1 = vec_srqi (u1, 1);
+	  vdh = vec_mrgahd ((vui128_t) zeros, v1);
+	  udh = vec_mrgahd ((vui128_t) zeros, u1); // !!
+	  qdh = vec_divqud_inline (u1, (vui64_t) v1);
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+#ifdef __DEBUG_PRINT__
+	  print_v2xint64 ("   u1/v1h = qdh ", qdh);
+	  print_vint128x ("            q0  ", (vui128_t) q0);
+#endif
+	  if (vec_cmpud_all_eq ((vui64_t) q0, zeros)
+	   /* && vec_cmpud_all_eq (vdh, udh)*/) // !!
+	    { // this depends on U != 0
+#if 1
+	      vb64_t Beq;
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) u1, (vui64_t) v1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+#ifdef __DEBUG_PRINT__
+	      print_v2xint64 (" qdh<-UINT128_MAX ", qdh);
+	      print_v2xint64 ("     vdh eq udh = ", (vui64_t) Beq);
+#endif
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+#ifdef __DEBUG_PRINT__
+	      print_v2xint64 ("  corrected qdh = ", qdh);
+#endif
+#else
+	      vb64_t CCq = vec_cmpequd ((vui64_t) qdh, zeros);
+	      vb64_t CCv = vec_cmpequd ((vui64_t) vdh, udh);
+	      vb64_t CCe = (vb64_t) vec_and ((vui32_t) CCq, (vui32_t) CCv);
+#ifdef __DEBUG_PRINT__
+	      print_v2xint64 (" qdh<-UINT128_MAX ", qdh);
+	      print_v2xint64 ("            vdh ", (vui64_t) vdh);
+	      print_v2xint64 ("            udh ", (vui64_t) udh);
+	      print_v2xint64 ("   qdh eq 0   = ", (vui64_t) CCq);
+	      print_v2xint64 ("   vdh eq udh = ", (vui64_t) CCv);
+	      print_v2xint64 ("   CCq && CCv = ", (vui64_t) CCe);
+#endif
+	      qdh = vec_selud (qdh, (vui64_t) mone, CCe);
+	      //qdh = vec_mrgahd ((vui128_t) zeros, mone);
+#endif
+	    }
+#if 1
+	  q0 = vec_slqi ((vui128_t) qdh, 64);
+#else
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+#endif
+#ifdef __DEBUG_PRINT__
+	  print_v2xint64 ("   u1/v1h = qdh", qdh);
+	  print_vint128x ("             q0 ", (vui128_t) q0);
+#endif
+	  // {k, k1}  = vec_muludq (v1, q0);
+#if 1
+	  {
+	    vui128_t l128, h128;
+	    vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+	    l128 = vec_vmuloud ((vui64_t ) v1, b_eud);
+	    h128 = vec_vmaddeud ((vui64_t ) v1, b_eud, (vui64_t ) l128);
+	    // 192-bit product of v1 * q-estimate
+	    k  = h128;
+	    k1 = vec_slqi (l128, 64);
+	  }
+#else
+	  k1 = vec_muludq (&k, v1, q0);
+#endif
+	  u2 = vec_subuqm ((vui128_t) zeros, k1);
+	  t = vec_subcuq ((vui128_t) zeros, k1);
+	  u0 = vec_subeuqm (u1, k, t);
+	  t2 = vec_subecuq (u1, k, t);
+	  Bgt = vec_setb_ncq (t2);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+	  print_vint128x (" lq(q0*v1) = k1 ", (vui128_t) k1);
+	  print_vint128x ("     u1-k = u0  ", (vui128_t) u0);
+	  print_vint128x ("     u1-k = u2  ", (vui128_t) u2);
+	  print_vint128x ("     u1-k = t2  ", (vui128_t) t2);
+	  print_vint128x ("     k>u1 = Bgt ", (vui128_t) Bgt);
+#endif
+	  u0 = vec_sldqi (u0, u2, 64);
+	  //if (vec_cmpuq_all_gt (k, u1))
+	    {
+	      vui128_t q2, t2, v3, v4;
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      q2 = (vui128_t) vec_mrgahd ((vui128_t) q2, (vui128_t) zeros);
+	      //vdh = vec_mrgahd (v1, (vui128_t) zeros);
+	      u2 = vec_adduqm ((vui128_t) u0, v1);
+	      //t2 = vec_subuqm (u0, (vui128_t) vdh);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      u0 = vec_seluq (u0, u2, Bgt);
+	      if (vec_cmpuq_all_eq ((vui128_t) Bgt, mone))
+		{
+#if 1
+#if 0
+		  u0 = vec_sldqi (u0, u2, 64);
+		  u2 = vec_adduqm ((vui128_t) u0, v1);
+		  u2 = vec_sldqi (u0, (vui128_t) zeros, 64);
+		  u0 = vec_sldqi ((vui128_t) zeros, u0, 64);
+#endif
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" hq(v1*q0) > u1 ", (vui128_t) u1);
+		  print_vint128x ("     q0-1 = q0  ", (vui128_t) q0);
+		  print_vint128x ("     u1-k'= u0  ", (vui128_t) u0);
+		  print_vint128x ("     u1-k'= u2  ", (vui128_t) u2);
+#endif
+#else
+		  v3 = vec_sldqi ((vui128_t) zeros, v1, 64);
+		  v4 = vec_sldqi (v1, (vui128_t) zeros, 64);
+		  t2 = vec_addcuq ((vui128_t) u2, v4);
+		  u2 = vec_adduqm ((vui128_t) u2, v4);
+		  u0 = vec_addeuqm (u0, v3, t2);
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" (v1>>64=v3/4   ", (vui128_t) v3);
+		  print_vint128x ("                ", (vui128_t) v4);
+		  print_vint128x (" hq(v1*q0) > u1 ", (vui128_t) u1);
+		  print_vint128x ("     q0-1 = q0  ", (vui128_t) q0);
+		  print_vint128x ("     u1-k'= u0  ", (vui128_t) u0);
+		  print_vint128x ("     u1-k'= u2  ", (vui128_t) u2);
+		  print_vint128x ("     u1-k'= t2  ", (vui128_t) t2);
+#endif
+#endif
+#if 0
+		  k1 = vec_muludq (&k, q0, v1);
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+		  print_vint128x (" lq(q0*v1) = k1 ", (vui128_t) k1);
+#endif
+#endif
+		}
+	    }
+	  qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+	  //u0 = vec_sldqi (u0, u2, 64);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x (" (u0|u2)<<64=u0 ", (vui128_t) u0);
+	  print_vint128x ("   q0>>64 = qdh ", (vui128_t) qdh);
+#endif
+	  qdl = vec_divqud_inline (u0, (vui64_t) v1);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("            v1  ", (vui128_t) v1);
+	  print_vint128x ("            u0  ", (vui128_t) u0);
+	  print_vint128x ("    u0/v1 = qdl ", (vui128_t) qdl);
+#endif
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("            q0' ", (vui128_t) q0);
+#endif
+	    {
+	      vui128_t q2, u2, k1;
+	      k1 = vec_muludq (&k, q0, v1);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("            u1  ", (vui128_t) u1);
+	      print_vint128x ("      hq(q0*v1) ", (vui128_t) k);
+	      print_vint128x ("      lq(q0*v1) ", (vui128_t) k1);
+#endif
+#if 0
+	      if (vec_cmpuq_all_gt (k, u1)
+		  || (vec_cmpuq_all_eq (k, u1)
+		      && vec_cmpuq_all_ne (k1, (vui128_t) zeros)))
+#endif
+		{
+		  vb128_t CCk, CCke, CCk1;
+		  vui128_t kc, k2;
+		  u2 = vec_subuqm ((vui128_t) zeros, k1);
+		  t = vec_subcuq ((vui128_t) zeros, k1);
+		  u0 = vec_subeuqm (u1, k, t);
+		  t2 = vec_subecuq (u1, k, t);
+		  CCk = vec_setb_ncq (t2);
+	#ifdef __DEBUG_PRINT__
+		  print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+		  print_vint128x (" lq(q0*v1) = k1 ", (vui128_t) k1);
+		  print_vint128x ("     u1-k = u0  ", (vui128_t) u0);
+		  print_vint128x ("     u1-k = u2  ", (vui128_t) u2);
+		  print_vint128x ("     u1-k = t2  ", (vui128_t) t2);
+	#endif
+		  q2 = vec_adduqm (q0, mone);
+		  q0 = vec_seluq (q0, q2, CCk);
+		      if (vec_cmpuq_all_eq ((vui128_t) CCk, mone))
+			{
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" hq(v1*q0')> u1 ", (vui128_t) CCk);
+		  print_vint128x ("         q0''-1 ", (vui128_t) q0);
+			}
+#endif
+#if 0
+#ifdef __DEBUG_PRINT__
+		  t = vec_muludq (&k, q0, v1);
+		  print_vint128x ("            u1  ", (vui128_t) u1);
+		  print_vint128x ("     hq(q0*v1)' ", (vui128_t) k);
+		  print_vint128x ("     lq(q0*v1)' ", (vui128_t) t);
+#endif
+#endif
+		}
+	    }
+#ifdef __DEBUG_PRINT__
+          print_vint128x ("           q0'' ", (vui128_t) q0);
+#endif
+	  return q0;
+	}
+    }
+#else
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, xt;
+  vui128_t y = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || 0) requires 129-bits, is (t || x || 0 )
+      t = vec_addcuq (x, x);
+      x = vec_adduqm (x, x);
+
+      // deconstruct ((t || x) >= z)
+      // Carry from subcuq == 1 for x >= z
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert to a bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+vui128_t db_vec_divuq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  vui128_t u = y;
+  vui128_t v = z;
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t u0, u1, v1, q0, q1, k, t, vn;
+  vui64_t vdh, vdl, udh, qdl, qdh;
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" vec_divuq   u ", (vui128_t) u);
+  print_vint128x ("             v ", (vui128_t) v);
+#endif
+
+  udh = vec_splatd((vui64_t)u, 1);
+  vdh = vec_splatd((vui64_t)v, 1);
+  vdl = vec_splatd((vui64_t)v, 0);
+
+  if (/*v >> 64 == 0UL*/ vec_cmpud_all_eq(vdh, zeros))
+    {
+      if (/*u >> 64 < v*/ vec_cmpud_all_lt(udh, vdl))
+	{
+
+	  qdl = vec_divqud_inline (u, vdl);
+	  return (vui128_t) vec_mrgald((vui128_t)zeros, (vui128_t)qdl);
+	}
+      else {
+	  //u1 = u >> 64;
+	  u1 = (vui128_t) vec_mrgahd ((vui128_t)zeros, u);
+	  // u0 = u & lmask;
+	  u0 = (vui128_t) vec_mrgald ((vui128_t)zeros, u);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             vd1 ", (vui128_t) vdl);
+	  print_vint128x ("             u0  ", (vui128_t) u0);
+	  print_vint128x ("             u1  ", (vui128_t) u1);
+#endif
+	  //q1 = scalar_divdud (u1, (unsigned long long) v) & lmask;
+	  qdh = vec_divqud_inline (u1, vdl);
+	  //k = u1 - q1*v;
+#if 1
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // k = u1 - q1*v; ((k << 64) + u0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+#else
+	  t = vec_muleud (qdh, vdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             qdh ", (vui128_t) qdh);
+	  print_vint128x ("             t   ", (vui128_t) t);
+#endif
+	  k = vec_subuqm (u1, t);
+	  // ((k << 64) + u0)
+	  k = (vui128_t) vec_mrgald (k, u0);
+#endif
+	  // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
+	  qdl = vec_divqud_inline (k, vdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             k   ", (vui128_t) k);
+	  print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	  //return (q1 << 64) + q0;
+	  return (vui128_t) vec_mrgald((vui128_t) qdh, (vui128_t) qdl);
+      }
+    }
+  // Here v >= 2**64, Normalize the divisor so MSB is 1
+  //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
+#if 1
+  // Could use vec_clzq(), but we know  v >= 2**64, So:
+  vn = (vui128_t) vec_clzd((vui64_t) v);
+  // vn = vn >> 64;, So we can use it with vec_slq ()
+  vn = (vui128_t) vec_mrgahd ((vui128_t)zeros, vn);
+#else
+  vn = vec_clzq(v);
+#endif
+  //v1 = (v << n) >> 64;
+  v1 = vec_slq (v, vn);
+
+  //u1 = u >> 1; 	// to insure no overflow
+  u1 = vec_srqi (u, 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("             vn ", (vui128_t) vn);
+  print_vint128x ("             v1 ", (vui128_t) v1);
+  print_vint128x ("             u1 ", (vui128_t) u1);
+#endif
+  // q1 = scalar_divdud (u1, (unsigned long long) v1) & lmask;
+  qdl = vec_divqud_inline (u1, (vui64_t) v1);
+  q1  = (vui128_t) vec_mrgald((vui128_t)zeros, (vui128_t)qdl);
+  // Undo normalization and u/2.
+  //q0 = (q1 << n) >> 63;
+  q0  = vec_slq (q1, vn);
+  q0  = vec_srqi(q0, 63);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("             qd ", (vui128_t) qdl);
+  print_vint128x ("             q1 ", (vui128_t) q1);
+  print_vint128x ("             q0 ", (vui128_t) q0);
+#endif
+
+  if (/*q0 != 0*/ vec_cmpuq_all_ne(q0, (vui128_t)zeros))
+    {
+      //q0 = q0 - 1;
+      q0 = vec_adduqm (q0, mone);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0-1 ", (vui128_t) q0);
+#endif
+    }
+  t = vec_mulluq(q0, v);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0*v ", (vui128_t) t);
+#endif
+  t = vec_subuqm (u, t);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           u-t  ", (vui128_t) t);
+#endif
+  /* (u - q0*v) >= v */
+  if (vec_cmpuq_all_ge(t, v))
+    {
+      //q0 = q0 + 1;
+      q0 = vec_subuqm (q0, mone);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0+1 ", (vui128_t) q0);
+#endif
+    }
+  return q0;
+#else
+  int i;
+  vb128_t ge;
+  vui128_t c, t, xt;
+  vui128_t x = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // 256-bit shift left
+      c = vec_addcuq (y, y);
+      x = vec_addeuqm (x, x, c);
+
+      // Deconstruct QW cmpge to extract the carry
+      t  = vec_subcuq (x, z);
+      ge = vec_cmpgeuq (x, z);
+
+      // xt = x - z, for select x >= z
+      xt = vec_subuqm (x, z);
+      // left shift y || t
+      y = vec_addeuqm (y, y, t);
+      // if (x >= z) x = x - z
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+
+__VEC_U_128P db_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result;
+#if defined (_ARCH_PWR8)
+  vui128_t Q, R;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+  const vui128_t ones = {(__int128) 1};
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" db_vec_divdqu x ", (vui128_t) x);
+  print_vint128x ("               y ", (vui128_t) y);
+  print_vint128x ("               z ", (vui128_t) z);
+#endif
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = db_vec_divuqe (x, z);
+  q2 = db_vec_divuq  (y, z);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" vec_divuqe       = ", (vui128_t) q1);
+  print_vint128x (" vec_divuq        = ", (vui128_t) q2);
+#endif
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" vec_mulluq(q1,z) = ", (vui128_t) r1);
+  print_vint128x (" vec_mulluq(q2,z) = ", (vui128_t) r2);
+#endif
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("                 r2 ", (vui128_t) r2);
+  print_vint128x ("                  Q ", (vui128_t) Q);
+  print_vint128x ("                  R ", (vui128_t) R);
+#endif
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("                 c1 ", (vui128_t) c1);
+  print_vint128x ("                 c2 ", (vui128_t) c2);
+  print_vint128x ("                 CC ", (vui128_t) CC);
+#endif
+// Corrected Quotient returned for divduq.
+  vui128_t Qt;
+  Qt = vec_adduqm (Q, ones);
+  Q = vec_seluq (Q, Qt, CC);
+  result.vx0 = Q;
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("                 Qt ", (vui128_t) Qt);
+  print_vint128x ("                  Q ", (vui128_t) Q);
+#endif
+// Corrected Remainder not returned for divduq.
+  vui128_t Rt;
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  result.vx1 = R;
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("                 Rt ", (vui128_t) Qt);
+  print_vint128x ("                  R ", (vui128_t) Q);
+#endif
+#else
+  /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
+   * "Divide long unsigned shift-and-subtract algorithm."
+   * Converted to use vector unsigned __int128 and PVEClIB
+   * operations.
+   * As cmpgeuq is based on detecting the carry-out of (x -z) and
+   * setting the bool via setb_cyq, we can use this carry (variable t)
+   * to generate quotient bits.
+   * Multi-precision shift-left is simpler then general addition,
+   * so we can simplify carry generation. This allows delaying the
+   * the y left-shift / quotient accumulation to a later.
+   * */
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, c, xt;
+  //t = (vui128_t) CONST_VINT128_W (0, 0, 0, 0);
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || y) requires 257-bits, is (t || x || y)
+      // t from previous iteration generates to 0/1 for low order y-bits.
+      c = vec_addcuq (y, y);
+      t = vec_addcuq (x, x);
+      x = vec_addeuqm (x, x, c);
+
+      // deconstruct ((t || x) >= z)
+      // Carry from subcuq == 1 for x >= z
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert to a bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  result.vx0 = y; // Q
+  result.vx1 = x; // R
+#endif
+  return result;
+}
+
+vui128_t db_vec_moduq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmoduq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  vui128_t u = y;
+  vui128_t v = z;
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t u0, u1, v1, r0, q0, q1, k, t, vn;
+  vui64_t vdh, vdl, udh, qdl, qdh;
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" vec_moduq   u ", (vui128_t) u);
+  print_vint128x ("             v ", (vui128_t) v);
+#endif
+
+  udh = vec_splatd((vui64_t)u, 1);
+  vdh = vec_splatd((vui64_t)v, 1);
+  vdl = vec_splatd((vui64_t)v, 0);
+
+  if (/*v >> 64 == 0UL*/ vec_cmpud_all_eq(vdh, zeros))
+    {
+      if (/*u >> 64 < v*/ vec_cmpud_all_lt(udh, vdl))
+	{
+
+	  qdl = vec_divqud_inline (u, vdl);
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+	}
+      else {
+	  //u1 = u >> 64;
+	  u1 = (vui128_t) vec_mrgahd ((vui128_t)zeros, u);
+	  // u0 = u & lmask;
+	  u0 = (vui128_t) vec_mrgald ((vui128_t)zeros, u);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             vd1 ", (vui128_t) vdl);
+	  print_vint128x ("             u0  ", (vui128_t) u0);
+	  print_vint128x ("             u1  ", (vui128_t) u1);
+#endif
+	  //q1 = scalar_divdud (u1, (unsigned long long) v) & lmask;
+	  qdh = vec_divqud_inline (u1, vdl);
+	  //k = u1 - q1*v;
+#if 1
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // k = u1 - q1*v; ((k << 64) + u0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+#else
+	  t = vec_muleud (qdh, vdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             qdh ", (vui128_t) qdh);
+	  print_vint128x ("             t   ", (vui128_t) t);
+#endif
+	  k = vec_subuqm (u1, t);
+	  // ((k << 64) + u0)
+	  k = (vui128_t) vec_mrgald (k, u0);
+#endif
+	  // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
+	  qdl = vec_divqud_inline (k, vdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             k   ", (vui128_t) k);
+	  print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	  //return (q1 << 64) + q0;
+	  //return (vui128_t) vec_mrgald((vui128_t) qdh, (vui128_t) qdl);
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+      }
+    }
+  // Here v >= 2**64, Normalize the divisor so MSB is 1
+  //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
+#if 1
+  // Could use vec_clzq(), but we know  v >= 2**64, So:
+  vn = (vui128_t) vec_clzd((vui64_t) v);
+  // vn = vn >> 64;, So we can use it with vec_slq ()
+  vn = (vui128_t) vec_mrgahd ((vui128_t)zeros, vn);
+#else
+  vn = vec_clzq(v);
+#endif
+  //v1 = (v << n) >> 64;
+  v1 = vec_slq (v, vn);
+
+  //u1 = u >> 1; 	// to insure no overflow
+  u1 = vec_srqi (u, 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("             vn ", (vui128_t) vn);
+  print_vint128x ("             v1 ", (vui128_t) v1);
+  print_vint128x ("             u1 ", (vui128_t) u1);
+#endif
+  // q1 = scalar_divdud (u1, (unsigned long long) v1) & lmask;
+  qdl = vec_divqud_inline (u1, (vui64_t) v1);
+  q1  = (vui128_t) vec_mrgald((vui128_t)zeros, (vui128_t)qdl);
+  // Undo normalization and u/2.
+  //q0 = (q1 << n) >> 63;
+  q0  = vec_slq (q1, vn);
+  q0  = vec_srqi(q0, 63);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("             qd ", (vui128_t) qdl);
+  print_vint128x ("             q1 ", (vui128_t) q1);
+  print_vint128x ("             q0 ", (vui128_t) q0);
+#endif
+
+  if (/*q0 != 0*/ vec_cmpuq_all_ne(q0, (vui128_t)zeros))
+    {
+      //q0 = q0 - 1;
+      q0 = vec_adduqm (q0, mone);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0-1 ", (vui128_t) q0);
+#endif
+    }
+  t = vec_mulluq(q0, v);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0*v ", (vui128_t) t);
+#endif
+  // r0 = u - (q0 * v)
+  r0 = vec_subuqm (u, t);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("  u-(q0*v) = r0 ", (vui128_t) r0);
+#endif
+  /* (u - q0*v) >= v */
+  if (vec_cmpuq_all_ge(r0, v))
+    {
+      //q0 = q0 + 1;
+      q0 = vec_subuqm (q0, mone);
+      //r0 = r0 - v;
+      r0 = vec_subuqm (r0, v);
+#ifdef __DEBUG_PRINT__
+      print_vint128x ("           q0+1 ", (vui128_t) q0);
+      print_vint128x ("           r0-v ", (vui128_t) r0);
+#endif
+    }
+  return r0;
+#else
+  int i;
+  vb128_t ge;
+  vui128_t c, t, xt;
+  vui128_t x = {(__int128) 0};
+
+  for (i = 1; i <= 128; i++)
+    {
+      // 256-bit shift left
+      c = vec_addcuq (y, y);
+      x = vec_addeuqm (x, x, c);
+
+      // Deconstruct QW cmpge to extract the carry
+      t  = vec_subcuq (x, z);
+      ge = vec_cmpgeuq (x, z);
+
+      // xt = x - z, for select x >= z
+      xt = vec_subuqm (x, z);
+      // left shift y || t
+      y = vec_addeuqm (y, y, t);
+      // if (x >= z) x = x - z
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+#endif
+}
+#endif
+
 #undef __DEBUG_PRINT__
+
 
 int
 test_addcq (void)
@@ -10278,6 +11108,2110 @@ test_xfer_int128 (void)
   return (rc);
 }
 
+#if 0
+extern vui128_t test_vec_divduq (vui128_t x, vui128_t y, vui128_t z);
+#define test_divduq	test_vec_divduq
+#if 0
+#define test_divuqe	db_vec_divuqe
+#else
+extern vui128_t test_vec_divuqe (vui128_t x, vui128_t z);
+#define test_divuqe	test_vec_divuqe
+#endif
+#if 0
+#define test_divuq	db_vec_divuq
+#else
+extern vui128_t test_vec_divuq (vui128_t y, vui128_t z);
+#define test_divuq	test_vec_divuq
+#endif
+#else
+extern vui128_t test_divduq (vui128_t x, vui128_t y, vui128_t z);
+extern vui128_t test_divuqe (vui128_t x, vui128_t z);
+extern vui128_t test_divuq (vui128_t y, vui128_t z);
+#endif
+//#define __DEBUG_PRINT__
+int
+test_vec_divide_QW (void)
+{
+
+  vui128_t ix[4];
+  vui128_t er;
+  vui128_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Unsigned Quadword\n");
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(1, 1);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+#if 1
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, 10000000000000000);
+  er = (vui128_t)CONST_VINT128_DW128(0x0000000000000734UL, 0xaca5f6226f0ada61UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+#if 1
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__-1);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__-1, __UINT64_MAX__-1);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+#if 1
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__-1, __UINT64_MAX__-1);
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, 1);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+#if 0
+  rq = test_divuqe (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = CONST_VINT128_DW128 ( 0x000004ee2d6d415bll,0x85acef8100000000ll ); /* 10**32 */
+  er = (vui128_t)CONST_VINT128_DW128(0, 0x33ec47UL);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  er = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT32_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, 0x100000001UL);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, 1);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128((__UINT64_MAX__-1), 1);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128((__UINT64_MAX__-1), __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, __UINT64_MAX__);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT32_MAX__, __UINT32_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, __UINT32_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(1, 1);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT32_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0, 0x100000000UL);
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+#ifdef test_divduq
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL,
+				     0x1UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq!!:", (vui128_t)rq, (vui128_t) er);
+
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+
+#ifdef test_divduq
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e7ffffll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[1] = vec_adduqm(ix[1], ix[3]);
+
+#ifdef test_divduq
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, (__UINT64_MAX__-1));
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x1UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, (__UINT64_MAX__-1));
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  rq = test_divuq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+
+#if 0 // Quotient overflow
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+#endif
+
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  ix[3] = vec_subuqm (ix[2], ix[3]);
+  ix[1] = vec_madduq (ix, ix[2], ix[2], ix[3]);
+  er = ix[2];
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq!:", (vui128_t)rq, (vui128_t) er);
+
+
+  er =  (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                      0x098a223ffffffffell);
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe!:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0000000100000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0001000000000000UL, 0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0001000000000000UL, 0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001000000000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001ffffffffffffUL, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x01ffffffffffffffUL, 0xffffffffffffff00UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001ffffffffffffUL, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0180000000000000UL, 0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0155555555555555UL, 0x55555555555554aaUL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001000000000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x01ffffffffffffffUL, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x0080000000000000UL, 0UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001800000000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x01ffffffffffffffUL, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x00c0000000000000UL, 0UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001ffffffffffffUL, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x1800000000000000UL, 0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0015555555555555UL, 0x555555555555554aUL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(1UL, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x1UL, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x8000000000000000UL, 0x4000000000000000UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(1UL, 0);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x2UL, 0x0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x8000000000000000UL, 0x0UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(1UL, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x2UL, 0x0UL);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, 0x8000000000000000UL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(1UL, (__UINT64_MAX__-1));
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x1UL, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, 0x7fffffffffffffffUL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(1UL, __UINT32_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x1UL, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x800000007fffffffUL, 0xc00000003fffffffUL);
+
+  rq = test_divduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0000000599709868UL, 0xff9e4deefbdc5d1cUL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x3e21f7954fe4a741UL, 0xd3ad0eeba1000000UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000c9f2c9cd0UL, 0x4674edea40000000UL);
+  er =    (vui128_t)CONST_VINT128_DW128(0x71919d1a73fa5e25UL, 0xdc93b8194055b965UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+#ifndef __DEBUG_PRINT__
+  if (rc == 1)
+    {
+      printf ("\n%i Failures may be the result of qemu issues\n", rc);
+      rc = 0;
+    }
+#endif
+
+  return (rc);
+}
+#undef __DEBUG_PRINT__
+
+#if 0
+extern vui128_t test_vec_modduq (vui128_t x, vui128_t y, vui128_t z);
+#if 0
+#define test_moddivduq	db_vec_divdqu
+#else
+extern __VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z);
+#define test_moddivduq	test_vec_divdqu
+#endif
+#if 0
+#define test_moduq	db_vec_moduq
+#else
+extern vui128_t test_vec_moduq (vui128_t y, vui128_t z);
+#define test_moduq	test_vec_moduq
+#endif
+#define test_modduq	test_vec_modduq
+#else
+extern vui128_t test_moduq (vui128_t y, vui128_t z);
+extern vui128_t test_modduq (vui128_t x, vui128_t y, vui128_t z);
+extern __VEC_U_128P test_divdqu (vui128_t x, vui128_t y, vui128_t z);
+// Correct for the renaming to Divide Double Quadword Unsigned
+// Which returns the quotient and remainder.
+#define test_moddivduq	test_divdqu
+#endif
+//#define __DEBUG_PRINT__
+
+int
+test_vec_modulo_QW (void)
+{
+  __VEC_U_128P mq;
+  vui128_t ix[4];
+  vui128_t er;
+  vui128_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector modulo Unsigned Quadword\n");
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0UL,
+					__UINT64_MAX__) /* 2**64-1 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x7538dcfb7617ffffll);
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rm=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__,
+					__UINT64_MAX__) /* 2**128-1 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x2ed503946aefffffll);
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rm=", (vui128_t) rq);
+#endif
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__,
+					__UINT64_MAX__) /* 2**128-1 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x1e4e1a06f06bb291ll,
+                                        0xe361993fffffffffll);
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rm=", (vui128_t) rq);
+#endif
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x000004ee2d6d415bll,
+					0x85acef8100000000ll ); /* 10**32 */
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000034ca936deeell,
+                                        0xc98ba738ffffffffll);
+
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rm=", (vui128_t) rq);
+#endif
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e7ffffll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[1] = vec_adduqm(ix[1], ix[3]);
+
+  er = ix[3];
+  rq = test_modduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" modduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rm=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("modduq:", (vui128_t)rq, (vui128_t) er);
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+
+  rc += check_vuint128x ("moddiv01:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv00:", (vui128_t)mq.vx0, (vui128_t) ix[2]);
+
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+#if 1 // Quotient overflow
+  ix[0] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, (__UINT64_MAX__-1));
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, (__UINT64_MAX__-1));
+
+  rq = test_modduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" modduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x (" qo  rm=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("modduq:", (vui128_t)rq, (vui128_t) er);
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+
+  rc += check_vuint128x ("moddiv11:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv10:", (vui128_t)mq.vx0, (vui128_t) er);
+#endif
+
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0, 1);
+  ix[3] = vec_subuqm (ix[2], ix[3]);
+  ix[1] = vec_madduq (ix, ix[2], ix[2], ix[3]);
+
+  er =  (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                      0x098a223fffffffffll) /* 10**38-1 */;
+
+  rq = test_modduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" modduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("modduq:", (vui128_t)rq, (vui128_t) er);
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+
+  rc += check_vuint128x ("moddiv21:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv20:", (vui128_t)mq.vx0, (vui128_t) ix[2]);
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x4b3b4ca85a86c47all,
+                                        0x098a224000000000ll) /* 10**38 */;
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e7ffffll) /* 10**19 */;
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000000000000ll,
+                                        0x8ac7230489e80000ll) /* 10**19 */;
+  ix[1] = vec_adduqm(ix[1], ix[3]);
+
+  er = ix[3];
+  rq = test_modduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" modduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("modduq:", (vui128_t)rq, (vui128_t) er);
+
+  rq = test_moduq (ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moduq  ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("moduq:", (vui128_t)rq, (vui128_t) er);
+
+
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0000000599709868ll,
+					0xff9e4deefbdc5d1cll);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x3e21f7954fe4a741ll,
+                                        0xd3ad0eeba1000000ll);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0000000c9f2c9cd0ll,
+                                        0x4674edea40000000ll) /* 10**30 */;
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x71919d1a73fa5e25ll,
+                                        0xdc93b8194541ecbcll);
+
+  er =    (vui128_t)CONST_VINT128_DW128(0x0000000b3dc3bba9ll,
+                                        0x7ec023e4a1000000ll);
+
+
+  //er = ix[3];
+  rq = test_modduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" modduq ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("modduq:", (vui128_t)rq, (vui128_t) er);
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+
+  rc += check_vuint128x ("moddiv31:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv30:", (vui128_t)mq.vx0, (vui128_t) ix[3]);
+
+#ifndef __DEBUG_PRINT__
+  if (rc == 1)
+    {
+      printf ("\n%i Failures may be the result of qemu issues\n", rc);
+      rc = 0;
+    }
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__
+
+int
+test_vec_moddiv_QW (void)
+{
+  __VEC_U_128P mq;
+  vui128_t ix[4], qx[4];
+#ifdef __DEBUG_PRINT__
+  vui128_t rx[6];
+#endif
+  vui128_t c152[4];
+  // 10**30
+  vui128_t c30 = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x40000000);
+
+  vui128_t zero = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  vui128_t er, eq;
+  // vui128_t rq;
+  // 10**152-1
+  c152[0] = (vui128_t) CONST_VINT128_W (0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+  c152[1] = (vui128_t) CONST_VINT128_W (0x3e21f795, 0x4fe4a741, 0xd3ad0eeb, 0xa0ffffff);
+  c152[2] = (vui128_t) CONST_VINT128_W (0xd2d8af57, 0xd5d929cb, 0x5f1e32bf, 0xfbdc5d1c);
+  c152[3] = (vui128_t) CONST_VINT128_W (0x01e8ca31, 0x85deb719, 0xa2fd64b0, 0xccbf84ba);
+  int rc = 0;
+
+  printf ("\ntest Vector long division Unsigned Quadword\n");
+
+  ix[0] = zero;
+  ix[1] = c152[3];
+  ix[2] = c30;
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  eq = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x0026b9d5);
+  er = (vui128_t) CONST_VINT128_W (0x0000000a, 0x91834589, 0x32ffa889, 0x8cbf84ba);
+
+  rc += check_vuint128x ("moddiv a er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv a eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+
+  // record 1st (QW) quotient digit
+  qx[3] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = c152[2];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  er = (vui128_t) CONST_VINT128_W (0x00000005, 0x99709868, 0xff9e4dee, 0xfbdc5d1c);
+  eq = (vui128_t) CONST_VINT128_W (0xd65a5181, 0xd7ccdd5e, 0x237a6c1a, 0x561573a4);
+
+  rc += check_vuint128x ("moddiv b er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv b eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 2st (QW) quotient digit
+  qx[2] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = c152[1];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  er = (vui128_t) CONST_VINT128_W (0x0000000b, 0x3dc3bba9, 0x7ec023e4, 0xa0ffffff);
+  eq = (vui128_t) CONST_VINT128_W (0x71919d1a, 0x73fa5e25, 0xdc93b819, 0x4541ecbc);
+
+  rc += check_vuint128x ("moddiv c er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv c eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 3rd (QW) quotient digit
+  qx[1] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = c152[0];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  // 10**30-1
+  er = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x3fffffff);
+  eq = (vui128_t) CONST_VINT128_W (0xe3ffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+
+  rc += check_vuint128x ("moddiv d er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv d eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+
+  // record 4th (QW) quotient digit
+  qx[0] = mq.vx0;
+
+#ifdef __DEBUG_PRINT__
+  // record 1th (QW) remainder digit
+  rx[0] = mq.vx1;
+
+  print_vint128x ("      Q ", (vui128_t) qx[3]);
+  print_vint128x ("        ", (vui128_t) qx[2]);
+  print_vint128x ("        ", (vui128_t) qx[1]);
+  print_vint128x ("        ", (vui128_t) qx[0]);
+  print_vint128x ("      R ", (vui128_t) rx[0]);
+#endif
+  // Remainder and next (QW) digit
+  ix[0] = qx[3];
+  ix[1] = qx[2];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  er = (vui128_t) CONST_VINT128_W (0x00000005, 0xd68afdd8, 0x5f4bc881, 0x561573a4);
+  eq = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00031174, 0x77e509c4);
+
+  rc += check_vuint128x ("moddiv e er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv e eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 1st (QW) quotient digit
+  qx[3] =(vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  qx[2] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = qx[1];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  er = (vui128_t) CONST_VINT128_W (0x00000004, 0xc2c28a47, 0x1a78277b, 0x4541ecbc);
+  eq = (vui128_t) CONST_VINT128_W (0x7668ee97, 0x42f4c93e, 0x0e502fb0, 0x2174d9b8);
+
+  rc += check_vuint128x ("moddiv f er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv f eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+
+  qx[1] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = qx[0];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  // 10**30-1
+  er = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x3fffffff);
+  eq = (vui128_t) CONST_VINT128_W (0x608f6351, 0x0fffffff, 0xffffffff, 0xffffffff);
+
+  rc += check_vuint128x ("moddiv g er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv g eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 4th (QW) quotient digit
+  qx[0] = mq.vx0;
+
+#ifdef __DEBUG_PRINT__
+  // record 2th (QW) remainder digit
+  rx[1] = mq.vx1;
+
+  print_vint128x ("      Q ", (vui128_t) qx[3]);
+  print_vint128x ("        ", (vui128_t) qx[2]);
+  print_vint128x ("        ", (vui128_t) qx[1]);
+  print_vint128x ("        ", (vui128_t) qx[0]);
+  print_vint128x ("      R ", (vui128_t) rx[1]);
+  print_vint128x ("        ", (vui128_t) rx[0]);
+#endif
+  // Remainder and next (QW) digit
+  ix[0] = qx[2];
+  ix[1] = qx[1];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  er = (vui128_t) CONST_VINT128_W (0x00000001, 0xb1f6f4e1, 0x64956a52, 0x2174d9b8);
+  eq = (vui128_t) CONST_VINT128_W (0x00000000, 0x00003e3a, 0xeb4ae138, 0x3562f4b8);
+
+  rc += check_vuint128x ("moddiv h er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv h eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 2st (QW) quotient digit
+  qx[2] =(vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  qx[1] = mq.vx0;
+  // Remainder and next (QW) digit
+  ix[0] = mq.vx1;
+  ix[1] = qx[0];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  // 10**30-1
+  er = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x3fffffff);
+  eq = (vui128_t) CONST_VINT128_W (0x2261d969, 0xf7ac94ca, 0x3fffffff, 0xffffffff);
+
+  rc += check_vuint128x ("moddiv i er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv i eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 4th (QW) quotient digit
+  qx[0] = mq.vx0;
+
+#ifdef __DEBUG_PRINT__
+  // record 3th (QW) remainder digit
+  rx[2] = mq.vx1;
+
+  print_vint128x ("      Q ", (vui128_t) qx[3]);
+  print_vint128x ("        ", (vui128_t) qx[2]);
+  print_vint128x ("        ", (vui128_t) qx[1]);
+  print_vint128x ("        ", (vui128_t) qx[0]);
+  print_vint128x ("      R ", (vui128_t) rx[2]);
+  print_vint128x ("        ", (vui128_t) rx[1]);
+  print_vint128x ("        ", (vui128_t) rx[0]);
+#endif
+  // Remainder and next (QW) digit
+  ix[0] = qx[1];
+  ix[1] = qx[0];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  // 10**30-1
+  er = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x3fffffff);
+  eq = (vui128_t) CONST_VINT128_W (0x000004ee, 0x2d6d415b, 0x85acef80, 0xffffffff);
+
+  rc += check_vuint128x ("moddiv j er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv j eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 3rd (QW) quotient digit
+  qx[1] =(vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  // record 4th (QW) quotient digit
+  qx[0] = mq.vx0;
+
+#ifdef __DEBUG_PRINT__
+  // record 4th (QW) remainder digit
+  rx[3] = mq.vx1;
+
+  print_vint128x ("      Q ", (vui128_t) qx[3]);
+  print_vint128x ("        ", (vui128_t) qx[2]);
+  print_vint128x ("        ", (vui128_t) qx[1]);
+  print_vint128x ("        ", (vui128_t) qx[0]);
+  print_vint128x ("      R ", (vui128_t) rx[3]);
+  print_vint128x ("        ", (vui128_t) rx[2]);
+  print_vint128x ("        ", (vui128_t) rx[1]);
+  print_vint128x ("        ", (vui128_t) rx[0]);
+#endif
+  // Remainder and next (QW) digit
+  ix[0] = qx[1];
+  ix[1] = qx[0];
+
+  mq = test_moddivduq (ix[0], ix[1], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" moddiv ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("    rmq=", (vui128_t) mq.vx1);
+  print_vint128x ("       =", (vui128_t) mq.vx0);
+#endif
+  // 10**30-1
+  er = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x3fffffff);
+  eq = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000063);
+
+  rc += check_vuint128x ("moddiv k er:", (vui128_t)mq.vx1, (vui128_t) er);
+  rc += check_vuint128x ("moddiv k eq:", (vui128_t)mq.vx0, (vui128_t) eq);
+  // record 5th (QW) quotient digit
+  qx[0] = mq.vx0;
+
+#ifdef __DEBUG_PRINT__
+  // record 5th (QW) remainder digit
+  rx[4] = mq.vx1;
+  rx[5] = mq.vx0;
+
+  print_vint128x ("      Q ", (vui128_t) qx[3]);
+  print_vint128x ("        ", (vui128_t) qx[2]);
+  print_vint128x ("        ", (vui128_t) qx[1]);
+  print_vint128x ("        ", (vui128_t) qx[0]);
+  print_vint128x ("      R ", (vui128_t) rx[4]);
+  print_vint128x ("        ", (vui128_t) rx[3]);
+  print_vint128x ("        ", (vui128_t) rx[2]);
+  print_vint128x ("        ", (vui128_t) rx[1]);
+  print_vint128x ("        ", (vui128_t) rx[0]);
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__
+int
+test_vec_divext_QW (void)
+{
+
+  vui128_t ix[4];
+  vui128_t rnd = (vui128_t)CONST_VINT128_DW128(0UL, 0x80UL);
+  vui128_t er, es;
+  vui128_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Extended Unsigned Quadword\n");
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0001000000000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0x0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0080000000000000UL, 0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x002aaaaaaaaaaaaaUL, 0xaaaaaaaaaaaaaaaaUL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000aaaaaaaaaaaaaUL, 0xaaaaaaaaaaaaaac0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0002222222222222UL, 0x2222222222222233UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x00005b05b05b05b0UL, 0x5b05b05b05b05b00UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x00000d00d00d00d0UL, 0x0d00d00d00d00d00UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000001a01a01a01aUL, 0x01a01a01a01a01a0UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0000002e3bc74aadUL, 0x8e671f5583911caaUL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  // round and normalize
+  rq    = vec_adduqm (rq, rnd);
+  ix[0] = vec_srqi (rq, 8);
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000000049f93eddeUL, 0x27d71cbbc05b4fb3UL);
+
+  rq = test_divuqe (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuqe ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+  rc += check_vuint128x ("divuqe:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // last term
+  es = (vui128_t)CONST_VINT128_DW128(0x02b7e150ed3c569dUL, 0x975c4df261fe4d9aUL);
+  rc += check_vuint128x ("divuqe-sum :", (vui128_t)ix[3], (vui128_t) es);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("   'sum ", (vui128_t) ix[3]);
+#endif
+
+#ifndef __DEBUG_PRINT__
+  if (rc == 1)
+    {
+      printf ("\n%i Failures may be the result of qemu issues\n", rc);
+      rc = 0;
+    }
+#endif
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__
+int
+test_vec_div1_QW (void)
+{
+
+  vui128_t ix[4];
+  // vui128_t rnd = (vui128_t)CONST_VINT128_DW128(0UL, 0x80UL);
+  vui128_t er, es;
+  vui128_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Unsigned Quadword\n");
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(0UL, 1UL);
+  ix[2] = (vui128_t)CONST_VINT128_DW128(0UL, 1UL);
+  ix[3] = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0x0UL);
+  er = (vui128_t)CONST_VINT128_DW128(0x0100000000000000UL, 0UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0080000000000000UL, 0UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x002aaaaaaaaaaaaaUL, 0xaaaaaaaaaaaaaaaaUL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000aaaaaaaaaaaaaUL, 0xaaaaaaaaaaaaaaaaUL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0002222222222222UL, 0x2222222222222222UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x00005b05b05b05b0UL, 0x5b05b05b05b05b05UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x00000d00d00d00d0UL, 0x0d00d00d00d00d00UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000001a01a01a01aUL, 0x01a01a01a01a01a0UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq :", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0000002e3bc74aadUL, 0x8e671f5583911ca0UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // next term
+  ix[0] = rq;
+  ix[2] = vec_adduqm (ix[2], ix[1]);
+  er = (vui128_t)CONST_VINT128_DW128(0x000000049f93eddeUL, 0x27d71cbbc05b4fa9UL);
+
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+  print_vint128x ("    sum ", (vui128_t) ix[3]);
+#endif
+  rc += check_vuint128x ("divuq :", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[3], rq); // last term
+  es = (vui128_t)CONST_VINT128_DW128(0x02b7e150ed3c569dUL, 0x975c4df261fe4d64UL);
+  rc += check_vuint128x ("divuq-sum :", (vui128_t)ix[3], (vui128_t) es);
+
+#if 0
+#endif
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("   'sum ", (vui128_t) ix[3]);
+#endif
+
+#ifndef __DEBUG_PRINT__
+  if (rc == 1)
+    {
+      printf ("\n%i Failures may be the result of qemu issues\n", rc);
+      rc = 0;
+    }
+#endif
+
+  return (rc);
+}
+
+int
+test_vec_div_QW (void)
+{
+
+  vui128_t ix[4];
+  // vui128_t rnd = (vui128_t)CONST_VINT128_DW128(0UL, 0x80UL);
+  vui128_t er, es;
+  vui128_t rq;
+  int rc = 0;
+
+  printf ("\ntest Vector divide Unsigned Quadword\n");
+
+  ix[0] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  ix[1] = (vui128_t)CONST_VINT128_DW128(__UINT64_MAX__, __UINT64_MAX__);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x0100000000000000UL);
+
+  // initial estimate of g0
+  ix[2] = vec_srqi (ix[1], 56);
+  // a / g0
+  rq = test_divuq (ix[0], ix[2]);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[1]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("g0+a/g0 ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x01fffe0001fffe00UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x3ffec0073fd5c0fUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x7ff58106661e0e1UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xffab21bf6d2e14dUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x1fd5a3ac3bbea82dUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x3eb3115afbdbfcdfUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0x764d70eb86f7d254UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xc2f7f97f2ec3bb41UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xf6ca8effa5b44f42UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xffd40bf97c935913UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xfffffc3968b32bdaUL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+
+  // a / gn
+  rq = test_divuq (ix[0], ix[2]);
+  er = (vui128_t)CONST_VINT128_DW128(0x0UL, 0xfffffffffff8df33UL);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128x (" divuq  ", (vui128_t) ix[0]);
+  print_vint128x ("        ", (vui128_t) ix[2]);
+  print_vint128x ("     rq=", (vui128_t) rq);
+#endif
+
+  rc += check_vuint128x ("divuq:", (vui128_t)rq, (vui128_t) er);
+
+  ix[3] = vec_adduqm (ix[2], rq);
+  ix[2] = vec_srqi (ix[3], 1);
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("gn+a/gn ", (vui128_t) ix[3]);
+  print_vint128x ("     /2 ", (vui128_t) ix[2]);
+#endif
+  es = (vui128_t)CONST_VINT128_DW128(1UL, 0UL);
+  rc += check_vuint128x ("divuq-sum :", (vui128_t)ix[2], (vui128_t) es);
+
+#ifndef __DEBUG_PRINT__
+  if (rc == 1)
+    {
+      printf ("\n%i Failures may be the result of qemu issues\n", rc);
+      rc = 0;
+    }
+#endif
+
+  return (rc);
+}
+
 int
 test_vec_i128 (void)
 {
@@ -10339,6 +13273,12 @@ test_vec_i128 (void)
   rc += test_div_modudq_e31 ();
   rc += test_longdiv_e31 ();
   rc += test_longdiv_e32 ();
+
+  rc += test_vec_divide_QW ();
+  rc += test_vec_modulo_QW ();
+  rc += test_vec_moddiv_QW ();
+  rc += test_vec_divext_QW ();
+  rc += test_vec_div_QW ();
 #endif
   return (rc);
 }

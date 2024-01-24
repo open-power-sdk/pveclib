@@ -204,6 +204,90 @@ test_time_i128 (void)
   double delta_sec;
   int rc = 0;
 
+  printf ("\n%s vec_divuq_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_divuq ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divuq_gcc end", __FUNCTION__);
+  printf ("\n%s vec_divuq_gcc  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s vec_divuq2_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_divuq2 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divuq2_gcc end", __FUNCTION__);
+  printf ("\n%s vec_divuq2_qcc  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s vec_divuq_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_vec_divuq ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divuq_lib end", __FUNCTION__);
+  printf ("\n%s vec_divuq_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s vec_divuq2_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_vec_divuq2 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divuq2_lib end", __FUNCTION__);
+  printf ("\n%s vec_divuq2_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s vec_divuqe_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_vec_divuqe ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divuqe_lib end", __FUNCTION__);
+  printf ("\n%s vec_divuqe_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
+  printf ("\n%s vec_divdqu_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_vec_divdqu ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s vec_divdqu_lib end", __FUNCTION__);
+  printf ("\n%s vec_divdqu_lib  tb delta = %lu, sec = %10.6g\n", __FUNCTION__, t_delta,
+	  delta_sec);
+
   printf ("\n%s vec_divmodud_lib start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)

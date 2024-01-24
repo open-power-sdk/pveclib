@@ -1918,7 +1918,7 @@ __VEC_PWR_IMP (vec_mul512x512) (__VEC_U_512 m1, __VEC_U_512 m2)
 * Other multiple precision functions supporting BCD and BCD <-> binary
 * conversions are likely candidates.
 *
-* \note Current Clang compilers silently ignore "#pragme GCC target".
+* \note Current Clang compilers silently ignore "\#pragme GCC target".
 * This causes all such targeted runtimes to revert to the compiler
 * default target or configure CFLAGS "-mcpu=". In this case the
 * __VEC_PWR_IMP()

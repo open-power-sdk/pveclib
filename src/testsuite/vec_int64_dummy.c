@@ -1560,7 +1560,9 @@ vui64_t test_vec_divude (vui64_t x, vui64_t z)
   vb64_t ge;
   vui64_t t, xt;
   const vui64_t ones = vec_splat_u64(1);
+#if defined (_ARCH_PWR8)
   const vui64_t zeros = vec_splat_u64(0);
+#endif
   vui64_t y = vec_splat_u64(0);
 
   for (i = 1; i <= 64; i++)
@@ -2050,7 +2052,9 @@ vui64_t test_vec_divdud_V1 (vui64_t x, vui64_t y, vui64_t z)
   vb64_t ge;
   vui64_t t, c, xt;
   const vui64_t ones = vec_splat_u64(1);
+#if defined (_ARCH_PWR8)
   const vui64_t zeros = vec_splat_u64(0);
+#endif
 
   for (i = 1; i <= 64; i++)
     {

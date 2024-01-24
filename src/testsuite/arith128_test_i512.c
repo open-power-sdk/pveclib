@@ -428,6 +428,150 @@ test_mul512x128 (void)
   rc += check_vuint128x ("vec_mul512x128 5a:", kp.x2.v1x128, ep.x2.v1x128);
   rc += check_vint512   ("vec_mul512x128 5b:", kp.x2.v0x512, ep.x2.v0x512);
 
+  i.vx0 = (vui128_t) CONST_VINT128_W (0x000004ee, 0x2d6d415b, 0x85acef81, 0x00000000); /* 10**32 */
+  i.vx1 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  i.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  i.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  j     = (vui128_t) CONST_VINT128_W (0x000004ee, 0x2d6d415b, 0x85acef81, 0x00000000);
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**32  ", i);
+  print_vint128x ("* 10**32  ", j);
+  print_vint640x ("        = ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x6e38ed64, 0xbf6a1f01, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00184f03, 0xe93ff9f4, 0xdaa797ed);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 6a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 6b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**64  ", i);
+  print_vint128x ("* 10**32  ", j);
+  print_vint640x ("        = ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0xe1178e81, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x62e7f4a7, 0x79f5080f, 0x1c46d01a, 0xe478b23b);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x77d9d58b, 0x62cd8a51);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 7a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 7b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**96  ", i);
+  print_vint128x ("* 10**32  ", j);
+  print_vint640x ("        = ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x2374e42f, 0x0f1538fd, 0x03df9909, 0x2e953e01);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0xa6337f19, 0xbccdb0da, 0xc404dc08, 0xd3cff5ec);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x0000024e, 0xe91f2603);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 8a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 8b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**128 ", i);
+  print_vint128x ("* 10**32  ", j);
+  print_vint640x (" =10**160 ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0xb70f2850, 0x5222d0f4, 0xfbc32d81, 0x00000000);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0xf8591999, 0xd6395d7d, 0xdc421413, 0x5713f2f3);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x12b7fe61, 0x7aa577b9, 0x86b314d6, 0x0092381c);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x000b616a);
+  rc += check_vuint128x ("vec_mul512x128 9a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 9b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i.vx0 = (vui128_t) CONST_VINT128_W (0x000004ee, 0x2d6d415b, 0x85acef81, 0x00000000); /* 10**32 */
+  i.vx1 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  i.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  i.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  j     = (vui128_t) CONST_VINT128_W (0x0000000c, 0x9f2c9cd0, 0x4674edea, 0x40000000); /* 10**30 */
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**32  ", i);
+  print_vint128x ("* 10**30  ", j);
+  print_vint640x ("        = ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x2261d969, 0xf7ac94ca, 0x40000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00003e3a, 0xeb4ae138, 0x3562f4b8);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 6a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 6b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**62 ", i);
+  print_vint128x ("* 10**30  ", j);
+  print_vint640x (" =10**92  ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x608f6351, 0x10000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x7668ee97, 0x42f4c93e, 0x0e502fb0, 0x2174d9b8);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00031174, 0x77e509c4);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 7a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 7b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**92  ", i);
+  print_vint128x ("* 10**30  ", j);
+  print_vint640x (" =10**122 ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0xe4000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x71919d1a, 0x73fa5e25, 0xdc93b819, 0x4541ecbc);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0xd65a5181, 0xd7ccdd5e, 0x237a6c1a, 0x561573a4);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x0026b9d5);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 8a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 8b:", kp.x2.v0x512, ep.x2.v0x512);
+
+  i = kp.x2.v0x512;
+  k = __VEC_PWR_IMP (vec_mul512x128)(i, j);
+
+#ifdef __DEBUG_PRINT__
+  print_vint512x ("  10**122 ", i);
+  print_vint128x ("* 10**30  ", j);
+  print_vint640x (" =10**152 ", k);
+#endif
+  kp.x640 = k;
+  ep.x2.v0x512.vx0 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  ep.x2.v0x512.vx1 = (vui128_t) CONST_VINT128_W (0x3e21f795, 0x4fe4a741, 0xd3ad0eeb, 0xa1000000);
+  ep.x2.v0x512.vx2 = (vui128_t) CONST_VINT128_W (0xd2d8af57, 0xd5d929cb, 0x5f1e32bf, 0xfbdc5d1c);
+  ep.x2.v0x512.vx3 = (vui128_t) CONST_VINT128_W (0x01e8ca31, 0x85deb719, 0xa2fd64b0, 0xccbf84ba);
+  ep.x2.v1x128 = (vui128_t) CONST_VINT128_W (0x00000000, 0x00000000, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_mul512x128 9a:", kp.x2.v1x128, ep.x2.v1x128);
+  rc += check_vint512   ("vec_mul512x128 9b:", kp.x2.v0x512, ep.x2.v0x512);
+
   return (rc);
 }
 

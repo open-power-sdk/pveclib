@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2017, 2018] IBM Corporation.
+ Copyright (c) [2017, 2018, 2023, 2024] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
  * functions implemented with PowerISA VMX and VSX instructions.
  *
  * Some of these operations are implemented in a single instruction
- * on newer (POWER8/POWER9) processors.
+ * on newer (POWER8/POWER9/POWER10) processors.
  * This header serves to fill in functional gaps for older
  * (POWER7, POWER8) processors and provides a in-line assembler
  * implementation for older compilers that do not
@@ -97,12 +97,13 @@
  * it needs to be used carefully as part of larger quadword multiply.
  * It performs only two of the four required doubleword multiplies.
  * The final quadword modulo sum will discard any overflow/carry from
- * the potential 130-bit result. With careful pre-conditioning of
- * doubleword inputs the results are can not overflow from 128-bits.
+ * the potential 130-bit result. For specific multiply operations,
+ * careful pre-conditioning of doubleword inputs, insure the results
+ * can not overflow from 128-bits.
  * Then separate add quadword add/write carry operations can be used to
  * complete the sum of partial products.
  * These techniques are used in the POWER9 specific implementations of
- * vec_muleud, vec_muloud, vec_mulluq, and vec_muludq.
+ * vec_muleud(), vec_muloud(), vec_mulluq(), and vec_muludq().
  *
  * PowerISA 3.0B also defined additional:
  * Binary Coded Decimal (BCD) and Zoned character format conversions.
@@ -114,12 +115,49 @@
  * (POWER7/8) processors and across element sizes (including
  * quadword elements).
  *
+ * POWER10 (PowerISA 3.1) adds a number of new doubleword/quadword
+ * integer instructions:
+ * - Additional doubleword multiply instruction forms;
+ *   vmsumcud, vmulhud, vmulld, vmuleud, vmuloud.
+ *   (see vec_msumcud(), vec_mulhud(), vec_muludm(), vec_vmuleud(),
+ *    vec_vmulhud_inline(), vec_vmulld_inline(), vec_vmuloud(),
+ *    vec_vmsumcud_inline())
+ * - Additional quadword integer compares; vcmpequq, vcmpgtsq,
+ *   vcmpgtuq.
+ *   (see vec_cmpequq(), vec_cmpgtsq(), vec_cmpgtuq(), vec_cmpgesq(),
+ *    vec_cmpgeuq(), vec_cmplesq(), vec_cmpleuq(), vec_cmpltsq(),
+ *    vec_cmpltuq(), vec_cmpneuq()).
+ * - Quadword integer Divide/Divide-Extended/Modulo instructions.
+ *   (see vec_vdivuqe_inline(), vec_vdivuq_inline(), vec_vmoduq_inline())
+ * - Quadword integer shift/rotate instructions; vrlq, vslq, vsraq, vsrq.
+ *   (see vec_rlq(), vec_rlqi(), vec_slq(), vec_slqi(), vec_sraq(),
+ *   vec_sraqi(), vec_srq(), vec_srqi())
+ * - Shift Left/Right Double (quadword) by Bit Immediate; vsldbi, vsrdbi.
+ *   (see vec_rlqi(), vec_sldqi(), vec_slqi() ,vec_sraqi(), vec_srqi(),
+ *   vec_vsldbi(), vec_vsrdbi()).
+ * - Expand to Quadword integer; vexpandqm.
+ *   (see vec_setb_sq())
+ *
+ * In most cases these new POWER10 instruction augment and simplify
+ * the implementation of existing PVECLIB quadword integer operations.
+ *
+ * \note
+ * The combination of <B>Vector Multiply-Sum & write Carry-out
+ * Unsigned Doubleword Modulo</B> instruction and
+ * <B>Vector Multiply-Sum Unsigned Doubleword Modulo</B>,
+ * allows an implementation to capture all 130-bits of the
+ * multiply-sum doubleword. Given the same vector inputs (VRA, VRB, VRC)
+ * and different result vectors (VRTs), this instruction
+ * pair returns a double quadword containing the 130-bit sum.
+ *
  * Most of these intrinsic (compiler built-in) operations are defined
  * in <altivec.h> and described in the compiler documentation.
- * However it took several compiler releases for all the new POWER8
+ * However it can take several compiler releases for all the new PowerISA
  * 64-bit and 128-bit integer vector intrinsics to be added to
- * <B>altivec.h</B>. This support started with the GCC 4.9 but was not
- * complete across function/type and bug free until GCC 6.0.
+ * <B>altivec.h</B>. The PVECLIB implementation tries to
+ * <I>smooth this transition</I> by substituting in-line assembler
+ * if the corresponding intrinsic is not supported and the
+ * compiler/assembler supports to specific op-code.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -128,12 +166,26 @@
  * and always be defined in this header, will generate the minimum code,
  * appropriate for the target, and produce correct results.
  *
- * Most of these
- * operations are implemented in a single instruction on newer
- * (POWER8/POWER9) processors. So this header serves to fill in
- * functional gaps for older (POWER7, POWER8) processors and provides
- * a in-line assembler implementation for older compilers that do not
- * provide the build-ins.
+ * Many of these operations are implemented in a single instruction on
+ * newer (POWER8/POWER9/POWER10) processors. So this header serves to
+ * fill in functional gaps for older (POWER7, POWER8, POWER9)
+ * processors.
+ * This header also provides an in-line assembler implementation for
+ * older compilers that do not provide the specific build-ins.
+ *
+ * \note Recent versions of PVECLIB headers have introduced
+ * operation names with a "<B>_inline</B>" suffix. While an specific
+ * operation implementation for the latest processor may require few
+ * instructions, the equivalent implementation for older processors can
+ * run to 10s of instructions. This is especially true for multiply and
+ * divide. So PVECLIB needs to plan for moving some of the larger
+ * operation implementations into libraries. In this case an existing
+ * operation name may change to an external library reference
+ * (\ref i512_libary_issues_0_0).
+ * However PVECLIB benefits from reuse of simple operations to build
+ * the most complex operations. For this case in-lining the simpler
+ * operations yields better optimizations. So some operations will have
+ * both "<B>_inline</B>" and extern library implementations in the API.
  *
  * This header covers operations that are either:
  *
@@ -1197,7 +1249,9 @@ vec_vmadd2euw (vui32_t a, vui32_t b, vui32_t c, vui32_t d)
                             =   2 FFFC0001
  * \endcode
  * Note the sum overflows the word twice and high order bits of
- * the sum will be lost.
+ * the sum will be lost. This oversight is corrected in PowerISA 3.1
+ * (POWER10) via <B>Vector Multiply-Sum & write Carry-out
+ * Unsigned Doubleword</B>.
  *
  * For POWER9 we can simulate Vector Multiply Even/Odd Unsigned
  * Doubleword by setting the Odd/Even doubleword of VRB to zero
@@ -1590,6 +1644,1452 @@ __test_madduq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
  * vec_madduq(), and vec_madd2uq()) are used to compose
  * wider multiply operations (see vec_int512_ppc.h).
  *
+ * \subsection int128_multiply_0_1 Implementing Quadword Multiply
+ *
+ * The discussion above covers the complexity of of implementing
+ * doubleword multiplies and quadword results with and without
+ * doubleword multiply instructions across the PowerISA versions.
+ * The discussion also points out opportunities to leverage existing
+ * quadword integer vector operations in the implementation of
+ * quadword results.
+ * \note This last point is the primary reason for implementing some
+ * doubleword integer multiply operations in this quadword integer
+ * implementation header.
+ *
+ * The discussion also points to compound multiply-add operations
+ * that are useful for implementing multiple quadword multiply
+ * operations (see vec_int512_ppc.h).
+ *
+ * PowerISA has not yet provided quadword integer multiply
+ * instructions.
+ * However PVEClIB can leverage the vector doubleword/word/halfword
+ * integer multiply operations with quadword shift and add to compute
+ * (double|high|low) quadword products.
+ * The POWER8 implementations leverages the vector word multiply
+ * operations.
+ * The POWER9 implementations leverages the vector doubleword multiply
+ * operations and this automatically picks up the new POWER10
+ * doubleword multiply instructions as needed for the -mcpu=power10
+ * target.
+ *
+ * \subsubsection int128_multiply_0_1_0_0 POWER7/8 Implementation of Quadword Multiply
+ *
+ * The POWER8 quadword implementations reduces to four quadword by word
+ * multiplies.
+ * The basic 160-bit product uses vec_vmuleuw() and vec_vmulouw().
+ * the vector doubleword results need to aligned for a quadword
+ * sum of the high 128-bits.
+ * For example, four repeats of the following sequence:
+ * \code
+  vui32_t tsw;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_3);
+  t_even = (vui32_t) vec_vmuleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_vmulouw ((vui32_t) a, tsw);
+  // Rotate the low 32-bits (right) into tmq. This is actually
+  // implemented as 96-bit (12-byte) shift left.
+  tmq = vec_sld (t_odd, z, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the high 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+ * \endcode
+ * The partial products in <I>t_odd</I> <I>t_even</I> need to be
+ * aligned for summation.
+ *
+ *  | W0 | W1 | W2 | W3 | W4 |
+ *  |:----:|:----:|:----:|:----:|:----:|
+ *  | | A<sub>w1</sub> \* B<sub>wn</sub> || A<sub>w3</sub> \* B<sub>wn</sub> ||
+ *  | A<sub>w0</sub> \* B<sub>wn</sub> || A<sub>w2</sub> \* B<sub>wn</sub> || |
+ *
+ * The low 32-bits (from <I>t_odd</I>) are right shifted into an
+ * accumulator (<I>tmq</I>), for the low-order 128-bits of
+ * the product. The quadword sum of  <I>t_even</I> and right shifted
+ * <I>t_odd</I> is the high-order 128-bits of the 160-bit partial
+ * products.
+ *
+ * The 160-bit partial products are shifted right 32-bits to
+ * accumulate the low order product and sum the high order 128-bit
+ * partial products.
+ *
+ *  | W0 | W1 | W2 | W3 | W4 | W5 | W6 | W7 |
+ *  |:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+ *  | | | | A \* B<sub>w3</sub> |||||
+ *  | | | A \* B<sub>w2</sub> ||||| |
+ *  | | A \* B<sub>w1</sub> ||||| | |
+ *  | A \* B<sub>w0</sub> ||||| | | |
+ *
+ * The 2nd, 3rd and 4th steps use vec_vmaddeuw() and vec_vmaddouw()
+ * to sum the high 128-bits of the previous partial product into
+ * this steps partial products. For example:
+ * \code
+  tsw = vec_splat ((vui32_t) b, VEC_WE_2);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+ * \endcode
+ * These (multiply add) operations are adding even/odd 32-bit values to
+ * the even/odd 64-bit partial products. This avoid carries and
+ * requires only doubleword adds.
+ *
+ *  | W0 | W1 | W2 | W3 | W4 |
+ *  |:----:|:----:|:----:|:----:|:----:|
+ *  | | A<sub>w1</sub> \* B<sub>wn</sub> \+ C<sub>w1</sub> || A<sub>w3</sub> \* B<sub>wn</sub> \+ C<sub>w3</sub> ||
+ *  | A<sub>w0</sub> \* B<sub>wn</sub> \+ C<sub>w0</sub> || A<sub>w2</sub> \* B<sub>wn</sub> \+ C<sub>w2</sub> || |
+ *
+ * \note The POWER7 implementation is similar to POWER8's but uses
+ * vector multiply even/odd halfword to generate 16-bit by 128-bit
+ * partial products and requires 8 steps.
+ *
+ * \subsubsection int128_multiply_0_1_0_1 POWER9/10 Implementation of Quadword Multiply
+ *
+ * The POWER9/10 quadword implementation reduces to four doubleword by
+ * doubleword multiplies.
+ *
+ *  | DW0 | DW1 | DW2 | DW3 |
+ *  |:------:|:------:|:------:|:------:|
+ *  | | | A<sub>l</sub> \* B<sub>l</sub> ||
+ *  | | A<sub>l</sub> \* B<sub>h</sub> || |
+ *  | | A<sub>h</sub> \* B<sub>l</sub> || |
+ *  | A<sub>h</sub> \* B<sub>h</sub> || | |
+ *
+ * The double quadword sum of all four rows is the 128-bit by 128-bit
+ * product.
+ * Each partial product can be implemented with vec_vmuleud() or
+ * vec_vmuloud(). For the middle two partial products we need to swap
+ * doublewords (vec_swapd()) for one operand before the multiply.
+ * The 1st and 4th partial products can be concatenated for double
+ * quadword summation but the middle sum and carry needs to be split
+ * into high/low quadwords.
+ *
+ * For POWER10 these PVELIB operations generate the vmuleud/vmuloud
+ * instructions.
+ * But for POWER9, PVECLIB will generate the Multiply Sum instruction
+ * (vmsumudm) but <I>adjusts</I> input operands to avoid overflow
+ * and emulate the equivalent vmuleud/vmuloud operations.
+ * This depends on the compiler optimizing across the doubleword
+ * permute (xxpermdi) operations generated to enforce these
+ * constraints.
+ *
+ * The middle partial products look like an opportunity to use the
+ * full power of multiply sum. However multiply sum can not be used
+ * where ignoring overflow/carry can result in incorrect results.
+ * For POWER9 implementations this is the most common case.
+ *
+ * One exception is vec_mulluq() where overflow/carry can not effect
+ * low-order 128-bit result (see \ref int128_multiply_0_1_2).
+ * For POWER10 combined with multiply sum and write carry-out
+ * (vec_vmsumcud_inline()) multiply sum can used as long as the
+ * carry-out is included in the final sum.
+ * (see \ref int128_multiply_0_1_3).
+ *
+ * \subsubsection int128_multiply_0_1_1 Implementing Quadword Multiply High
+ *
+ * Compute the product of integer quadwords and return the high-order
+ * quadword. See vec_mulhuq() for the details.
+ *
+ * For multiply-high
+ * all four partial products are still required.
+ * The low-order and middle partial products are summed to detect and
+ * propagate any carry-out from the low-order quadword.
+ *
+ * For POWER10 the implementation leverages vec_vmsumcud_inline() in
+ * combination vec_vmsumudm_inline() to capture the 129-bit middle
+ * partial products sum.
+ * This sum is rotated to align with the double quadword of the
+ * concatenation of the high and low partial products
+ * generated by vec_vmuleud() and vec_vmuloud().
+ * This structure allows the multiplies to start early and execute
+ * with maximum overlap within the vector pipelines.
+ * Then these double quadwords are summed to generate the final
+ * 256-bit product. The low-order quadword of this sum is not required
+ * but any carry-out needs captured and propagated to the high-order
+ * quadword of the result.
+ *
+ * The POWER9 implementation uses the vec_vmuloud() operation for the
+ * low partial product and the combination of vec_vmaddeud() and
+ * vec_vmuloud() for the middle partial products. These
+ * generate combinations of xxpermdi and vmsumudm instructions for
+ * POWER9 which generate 128-bits products without any carry-outs.
+ *
+ * \note Using vec_vmaddeud() to pick up the high 64-bits of the
+ * low partial product as the 3rd addend to the middle partial product
+ * sum. This is simpler then the double quadword sum required for
+ * vec_muludq() and the POWER10 implementation for vec_mulhuq().
+ * (see \ref int128_arith_facts_0_2_3)
+ *
+ * The implementation uses vec_msumudm to compute the high partial
+ * product plus the high-order 128-bit bits of the middle/low partial
+ * product sums. This is safe as this final sum can not overflow.
+ * Again this code structure is intended to get the multiplies
+ * started and through the pipelines as quickly as possible.
+ *
+ * The POWER8 implementation is similar to vec_muludq() except there
+ * is no need to accumulate the low-bits for vec_mulhuq().
+ * This eliminates one vec_sld() from each step.
+ *
+ * \code
+vui128_t test_vec_mulhuq (vui128_t a, vui128_t b)
+{
+  vui32_t t;
+  // compute the 256 bit product of two 128 bit values a, b.
+  // The high 128 bits are accumulated in t and the low 128-bits
+  // in tmq. The high 128-bits are the return value.
+#ifdef _ARCH_PWR10
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t txl, txh, tc1;
+  vui128_t thh, tll;
+  // multiply the high and low 64-bits of a and b.
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  // multiply and sum the middle products with carry-out
+  tx  = vec_vmsumudm_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  tc1 = vec_vmsumcud_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  // Align the middle product and carry-out for double quadword sum.
+  // This is effectively a double quadword rotate left 64-bits
+  txl = vec_sldqi ( tx,  tc1, 64);
+  txh = vec_sldqi ( tc1, tx,  64);
+  // Double quadword sum for 256-bit product
+  tc1 = vec_addcuq (tll, txl);
+  thq  = vec_addeuqm (thh, txh, tc1);
+  // Return only the high 128-bits
+  t = (vui32_t) thq;
+#else
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t tll, thh, tab, tba, tmq, tmc, tb0;
+  // multiply the low 64-bits of a and b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.
+  tll = vec_vmuloud ((vui64_t) a, (vui64_t) b);
+  // compute the 2 middle partial projects plus high dw of tll.
+  // This sum will be 129-bits including a carry.
+  // Can't directly use vmsumudm here because the sum of partial
+  // products can overflow.
+  tab = vec_vmuloud (a_swap, (vui64_t) b);
+  // tba = (a[h] * b[l]) + (a[l] * 0) + (tll[h]>>64).
+  tba = vec_vmaddeud (a_swap, (vui64_t) b, (vui64_t) tll);
+  tmq = vec_adduqm (tab, tba);
+  tmc = vec_addcuq (tab, tba);
+  // Shift tmc||tmq left 64-bits to align with high quadword
+  tmq = vec_sldqi ( tmc, tmq,  64);
+  // Fake vec_vmaddeud ((vui64_t) a, (vui64_t) b, (vui128_t) tmq);
+  tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  // sum = ((a[h] * b[h]) + (a[l] * 0) + tmc).
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, tmq);
+#else
+#ifdef _ARCH_PWR8
+  vui32_t tsw;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+  // We use Vector Multiply Even/Odd Unsigned Word to compute
+  // the 128 x 32 partial (160-bit) product of vector a with a
+  // word element of b. The (for each word of vector b) 4 X 160-bit
+  // partial products are  summed to produce the full 256-bit product.
+  // See the comment in vec_muludq for details.
+  //
+  tsw = vec_splat ((vui32_t) b, VEC_WE_3);
+  t_even = (vui32_t) vec_vmuleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_vmulouw ((vui32_t) a, tsw);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the high 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_2);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_1);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_0);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#else // _ARCH_PWR7 or earlier and Big Endian only.
+  // We use Vector Multiply Even/Odd Unsigned Halfword to compute
+  // the 128 x 16 partial (144-bit) product of vector a with a
+  // halfword element of b. The (for each halfword of vector b)
+  // 8 X 144-bit partial products are  summed to produce the full
+  // 256-bit product.
+  // See Implementation for details of POWER7 implementation
+#endif
+#endif
+#endif
+  return ((vui128_t) t);
+}
+ * \endcode
+ *
+ * \subsubsection int128_multiply_0_1_2 Implementing Quadword Multiply Low
+ *
+ * Compute the product of integer quadwords and return the low-order
+ * quadword of this product.
+ * See vec_mulluq() for the details.
+ *
+ * For Power9/10 this this requires only the low and middle doubleword
+ * products and only the low-order 64-bits of the middle product sums
+ * are relevant to the final result.
+ * This allows the direct use of vec_msumudm() for middle product sums
+ * as any carry-out is irrelevant.
+ * The _ARCH_PWR9 code section is common for POWER9/10 code generation.
+ * Using vec_vmuloud() for the low partial product will generate the
+ * vmuloud instruction and simplifies code for the -mcpu=power10 target.
+ *
+ * The POWER8 implementation is similar to vec_muludq() except
+ * the final vec_vmaddeuw() and associates even/odd sum operations
+ * are not needed. These operations produce bits for the high quadword
+ * which will be discarded.
+ *
+ * For example:
+ * \code
+vui128_t
+test_vec_mulluq (vui128_t a, vui128_t b)
+{
+  vui32_t t, tmq;
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t b_swap = vec_swapd ((vui64_t) b);
+  // multiply the low 64-bits of a and b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.
+  tmq = (vui32_t) vec_vmuloud ((vui64_t) a, (vui64_t) b);
+  // we can use multiply sum here because we only need the low 64-bits
+  // and don't care if we lose the carry / overflow.
+  // sum = (a[h] * b[l]) + (a[l] * b[h])) + zero).
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) zero);
+  // result = sum ({tmq[h] + t[l]} , {tmq[l] + zero}).
+  // Shift t left 64-bits and use doubleword add.
+  t   = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) zero);
+  tmq = (vui32_t) vec_addudm ((vui64_t) t, (vui64_t) tmq);
+#else
+#ifdef _ARCH_PWR8
+  // We use Vector Multiply Even/Odd Unsigned Word to compute
+  // the 128 x 32 partial (160-bit) product of vector a with a
+  // word element of b. The (for each word of vector b) 4 X 160-bit
+  // partial products are  summed to produce the full 256-bit product.
+  // See the comment in vec_muludq for details.
+  vui32_t tsw;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_3);
+  t_even = (vui32_t) vec_vmuleuw ((vui32_t) a, tsw);
+  t_odd = (vui32_t) vec_vmulouw ((vui32_t) a, tsw);
+  // Rotate the low 32-bits (right) into tmq. This is actually
+  // implemented as 96-bit (12-byte) shift left.
+  tmq = vec_sld (t_odd, z, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the high 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_2);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_1);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_0);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // dont need the high 128-bits of 160-bits.
+#else
+  // _ARCH_PWR7 or earlier and Big Endian only.
+  // We use Vector Multiply Even/Odd Unsigned Halfword to compute
+  // the 128 x 16 partial (144-bit) product of vector a with a
+  // halfword element of b. The (for each halfword of vector b)
+  // 8 X 144-bit partial products are  summed to produce the full
+  // 256-bit product.
+  // See Implementation for details of POWER7 implementation
+#endif
+#endif
+  return ((vui128_t) tmq);
+}
+ * \endcode
+ *
+ * \subsubsection int128_multiply_0_1_3 Implementing Quadword Multiply with double Quadword result
+ *
+ * Compute the product of integer quadwords and return the
+ * high and low-order quadwords of the 256-bit product.
+ * See vec_muludq() for the details.
+ *
+ * For POWER10 the implementation leverages vec_vmsumcud_inline() in
+ * combination vec_vmsumudm_inline() to capture the 129-bit middle
+ * partial products sum.
+ * This sum is rotated to align with the double quadword of the
+ * concatenation of the high and low partial products
+ * generated by vec_vmuleud() and vec_vmuloud().
+ * Then these double quadwords are summed to generate the final
+ * 256-bit product.
+ * This structure allows the multiplies to start early and execute
+ * with maximum overlap within the vector pipelines.
+ *
+ * The POWER9 implementation uses vec_vmuleud() and vec_vmuloud()
+ * operations for all four partial products. These generate
+ * combinations of xxpermdi and vmsumudm instructions for POWER9 which
+ * generate 128-bits products without any carry-outs.
+ * Again this code structure is intended to get all four multiplies
+ * started and through the pipelines as quickly as possible.
+ * Then align and sum the quadwords for the double quadword result,
+ * while capturing and propagating any carry-outs.
+ *
+ * For example:
+ * \code
+vui128_t test_vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
+{
+  vui32_t t, tmq;
+  // compute the 256 bit product of two 128 bit values a, b.
+  // The high 128 bits are accumulated in t and the low 128-bits
+  // in tmq. The high 128-bits of the product are returned to the
+  // address of the 1st parm. The low 128-bits are the return
+  // value.
+#ifdef _ARCH_PWR10
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t txl, txh, tc1;
+  vui128_t thh, tll;
+  // multiply the high and low 64-bits of a and b.
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  // multiply and sum the middle products with carry-out
+  tx  = vec_vmsumudm_inline  ((vui64_t)a_swap, (vui64_t)b, (vui128_t)zero);
+  tc1 = vec_vmsumcud_inline  ((vui64_t)a_swap, (vui64_t)b, (vui128_t)zero);
+  // Align the middle product and carry-out for double quadword sum
+  // This effectively a double quadword rotate 64-bits
+  txl = vec_sldqi ( tx,  tc1, 64);
+  txh = vec_sldqi ( tc1, tx,  64);
+  // Double quadword sum for 256-bit product
+  tc1 = vec_addcuq (tll, txl);
+  tlq  = vec_adduqm (tll, txl);
+  thq  = vec_addeuqm (thh, txh, tc1);
+
+  t = (vui32_t) thq;
+  tmq = (vui32_t) tlq;
+#else
+#ifdef _ARCH_PWR9
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t t0l, tc1;
+  vui128_t thh, thl, tlh, tll;
+  // multiply the low 64-bits of a and b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  thl = vec_vmuloud (a_swap, (vui64_t)b);
+  tlh = vec_vmuleud (a_swap, (vui64_t)b);
+  // sum the two middle products (plus the high 64-bits of the low
+  // product.  This will generate a carry that we need to capture.
+  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  tc1 = vec_addcuq (thl, tlh);
+  tx   = vec_adduqm (thl, tlh);
+  tx   = vec_adduqm (tx, t0l);
+  // result = t[l] || tll[l].
+  tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
+  // Sum the high product plus the high sum (with carry) of middle
+  // partial products.  This can't overflow.
+  thq = (vui128_t) vec_permdi ((vui64_t) tc1, (vui64_t) tx, 2);
+  thq = vec_adduqm ( thh, thq);
+
+  t = (vui32_t) thq;
+  tmq = (vui32_t) tlq;
+#else
+#ifdef _ARCH_PWR8
+  vui32_t tsw;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+  // We use the Vector Multiple Even/Odd Unsigned Word to compute
+  // the 128 x 32 partial (160-bit) product of value a with the
+  // word splat of b. This produces four 64-bit (32 x 32)
+  // partial products in two vector registers.
+  //
+  // These results
+  // are not aligned for summation as is. So the odd result is
+  // shifted right 32-bits before it is summed (via Vector Add
+  // Unsigned Quadword Modulo) with the the even result.
+  // The low order 32-bits, of the 160-bit product
+  // is shifted (right) in to a separate vector (tmq).
+  //
+  // This is repeated for each (low to high order) words of b.
+  // After the first (160-bit) partial product, the high 128-bits
+  // (t) of the previous partial product is summed with the current
+  // odd multiply result, before this sum (including any carry out)
+  // is shifted right 32-bits.  Bits shifted out of the of this sum
+  // are shifted (32-bits at a time) into the low order 128-bits
+  // of the product (tmq). The shifted odd sum is then added to the
+  // current even product, After the 4th step this sum is the
+  // final high order 128-bits of the quadword product.
+  tsw = vec_splat ((vui32_t) b, VEC_WE_3);
+  t_even = (vui32_t)vec_vmuleuw((vui32_t)a, tsw);
+  t_odd = (vui32_t)vec_vmulouw((vui32_t)a, tsw);
+  // Rotate the low 32-bits (right) into tmq. This is actually
+  // implemented as 96-bit (12-byte) shift left.
+  tmq = vec_sld (t_odd, z, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the high 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_2);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_1);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+
+  tsw = vec_splat ((vui32_t) b, VEC_WE_0);
+  t_even = (vui32_t)vec_vmaddeuw((vui32_t)a, tsw, t);
+  t_odd = (vui32_t)vec_vmaddouw((vui32_t)a, tsw, t);
+  // rotate right the low 32-bits into tmq
+  tmq = vec_sld (t_odd, tmq, 12);
+  // shift the low 128 bits of partial product right 32-bits
+  t_odd = vec_sld (z, t_odd, 12);
+  // add the top 128 bits of even / odd partial products
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#else // _ARCH_PWR7 or earlier and Big Endian only.
+  // We use Vector Multiply Even/Odd Unsigned Halfword to compute
+  // the 128 x 16 partial (144-bit) product of vector a with a
+  // halfword element of b. The (for each halfword of vector b)
+  // 8 X 144-bit partial products are  summed to produce the full
+  // 256-bit product.
+  // See Implementation for details of POWER7 implementation
+#endif
+#endif
+#endif
+  *mulu = (vui128_t) t;
+  return ((vui128_t) tmq);
+}
+ * \endcode
+ *
+ *
+ * \subsection int128_Divide_0_1 Implementing Quadword Divide/Modulo
+ *
+ * Vector Divide for integer elements is a recent addition to the
+ * PowerISA. The original Altivec<SUP>TM</SUP> did not provide any
+ * divide operations, even for float elements. Instead it provided a
+ * <B>Vector Reciprocal Estimate Floating-Point</B> instruction.
+ * This required the <I>Newton-Raphson method</I> to complete the
+ * reciprocal to full precision, then a multiply to complete a
+ * division.
+ *
+ * It was not until PowerISA 2.06 (POWER7/VSX) that vector divide
+ * was provided for float and double precision. Still no vector divide
+ * operations for integer elements. This was the status quo before
+ * PowerISA 3.1 (POWER10).
+ *
+ * POWER10 added vector Divide/Divide-Extend/Modulo (signed/unsigned)
+ * operations over Word/Doubleword/Quadword integer elements.
+ * This is now within PVECLIBs mission to provide functionally
+ * equivalent vector operations for previous PowerISA (VSX POWER7/8/9)
+ * processors.
+ * For completeness implement the integer operations across the element
+ * sizes (including Halfword and Byte).
+ *
+ * \note Divide Extended Quadword will be extremely useful in the
+ * soft-float implementation of
+ * <B>VSX Scalar Divide Quad-Precision [using round to Odd]</B>
+ * for POWER7/8.
+ *
+ * \subsubsection int128_Divide_0_1_1 Vectorizable Divide implementations
+ *
+ * The trick is to use vector registers and existing instructions to
+ * implement division without native vector divide instructions.
+ * There are a few ways this can be done:
+ * - Vectorize the shift-and-subtract algorithm
+ * - Transfer the elements to GPU registers and use scalar divide
+ *   instructions (for each element).
+ * - Use long division based on a narrower (smaller word) divide
+ *   operations.
+ * - Or some clever combinations of the above.
+ *
+ * The selection for best implementation (smallest average cycle time)
+ * will depend on a number of factors:
+ * - The number of element bits (a quadword shift-subtract algorithm
+ *   requires up to 128 iterations).
+ * - The cost of transferring vector elements to/from GPRs
+ *   (POWER8 and later include Move From/To VSR instructions.
+ *   POWER7 does not).
+ * - The cycle latency and throughput (IPC) of the scalar divide,
+ *   for the platform.
+ *
+ * \paragraph int128_Divide_0_1_1_1 Vectorized Shift-Subtract Quadword Divide
+ *
+ * Consider the algorithm from Hacker's Delight (2nd Edition) Figure 9-2.
+ * This is an example of bit-by-bit long division which only requires
+ * shift, add/subtract, and compare.
+ * It is simple to vectorize by converting the if/then logic into vector
+ * compares returning vector bool and vector select.
+ * This algorithm requires a double-wide (x || y) dividend/shifter,
+ * plus 1-bit (or bool variable) (t) for the carry-out.
+ *
+ * So for 128-bit quadwords this is logically 257-bits (t || x || y)
+ * where each is a vector unsigned __int128 value.
+ * This is a bit simpler then the doubleword implementation since
+ * (as of PowerISA 2.07) we have quadword add/subtract with carry/extend.
+ *
+ * \sa The 64-bit \ref i64_missing_ops_0_2_2_1 descriptions for an example
+ * implementation without carry/extend.
+ *
+ * For example:
+ * \code
+vui128_t test_vec_divduq_V0 (vui128_t x, vui128_t y, vui128_t z)
+{
+  int i;
+  vb128_t ge;
+  vui128_t t, cc, c, xt;
+  //t = (vui128_t) CONST_VINT128_W (0, 0, 0, 0);
+
+  for (i = 1; i <= 128; i++)
+    {
+      // Left shift (x || y) requires 257-bits, is (t || x || y)
+      c = vec_addcuq (y, y);
+      t = vec_addcuq (x, x);
+      x = vec_addeuqm (x, x, c);
+
+      // deconstruct ((t || x) >= z) to ((x >= z) || t), then
+      // deconstruct vec_cmpgeuq() to vec_subcuq and vec_setb_cyq ()
+      // If (x >= z) cc == 1
+      cc = vec_subcuq (x, z);
+      // Combine t with (x >= z) for 129-bit compare
+      t  = (vui128_t) vec_or ((vui32_t)cc, (vui32_t)t);
+      // Convert t to a 128-bit bool for select
+      ge = vec_setb_cyq (t);
+
+      xt = vec_subuqm (x, z);
+      // Delay the shift left of y to here so we can conveniently shift
+      // t into the low order bits to accumulate the quotient.
+      y = vec_addeuqm (y, y, t);
+      x = vec_seluq (x, xt, ge);
+    }
+  return y;
+}
+ * \endcode
+ * Here we can use the <I>add carrying</I> directly to generate the 257th bit as
+ * variable <B>t</B>. Initially we use add and write carry
+ * (vec_addcuq()) to capture the high bits of carry(<B>y</B>) -> <B>c</B> and
+ * carry(<B>x</B>) -> <B>t</B>. Then use add extended (vec_addeuqm()) to shift
+ * left <B>x</B> || <B>c</B> -> <B>x</B> by one bit.
+ *
+ * Next we need to generate a 128-bit boolean for the compare
+ * ((t || x) >= z) to select (x - z) -> x if true.
+ * We also need the result as a 0/1 bit to use in the shift left
+ * (<B>y</B> || <B>t</B>) -> <B>y</B> to accumulate the quotient.
+ * So we change the compare to the equivalent
+ * logic ((x >= z) | t) for the sequence above.
+ * This provides the compare result as both a carry-bit (t) and 128-bit
+ * boolean (ge).
+ *
+ * So we use the add extended (vec_addeuqm(y,y,t)) to shift left
+ * <B>y</B> and accumulate the quotient bits.
+ * We also generate a temporary (x - z) -> xt and use the
+ * vec_seluq (x,xt,ge) to update x as needed.
+ * This updates x and y for the next iteration.
+ *
+ * The result is short sequence of 10 instructions but
+ * the whole sequence is repeated in loop for 128 iterations.
+ * The result is division of a 256-bit dividend by a 128-bit divisor.
+ * This returns the quotient (in y) and the remainder (in x).
+ *
+ * Unfortunately the combination of higher latency for the quadword
+ * add/subtract and 128 iteration count will push the quadword divide
+ * execution time over a 1000 cycles.
+ *
+ * \paragraph int128_Divide_0_1_1_2 Vectorized Quadword Long division
+ *
+ * So we will look at using the Fixed-point scalar divide and long
+ * division to implement quadword divide/divide-extended/modulo.
+ * The FXU only supports doubleword divide operations but we can
+ * leverage these for long division. Effective we can treat 64-bit
+ * doublewords as single digits in 2 or 4 digit dividends and 2 digit
+ * divisors.
+ *
+ * The cleaver part is using the vec_divqud_inline() implementation
+ * from vec_int64_ppc.h in our quadword long division.
+ * This provides a 128-bit by 64-bit divide returning 64-bit quotient
+ * and 64-bit remainder. This provides our 2-digit by 1-digit divide
+ * as a step in our long division implementation of divide quadword.
+ * This implementation provides PowerISA version specific
+ * optimizations. This includes leveraging the
+ * Move From/To VSR instructions (for P8/P9) and
+ * FXU divdu/divdeu instructions.
+ *
+ * \see "Hacker's Delight, 2nd Edition,"
+ * Henry S. Warren, Jr, Addison Wesley, 2013.
+ * Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ * In our implementation, vec_divqud_inline() replaces Figure 9-5's
+ * DIVU.
+ *
+ * We will start by implementing divide quadword and divide
+ * extended quadword as vec_vdivuq_inline() and vec_vdivuqe_inline().
+ * Of course we will use the new PowerISA 3.1 vdivuq and
+ * vdivuqe instructions as the implementation for the P10 target.
+ * For P8/P9 we will leverage vec_divqud_inline() for equivalent
+ * operations inspired but the "Hacker's Delight" long division
+ * implementation.
+ *
+ * Once we have a good implementations for quadword divide/divide
+ * extended, we can use them in the double quadword long division
+ * based on the PowerISA, Programming Note for
+ * long division using Divide Word Extended.
+ *
+ * \paragraph int128_Divide_0_1_1_3 Divide Quadword implementation
+ *
+ * The implementation of Vector Divide Quadword is split into
+ * conditional code sections for P10 and P7-P9.
+ * For the P10 target we can use the PowerISA 3.1 vdivuq instruction
+ * directly.
+ * For example:
+ * \code
+vui128_t test_vec_divuq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // _ARCH_PWR7 though _ARCH_PWR9
+ // See "Hacker's Delight, 2nd Edition,"
+ // Henry S. Warren, Jr, Addison Wesley, 2013.
+ // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ // ...
+#endif
+}
+ * \endcode
+ * \note We want to use the vec_div () intrinsic if available.
+ * This will allow the (GCC version 12 and later) compiler to
+ * do better code optimizations.
+ * For older compilers PVECLIB uses the in-line assembler.
+ *
+ * For PowerISA versions before 3.1 use
+ * long division where is <I>digit</I> is 64-bit doubleword.
+ * We use the 128 by 64 division operation
+ * vec_divqud_inline() for 3 distinct cases.
+ * - divisor < 2**64 and
+ *   - dividend < 2**64 or
+ *   - dividend >= 2**64
+ * - divisor >= 2**64
+ *
+ * This also allows the use of doubleword operations for permutes,
+ * some compares, and count leading zeros.
+ * It does require some quadword shifts, add/subtract, some compares
+ * and in one case multiply.
+ * By using PVECLIB operations we can assume that each operation will
+ * be correct and optimal for each specific (power7/8/9) compile target.
+ *
+ * We use permute doubleword immediate operations (splat/merge/paste)
+ * to replace (doubleword) shifts/masks in the original
+ * "Hacker's Delight".
+ * We also take advantage of vec_divqud_inline() returning both
+ * remainder and quotient.
+ * This saves a multiply/subtract for the 2nd case.
+ * Finally if/then logic for quotient correction in the 3rd case
+ * is replaced with quadword boolean compare and select.
+ *
+ * For example:
+ * \code
+vui128_t test_vec_divuq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+ // _ARCH_PWR10 specific implementation
+#else // _ARCH_PWR7 though _ARCH_PWR9 implementation
+ // See "Hacker's Delight, 2nd Edition,"
+ // Henry S. Warren, Jr, Addison Wesley, 2013.
+ // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ //
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t y0, y1, z1, q0, q1, k, t, zn;
+  vui64_t zdh, zdl, ydh, qdl, qdh;
+
+  ydh = vec_splatd((vui64_t)y, VEC_DW_H);
+  zdh = vec_splatd((vui64_t)z, VEC_DW_H);
+  zdl = vec_splatd((vui64_t)z, VEC_DW_L);
+
+  if (vec_cmpud_all_eq (zdh, zeros)) // (z >> 64) == 0UL
+    {
+      if (vec_cmpud_all_lt (ydh, zdl)) // (y >> 64) < z
+	{
+	  // Here qdl = (vui64_t) {(y % z) || (y / z)}
+	  qdl = vec_divqud_inline (y, zdl);
+	  // return the quotient
+	  return (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+	}
+      else
+	{
+	  //y1 = y >> 64;
+	  y1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, y);
+	  // y0 = y & lmask;
+	  y0 = (vui128_t) vec_mrgald ((vui128_t) zeros, y);
+	  //q1 = scalar_DIVU (y1, (unsigned long long) z);
+	  // Here qdh = (vui64_t) {(y1 % z) || (y1 / z)}
+	  qdh = vec_DIVU_inline (y1, zdl);
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // So; k = y1 - q1*z; ((k << 64) + y0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) y0);
+	  // q0 = scalar_DIVU ((k << 64) + y0, (unsigned long long) z);
+	  // Here qdl = (vui64_t) {(k % z) || (k / z)}
+	  qdl = vec_divqud_inline (k, zdl);
+	  //return (q1 << 64) + q0;
+	  return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	}
+    }
+  else
+    {
+      // Here z >= 2**64, Normalize the divisor so MSB is 1
+      // Could use vec_clzq(), but we know  z >= 2**64, So:
+      zn = (vui128_t) vec_clzd ((vui64_t) z);
+      // zn = zn >> 64, So we can use it with vec_slq ()
+      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+      //z1 = (z << n) >> 64;
+      z1 = vec_slq (z, zn);
+
+      //y1 = y >> 1; 	// to prevent overflow
+      y1 = vec_srqi (y, 1);
+      // q1 = scalar_DIVU (y1, (unsigned long long) z1);
+      qdl = vec_divqud_inline (y1, (vui64_t) z1);
+      q1 = (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+      // Undo normalization and y/2.
+      //q0 = (q1 << n) >> 63;
+      q0 = vec_slq (q1, zn);
+      q0 = vec_srqi (q0, 63);
+
+      // if (q0 != 0) q0 = q0 - 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpequq (q0, (vui128_t) zeros);
+	  q1 = vec_adduqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      t = vec_mulluq (q0, z);
+      t = vec_subuqm (y, t);
+      // if ((y - q0*z) >= z) q0 = q0 + 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpgtuq (z, t);
+	  q1 = vec_subuqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      return q0;
+    }
+}
+ * \endcode
+ *
+ * \paragraph int128_Divide_0_1_1_4 Divide Extended Quadword implementation
+ * The implementation of Vector Divide Extended Quadword is split into
+ * conditional code sections for P10 and P7-P9.
+ * For the P10 target we can use the PowerISA 3.1 vdiveuq instruction
+ * directly.
+ * For example:
+ * \code
+vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#else // _ARCH_PWR7 though _ARCH_PWR9
+ // ...
+#endif
+}
+ * \endcode
+ * \note We want to use the vec_dive () intrinsic if available.
+ * This allows the (GCC version 12 and later) compiler to
+ * do better code optimizations.
+ * For older compilers that support the -mcpu=power10 target,
+ * use in-line assembler.
+ *
+ * For PowerISA versions before 3.1 we need an implementation for
+ * 256-bit by 128-bit division.
+ * Divide Extended only provides the high order 128-bits (x) of the
+ * dividend. The low order 128-bits are implicitly supplied as 0s.
+ * Using doubleword operations, we can treat each 64-bit doubleword
+ * as a <I>digit</I> for long division.
+ * So the Divide Extended Quadword implementation is logically a
+ * 4-digit by 2-digit divide.
+ *
+ * The implementation uses the 128-bit by 64-bit
+ * (2 by 1 doubleword digit) division operation vec_divqud_inline()
+ * to generate quotient estimates for
+ * long division steps. This operation provides both
+ * the doubleword remainder and quotient in a single vector.
+ * In some cases this remainder can be used in the next long division
+ * step. For other cases the PVECLIB implementation also provides
+ * quadword unsigned integer multiplies (vec_muludq()) to verify
+ * quotient estimates are correct and compute remainders.
+ *
+ * \note The correct quotient (digit) is the unique unsigned integer
+ * that satisfies: dividend = (quotient × divisor) + remainder
+ *
+ * To simplify the logic and avoid traps,
+ * we look at 4 distinct cases.
+ * - overflow/zero divide
+ * - (x == 0) return quotient 0
+ * - divisor z < 2**64
+ * - divisor z >= 2**64
+ *
+ *For example:
+ * \code
+vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+ // _ARCH_PWR10 specific implementation
+#else // _ARCH_PWR7 though _ARCH_PWR9 implementation
+  // Inspired by:
+  // "Hacker's Delight, 2nd Edition,"
+  // Henry S. Warren, Jr, Addison Wesley, 2013.
+  // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+  // Adjusted for Divide Extended Quadword
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui64_t zdh, zdl, xdh, qdl, qdh;
+
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  zdh = vec_splatd ((vui64_t) z, VEC_DW_H);
+	  zdl = vec_splatd ((vui64_t) z, VEC_DW_L);
+          // (z < 2**64) simplifies to z >> 64 == 0UL
+	  if (vec_cmpud_all_eq (zdh, zeros))
+	    {
+	      // Special case for 3 digit by 1 digit long division
+	    }
+	  else
+	    {
+	      // full 4 digit by 2 digit long division
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made to divide any value by 0
+      // then the results are undefined. We return __UINT128_MAX__.
+      return mone;
+    }
+#endif
+}
+ * \endcode
+ * For any case where, (x >= z) the extended divide quotient can not be
+ * represented in 128-bit (divide overflow) or divide by 0,
+ * (z == 0) need to be avoided. Once overflow and
+ * zero divide are eliminated, we can check for (x == 0) as an
+ * opportunity to avoid unnecessary computation.
+ *
+ * The case; divisor (z < 2**64), the overflow test (x < z) insures
+ * (x < 2**64). This guarantees that the effective dividend
+ * (double quadword {(x, 128 0s}) is < 2**192.
+ * So (x < 2**192) / (z < 2**64) = (q < 2**128).
+ *
+ * For doubleword long division we can treat this as a 3 digit by
+ * 1 digit divide.
+ * While the dividend is 3 digit the low order 2 digits are implicit 0s.
+ * We also know that the high order dividend digit is nonzero
+ * (we already check for (x != 0)).
+ * The final quotient will be 2 doubleword digits.
+ *
+ * We can use vec_divqud_inline() for the long division in 2 steps.
+ * For example:
+ * \code
+	    {
+	      // x0 = x << 64;
+	      x0 = (vui128_t) vec_swapd ((vui64_t) x);
+	      // Here qdh = {(x0 % z) , (x0 / z)}
+	      qdh = vec_divqud_inline (x0, zdl);
+	      // vec_divqud already provides the remainder (k)
+	      // and the next dividend digit (x1) is 0
+	      // So k = x0 - q*z; ((k << 64) + x1);
+	      // Simplifies to:
+	      x1 = (vui128_t) vec_pasted (qdh, (vui64_t) x0);
+	      qdl = vec_divqud_inline (x1, zdl);
+	      //return (vui128_t) {qlh, qdl};
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+ * \endcode
+ * The first 2 dividend digits are divided by z. This generates the 1st
+ * quotient digit and a remainder. Since the 2nd and 3rd dividend
+ * digits are zero, we can use the 1st remainder directly
+ * (after shifting left 64-bits) as the 2nd dividend for long division,
+ * generating the 2nd quotient digit.
+ * The final 128-bit quotient is simply the concatenation of the 1st
+ * and 2nd quotient digits.
+ *
+ * The case; divisor >= 2**64, requires a 4 digit by 2 digit long
+ * division.
+ * Divide Extended only provides the 1st/2nd digits of the
+ * dividend. The 3rd/4th digits are implicitly supplied as
+ * doubleword 0s.
+ *
+ * This case is more complicate than the previous case because the
+ * divisor is two doubleword digits. The vec_divqud_inline() can
+ * generate a quotient digit estimate by dividing the high 2-digits
+ * of the dividend by the first digit of the divisor.
+ *
+ * There is an additional special case to consider where there is
+ * exposer to overflow on internal vec_divqud_inline() operations.
+ * This can occur as we are only using
+ * the high doubleword of the divisor in this divide and
+ * if ((x >> 64) >= ((z >> 64))) the quotient will be >= 2**64.
+ *
+ * For example while the quadword divide extended parameters may be:
+ * \code
+ quadword:	FFFFFFFFFFFFFFFF FFFFFFFFFFFFFFFE
+         ext-0s 0000000000000000 0000000000000000
+              / FFFFFFFFFFFFFFFF FFFFFFFFFFFFFFFF
+              = FFFFFFFFFFFFFFFF FFFFFFFFFFFFFFFE
+ * \endcode
+ * The intermediate divide estimate will be:
+ * \code
+ quadword:	FFFFFFFFFFFFFFFF FFFFFFFFFFFFFFFE
+              / FFFFFFFFFFFFFFFF
+            = 1 0000000000000000
+ * \endcode
+ * This is clearly a divide overflow where vec_divqud_inline() will
+ * truncate the quotient doubleword to 0 (the remainder overwrites the
+ * high doubleword of the result vector).
+ * We need to detect and correct for this case.
+ * In this case decrementing the quotient is the same as forcing the
+ * quotient doubleword to __UINT64_MAX__.
+ *
+ * Actually since we have already verified quadwords (x < z) in the
+ * outermost if test, the overflow test reduces to:
+ * ((x >> 64) == ((z >> 64))).
+ * here we can use a (faster) doubleword (x == z) compare then shift
+ * the compare boolean right 64-bits. This aligns the overflow boolean
+ * doubleword with quotient result from vec_divqud_inline().
+ * For example:
+ * \code
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+ * \endcode
+ * This test should execute out-of-order while the processor waits
+ * for the divides (vec_divqud_inline()) to complete.
+ *
+ * This quotient estimate may be incorrect (too high) and so needs to
+ * be verified (quotient * divisor) <= dividend).
+ * This requires multiplying the 64-bit Quotient estimate
+ * by the 128-bit divisor. The the product will be 192-bits and needs
+ * to be left justified to align with the dividend for subtract
+ * (compare/remainder calculation). We need to subtract the 192-bit
+ * product from the high-order 192-bits of the dividend to get correct
+ * results. Given the operations we have in the PowerISA and PVECLIB,
+ * it is simpler to use quadword operations.
+ * For example:
+ * \code
+              // q0 = qdh << 64
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+	      k1 = vec_muludq (&k, q0, z1);
+	      // Compute 1st quotient digit remainder
+	      // Also a double QW compare for {x1 || 0} >= {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+ * \endcode
+ * We shift the quotient estimate left 64-bits and use quadword
+ * multiply (vec_muludq()) to get the required 192-bit product
+ * alignment (left adjusted) in the 256-bit result {k || k1}.
+ *
+ * \note This uses a relatively expensive quadword multiply
+ * (vec_muludq ()) with double quadword product.
+ *
+ * It may be worthwhile to use doubleword multiplies to compute the
+ * required 128-bit by 64-bit multiply for the 192-bit product
+ * then shift this result into alignment.
+ * For example:
+ * \code
+	  {
+	    vui128_t l128, h128;
+	    vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+	    l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+	    h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+	    // 192-bit product of (128-bit) z1 * (64-bit) q-estimate
+	    k  = h128;
+	    k1 = vec_slqi (l128, 64);
+	  }
+ * \endcode
+ *
+ * Then double quadword subtract the product from the extended
+ * dividend {x1 || 0}.
+ * This gives the remainder and a carry which summarizes the compare
+ * {k || k1} <= {x1 || 0}.
+ * This carry can be converted into a 128-bit boolean for use in
+ * select logic if the quotient and remainder need to be corrected.
+ * For example:
+ * \code
+              // The remainder should be only 128-bits, so shift left 64
+	      x0 = vec_sldqi (x0, x2, 64);
+	      // Corrected quotient - 1
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      // Corrected remainder + divisor
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      // Select original or corrected quotient/reminder
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      x0 = vec_seluq (x0, x2, Bgt);
+              // Update qdh with corrected 1st quotient digit
+	      qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+ * \endcode
+ * The result is a corrected 1st quotient digit (in qdh) and 1st
+ * stage remainder (in x0). So we are ready to generate the 2nd
+ * quotient digit estimate.
+ * Divide the 1st stage remainder by the high doubleword of the divisor
+ * to generate the 2nd quotient digit estimate. Then concatenate the
+ * 1st and 2nd quotient digits into a quadword quotient estimate.
+ * For example:
+ * \code
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+ * \endcode
+ * Again the quotient estimate may be incorrect (too high) and so needs
+ * to be verified (quotient * divisor) <= dividend).
+ * Now we have a quadword (2-digit) quotient we need to multiply the
+ * quadword quotient by the quadword divisor for this verification.
+ * This double quadword product is compare to the (extended) double
+ * quadword dividend.
+ * We don't need the remainder for the result, but we do need to perform
+ * a double quadword subtract as the final carry is the indicator for
+ * great than compare.
+ * For example:
+ * \code
+	      k1 = vec_muludq (&k, q0, z1);
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+	      // q2 = qo - 1;
+	      q2 = vec_adduqm (q0, mone);
+	      // Select original or corrected quotient
+	      q0 = vec_seluq (q0, q2, Bgt);
+ * \endcode
+ * As the remainder is not required, we only execute two stages of
+ * subtract (extended) and write carry and then vec_setb_ncq() to
+ * set the boolean. The selected q0 value is the final result.
+ *
+ * The complete sequence for the case; divisor >= 2**64:
+ * \code
+	    {
+	      const vui64_t ones = vec_splat_u64 (1);
+	      vui128_t k1, k2, x2, t2, q2;
+	      vui64_t xdh, zdh;
+	      vb128_t Bgt;
+	      vb64_t Beq, Beq2;
+	      // Here z >= 2**64, Normalize the divisor so MSB is 1
+	      // Could use vec_clzq(), but we know  z >= 2**64, So:
+	      zn = (vui128_t) vec_clzd ((vui64_t) z);
+	      // zn = zn >> 64;, So we can use it with vec_slq ()
+	      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+
+	      // Normalize dividend and divisor
+	      x1 = vec_slq (x, zn);
+	      z1 = vec_slq (z, zn);
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+	      // Compute 1st digit remainder
+	      k1 = vec_muludq (&k, q0, z1);
+	      // Also a double QW compare for {x1 || 0} > {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+
+	      x0 = vec_sldqi (x0, x2, 64);
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      //t2 = vec_subuqm (x0, (vui128_t) zdh);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+	      qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      k1 = vec_muludq (&k, q0, z1);
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      return q0;
+	    }
+ * \endcode
+ *
+ * \paragraph int128_Divide_0_1_1_5 Quadword Modulo implementation
+ *
+ * Now that we have working quadword divide
+ * operation we can leverage this for
+ * quadword modulo.
+ * The implementation of Vector Divide Quadword is split into
+ * conditional code sections for P10 and P7-P9.
+ * For the P10 target we can use the PowerISA 3.1 vmoduq instruction
+ * directly.
+ * For example:
+ * \code
+vui128_t test_vec_moduq (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmoduq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // defined (_ARCH_PWR7/8/9)
+  vui128_t R;
+  vui128_t r2, q2;
+  q2 = vec_vdivuq_inline (y, z);
+
+  r2 = vec_mulluq (q2, z);
+  R  = vec_subuqm (y, r2);
+  return R;
+#endif
+}
+ * \endcode
+ * Otherwise (for P7/8/9) we could use the classic
+ * remainder = dividend - (quotient × divisor) technique.
+ * By using the PVECLIB operations vec_vdivuq(), vec_mulluq(),
+ * and vec_subuqm() (above).
+ * We will depend on the PVECLIB implementations to compile to;
+ * - the correct implementation for each processor target,
+ * - while leveraging processor/ISA specific optimization where possible.
+ *
+ * A better solution would start with and modify the
+ * none (_ARCH_PWR10) code section from vec_vdivuq_inline() to
+ * return the remainder instead of the quotient.
+ * The vec_modqud_inline() implementation will have the same
+ * 3 distinct cases:
+ * - divisor < 2**64 and
+ *   - dividend < 2**64
+ *   - dividend >= 2**64
+ * - divisor >= 2**64
+ *
+ * For the cases divisor < 2**64 we use vec_divqud_inline() to compute
+ * the quotient. But vec_divqud_inline() also returns
+ * remainders appropriate for vec_moduq_inline().
+ * For example the case dividend < 2**64:
+ * \code
+ 	  // return the quotient was
+ 	  // return (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+ 	  // replace with return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ * \endcode
+ * and the case dividend >= 2**64:
+ * \code
+ 	  // return (q1 << 64) + q0; was
+ 	  // return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+ 	  // replace with return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ * \endcode
+ *
+ * For the divisor >= 2**64 case a q0 estimate is computed then verified
+ * by computing the remainder and comparing this to the original divisor.
+ * For example:
+ * \code
+       t = vec_mulluq (q0, z);
+       r0 = vec_subuqm (y, t);
+       // if ((y - q0*z) >= z) q0 = q0 + 1;
+ 	{
+ 	  vb128_t QB;
+ 	  QB = vec_cmpgtuq (z, r0);
+ 	  // q1 = vec_subuqm (q0, mone);
+ 	  // q0 = vec_seluq (q1, q0, QB);
+ 	  t  = vec_subuqm (r0, z);
+ 	  r0 = vec_seluq (t, r0, QB);
+ 	}
+       return r0;
+ * \endcode
+ * Note we need to add code to correct the initial remainder if the
+ * quotient estimate (q0) is incorrect (to low).
+ * Then return this remainder (r0) as the result.
+ *
+ * \paragraph int128_Divide_0_1_1_6 Double Quadword Divide implementation
+ *
+ * Now that we have working quadword divide and divide extended
+ * operations we can leverage these in implementations of long division
+ * for double quadword divide/modulo.
+ * We will use the PowerISA Programming Note for divide extended as a
+ * guide and use the PVECLIB operations vec_vdivuqe_inline() and
+ * vec_vdivuq_inline() in this implementation.
+ * This will use the P10 hardware instructions for
+ * the -mcpu=power10 target.
+ * Otherwise the software implementation is used for
+ * the power7/8/9 targets.
+ *
+ * For example:
+ * \code
+__VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result;
+  vui128_t Q, R;
+  vui128_t Qt, Rt;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+  const vui128_t ones = {(__int128) 1};
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = test_vec_divuqe (x, z);
+  q2 = test_vec_divuq  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+  // Corrected Quotient returned for divduq.
+  Qt = vec_adduqm (Q, ones);
+  Q = vec_seluq (Q, Qt, CC);
+  // Corrected Remainder returned for modduq.
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  // Return both Remainder and Quotient as Vector Pair.
+  result.vx0 = Q;
+  result.vx1 = R;
+  return result;
+}
+ * \endcode
+ *
+ * \note The PowerISA Programming Note for divide extended describes
+ * double-precision long division which generates both Quotient and
+ * Remainder.
+ *
+ * We can leverage this as single implementation of
+ * divide double quadword that returns a vector pair {R, Q} result.
+ * This is useful for multiple quadword long division where we can use
+ * the remainder directly in next step.
+ * We can also use this in-line implementation of
+ * divide and modulo double quadword
+ * which return a single (Q or R) vector.
+ *
+ * For example:
+ * \code
+vui128_t test_vec_divduq (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
+  return result.vx0;
+}
+
+vui128_t test_vec_modduq (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
+  return result.vx1;
+}
+ * \endcode
+ * The compiler should elide any machine instructions
+ * (generated for vec_divdqu_inline()) not actually
+ * needed for the specific single quadword result.
+ *
  * \section int128_examples_0_1 Vector Quadword Examples
  *
  * The PowerISA Vector facilities provide logical and integer
@@ -1610,7 +3110,7 @@ __test_madduq_y_PWR9 (vui128_t *mulu, vui128_t a, vui128_t b, vui128_t c)
  * values into a complete number.
  *
  * For example, from the __int128 value (39 decimal digits):
- * - Detect the sign and set a char to "+' or '-'
+ * - Detect the sign and set a char to '+' or '-'
  * - Then from the absolute value, divide/modulo by 10000000000000000. Producing:
  *   - The highest 7 digits (t_high)
  *   - The middle 16 digits (t_mid)
@@ -1843,7 +3343,7 @@ vec_divuq_10e31 (vui128_t vra)
   return result;
 }
  * \endcode
- * As the vec_mulhuq() operation is relatively expensive and we expect
+ * As the vec_() operation is relatively expensive and we expect
  * most __int128 values to 31-digits or less, using a compare to bypass
  * the multiplication and return the 0 quotient, seems a prudent
  * optimization.
@@ -2426,6 +3926,20 @@ example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
     (((unsigned __int128) __q0) * 10000000000000000UL) \
     + ((unsigned __int128) __q1) )
 
+/*! \brief A vector representation of a 128-bit unsigned integer pair.
+ *
+ *  A homogeneous aggregate of 2 x 128-bit unsigned integer fields.
+ *  The low order field is named vx0, progressing to the high order
+ *  field vx1.
+ */
+typedef struct
+{
+  ///@cond INTERNAL
+  vui128_t vx1; // R
+  vui128_t vx0; // Q
+  ///@endcond
+} __VEC_U_128P;
+
 ///@cond INTERNAL
 static inline vui128_t vec_addecuq (vui128_t a, vui128_t b, vui128_t ci);
 static inline vui128_t vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci);
@@ -2437,8 +3951,13 @@ static inline vb128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
 static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_divuq_10e31 (vui128_t vra);
 static inline vui128_t vec_divuq_10e32 (vui128_t vra);
+static inline vui128_t vec_vdivuqe_inline (vui128_t x, vui128_t z);
+static inline vui128_t vec_vdivuq_inline (vui128_t y, vui128_t z);
+static inline vui128_t vec_vmoduq_inline (vui128_t y, vui128_t z);
 static inline vui128_t vec_maxuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_minuq (vui128_t a, vui128_t b);
+static inline __VEC_U_128P
+vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z);
 static inline vui128_t vec_moduq_10e31 (vui128_t vra, vui128_t q);
 static inline vui128_t vec_moduq_10e32 (vui128_t vra, vui128_t q);
 static inline vui128_t vec_muleud (vui64_t a, vui64_t b);
@@ -2452,6 +3971,7 @@ static inline vb128_t vec_setb_cyq (vui128_t vcy);
 static inline vb128_t vec_setb_ncq (vui128_t vcy);
 static inline vb128_t vec_setb_sq (vi128_t vra);
 static inline vi128_t vec_selsq (vi128_t vra, vi128_t vrb, vb128_t vrc);
+static inline vui128_t vec_seluq (vui128_t vra, vui128_t vrb, vb128_t vrc);
 static inline vui128_t vec_sldq (vui128_t vrw, vui128_t vrx,
 				 vui128_t vrb);
 static inline vui128_t vec_sldqi (vui128_t vrw, vui128_t vrx,
@@ -2466,6 +3986,8 @@ static inline vui128_t vec_vmsumeud (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vmuleud (vui64_t a, vui64_t b);
 static inline vui128_t vec_vmuloud (vui64_t a, vui64_t b);
+static inline vui128_t vec_vmsumcud_inline (vui64_t a, vui64_t b, vui128_t c);
+static inline vui128_t vec_vmsumudm_inline (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vsldbi (vui128_t vra, vui128_t vrb,
 				   const unsigned int shb);
 ///@endcond
@@ -4171,6 +5693,40 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
   return ((vui128_t) t);
 }
 
+/** \brief Vector Divide Double Unsigned Quadword.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to from the 256-bit dividend and the
+ *  quotient = {x || y} / z.
+ *  The quotient is returned as a
+ *  vector unsigned __int128.
+ *
+ *  \note The quotient element result may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note See vec_moddivduq() for implementation details.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | ~??   |1/40 cycle|
+ *  |power9   | ~??   |1/9 cycle |
+ *  |power10  | 61-104|1/66 cycle|
+ *
+ *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z 128-bit vector of 128-bit element for the divisor.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_divduq (vui128_t x, vui128_t y, vui128_t z)
+{
+    __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
+    return result.vx0;
+}
+
 /** \brief Vector Divide by const 10e31 Signed Quadword.
  *
  *  Compute the quotient of a 128 bit values vra / 10e31.
@@ -4463,6 +6019,66 @@ vec_divuq_10e32 (vui128_t vra)
     result = (vui128_t) { (__int128) 0 };
 
   return result;
+}
+
+/** \brief Vector Divide Extended Unsigned Quadword.
+ *
+ *  Divide the [zero] extended quadword element x by the
+ *  corresponding quadword element z. The extended dividend is the
+ *  128-bit element from x extended to the right with 128-bits of 0b.
+ *  This is effectively a 256x128 bit unsigned divide
+ *  returning 128-bit quotient.
+ *  The quotient of the extended divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |176-236|    NA    |
+ *  |power9   |127-163|   NA     |
+ *  |power10  | 22-61 |1/13 cycle|
+ *
+ *  @param x 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_divuqe (vui128_t x, vui128_t z)
+{
+  return vec_vdivuqe_inline (x, z);
+}
+
+
+/** \brief Vector Divide Unsigned Quadword.
+ *
+ *  Divide the quadword elements y by the
+ *  corresponding quadword elements of z.
+ *  This is effectively a vectorized 128x128 bit unsigned divide
+ *  returning a 128-bit quotient.
+ *  The quotient of the divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 34-141|    NA    |
+ *  |power9   | 51-114|   NA     |
+ *  |power10  | 22-61 |1/13 cycle|
+ *
+ *  @param y 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+
+static inline vui128_t
+vec_divuq (vui128_t y, vui128_t z)
+{
+  return vec_vdivuq_inline  (y, z);
 }
 
 /** \brief Vector Maximum Signed Quadword.
@@ -4764,6 +6380,136 @@ vec_moduq_10e32 (vui128_t vra, vui128_t q)
     result = vra;
 
   return result;
+}
+
+/** \brief Vector Divide/Modulo Double Quadword Unsigned.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword remainder and Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to from the 256-bit dividend and the
+ *  remainder =  {x || y} % z while the
+ *  quotient = {x || y} / z.
+ *  The {remainder, quotient} is returned as a
+ *  structure of two vector unsigned __int128 values.
+ *
+ *  \note The results result may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |113-303|   NA     |
+ *  |power10  | 69-114|1/66 cycle|
+ *
+ *  @param x vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z vector unsigned __int128 for the divisor.
+ *  @return The vector unsigned __int128 pair structure {remainder, quotient}.
+ */
+static inline __VEC_U_128P
+vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result;
+  vui128_t Q, R;
+  vui128_t Rt;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = vec_vdivuqe_inline (x, z);
+  q2 = vec_vdivuq_inline  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+  // Corrected Quotient returned for divduq.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  result.vx0 = Q;
+// Corrected Remainder returned for modduq.
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  result.vx1 = R;
+  // Return both Remainder and Quotient as Vector Pair.
+  return result;
+}
+
+/** \brief Vector Modulo Double Unsigned Quadword.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword remainder.
+ *  The quadword element of vectors x and y are
+ *  concatenated to from the 256-bit dividend and the
+ *  remainder = {x || y} % z.
+ *  The remainder is returned as a
+ *  vector unsigned __int128.
+ *
+ *  \note The remainder element result may be undefined if;
+ *  the remainder cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note See vec_moddivduq() for implementation details.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |123-325|   NA     |
+ *  |power10  | 61-104|1/66 cycle|
+ *
+ *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z 128-bit vector of 128-bit element for the divisor.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_modduq (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
+  return result.vx1;
+}
+
+/** \brief Vector Modulo Unsigned Quadword.
+ *
+ *  Divide the quadword element y by the
+ *  corresponding quadword element of z
+ *  and return the remainder.
+ *  This is effectively a vectorized 128x128 bit unsigned modulo
+ *  returning 128-bit remainders.
+ *  The remainder of the divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 76-189|   NA     |
+ *  |power9   | 67-144|   NA     |
+ *  |power10  | 25-68 |1/16 cycle|
+ *
+ *  @param y 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The remainder in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_moduq (vui128_t y, vui128_t z)
+{
+  return vec_vmoduq_inline (y, z);
 }
 
 /** \brief Vector Multiply by 10 & write Carry Unsigned Quadword.
@@ -5182,7 +6928,7 @@ vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
 
 /** \brief Vector Multiply-Sum Unsigned Doubleword Modulo.
  *
- *  compute the even and odd 128-bit products of doubleword 64-bit
+ *  Compute the even and odd 128-bit products of doubleword 64-bit
  *  element values from a, b.
  *  Then compute the 128-bit sum
  *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
@@ -5394,7 +7140,8 @@ vec_muludm (vui64_t vra, vui64_t vrb)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 56-64 | 1/cycle  |
- *  |power9   | 33-39 | 1/cycle  |
+ *  |power9   | 27-36 | 1/cycle  |
+ *  |power10  | 23-29 | 2/cycle  |
  *
  *  @param a 128-bit vector treated as unsigned __int128.
  *  @param b 128-bit vector treated as unsigned __int128.
@@ -5408,31 +7155,54 @@ vec_mulhuq (vui128_t a, vui128_t b)
    * The high 128 bits are accumulated in t and the low 128-bits
    * in tmq. The high 128-bits are the return value.
    */
+#ifdef _ARCH_PWR10
+  const vui64_t zero = { 0, 0 };
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tx;
+  vui128_t txl, txh, tc1;
+  vui128_t thh, tll;
+  /* multiply the high and low 64-bits of a and b.  */
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  /* multiply and sum the middle products with carry-out */
+  tx  = vec_vmsumudm_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  tc1 = vec_vmsumcud_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  /* Align the middle product and carry-out for double quadword sum.
+     This is effectively a double quadword rotate 64-bits */
+  txl = vec_sldqi ( tx,  tc1, 64);
+  txh = vec_sldqi ( tc1, tx,  64);
+  /* Double quadword sum for 256-bit product */
+  tc1 = vec_addcuq (tll, txl);
+  //tlq  = vec_adduqm (tll, txl);
+  thq  = vec_addeuqm (thh, txh, tc1);
+  // Return only the high 128-bits
+  t = (vui32_t) thq;
+  //tmq = (vui32_t) tlq;
+#else
 #ifdef _ARCH_PWR9
   const vui64_t zero = { 0, 0 };
-  vui64_t b_swap = vec_swapd ((vui64_t) b);
-  vui128_t tmh, tab, tba, tb0, tc1, tc2, tmq;
-  /* multiply the low 64-bits of a and b.  For PWR9 this is just
-   * vmsumudm with conditioned inputs.  */
-  tmq = vec_vmuloud ((vui64_t) a, (vui64_t) b);
-  /* compute the 2 middle partial projects.  Can't directly use
-   * vmsumudm here because the sum of partial products can overflow.  */
-  tab = vec_vmuloud ((vui64_t) a, b_swap);
-  tba = vec_vmuleud ((vui64_t) a, b_swap);
-  t   = (vui32_t) vec_adduqm (tab, tba);
-  tc1 = vec_addcuq (tab, tba);
-  tmh = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tmq);
-  t   = (vui32_t ) vec_adduqm ((vui128_t) t, tmh);
-  tc2 = vec_addcuq ((vui128_t) t, tmh);
-  tc1 = (vui128_t) vec_vadduwm ((vui32_t) tc1, (vui32_t) tc2);
-  /* result = t[l] || tmq[l].  */
-  tmq = (vui128_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
-  /* we can use multiply sum here because the high product plus the
-   * high sum of middle partial products can't overflow.  */
-  t   = (vui32_t) vec_permdi ((vui64_t) tc1, (vui64_t) t, 2);
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t tll, tab, tba, tmq, tmc, tb0;
+  // multiply the low 64-bits of a and b.  For PWR9 this is just
+  // vmsumudm with conditioned inputs.  */
+  tll = vec_vmuloud ((vui64_t) a, (vui64_t) b);
+  // compute the 2 middle partial projects plus high dw of tll.
+  // This sum will be 129-bits including a carry.
+  // Can't directly use vmsumudm here because the sum of partial
+  // products can overflow.  */
+  tab = vec_vmuloud (a_swap, (vui64_t) b);
+  // tba = (a[h] * b[l]) + (a[l] * 0) + (tll[h]>>64).
+  tba = vec_vmaddeud (a_swap, (vui64_t) b, (vui64_t) tll);
+  tmq = vec_adduqm (tab, tba);
+  tmc = vec_addcuq (tab, tba);
+  // Shift tmc||tmq left 64-bits to align with high quadword
+  tmq = vec_sldqi ( tmc, tmq,  64);
+  // Fake vec_vmaddeud ((vui64_t) a, (vui64_t) b, (vui128_t) tmq)
   tb0 = (vui128_t) vec_mrgahd ((vui128_t) b, (vui128_t) zero);
-  /* sum = (a[h] * b[h]) + (a[l] * 0) + (tc1[l] || t[h]).  */
-  t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, (vui128_t) t);
+  // sum = ((a[h] * b[h]) + (a[l] * 0) + tmc).
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, (vui64_t) tb0, tmq);
 #else
 #ifdef _ARCH_PWR8
   vui32_t tsw;
@@ -5551,6 +7321,7 @@ vec_mulhuq (vui128_t a, vui128_t b)
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
 #endif
 #endif
+#endif
   return ((vui128_t) t);
 }
 
@@ -5563,6 +7334,7 @@ vec_mulhuq (vui128_t a, vui128_t b)
  *  |--------:|:-----:|:---------|
  *  |power8   | 42-48 | 1/cycle  |
  *  |power9   | 16-20 | 2/cycle  |
+ *  |power10  | 13-18 | 2/cycle  |
  *
  *  @param a 128-bit vector treated as unsigned __int128.
  *  @param b 128-bit vector treated as unsigned __int128.
@@ -5585,11 +7357,12 @@ vec_mulluq (vui128_t a, vui128_t b)
   tmq = (vui32_t) vec_vmuloud ((vui64_t) a, (vui64_t) b);
   /* we can use multiply sum here because we only need the low 64-bits
    * and don't care if we lose the carry / overflow.  */
-  t   = (vui32_t) vec_mrgahd ((vui128_t) zero, (vui128_t) tmq);
-  /* sum = (a[h] * b[l]) + (a[l] * b[h]) + (zero || tmq[h]).  */
-  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) t);
-  /* result = t[l] || tmq[l].  */
-  tmq = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) tmq);
+  /* sum = (a[h] * b[l]) + (a[l] * b[h])) + zero).  */
+  t   = (vui32_t) vec_msumudm ((vui64_t) a, b_swap, (vui128_t) zero);
+  /* result = sum ({tmq[h] + t[l]} , {tmq[l] + zero}).  */
+  /* Shift t left 64-bits and use doubleword add. */
+  t   = (vui32_t) vec_mrgald ((vui128_t) t, (vui128_t) zero);
+  tmq = (vui32_t) vec_addudm ((vui64_t) t, (vui64_t) tmq);
 #else
 #ifdef _ARCH_PWR8
   /* We use Vector Multiply Even/Odd Unsigned Word to compute
@@ -5740,6 +7513,7 @@ vec_mulluq (vui128_t a, vui128_t b)
  *  |--------:|:-----:|:---------|
  *  |power8   | 52-56 | 1/cycle  |
  *  |power9   | 24-30 | 1/cycle  |
+ *  |power10  | 23-29 | 2/cycle  |
  *
  *  @param *mulu pointer to vector unsigned __int128 to receive the
  *  upper 128-bits of the product.
@@ -5757,24 +7531,45 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
    * address of the 1st parm. The low 128-bits are the return
    * value.
    */
-#ifdef _ARCH_PWR9
+#ifdef _ARCH_PWR10
   const vui64_t zero = { 0, 0 };
   vui64_t a_swap = vec_swapd ((vui64_t) a);
   vui128_t thq, tlq, tx;
-  vui128_t t0l, tc1;
+  vui128_t txl, txh, tc1;
+  vui128_t thh, tll;
+  /* multiply the high and low 64-bits of a and b.  */
+  tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
+  thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
+  /* multiply and sum the middle products with carry-out */
+  tx  = vec_vmsumudm_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  tc1 = vec_vmsumcud_inline  ((vui64_t)a_swap, (vui64_t)b,
+			      (vui128_t)zero);
+  /* Align the middle product and carry-out for double quadword sum.
+     This is effectively a double quadword rotate 64-bits */
+  txl = vec_sldqi ( tx,  tc1, 64);
+  txh = vec_sldqi ( tc1, tx,  64);
+  /* Double quadword sum for 256-bit product */
+  tc1 = vec_addcuq (tll, txl);
+  tlq  = vec_adduqm (tll, txl);
+  thq  = vec_addeuqm (thh, txh, tc1);
+
+  t = (vui32_t) thq;
+  tmq = (vui32_t) tlq;
+#else
+#ifdef _ARCH_PWR9
+  vui64_t a_swap = vec_swapd ((vui64_t) a);
+  vui128_t thq, tlq, tx;
+  vui128_t tc1;
   vui128_t thh, thl, tlh, tll;
   /* multiply the low 64-bits of a and b.  For PWR9 this is just
    * vmsumudm with conditioned inputs.  */
   tll = vec_vmuloud ((vui64_t)a, (vui64_t)b);
   thh = vec_vmuleud ((vui64_t)a, (vui64_t)b);
   thl = vec_vmuloud (a_swap, (vui64_t)b);
-  tlh = vec_vmuleud (a_swap, (vui64_t)b);
-  /* sum the two middle products (plus the high 64-bits of the low
-   * product.  This will generate a carry that we need to capture.  */
-  t0l   = (vui128_t) vec_mrgahd ( (vui128_t) zero, tll);
+  tlh = vec_vmaddeud (a_swap, (vui64_t)b, (vui64_t)tll);
   tc1 = vec_addcuq (thl, tlh);
   tx   = vec_adduqm (thl, tlh);
-  tx   = vec_adduqm (tx, t0l);
   /* result = t[l] || tll[l].  */
   tlq = (vui128_t) vec_mrgald ((vui128_t) tx, (vui128_t) tll);
   /* Sum the high product plus the high sum (with carry) of middle
@@ -5941,6 +7736,7 @@ vec_muludq (vui128_t *mulu, vui128_t a, vui128_t b)
   t_odd = vec_sld (z, t_odd, 14);
   /* add the top 128 bits of even / odd partial products */
   t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#endif
 #endif
 #endif
   *mulu = (vui128_t) t;
@@ -6785,18 +8581,6 @@ vec_slqi (vui128_t vra, const unsigned int shb)
   if (shb < 128)
     {
       vui8_t lshift;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-      lshift = (vui8_t) vec_splats((unsigned int) shb);
-#if (__GNUC__ >= 12)
-      result = (vui8_t) vec_sl (vra, (vui128_t) lshift);
-#else
-      __asm__(
-	  "vslq %0,%1,%2;\n"
-	  : "=v" (result)
-	  : "v" (vra), "v" (lshift)
-	  : );
-#endif
-#else
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
 	  /* When shifting an multiple of 8 bits (octet), use Vector
@@ -6812,6 +8596,18 @@ vec_slqi (vui128_t vra, const unsigned int shb)
 	}
       else
 	{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+          lshift = (vui8_t) vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+          result = (vui8_t) vec_sl (vra, (vui128_t) lshift);
+#else
+	  __asm__(
+	      "vslq %0,%1,%2;\n"
+	      : "=v" (result)
+	      : "v" (vra), "v" (lshift)
+	      : );
+#endif
+#else
 	  /* Load the shift const in a vector.  The bit level shifts
 	   require the shift amount is splatted to all 16-bytes of
 	   the shift control.  */
@@ -6828,8 +8624,8 @@ vec_slqi (vui128_t vra, const unsigned int shb)
 
 	  /* Vector Shift Left by bits 125-127 of lshift.  */
 	  result = vec_sll (result, lshift);
-	}
 #endif
+	}
     }
   else
     { /* shifts greater then 127 bits return zeros.  */
@@ -7515,6 +9311,414 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
   return ((vui128_t) t);
 }
 
+/** \brief Vector Divide Extended Unsigned Quadword.
+ *
+ *  Divide the [zero] extended quadword element x by the
+ *  corresponding quadword element z. The extended dividend is the
+ *  128-bit element from x extended to the right with 128-bits of 0b.
+ *  This is effectively a 256x128 bit unsigned divide
+ *  returning 128-bit quotient.
+ *  The quotient of the extended divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |176-236|   NA     |
+ *  |power9   |127-163|   NA     |
+ *  |power10  | 22-61 |1/13 cycle|
+ *
+ *  @param x 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_vdivuqe_inline (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#else // _ARCH_PWR7 and higher
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t x0, x1, z1, q0, k, t, zn;
+  vui64_t zdh, zdl, qdl, qdh;
+
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  zdh = vec_splatd ((vui64_t) z, VEC_DW_H);
+	  zdl = vec_splatd ((vui64_t) z, VEC_DW_L);
+
+	  if (/*z >> 64 == 0UL*/vec_cmpud_all_eq (zdh, zeros))
+	    {
+	      x0 = (vui128_t) vec_swapd ((vui64_t) x);
+	      qdh = vec_divqud_inline (x0, zdl);
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = x1 - q1*z; ((k << 64) + x0);
+	      // Simplifies to:
+	      x1 = (vui128_t) vec_pasted (qdh, (vui64_t) x0);
+	      qdl = vec_divqud_inline (x1, zdl);
+	      //return (vui128_t) {qlh, qdl};
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	  else
+	    {
+	      const vui64_t ones = vec_splat_u64 (1);
+	      vui128_t k1, x2, t2, q2;
+	      vb128_t Bgt;
+	      vb64_t Beq;
+	      // Here z >= 2**64, Normalize the divisor so MSB is 1
+	      // Could use vec_clzq(), but we know  z >= 2**64, So:
+	      zn = (vui128_t) vec_clzd ((vui64_t) z);
+	      // zn = zn >> 64;, So we can use it with vec_slq ()
+	      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+
+	      // Normalize dividend and divisor
+	      x1 = vec_slq (x, zn);
+	      z1 = vec_slq (z, zn);
+
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+	      // q0 = qdh << 64
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+	      // Compute 1st digit remainder
+	      // {k, k1}  = vec_muludq (z1, q0);
+	      { // Optimized for 128-bit by 64-bit multiply
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * q-estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // Also a double QW compare for {x1 || 0} > {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+
+	      x0 = vec_sldqi (x0, x2, 64);
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      //t2 = vec_subuqm (x0, (vui128_t) zdh);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+	      qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+	      //x0 = vec_sldqi (x0, x2, 64);
+
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      k1 = vec_muludq (&k, q0, z1);
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      //x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      //x0 = vec_subeuqm (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      return q0;
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made divide any value by 0
+      // then the results are undefined. We use __UINT128_MAX__.
+      return mone;
+    }
+#endif
+}
+
+/** \brief Vector Divide Unsigned Quadword.
+ *
+ *  Divide the quadword elements y by the
+ *  corresponding quadword elements of z.
+ *  This is effectively a vectorized 128x128 bit unsigned divide
+ *  returning a 128-bit quotient.
+ *  The quotient of the divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 34-141|   NA     |
+ *  |power9   | 51-114|   NA     |
+ *  |power10  | 22-61 |1/13 cycle|
+ *
+ *  @param y 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+
+static inline vui128_t
+vec_vdivuq_inline (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_div (y, z);
+#else
+  __asm__(
+      "vdivuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // (_ARCH_PWR7)
+ // See "Hacker's Delight, 2nd Edition,"
+ // Henry S. Warren, Jr, Addison Wesley, 2013.
+ // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+ //
+ // Here we will use long division by doubleword to compute the
+ // quadword division. We use the 128 by 64 division operation
+ // vec_divqud_inline() for 3 distinct cases.
+ // - divisor < 2**64 and
+ //   - dividend < 2**64
+ //   - dividend >= 2**64
+ // - divisor >= 2**64
+ // This also allows the use of doubleword operations for permutes,
+ // compares, and count leading zeros.
+ // It does require some quadword shifts, add/subtract, and in one case
+ // multiply.
+  const vui64_t zeros = vec_splat_u64(0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+  vui128_t y0, y1, z1, q0, q1, k, t, zn;
+  vui64_t zdh, zdl, ydh, qdl, qdh;
+
+  ydh = vec_splatd((vui64_t)y, VEC_DW_H);
+  zdh = vec_splatd((vui64_t)z, VEC_DW_H);
+  zdl = vec_splatd((vui64_t)z, VEC_DW_L);
+
+  if (vec_cmpud_all_eq (zdh, zeros)) // (z >> 64) == 0UL
+    {
+      if (vec_cmpud_all_lt (ydh, zdl)) // (y >> 64) < z
+	{
+	  // Here qdl = {(y % z) || (y / z)}
+	  qdl = vec_divqud_inline (y, zdl);
+	  // return the quotient
+	  return (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+	}
+      else
+	{
+	  //y1 = y >> 64;
+	  y1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, y);
+	  // y0 = y & lmask;
+	  y0 = (vui128_t) vec_mrgald ((vui128_t) zeros, y);
+	  //q1 = scalar_divqud (y1, (unsigned long long) z) & lmask;
+	  // Here qdh = {(y1 % z) || (y1 / z)}
+	  qdh = vec_divqud_inline (y1, zdl);
+	  // vec_divqud already provides the remainder in qdh[1]
+	  // So; k = y1 - q1*z; ((k << 64) + y0);
+	  // Simplifies to:
+	  k = (vui128_t) vec_pasted (qdh, (vui64_t) y0);
+	  // q0 = scalar_divqud ((k << 64) + y0, (unsigned long long) z) & lmask;
+	  qdl = vec_divqud_inline (k, zdl);
+	  //return (q1 << 64) + q0;
+	  return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	}
+    }
+  else
+    {
+      // Here z >= 2**64, Normalize the divisor so MSB is 1
+      // Could use vec_clzq(), but we know  z >= 2**64, So:
+      zn = (vui128_t) vec_clzd ((vui64_t) z);
+      // zn = zn >> 64, So we can use it with vec_slq ()
+      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+      //z1 = (z << n) >> 64;
+      z1 = vec_slq (z, zn);
+
+      //y1 = y >> 1; 	// to insure no overflow
+      y1 = vec_srqi (y, 1);
+      // q1 = scalar_divdud (y1, (unsigned long long) z1) & lmask;
+      qdl = vec_divqud_inline (y1, (vui64_t) z1);
+      q1 = (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+      // Undo normalization and y/2.
+      //q0 = (q1 << n) >> 63;
+      q0 = vec_slq (q1, zn);
+      q0 = vec_srqi (q0, 63);
+
+      // if (q0 != 0) q0 = q0 - 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpequq (q0, (vui128_t) zeros);
+	  q1 = vec_adduqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      t = vec_mulluq (q0, z);
+      t = vec_subuqm (y, t);
+      // if ((y - q0*z) >= z) q0 = q0 + 1;
+	{
+	  vb128_t QB;
+	  QB = vec_cmpgtuq (z, t);
+	  q1 = vec_subuqm (q0, mone);
+	  q0 = vec_seluq (q1, q0, QB);
+	}
+      return q0;
+    }
+#endif
+}
+
+/** \brief Vector Modulo Unsigned Quadword.
+ *
+ *  Divide the quadword element y by the
+ *  corresponding quadword element of z
+ *  and return the remainder.
+ *  This is effectively a vectorized 128x128 bit unsigned modulo
+ *  returning 128-bit remainders.
+ *  The remainder of the divide is returned as a vector
+ *  unsigned __int128.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 34-141|   NA     |
+ *  |power9   | 51-124|   NA     |
+ *  |power10  | 25-68 |1/16 cycle|
+ *
+ *  @param y 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The remainder in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_vmoduq_inline (vui128_t y, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mod (y, z);
+#else
+  __asm__(
+      "vmoduq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (y), "v" (z)
+      : );
+#endif
+  return res;
+#else // defined (_ARCH_PWR7)
+  // inspired by:
+  // "Hacker's Delight, 2nd Edition,"
+  // Henry S. Warren, Jr, Addison Wesley, 2013.
+  // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+  // basically perform the long division as in vec_divuq but return
+  // the remainder.
+   const vui64_t zeros = vec_splat_u64(0);
+   const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
+   vui128_t y0, y1, z1, r0, q0, q1, k, t, zn;
+   vui64_t zdh, zdl, ydh, qdl, qdh;
+
+   ydh = vec_splatd((vui64_t)y, VEC_DW_H);
+   zdh = vec_splatd((vui64_t)z, VEC_DW_H);
+   zdl = vec_splatd((vui64_t)z, VEC_DW_L);
+
+   if (vec_cmpud_all_eq (zdh, zeros)) // (z >> 64) == 0UL
+     {
+       if (vec_cmpud_all_lt (ydh, zdl)) // (y >> 64) < z
+ 	{
+ 	  // Here qdl = {(y % z) || (y / z)}
+ 	  qdl = vec_divqud_inline (y, zdl);
+ 	  // return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ 	}
+       else
+ 	{
+ 	  //y1 = y >> 64;
+ 	  y1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, y);
+ 	  // y0 = y & lmask;
+ 	  y0 = (vui128_t) vec_mrgald ((vui128_t) zeros, y);
+ 	  //q1 = scalar_divqud (y1, (unsigned long long) z) & lmask;
+ 	  // Here qdh = {(y1 % z) || (y1 / z)}
+ 	  qdh = vec_divqud_inline (y1, zdl);
+ 	  // vec_divqud already provides the remainder in qdh[1]
+ 	  // So; k = y1 - q1*z; ((k << 64) + y0);
+ 	  // Simplifies to:
+ 	  k = (vui128_t) vec_pasted (qdh, (vui64_t) y0);
+ 	  // q0 = scalar_divqud ((k << 64) + y0, (unsigned long long) z) & lmask;
+ 	  qdl = vec_divqud_inline (k, zdl);
+ 	  // return the remainder
+	  return (vui128_t) vec_mrgahd((vui128_t)zeros, (vui128_t)qdl);
+ 	}
+     }
+   else
+     {
+       // Here z >= 2**64, Normalize the divisor so MSB is 1
+       // Could use vec_clzq(), but we know  z >= 2**64, So:
+       zn = (vui128_t) vec_clzd ((vui64_t) z);
+       // zn = zn >> 64, So we can use it with vec_slq ()
+       zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+       //z1 = (z << n) >> 64;
+       z1 = vec_slq (z, zn);
+
+       //y1 = y >> 1; 	// to insure no overflow
+       y1 = vec_srqi (y, 1);
+       // q1 = scalar_divdud (y1, (unsigned long long) z1) & lmask;
+       qdl = vec_divqud_inline (y1, (vui64_t) z1);
+       q1 = (vui128_t) vec_mrgald ((vui128_t) zeros, (vui128_t) qdl);
+       // Undo normalization and y/2.
+       //q0 = (q1 << n) >> 63;
+       q0 = vec_slq (q1, zn);
+       q0 = vec_srqi (q0, 63);
+
+       // if (q0 != 0) q0 = q0 - 1;
+ 	{
+ 	  vb128_t QB;
+ 	  QB = vec_cmpequq (q0, (vui128_t) zeros);
+ 	  q1 = vec_adduqm (q0, mone);
+ 	  q0 = vec_seluq (q1, q0, QB);
+ 	}
+        t = vec_mulluq (q0, z);
+        r0 = vec_subuqm (y, t);
+        // if ((y - q0*z) >= z) q0 = q0 + 1;
+  	{
+  	  vb128_t QB;
+  	  QB = vec_cmpgtuq (z, r0);
+  	  t  = vec_subuqm (r0, z);
+  	  r0 = vec_seluq (t, r0, QB);
+  	}
+        return r0;
+     }
+#endif
+}
 
 /** \brief Vector Multiply Even Unsigned Doublewords.
  *
@@ -7532,6 +9736,7 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-11  | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit vector unsigned long int.
  *  @param b 128-bit vector unsigned long int.
@@ -7691,85 +9896,102 @@ vec_vmuleud (vui64_t a, vui64_t b)
   return ((vui128_t) res);
 }
 
-/** \brief Vector Multiply-Add Even Unsigned Doublewords.
+/** \brief Vector Multiply High Unsigned Doubleword.
  *
- *  Multiply the even 64-bit doublewords of vector unsigned long
- *  values (a * b) and return sum of the unsigned __int128 product and
- *  the even doubleword of c
- *  (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB>.
- *
- *  \note The advantage of this form (versus Multiply-Sum) is that
- *  the final 128 bit sum can not overflow.
- *  \note This implementation is NOT endian sensitive and the function is
- *  stable across BE/LE implementations.
+ *  Multiple the corresponding doubleword elements of two vector
+ *  unsigned long values and return the high order 64-bits, from each
+ *  128-bit product.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 25-28 | 1/cycle  |
- *  |power9   | 10-13 | 2/cycle  |
+ *  |power8   | 28-32 | 1/cycle  |
+ *  |power9   | 11-16 | 1/cycle  |
+ *  |power10  | 4-5   | 4/cycle  |
  *
- *  @param a 128-bit vector unsigned long int.
- *  @param b 128-bit vector unsigned long int.
- *  @param c 128-bit vector unsigned long int.
- *  @return vector unsigned __int128 sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB>.
+ *  \note This operation can be used to effectively perform a divide
+ *  by multiplying by the scaled multiplicative inverse (reciprocal).
+ *
+ *  Warren, Henry S. Jr and <I>Hacker's Delight</I>, 2nd Edition,
+ *  Addison Wesley, 2013. Chapter 10, Integer Division by Constants.
+ *
+ *  @param vra 128-bit vector unsigned long int.
+ *  @param vrb 128-bit vector unsigned long int.
+ *  @return vector unsigned long int of the high order 64-bits of the
+ *  unsigned 128-bit product of the doubleword elements from vra
+ *  and vrb.
  */
-static inline vui128_t
-vec_vmaddeud (vui64_t a, vui64_t b, vui64_t c)
+static inline vui64_t
+vec_vmulhud_inline (vui64_t vra, vui64_t vrb)
 {
-  const vui64_t zero = { 0, 0 };
-#ifdef _ARCH_PWR9
-  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
-  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
-  return vec_msumudm(a, b_eud, (vui128_t) c_eud);
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mulh (vra, vrb);
 #else
-  vui128_t res;
-  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
-  res = vec_vmuleud (a, b);
-  return vec_adduqm (res, (vui128_t) c_eud);
+  __asm__(
+      "vmulhud %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+  return res;
+#else
+  return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #endif
 }
 
-/** \brief Vector Multiply-Add2 Even Unsigned Doublewords.
+/** \brief Vector Multiply Unsigned Doubleword Modulo.
  *
- *  Multiply the even 64-bit doublewords of vector unsigned long
- *  values (a * b) and return sum of the unsigned __int128 product and
- *  the even doublewords of c and d
- *  ((a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB> + d<SUB>even</SUB>).
+ *  Multiple the corresponding doubleword elements of two vector
+ *  unsigned long values and return the low order 64-bits of the
+ *  128-bit product for each element.
  *
- *  \note The advantage of this form (versus Multiply-Sum) is that
- *  the final 128 bit sum can not overflow.
- *  \note This implementation is NOT endian sensitive and the function is
- *  stable across BE/LE implementations.
+ *  \note vec_vmulld can be used for unsigned or signed integers.
+ *  It is the vector equivalent of Multiply Low Doubleword.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 25-28 | 1/cycle  |
- *  |power9   | 13-18 | 2/cycle  |
+ *  |power8   | 19-28 | 1/cycle  |
+ *  |power9   | 11-16 | 1/cycle  |
+ *  |power10  |  4-5  | 4/cycle  |
  *
- *  @param a 128-bit vector unsigned long int.
- *  @param b 128-bit vector unsigned long int.
- *  @param c 128-bit vector unsigned long int.
- *  @param d 128-bit vector unsigned long int.
- *  @return vector unsigned __int128 sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB> + d<SUB>even</SUB>.
+ *
+ *  @param vra 128-bit vector unsigned long long.
+ *  @param vrb 128-bit vector unsigned long long.
+ *  @return vector unsigned long long of the low order 64-bits of the
+ *  unsigned 128-bit product of the doubleword elements from vra
+ *  and vrb.
  */
-static inline vui128_t
-vec_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+static inline vui64_t
+vec_vmulld_inline (vui64_t vra, vui64_t vrb)
 {
-  const vui64_t zero = { 0, 0 };
-#ifdef _ARCH_PWR9
-  vui128_t cd_sum;
-  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
-  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
-  vui64_t d_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) d);
-  cd_sum = vec_adduqm ((vui128_t) c_eud, (vui128_t) d_eud);
-  return vec_msumudm(a, b_eud, (vui128_t) cd_sum);
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui64_t res;
+#if (__GNUC__ >= 12)
+  res = vec_mul (vra, vrb);
 #else
-  vui128_t res, cd_sum;
-  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
-  vui64_t d_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) d);
-  cd_sum = vec_adduqm ((vui128_t) c_eud, (vui128_t) d_eud);
-  res = vec_vmuleud (a, b);
-  return vec_adduqm (res, (vui128_t) cd_sum);
+  __asm__(
+      "vmulld %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+  return res;
+#elif defined (_ARCH_PWR9)
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
+#elif defined (_ARCH_PWR8)
+  vui64_t s32 = { 32, 32 }; // shift / rotate amount.
+  vui64_t z = { 0, 0 };
+  vui64_t t2, t3, t4;
+  vui32_t t1;
+
+  t1 = (vui32_t) vec_vrld (vrb, s32);
+  t2 = vec_vmulouw ((vui32_t)vra, (vui32_t)vrb);
+  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
+  t4 = vec_vsld (t3, s32);
+  return (vui64_t) vec_addudm (t4, t2);
+#else
+  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #endif
 }
 
@@ -7789,6 +10011,7 @@ vec_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit vector unsigned long int.
  *  @param b 128-bit vector unsigned long int.
@@ -7955,6 +10178,199 @@ vec_vmuloud (vui64_t a, vui64_t b)
   res = (vui64_t)resw;
 #endif
   return ((vui128_t) res);
+}
+
+/** \brief Vector Multiply-Sum and Write Carryout Unsigned Doubleword.
+ *
+ *  Compute the even and odd 128-bit products of doubleword 64-bit
+ *  element values from a, b.
+ *  Then compute the carry-out of the low order 128-bits of the sum of
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + c.
+ *  Only the high order 2 bits of the 130-bit Multiply-Sum are
+ *  returned and the low order 128-bits of the sum are ignored/lost.
+ *  Results are in the range 0-2.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 30-32 | 1/cycle  |
+ *  |power9   | 5-7   | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
+ *
+ *  @param a 128-bit __vector unsigned long long.
+ *  @param b 128-bit __vector unsigned long long.
+ *  @param c 128-bit __vector unsigned __int128.
+ *  @return The Carryout of the __vector unsigned Multiply-Sum.
+ */
+static inline vui128_t
+vec_vmsumcud_inline (vui64_t a, vui64_t b, vui128_t c)
+{
+  vui128_t res;
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 10)
+#if (__GNUC__ >= 12)
+  res = vec_msumc (a, b, c);
+#else
+  __asm__(
+      "vmsumcud %0,%1,%2,%3;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b), "v" (c)
+      : );
+#endif
+#else
+  vui128_t p_even, p_odd, p_sum1, p_cry1, p_cry2;
+  // Generate separate 128-bit even/odd products to isolate the carries
+  p_even = vec_muleud (a, b);
+  p_odd  = vec_muloud (a, b);
+  // Sum the products and generate the carry
+#ifdef _ARCH_PWR8
+  p_sum1 = vec_adduqm (p_even, p_odd);
+  p_cry1 = vec_addcuq (p_even, p_odd);
+#else
+  p_sum1 = vec_addcq (&p_cry1, p_even, p_odd);
+#endif
+  // Generate the carry from the sum (p_even + p_odd + c)
+  p_cry2 = vec_addcuq (p_sum1, c);
+  // Sum the two carries
+#ifdef _ARCH_PWR9
+  res    = vec_adduqm (p_cry2, p_cry1);
+#else
+  /* Results can be 0-2, So Add Word will do.  */
+  res    = (vui128_t) vec_add ((vui32_t) p_cry2, (vui32_t) p_cry1);
+#endif
+#endif
+  return (res);
+}
+
+/** \brief Vector Multiply-Sum Unsigned Doubleword Modulo.
+ *
+ *  Compute the even and odd 128-bit products of doubleword 64-bit
+ *  element values from a, b.
+ *  Then compute the 128-bit sum
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) +
+ *  (a<SUB>odd</SUB> * b<SUB>odd</SUB>) + c.
+ *  Only the low order 128 bits of the Multiply-Sum are returned and
+ *  any overflow/carry-out is ignored/lost.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 30-32 | 1/cycle  |
+ *  |power9   | 5-7   | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
+ *
+ *  @param a 128-bit __vector unsigned long int.
+ *  @param b 128-bit __vector unsigned long int.
+ *  @param c 128-bit __vector unsigned __int128.
+ *  @return __vector unsigned Modulo Sum of the 128-bit even / odd
+ *  products of operands a and b plus the unsigned __int128
+ *  operand c.
+ */
+static inline vui128_t
+vec_vmsumudm_inline (vui64_t a, vui64_t b, vui128_t c)
+{
+  vui128_t res;
+#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
+#if (__GNUC__ >= 12)
+  res = vec_msum (a, b, c);
+#else
+  __asm__(
+      "vmsumudm %0,%1,%2,%3;\n"
+      : "=v" (res)
+      : "v" (a), "v" (b), "v" (c)
+      : );
+#endif
+#else
+  vui128_t p_even, p_odd, p_sum;
+
+  p_even = vec_muleud (a, b);
+  p_odd  = vec_muloud (a, b);
+  p_sum  = vec_adduqm (p_even, p_odd);
+  res    = vec_adduqm (p_sum, c);
+#endif
+
+  return (res);
+}
+
+/** \brief Vector Multiply-Add Even Unsigned Doublewords.
+ *
+ *  Multiply the even 64-bit doublewords of vector unsigned long
+ *  values (a * b) and return sum of the unsigned __int128 product and
+ *  the even doubleword of c
+ *  (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB>.
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 128 bit sum can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 25-28 | 1/cycle  |
+ *  |power9   | 10-13 | 2/cycle  |
+ *  |power10  | 10-13 | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
+ *  @param c 128-bit vector unsigned long int.
+ *  @return vector unsigned __int128 sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB>.
+ */
+static inline vui128_t
+vec_vmaddeud (vui64_t a, vui64_t b, vui64_t c)
+{
+  const vui64_t zero = { 0, 0 };
+#ifdef _ARCH_PWR9
+  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
+  return vec_vmsumudm_inline (a, b_eud, (vui128_t) c_eud);
+#else
+  vui128_t res;
+  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
+  res = vec_vmuleud (a, b);
+  return vec_adduqm (res, (vui128_t) c_eud);
+#endif
+}
+
+/** \brief Vector Multiply-Add2 Even Unsigned Doublewords.
+ *
+ *  Multiply the even 64-bit doublewords of vector unsigned long
+ *  values (a * b) and return sum of the unsigned __int128 product and
+ *  the even doublewords of c and d
+ *  ((a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB> + d<SUB>even</SUB>).
+ *
+ *  \note The advantage of this form (versus Multiply-Sum) is that
+ *  the final 128 bit sum can not overflow.
+ *  \note This implementation is NOT endian sensitive and the function is
+ *  stable across BE/LE implementations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 25-28 | 1/cycle  |
+ *  |power9   | 13-18 | 2/cycle  |
+ *
+ *  @param a 128-bit vector unsigned long int.
+ *  @param b 128-bit vector unsigned long int.
+ *  @param c 128-bit vector unsigned long int.
+ *  @param d 128-bit vector unsigned long int.
+ *  @return vector unsigned __int128 sum (a<SUB>even</SUB> * b<SUB>even</SUB>) + c<SUB>even</SUB> + d<SUB>even</SUB>.
+ */
+static inline vui128_t
+vec_vmadd2eud (vui64_t a, vui64_t b, vui64_t c, vui64_t d)
+{
+  const vui64_t zero = { 0, 0 };
+#ifdef _ARCH_PWR9
+  vui128_t cd_sum;
+  vui64_t b_eud = vec_mrgahd ((vui128_t) b, (vui128_t) zero);
+  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
+  vui64_t d_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) d);
+  cd_sum = vec_adduqm ((vui128_t) c_eud, (vui128_t) d_eud);
+  return vec_msumudm(a, b_eud, (vui128_t) cd_sum);
+#else
+  vui128_t res, cd_sum;
+  vui64_t c_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) c);
+  vui64_t d_eud = vec_mrgahd ((vui128_t) zero, (vui128_t) d);
+  cd_sum = vec_adduqm ((vui128_t) c_eud, (vui128_t) d_eud);
+  res = vec_vmuleud (a, b);
+  return vec_adduqm (res, (vui128_t) cd_sum);
+#endif
 }
 
 /** \brief Vector Multiply-Add Odd Unsigned Doublewords.

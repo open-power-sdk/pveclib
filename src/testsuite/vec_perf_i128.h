@@ -32,6 +32,12 @@ extern int timed_cmul10ecuq (void);
 extern int timed_mulluq (void);
 extern int timed_muludq (void);
 extern int timed_muludqx (void);
+extern int timed_vec_divdqu (void);
+extern int timed_vec_divuqe (void);
+extern int timed_vec_divuq (void);
+extern int timed_vec_divuq2 (void);
+extern int timed_gcc_divuq (void);
+extern int timed_gcc_divuq2 (void);
 extern int timed_longdiv_e32 (void);
 #ifndef PVECLIB_DISABLE_DFP
 extern int timed_longbcdcf_10e32 (void);

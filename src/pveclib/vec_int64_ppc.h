@@ -876,7 +876,7 @@ vui64_t test_vec_divdud_V1 (vui64_t x, vui64_t y, vui64_t z)
  *
  * \note Word and Quadword variants can also be optimized to take
  * advantage of instructions that generate the carry directly
- * (vec_addc()).
+ * (vec_addc()). \see \ref int128_Divide_0_1_1_1
  *
  * Another optimization is to leverage the 128-bit vector and use
  * the next larger element size to concatenate the dividend (x_y) into a
@@ -3366,7 +3366,16 @@ vec_divqud_inline (vui128_t x_y, vui64_t z)
   q1 = __builtin_divdeu (Dh, Dv);
   //r1 = -(q1 * Dv);
   r1 = (q1 * Dv);
+#if  defined (_ARCH_PWR9)
+  // Prevent the compiler from generating modud
+  __asm__(
+      "divdu %0,%1,%2;\n"
+      : "=r" (q2)
+      : "r" (Dl), "r" (Dv)
+      : );
+#else
   q2 = Dl / Dv;
+#endif
   r2 = Dl - (q2 * Dv);
   Q = q1 + q2;
   //R = r1 + r2;
@@ -3643,10 +3652,9 @@ static inline vui64_t
 vec_moddud_inline (vui64_t x, vui64_t y, vui64_t z)
 {
 #if defined (_ARCH_PWR8)
-  vui64_t Q, R;
+  vui64_t R;
   vui64_t r1, r2, q1, q2;
   vb64_t CC, c1, c2;
-  const vui64_t ones = vec_splat_u64(1);
 
   // Based on the PowerISA, Programming Note for
   // Divide Word Extended [Unsigned] but vectorized
@@ -3657,14 +3665,15 @@ vec_moddud_inline (vui64_t x, vui64_t y, vui64_t z)
 
   r2 = vec_muludm (q2, z);
   r2 = vec_subudm (y, r2);
-  Q  = vec_addudm (q1, q2);
   R  = vec_subudm (r2, r1);
 
   c1 = vec_cmpltud (R, r2);
   c2 = vec_cmpgeud (R, z);
   CC = vec_or (c1, c2);
 #if 0
-  vui64_t Qt;
+  vui64_t Q, Qt;
+  const vui64_t ones = vec_splat_u64(1);
+  Q  = vec_addudm (q1, q2);
   Qt = vec_addudm (Q, ones);
   Q = vec_selud (Q, Qt, CC);
   return Q;

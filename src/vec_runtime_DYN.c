@@ -50,6 +50,7 @@
  * appropriate (for the platform endian) base platform.
  */
 
+#include <pveclib/vec_int64_ppc.h>
 #include <pveclib/vec_int512_ppc.h>
 #include <pveclib/vec_f128_ppc.h>
 #if 1
@@ -134,6 +135,14 @@ __attribute__ ((ifunc ("resolve_" #_FUNC )));
  * functions.
  * These will be expanded multiple time, once for each supported
  * -mcpu target.*/
+#define VEC_INT64_LIB_LIST(_TARGET) \
+extern vui64_t vec_divdud ## _TARGET (vui64_t, vui64_t, vui64_t); \
+extern vui64_t vec_moddud ## _TARGET (vui64_t, vui64_t, vui64_t); \
+extern vui64_t vec_divqud ## _TARGET (vui128_t, vui64_t); \
+extern vui64_t vec_diveud ## _TARGET (vui64_t, vui64_t); \
+extern vui64_t vec_divud ## _TARGET (vui64_t, vui64_t); \
+extern vui64_t vec_modud ## _TARGET (vui64_t, vui64_t);
+
 #define VEC_F128_LIB_LIST(_TARGET) \
 extern __binary128 vec_xsaddqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xssubqpo ## _TARGET (__binary128, __binary128); \
@@ -158,12 +167,16 @@ extern void vec_mul512_byMN ## _TARGET (__VEC_U_512 *p, \
 
 #ifndef PVECLIB_DISABLE_POWER7
 // POWER7 supports only BIG Endian. So declare PWR7 externs only for BE.
+VEC_INT64_LIB_LIST (_PWR7)
+
 VEC_INT512_LIB_LIST (_PWR7)
 
 VEC_F128_LIB_LIST (_PWR7)
 #endif
 
 // POWER8 supports both Endians. So declare PWR8 externs unconditionally.
+VEC_INT64_LIB_LIST (_PWR8)
+
 VEC_INT512_LIB_LIST (_PWR8)
 
 VEC_F128_LIB_LIST (_PWR8)
@@ -171,6 +184,8 @@ VEC_F128_LIB_LIST (_PWR8)
 #ifndef PVECLIB_DISABLE_POWER9
 /* Older distros running Big Endian are unlikely to support PWR9.
  * So declare PWR9 externs only for LE.  */
+
+VEC_INT64_LIB_LIST (_PWR9)
 
 VEC_INT512_LIB_LIST (_PWR9)
 
@@ -180,6 +195,8 @@ VEC_F128_LIB_LIST (_PWR9)
 #ifndef PVECLIB_DISABLE_POWER10
 /* Older distros running Big Endian are unlikely to support PWR10.
  * So declare PWR9 externs only for LE.  */
+
+VEC_INT64_LIB_LIST (_PWR10)
 
 VEC_INT512_LIB_LIST (_PWR10)
 
@@ -260,3 +277,14 @@ VEC_RESOLVER_2 (__binary128, vec_xsmulqpo, __binary128, __binary128);
 VEC_RESOLVER_2 (__binary128, vec_xssubqpo, __binary128, __binary128);
 VEC_RESOLVER_3 (__binary128, vec_xsmaddqpo, __binary128, __binary128, __binary128);
 VEC_RESOLVER_3 (__binary128, vec_xsmsubqpo, __binary128, __binary128, __binary128);
+
+/* Declare the required static resolvers and ifunc aliases for dynamic
+ * selection of CPU specific implementations supporting
+ * vec_int64_ppc.h
+ * */
+VEC_RESOLVER_2 (vui64_t, vec_diveud, vui64_t, vui64_t);
+VEC_RESOLVER_2 (vui64_t, vec_divqud, vui128_t, vui64_t);
+VEC_RESOLVER_2 (vui64_t, vec_divud, vui64_t, vui64_t);
+VEC_RESOLVER_2 (vui64_t, vec_modud, vui64_t, vui64_t);
+VEC_RESOLVER_3 (vui64_t, vec_divdud, vui64_t, vui64_t, vui64_t);
+VEC_RESOLVER_3 (vui64_t, vec_moddud, vui64_t, vui64_t, vui64_t);

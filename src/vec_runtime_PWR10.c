@@ -24,6 +24,7 @@
 /* Older Linux distros running Big Endian are unlikely to support
    PWR10.  */
 
+#include "vec_int64_runtime.c"
 #include "vec_int512_runtime.c"
 #include "vec_f128_runtime.c"
 #endif

@@ -1,4 +1,5 @@
 /*
+ Copyright (c) [2018, 2023-2024] Steven Munroe.
  Copyright (c) [2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -2141,7 +2142,32 @@ vui64_t test_vec_divdud_V0 (vui64_t x, vui64_t y, vui64_t z)
 
 vui64_t test_vec_divqud (vui128_t x_y, vui64_t z)
 {
-#if defined (_ARCH_PWR7)
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 12)
+  // Circular dependency between int64 and int128, thinking
+  vui128_t Dv, Q, R, t;
+
+#if 1
+  // Use compiler intrinsics to avoid dependency on vec_int128-ppc.h
+  const vui64_t zero = { 0, 0 };
+  Dv = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) z);
+  Q  = vec_div (x_y, Dv);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t  = vec_mule ((vui64_t)Q, (vui64_t) Dv);
+#else
+  t  = vec_mulo ((vui64_t)Q, (vui64_t) Dv);
+#endif
+  R = vec_sub (x_y, t);
+#else
+  // This would require vec_int128_ppc.h to be completely compiled
+  // before vec_int64_ppc.h. Nope!
+  Dv = vec_srqi ((vui128_t) z, 64);
+  Q  = vec_vdivuq_inline (x_y, Dv);
+  t  = vec_vmuloud ((vui64_t)Q, (vui64_t) Dv);
+  R  = vec_subuqm (x_y, t);
+#endif
+
+  return vec_mrgald (R, Q);
+#elif defined (_ARCH_PWR7)
   // POWER8/9 Do not have vector integer divide, but do have
   // Move To/From Vector-Scalar Register Instructions
   // So we can use the scalar hardware divide/divide extended

@@ -688,15 +688,31 @@ timed_gcc_divuq2 (void)
   return (rc);
 }
 
-#if 0
-#else
-extern vui64_t test_divdud (vui64_t x, vui64_t y, vui64_t z);
-extern vui64_t test_moddud (vui64_t x, vui64_t y, vui64_t z);
-extern vui64_t test_divud (vui64_t y, vui64_t z);
-extern vui64_t test_modud (vui64_t y, vui64_t z);
+#if 1
+// use implementations from vec_int64_dummy compile tests.
 extern vui64_t test_divmodud (vui64_t *r, vui64_t y, vui64_t z);
 extern __VEC_U_128P test_divdqu (vui128_t x, vui128_t y, vui128_t z);
 //#define test_moddivduq	test_divdqu
+#endif
+#if 1
+// Use static lib implementations.
+extern vui64_t __VEC_PWR_IMP(vec_divdud) (vui64_t x, vui64_t y, vui64_t z);
+#define test_divdud __VEC_PWR_IMP(vec_divdud)
+extern vui64_t __VEC_PWR_IMP(vec_divud) (vui64_t y, vui64_t z);
+#define test_divud __VEC_PWR_IMP(vec_divud)
+extern vui64_t __VEC_PWR_IMP(vec_diveud) (vui64_t x, vui64_t z);
+#define test_divude __VEC_PWR_IMP(vec_diveud)
+extern vui64_t __VEC_PWR_IMP(vec_modud) (vui64_t y, vui64_t z);
+#define test_modud __VEC_PWR_IMP(vec_modud)
+extern vui64_t __VEC_PWR_IMP(vec_moddud) (vui64_t x, vui64_t y, vui64_t z);
+#define test_moddud __VEC_PWR_IMP(vec_moddud)
+#else
+// use implementations from vec_int64_dummy compile tests.
+extern vui64_t test_divdud (vui64_t x, vui64_t y, vui64_t z);
+extern vui64_t test_divud (vui64_t y, vui64_t z);
+extern vui64_t test_divude (vui64_t x, vui64_t z);
+extern vui64_t test_modud (vui64_t y, vui64_t z);
+extern vui64_t test_moddud (vui64_t x, vui64_t y, vui64_t z);
 #endif
 
 vui64_t dummy_x2;
@@ -796,10 +812,12 @@ int timed_lib_divmodud (void)
   return rc;
 }
 
-#if 0
-extern vui64_t test_vec_divqud (vui128_t x_y, vui64_t z);
-#define test_divqud test_vec_divqud
+#if 1
+// Use static lib implementations.
+extern vui64_t __VEC_PWR_IMP(vec_divqud) (vui128_t x_y, vui64_t z);
+#define test_divqud __VEC_PWR_IMP(vec_divqud)
 #else
+// use implementations from vec_int64_dummy compile tests.
 extern vui64_t test_divqud (vui128_t x_y, vui64_t z);
 #endif
 int timed_divqud (void)

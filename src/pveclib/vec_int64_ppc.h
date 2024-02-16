@@ -1,4 +1,5 @@
 /*
+ Copyright (c) [2018, 2023-2024] Steven Munroe.
  Copyright (c) [2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,9 +32,9 @@
  * operations over 64-bit integer elements.
  *
  * Most of these operations are implemented in a single instruction
- * on newer (POWER8/POWER9) processors.
+ * on newer (POWER8/POWER9/POWER10) processors.
  * This header serves to fill in functional gaps for older
- * (POWER7, POWER8) processors and provides a in-line assembler
+ * (POWER7, POWER8, POWER9) processors and provides a in-line assembler
  * implementation for older compilers that do not
  * provide the built-ins.
  *
@@ -90,10 +91,24 @@
  *
  * Most of these
  * operations are implemented in a single instruction on newer
- * (POWER8/POWER9) processors. So this header serves to fill in
- * functional gaps for older (POWER7, POWER8) processors and provides
- * a in-line assembler implementation for older compilers that do not
- * provide the built-ins.
+ * (POWER8/POWER9/POWER10) processors. So this header serves to fill in
+ * functional gaps for older (POWER7, POWER8. POWER9) processors and
+ * provides a in-line assembler implementation for older compilers that
+ * do not provide the built-ins.
+ *
+ * \note Recent versions of PVECLIB headers have introduced
+ * operation names with a <B>_inline</B> suffix. While an specific
+ * operation implementation for the latest processor may require few
+ * instructions, the equivalent implementation for older processors can
+ * run to 10s of instructions. This is especially true for multiply and
+ * divide. So PVECLIB needs to plan for moving some of the larger
+ * operation implementations into libraries. In this case an existing
+ * operation name may change to an external library reference
+ * (\ref i512_libary_issues_0_0).
+ * However PVECLIB benefits from reuse of simple operations to build
+ * the most complex operations. For this case in-lining the simpler
+ * operations yields better optimizations. So some operations will have
+ * both <B>_inline</B> and extern library implementations in the API.
  *
  * This header covers operations that are any of the following:
  *
@@ -793,7 +808,7 @@ vui64_t test_vec_divdud_V0 (vui64_t x, vui64_t y, vui64_t z)
  * The code above leaves some opportunities for additional optimizations.
  * - The 63-bit shifts require a vector load of the vector constant
  *   {63, 63} under the covers.
- *   Constants like {0, 0} and {1, 1} simpler and faster to generate.
+ *   Constants like {0, 0} and {1, 1} are simpler and faster to generate.
  * - The vec_srdi (y, 63) reduces the sign-bit to simple 1b/0b values as carry-bit c.
  * It is simpler to use rotate-left of 1 and use vec_selud with mask of constant {1, 1}
  * to replace vec_addudm (x, c).
@@ -1912,6 +1927,8 @@ static inline vui64_t vec_minud (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_muludm (vui64_t vra, vui64_t vrb);
 static inline vui64_t vec_pasted (vui64_t __VH, vui64_t __VL);
 static inline vui64_t vec_permdi (vui64_t vra, vui64_t vrb, const int ctl);
+static inline vui64_t vec_mrgahd (vui128_t vra, vui128_t vrb);
+static inline vui64_t vec_mrgald (vui128_t vra, vui128_t vrb);
 static inline vui64_t vec_mrghd (vui64_t __VA, vui64_t __VB);
 static inline vui64_t vec_mrgld (vui64_t __VA, vui64_t __VB);
 static inline vui64_t vec_swapd (vui64_t vra);
@@ -3246,6 +3263,44 @@ vec_cmpud_any_ne (vui64_t a, vui64_t b)
  *  The quotients of are returned as a
  *  vector unsigned long long int.
  *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divdud_PWR8,
+ *  vec_divdud_PWR9, and vec_divdud_PWR10.
+ *  These are expanded from vec_divdud_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The quotient element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | ~78   |1/40 cycle|
+ *  |power9   | 67-72 |1/9 cycle |
+ *  |power10  | 38-88 |2/22 cycle|
+ *
+ *  @param x 128-bit vector of the high 64-bit elements of the 128-bit dividends.
+ *  @param y 128-bit vector of the low 64-bit elements of the 128-bit dividends.
+ *  @param z 128-bit vector of 64-bit elements for the divisor.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_divdud (vui64_t x, vui64_t y, vui64_t z);
+
+/** \brief Vector Divide Double Unsigned Doubleword.
+ *
+ *  A vectorized 128-bit by 64=bit divide returning two 64-bit
+ *  Unsigned Doubleword quotients.
+ *  The corresponding Doubleword elements of vectors x and y are
+ *  concatenated to from the 128-bit dividends.
+ *  For integer value i from 0 to 1 over doubleword elements:
+ *  quotient[i] = (x[i] || y[i]) / z[i].
+ *  The quotients of are returned as a
+ *  vector unsigned long long int.
+ *
  *  \note The quotient element results may be undefined if;
  *  the quotient cannot be represented in 64-bits,
  *  or the corresponding divisor element is 0.
@@ -3311,6 +3366,43 @@ vec_divdud_inline (vui64_t x, vui64_t y, vui64_t z)
 #endif
 }
 
+/** \brief Vector Divide Extended Unsigned Doubleword.
+ *
+ *  Divide the [zero] extended doubleword elements x by the
+ *  corresponding doubleword elements of z. The extended dividend is
+ *  the 64-bit element from x extended to the right with 64-bits of 0b.
+ *  This is effectively a vectorized 128x64 bit unsigned divide
+ *  returning 64-bit quotients.
+ *  The quotients of the extended divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_diveud_PWR8,
+ *  vec_diveud_PWR9, and vec_diveud_PWR10.
+ *  These are expanded from vec_vdiveud_inline().
+ *  For static calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   54  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-75 |2/22 cycle|
+ *
+ *
+ *  @param x 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_diveud (vui64_t x, vui64_t z);
+
 /** \brief Vector Divide Quadword Unsigned by Doubleword.
  *
  *  A vector implementation of a 128-bit by 64-bit divide returning
@@ -3320,6 +3412,45 @@ vec_divdud_inline (vui64_t x, vui64_t y, vui64_t z)
  *  (the low-order element of z is not used).
  *  The 64-bit remainder/quotient are returned as the
  *  high/low order elements of a vector unsigned long long int.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divqud_PWR8,
+ *  vec_divqud_PWR9, and vec_divqud_PWR10.
+ *  These are expanded from vec_divqud_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The quotient element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 30-41 |1/23 cycle|
+ *  |power9   | 35-63 |1/9 cycle |
+ *  |power10  | 36-64 |1/11 cycle|
+ *
+ *  @param x_y 128-bit vector 128-bit dividend.
+ *  @param z 128-bit vector of 64-bit elements. The high doubleword is the divisor.
+ *  @return The remainder/quotient in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_divqud (vui128_t x_y, vui64_t z);
+
+/** \brief Vector Divide Quadword Unsigned by Doubleword.
+ *
+ *  A vector implementation of a 128-bit by 64-bit divide returning
+ *  64-bit remainder and quotient.
+ *  The quadword element x_y is the 128-bit dividend.
+ *  The high-order doubleword element of z is the divisor
+ *  (the low-order element of z is not used).
+ *  The 64-bit remainder/quotient are returned as the
+ *  high/low order elements of a vector unsigned long long int.
+ *
+ *  \note This operation is used internally in the implementation of
+ *  long division for quadword divide/modulo operations.
  *
  *  \note The quotient element results may be undefined if;
  *  the quotient cannot be represented in 64-bits,
@@ -3338,8 +3469,25 @@ vec_divdud_inline (vui64_t x, vui64_t y, vui64_t z)
 static inline vui64_t
 vec_divqud_inline (vui128_t x_y, vui64_t z)
 {
-#if defined (_ARCH_PWR7)
-  // POWER8/9 Do not have vector integer divide, but do have
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 12)
+  // Circular dependency between int64 and int128, thinking
+  vui128_t Dv, Q, R, t;
+
+  // Use compiler intrinsics to avoid dependency on vec_int128-ppc.h
+  const vui64_t zero = { 0, 0 };
+  Dv = (vui128_t) vec_mrgahd ((vui128_t) zero, (vui128_t) z);
+  Q  = vec_div (x_y, Dv);
+  // Un-twist the compilers little-endian transform
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t  = vec_mule ((vui64_t)Q, (vui64_t) Dv);
+#else
+  t  = vec_mulo ((vui64_t)Q, (vui64_t) Dv);
+#endif
+  R = vec_sub (x_y, t);
+
+  return vec_mrgald (R, Q);
+#elif defined (_ARCH_PWR7)
+  // POWER7/8/9 Do not have vector integer divide, but do have
   // Move To/From Vector-Scalar Register Instructions
   // So we can use the scalar hardware divide/divide extended
   __VEC_U_128 qu, xy, zu;
@@ -3453,6 +3601,40 @@ vec_divqud_inline (vui128_t x_y, vui64_t z)
   return (vui64_t)x_y;
 #endif
 }
+
+/** \brief Vector Divide Unsigned Doubleword.
+ *
+ *  Divide the doubleword elements y by the
+ *  corresponding doubleword elements of z.
+ *  This is effectively a vectorized 64x64 bit unsigned divide
+ *  returning 64-bit quotients.
+ *  The quotients of the divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divud_PWR8,
+ *  vec_divud_PWR9, and vec_divud_PWR10.
+ *  These are expanded from vec_vdivud_inline().
+ *  For static calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   54  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-43 |2/22 cycle|
+ *
+ *  @param y 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The quotients in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_divud (vui64_t y, vui64_t z);
 
 /** \brief Vector Maximum Signed Doubleword.
  *
@@ -3633,6 +3815,44 @@ vec_minud (vui64_t vra, vui64_t vrb)
  *  The remainders of are returned as a
  *  vector unsigned long long int.
  *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_moddud_PWR8,
+ *  vec_moddud_PWR9, and vec_moddud_PWR10.
+ *  These are expanded from vec_moddud_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The remainder element results may be undefined if;
+ *  the quotient cannot be represented in 64-bits,
+ *  or the corresponding divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  ~38  |1/40 cycle|
+ *  |power9   | 67-72 |1/9 cycle |
+ *  |power10  | 38-88 |2/22 cycle|
+ *
+ *  @param x 128-bit vector of the high 64-bit elements of the 128-bit dividends.
+ *  @param y 128-bit vector of the low 64-bit elements of the 128-bit dividends.
+ *  @param z 128-bit vector of 64-bit elements for the divisor.
+ *  @return The remainders in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_moddud (vui64_t x, vui64_t y, vui64_t z);
+
+/** \brief Vector Modulo Double Unsigned Doubleword.
+ *
+ *  A vectorized 128-bit by 64=bit modulo divide returning
+ *  two 64-bit Unsigned Doubleword remainders.
+ *  The corresponding Doubleword elements of vectors x and y are
+ *  concatenated to from the 128-bit dividends.
+ *  For integer value i from 0 to 1 over doubleword elements:
+ *  remainder[i] = (x[i] || y[i]) % z[i].
+ *  The remainders of are returned as a
+ *  vector unsigned long long int.
+ *
  *  \note The remainder element results may be undefined if;
  *  the quotient cannot be represented in 64-bits,
  *  or the corresponding divisor element is 0.
@@ -3677,7 +3897,7 @@ vec_moddud_inline (vui64_t x, vui64_t y, vui64_t z)
   Qt = vec_addudm (Q, ones);
   Q = vec_selud (Q, Qt, CC);
   return Q;
-#else // Corrected Remainder not returned for divdud.
+#else // Corrected Remainder returned for moddud.
   vui64_t Rt;
   Rt = vec_subudm (R, z);
   R = vec_selud (R, Rt, CC);
@@ -3697,6 +3917,41 @@ vec_moddud_inline (vui64_t x, vui64_t y, vui64_t z)
   return RR;
 #endif
 }
+
+/** \brief Vector Modulo Unsigned Doubleword.
+ *
+ *  Divide the doubleword elements y by the
+ *  corresponding doubleword elements of z
+ *  and return the remainder.
+ *  This is effectively a vectorized 64x64 bit unsigned modulo
+ *  returning 64-bit remainders.
+ *  The remainders of the divide is returned as a vector
+ *  unsigned long long int.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_modud_PWR8,
+ *  vec_modud_PWR9, and vec_modud_PWR10.
+ *  These are expanded from vec_vmodud_inline().
+ *  For static calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The element results will be undefined if
+ *  the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   62  |1/40 cycle|
+ *  |power9   |   48  |1/9 cycle |
+ *  |power10  | 26-47 |2/22 cycle|
+ *
+ *  @param y 128-bit vector unsigned long long.
+ *  @param z 128-bit vector unsigned long long.
+ *  @return The remainders in a vector unsigned long long int.
+ */
+extern vui64_t
+vec_modud (vui64_t y, vui64_t z);
 
 /** \brief Vector Merge Algebraic High Doublewords.
  *

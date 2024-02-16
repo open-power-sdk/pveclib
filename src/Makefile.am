@@ -47,7 +47,7 @@ PVECCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS)
 
-vec_dynrt_PWR10.lo: vec_runtime_PWR10.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER10_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -59,7 +59,7 @@ endif
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER10_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 endif
 
-vec_staticrt_PWR10.lo: vec_runtime_PWR10.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER10_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -71,7 +71,7 @@ endif
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER10_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 endif
 
-vec_dynrt_PWR9.lo: vec_runtime_PWR9.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -83,7 +83,7 @@ endif
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 endif
 
-vec_staticrt_PWR9.lo: vec_runtime_PWR9.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -95,7 +95,7 @@ endif
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 endif
 
-vec_dynrt_PWR8.lo: vec_runtime_PWR8.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -107,7 +107,7 @@ endif
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 endif
 
-vec_staticrt_PWR8.lo: vec_runtime_PWR8.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -119,7 +119,7 @@ endif
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 endif
 
-vec_dynrt_PWR7.lo: vec_runtime_PWR7.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -131,7 +131,7 @@ endif
 	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 endif
 
-vec_staticrt_PWR7.lo: vec_runtime_PWR7.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 if am__fastdepCC
 	$(PVECCOMPILE) -fpie $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
@@ -161,7 +161,9 @@ EXTRA_DIST = \
   vec_runtime_PWR9.c \
   vec_runtime_PWR10.c \
   vec_runtime_common.c \
-  vec_int512_runtime.c
+  vec_int64_runtime.c \
+  vec_int512_runtime.c \
+  vec_f126_runtime.c
 
 distclean-local:
 	rm $(DEPDIR)/*.Plo

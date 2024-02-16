@@ -3242,9 +3242,9 @@ test_divqud_PWR9 (vui128_t x_y, vui64_t z)
   return vec_divqud_inline (x_y, z);
 }
 
-vui128_t test_divuqe_PWR9 (vui128_t x, vui128_t z)
+vui128_t test_diveuq_PWR9 (vui128_t x, vui128_t z)
 {
-  return vec_vdivuqe_inline (x, z);
+  return vec_vdiveuq_inline (x, z);
 }
 
 vui128_t test_divuq_PWR9 (vui128_t y, vui128_t z)
@@ -3267,7 +3267,7 @@ vui128_t test_modduq_PWR9 (vui128_t x, vui128_t y, vui128_t z)
   return vec_modduq (x, y, z);
 }
 
-__VEC_U_128P test_divdqu_PWR9 (vui128_t x, vui128_t y, vui128_t z)
+__VEC_U_128RQ test_divdqu_PWR9 (vui128_t x, vui128_t y, vui128_t z)
 {
   return vec_divdqu_inline (x, y, z);
 }
@@ -3453,9 +3453,9 @@ vui64_t test_vec_divdud_PWR9 (vui64_t x, vui64_t y, vui64_t z)
   return Q;
 }
 
-__VEC_U_128P test_vec_moddivduq_PWR9 (vui128_t x, vui128_t y, vui128_t z)
+__VEC_U_128RQ test_vec_moddivduq_PWR9 (vui128_t x, vui128_t y, vui128_t z)
 {
-  __VEC_U_128P result;
+  __VEC_U_128RQ result;
 #if defined (_ARCH_PWR8)
   vui128_t Q, R;
   vui128_t r1, r2, q1, q2;
@@ -3465,7 +3465,7 @@ __VEC_U_128P test_vec_moddivduq_PWR9 (vui128_t x, vui128_t y, vui128_t z)
   // Based on the PowerISA, Programming Note for
   // Divide Word Extended [Unsigned] but vectorized
   // for vector __int128
-  q1 = vec_vdivuqe_inline (x, z);
+  q1 = vec_vdiveuq_inline (x, z);
   q2 = vec_vdivuq_inline  (y, z);
   r1 = vec_mulluq (q1, z);
 
@@ -3486,12 +3486,12 @@ __VEC_U_128P test_vec_moddivduq_PWR9 (vui128_t x, vui128_t y, vui128_t z)
   vui128_t Qt;
   Qt = vec_adduqm (Q, ones);
   Q = vec_seluq (Q, Qt, CC);
-  result.vx0 = Q;
+  result.Q = Q;
 // Corrected Remainder not returned for divduq.
   vui128_t Rt;
   Rt = vec_subuqm (R, z);
   R = vec_seluq (R, Rt, CC);
-  result.vx1 = R;
+  result.R = R;
 #else
   /* Based on Hacker's Delight (2nd Edition) Figure 9-2.
    * "Divide long unsigned shift-and-subtract algorithm."

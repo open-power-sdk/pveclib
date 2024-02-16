@@ -20,6 +20,7 @@
       Created on: Aug 20, 2019
  */
 
+#include "vec_int128_runtime.c"
 #include "vec_int64_runtime.c"
 #include "vec_int512_runtime.c"
 #include "vec_f128_runtime.c"

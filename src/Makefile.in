@@ -723,7 +723,8 @@ PVECCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 
 EXTRA_DIST = vec_runtime_PWR7.c vec_runtime_PWR8.c vec_runtime_PWR9.c \
 	vec_runtime_PWR10.c vec_runtime_common.c vec_int64_runtime.c \
-	vec_int512_runtime.c vec_f126_runtime.c $(pveclib_la_INCLUDES)
+	vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c \
+	$(pveclib_la_INCLUDES)
 
 # libpvec definitions.
 # libpvec_la already includes vec_runtime_DYN.c compiled compiled -fpic
@@ -1976,56 +1977,56 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-pveclibincludeHEADERS
 .PRECIOUS: Makefile
 
 
-vec_dynrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER10_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR10.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER10_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 
-vec_staticrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR10.lo: vec_runtime_PWR10.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER10_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR10.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER10_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR10.c
 
-vec_dynrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 
-vec_staticrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR9.lo: vec_runtime_PWR9.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER9_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR9.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER9_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR9.c
 
-vec_dynrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR8.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 
-vec_staticrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR8.lo: vec_runtime_PWR8.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER8_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR8.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER8_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR8.c
 
-vec_dynrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_dynrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR7.c' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(PVECCOMPILE) -fpic $(PVECLIB_POWER7_CFLAGS) -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 
-vec_staticrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
+vec_staticrt_PWR7.lo: vec_runtime_PWR7.c vec_int64_runtime.c vec_int128_runtime.c vec_int512_runtime.c vec_f128_runtime.c $(pveclibinclude_HEADERS)
 @am__fastdepCC_TRUE@	$(PVECCOMPILE) -fpie $(PVECLIB_POWER7_CFLAGS) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/vec_runtime_PWR7.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vec_runtime_PWR7.c' object='$@' libtool=yes @AMDEPBACKSLASH@

@@ -23,6 +23,7 @@
 #ifndef PVECLIB_DISABLE_POWER7
 // POWER7 supports only BIG Endian. So build PWR7 runtime for BE only.
 
+#include "vec_int128_runtime.c"
 #include "vec_int64_runtime.c"
 #include "vec_int512_runtime.c"
 #include "vec_f128_runtime.c"

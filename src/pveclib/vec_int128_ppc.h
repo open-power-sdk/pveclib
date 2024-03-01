@@ -1,5 +1,6 @@
 /*
- Copyright (c) [2017, 2018, 2023, 2024] IBM Corporation.
+ Copyright (c) [2018, 2023-2024] Steven Munroe.
+ Copyright (c) [2017, 2018] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -35,7 +36,7 @@
  * Some of these operations are implemented in a single instruction
  * on newer (POWER8/POWER9/POWER10) processors.
  * This header serves to fill in functional gaps for older
- * (POWER7, POWER8) processors and provides a in-line assembler
+ * (POWER7, POWER8, POWER9) processors and provides a in-line assembler
  * implementation for older compilers that do not
  * provide the build-ins.
  * Other operations do not exist as instructions on any current
@@ -128,7 +129,7 @@
  *    vec_cmpgeuq(), vec_cmplesq(), vec_cmpleuq(), vec_cmpltsq(),
  *    vec_cmpltuq(), vec_cmpneuq()).
  * - Quadword integer Divide/Divide-Extended/Modulo instructions.
- *   (see vec_vdivuqe_inline(), vec_vdivuq_inline(), vec_vmoduq_inline())
+ *   (see vec_vdiveuq_inline(), vec_vdivuq_inline(), vec_vmoduq_inline())
  * - Quadword integer shift/rotate instructions; vrlq, vslq, vsraq, vsrq.
  *   (see vec_rlq(), vec_rlqi(), vec_slq(), vec_slqi(), vec_sraq(),
  *   vec_sraqi(), vec_srq(), vec_srqi())
@@ -2372,9 +2373,9 @@ vui128_t test_vec_divduq_V0 (vui128_t x, vui128_t y, vui128_t z)
  * DIVU.
  *
  * We will start by implementing divide quadword and divide
- * extended quadword as vec_vdivuq_inline() and vec_vdivuqe_inline().
+ * extended quadword as vec_vdivuq_inline() and vec_vdiveuq_inline().
  * Of course we will use the new PowerISA 3.1 vdivuq and
- * vdivuqe instructions as the implementation for the P10 target.
+ * vdiveuq instructions as the implementation for the P10 target.
  * For P8/P9 we will leverage vec_divqud_inline() for equivalent
  * operations inspired but the "Hacker's Delight" long division
  * implementation.
@@ -2541,7 +2542,7 @@ vui128_t test_vec_divuq (vui128_t y, vui128_t z)
  * directly.
  * For example:
  * \code
-vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
+vui128_t test_vec_diveuq (vui128_t x, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui128_t res;
@@ -2597,7 +2598,7 @@ vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
  *
  *For example:
  * \code
-vui128_t test_vec_divuqe (vui128_t x, vui128_t z)
+vui128_t test_vec_diveuq (vui128_t x, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
  // _ARCH_PWR10 specific implementation
@@ -3009,7 +3010,7 @@ vui128_t test_vec_moduq (vui128_t y, vui128_t z)
  * operations we can leverage these in implementations of long division
  * for double quadword divide/modulo.
  * We will use the PowerISA Programming Note for divide extended as a
- * guide and use the PVECLIB operations vec_vdivuqe_inline() and
+ * guide and use the PVECLIB operations vec_vdiveuq_inline() and
  * vec_vdivuq_inline() in this implementation.
  * This will use the P10 hardware instructions for
  * the -mcpu=power10 target.
@@ -3018,9 +3019,9 @@ vui128_t test_vec_moduq (vui128_t y, vui128_t z)
  *
  * For example:
  * \code
-__VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
+__VEC_U_128RQ test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
 {
-  __VEC_U_128P result;
+  __VEC_U_128RQ result;
   vui128_t Q, R;
   vui128_t Qt, Rt;
   vui128_t r1, r2, q1, q2;
@@ -3030,7 +3031,7 @@ __VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
   // Based on the PowerISA, Programming Note for
   // Divide Word Extended [Unsigned] but vectorized
   // for vector __int128
-  q1 = test_vec_divuqe (x, z);
+  q1 = test_vec_diveuq (x, z);
   q2 = test_vec_divuq  (y, z);
   r1 = vec_mulluq (q1, z);
 
@@ -3054,8 +3055,8 @@ __VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
   Rt = vec_subuqm (R, z);
   R = vec_seluq (R, Rt, CC);
   // Return both Remainder and Quotient as Vector Pair.
-  result.vx0 = Q;
-  result.vx1 = R;
+  result.Q = Q;
+  result.R = R;
   return result;
 }
  * \endcode
@@ -3076,14 +3077,14 @@ __VEC_U_128P test_vec_divdqu (vui128_t x, vui128_t y, vui128_t z)
  * \code
 vui128_t test_vec_divduq (vui128_t x, vui128_t y, vui128_t z)
 {
-  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
-  return result.vx0;
+  __VEC_U_128RQ result = vec_divdqu_inline (x, y, z);;
+  return result.Q;
 }
 
 vui128_t test_vec_modduq (vui128_t x, vui128_t y, vui128_t z)
 {
-  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
-  return result.vx1;
+  __VEC_U_128RQ result = vec_divdqu_inline (x, y, z);;
+  return result.R;
 }
  * \endcode
  * The compiler should elide any machine instructions
@@ -3938,7 +3939,26 @@ typedef struct
   vui128_t vx1; // R
   vui128_t vx0; // Q
   ///@endcond
-} __VEC_U_128P;
+} __VEC_U_128PP;
+
+/*! \brief A Double Quadword vector representation of a 256-bit unsigned integer.
+ *
+ *  A homogeneous aggregate of 2 x 128-bit unsigned integer fields.
+ *  The low order field is named vx0, progressing to the high order
+ *  field vx1.
+ */
+typedef struct
+{
+  ///@cond INTERNAL
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  vui128_t R;
+  vui128_t Q;
+#else
+  vui128_t R;
+  vui128_t Q;
+#endif
+  ///@endcond
+} __VEC_U_128RQ;
 
 ///@cond INTERNAL
 static inline vui128_t vec_addecuq (vui128_t a, vui128_t b, vui128_t ci);
@@ -3951,12 +3971,12 @@ static inline vb128_t vec_cmpltuq (vui128_t vra, vui128_t vrb);
 static inline vb128_t vec_cmpneuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_divuq_10e31 (vui128_t vra);
 static inline vui128_t vec_divuq_10e32 (vui128_t vra);
-static inline vui128_t vec_vdivuqe_inline (vui128_t x, vui128_t z);
+static inline vui128_t vec_vdiveuq_inline (vui128_t x, vui128_t z);
 static inline vui128_t vec_vdivuq_inline (vui128_t y, vui128_t z);
 static inline vui128_t vec_vmoduq_inline (vui128_t y, vui128_t z);
 static inline vui128_t vec_maxuq (vui128_t a, vui128_t b);
 static inline vui128_t vec_minuq (vui128_t a, vui128_t b);
-static inline __VEC_U_128P
+static inline __VEC_U_128RQ
 vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z);
 static inline vui128_t vec_moduq_10e31 (vui128_t vra, vui128_t q);
 static inline vui128_t vec_moduq_10e32 (vui128_t vra, vui128_t q);
@@ -3990,6 +4010,8 @@ static inline vui128_t vec_vmsumcud_inline (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vmsumudm_inline (vui64_t a, vui64_t b, vui128_t c);
 static inline vui128_t vec_vsldbi (vui128_t vra, vui128_t vrb,
 				   const unsigned int shb);
+static inline vui64_t vec_vmulhud_inline (vui64_t vra, vui64_t vrb);
+static inline vui64_t vec_vmulld_inline (vui64_t vra, vui64_t vrb);
 ///@endcond
 
 /** \brief Vector Absolute Difference Unsigned Quadword.
@@ -5693,40 +5715,6 @@ vec_cmul10cuq (vui128_t *cout, vui128_t a)
   return ((vui128_t) t);
 }
 
-/** \brief Vector Divide Double Unsigned Quadword.
- *
- *  A vectorized 256-bit by 128-bit divide returning a 128-bit
- *  Unsigned quadword quotient.
- *  The quadword element of vectors x and y are
- *  concatenated to from the 256-bit dividend and the
- *  quotient = {x || y} / z.
- *  The quotient is returned as a
- *  vector unsigned __int128.
- *
- *  \note The quotient element result may be undefined if;
- *  the quotient cannot be represented in 128-bits,
- *  or the divisor element is 0.
- *
- *  \note See vec_moddivduq() for implementation details.
- *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power8   | ~??   |1/40 cycle|
- *  |power9   | ~??   |1/9 cycle |
- *  |power10  | 61-104|1/66 cycle|
- *
- *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
- *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
- *  @param z 128-bit vector of 128-bit element for the divisor.
- *  @return The quotient in a vector unsigned __int128.
- */
-static inline vui128_t
-vec_divduq (vui128_t x, vui128_t y, vui128_t z)
-{
-    __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
-    return result.vx0;
-}
-
 /** \brief Vector Divide by const 10e31 Signed Quadword.
  *
  *  Compute the quotient of a 128 bit values vra / 10e31.
@@ -6021,15 +6009,210 @@ vec_divuq_10e32 (vui128_t vra)
   return result;
 }
 
+/** \brief Vector Divide/Modulo Double Quadword Unsigned.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword remainder and Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to form the 256-bit dividend and the
+ *  remainder =  {x || y} % z while the
+ *  quotient = {x || y} / z.
+ *  The {remainder, quotient} is returned as a
+ *  structure of two vector unsigned __int128 values.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divdqu_PWR8,
+ *  vec_divdqu_PWR9, and vec_divdqu_PWR10.
+ *  These are expanded from vec_divdqu_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The results may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |113-303|   NA     |
+ *  |power10  | 69-114|1/66 cycle|
+ *
+ *  @param x vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z vector unsigned __int128 for the divisor.
+ *  @return The vector unsigned __int128 pair structure {remainder, quotient}.
+ */
+extern __VEC_U_128RQ
+vec_divdqu (vui128_t x, vui128_t y, vui128_t z);
+
+/** \brief Vector Divide/Modulo Double Quadword Unsigned.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword remainder and Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to form the 256-bit dividend and the
+ *  remainder =  {x || y} % z while the
+ *  quotient = {x || y} / z.
+ *  The {remainder, quotient} is returned as a
+ *  structure of two vector unsigned __int128 values.
+ *
+ *  \note The results may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note this inline implementation returns both remainder and
+ *  quotient in the structure __VEC_U_128RQ. If only one member
+ *  (vx0 for quotient or vx1 for remainder) is used by the invoking
+ *  code, the compiler will elide any instructions specific to setting
+ *  the unused member.
+ *  The implementations of vec_divduq() and vec_modduq() leverage this
+ *  to avoid duplication of code.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |113-303|   NA     |
+ *  |power10  | 69-114|1/66 cycle|
+ *
+ *  @param x vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z vector unsigned __int128 for the divisor.
+ *  @return The vector unsigned __int128 pair structure {remainder, quotient}.
+ */
+static inline __VEC_U_128RQ
+vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
+{
+  __VEC_U_128RQ result;
+  vui128_t Q, R;
+  vui128_t Rt;
+  vui128_t r1, r2, q1, q2;
+  vb128_t CC, c1, c2;
+
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+  q1 = vec_vdiveuq_inline (x, z);
+  q2 = vec_vdivuq_inline  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  r2 = vec_mulluq (q2, z);
+  r2 = vec_subuqm (y, r2);
+  Q  = vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+  c1 = vec_cmpltuq (R, r2);
+#if defined (_ARCH_PWR8) // vorc requires P8
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+  // Corrected Quotient returned for divduq.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  result.Q = Q;
+// Corrected Remainder returned for modduq.
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  result.R = R;
+  // Return both Remainder and Quotient as Vector Pair.
+  return result;
+}
+
+/** \brief Vector Divide Double Unsigned Quadword.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to form the 256-bit dividend and the
+ *  quotient = {x || y} / z.
+ *  The quotient is returned as a
+ *  vector unsigned __int128.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divduq_PWR8,
+ *  vec_divduq_PWR9, and vec_divduq_PWR10.
+ *  These are expanded from vec_divdqu_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The quotient element result may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note See vec_divdqu_inline() for implementation details.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |113-303|   NA     |
+ *  |power10  | 61-104|1/66 cycle|
+ *
+ *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z 128-bit vector of 128-bit element for the divisor.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+extern vui128_t
+vec_divduq (vui128_t x, vui128_t y, vui128_t z);
+
+/** \brief Vector Divide Double Unsigned Quadword.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword quotient.
+ *  The quadword element of vectors x and y are
+ *  concatenated to form the 256-bit dividend and the
+ *  quotient = {x || y} / z.
+ *  The quotient is returned as a
+ *  vector unsigned __int128.
+ *
+ *  \note The quotient element result may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note See vec_divdqu_inline() for implementation details.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |113-303|   NA     |
+ *  |power10  | 61-104|1/66 cycle|
+ *
+ *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z 128-bit vector of 128-bit element for the divisor.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_divduq_inline (vui128_t x, vui128_t y, vui128_t z)
+{
+    __VEC_U_128RQ result = vec_divdqu_inline (x, y, z);
+    return result.Q;
+}
+
 /** \brief Vector Divide Extended Unsigned Quadword.
  *
  *  Divide the [zero] extended quadword element x by the
  *  corresponding quadword element z. The extended dividend is the
  *  128-bit element from x extended to the right with 128-bits of 0b.
- *  This is effectively a 256x128 bit unsigned divide
- *  returning 128-bit quotient.
+ *  This is effectively a 256-bit by 128-bit unsigned divide
+ *  returning a 128-bit quotient.
  *  The quotient of the extended divide is returned as a vector
  *  unsigned __int128.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_diveuq_PWR8,
+ *  vec_diveuq_PWR9, and vec_diveuq_PWR10.
+ *  These are expanded from vec_vdiveuq_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
  *
  *  \note The element results may be undefined if;
  *  the quotient cannot be represented in 128-bits,
@@ -6045,11 +6228,8 @@ vec_divuq_10e32 (vui128_t vra)
  *  @param z 128-bit vector unsigned __int128.
  *  @return The quotient in a vector unsigned __int128.
  */
-static inline vui128_t
-vec_divuqe (vui128_t x, vui128_t z)
-{
-  return vec_vdivuqe_inline (x, z);
-}
+extern vui128_t
+vec_diveuq (vui128_t x, vui128_t z);
 
 
 /** \brief Vector Divide Unsigned Quadword.
@@ -6060,6 +6240,15 @@ vec_divuqe (vui128_t x, vui128_t z)
  *  returning a 128-bit quotient.
  *  The quotient of the divide is returned as a vector
  *  unsigned __int128.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_divuq_PWR8,
+ *  vec_divuq_PWR9, and vec_divuq_PWR10.
+ *  These are expanded from vec_vdivuq_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
  *
  *  \note The element results will be undefined if
  *  the divisor is 0.
@@ -6074,12 +6263,8 @@ vec_divuqe (vui128_t x, vui128_t z)
  *  @param z 128-bit vector unsigned __int128.
  *  @return The quotient in a vector unsigned __int128.
  */
-
-static inline vui128_t
-vec_divuq (vui128_t y, vui128_t z)
-{
-  return vec_vdivuq_inline  (y, z);
-}
+extern vui128_t
+vec_divuq (vui128_t y, vui128_t z);
 
 /** \brief Vector Maximum Signed Quadword.
  *
@@ -6382,79 +6567,12 @@ vec_moduq_10e32 (vui128_t vra, vui128_t q)
   return result;
 }
 
-/** \brief Vector Divide/Modulo Double Quadword Unsigned.
- *
- *  A vectorized 256-bit by 128-bit divide returning a 128-bit
- *  Unsigned quadword remainder and Unsigned quadword quotient.
- *  The quadword element of vectors x and y are
- *  concatenated to from the 256-bit dividend and the
- *  remainder =  {x || y} % z while the
- *  quotient = {x || y} / z.
- *  The {remainder, quotient} is returned as a
- *  structure of two vector unsigned __int128 values.
- *
- *  \note The results result may be undefined if;
- *  the quotient cannot be represented in 128-bits,
- *  or the divisor element is 0.
- *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power8   |198-398|   NA     |
- *  |power9   |113-303|   NA     |
- *  |power10  | 69-114|1/66 cycle|
- *
- *  @param x vector of the high 128-bit element of the 256-bit dividend.
- *  @param y vector of the low 128-bit element of the 256-bit dividend.
- *  @param z vector unsigned __int128 for the divisor.
- *  @return The vector unsigned __int128 pair structure {remainder, quotient}.
- */
-static inline __VEC_U_128P
-vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
-{
-  __VEC_U_128P result;
-  vui128_t Q, R;
-  vui128_t Rt;
-  vui128_t r1, r2, q1, q2;
-  vb128_t CC, c1, c2;
-
-  // Based on the PowerISA, Programming Note for
-  // Divide Word Extended [Unsigned] but vectorized
-  // for vector __int128
-  q1 = vec_vdivuqe_inline (x, z);
-  q2 = vec_vdivuq_inline  (y, z);
-  r1 = vec_mulluq (q1, z);
-
-  r2 = vec_mulluq (q2, z);
-  r2 = vec_subuqm (y, r2);
-  Q  = vec_adduqm (q1, q2);
-  R  = vec_subuqm (r2, r1);
-
-  c1 = vec_cmpltuq (R, r2);
-#if defined (_ARCH_PWR8) // vorc requires P8
-  c2 = vec_cmpgtuq (z, R);
-  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
-#else
-  c2 = vec_cmpgeuq (R, z);
-  CC = (vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
-#endif
-  // Corrected Quotient returned for divduq.
-  // if Q needs correction (Q+1), Bool CC is True, which is -1
-  Q = vec_subuqm (Q, (vui128_t) CC);
-  result.vx0 = Q;
-// Corrected Remainder returned for modduq.
-  Rt = vec_subuqm (R, z);
-  R = vec_seluq (R, Rt, CC);
-  result.vx1 = R;
-  // Return both Remainder and Quotient as Vector Pair.
-  return result;
-}
-
 /** \brief Vector Modulo Double Unsigned Quadword.
  *
  *  A vectorized 256-bit by 128-bit divide returning a 128-bit
  *  Unsigned quadword remainder.
  *  The quadword element of vectors x and y are
- *  concatenated to from the 256-bit dividend and the
+ *  concatenated to form the 256-bit dividend and the
  *  remainder = {x || y} % z.
  *  The remainder is returned as a
  *  vector unsigned __int128.
@@ -6463,7 +6581,46 @@ vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
  *  the remainder cannot be represented in 128-bits,
  *  or the divisor element is 0.
  *
- *  \note See vec_moddivduq() for implementation details.
+ *  \note See vec_divdqu_inline() for implementation details.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |198-398|   NA     |
+ *  |power9   |123-325|   NA     |
+ *  |power10  | 61-104|1/66 cycle|
+ *
+ *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
+ *  @param y 128-bit vector of the low 128-bit element of the 256-bit dividend.
+ *  @param z 128-bit vector of 128-bit element for the divisor.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+extern vui128_t
+vec_modduq (vui128_t x, vui128_t y, vui128_t z);
+
+/** \brief Vector Modulo Double Unsigned Quadword.
+ *
+ *  A vectorized 256-bit by 128-bit divide returning a 128-bit
+ *  Unsigned quadword remainder.
+ *  The quadword element of vectors x and y are
+ *  concatenated to form the 256-bit dividend and the
+ *  remainder = {x || y} % z.
+ *  The remainder is returned as a
+ *  vector unsigned __int128.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_modduq_PWR8,
+ *  vec_modduq_PWR9, and vec_modduq_PWR10.
+ *  These are expanded from vec_divdqu_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
+ *
+ *  \note The remainder element result may be undefined if;
+ *  the remainder cannot be represented in 128-bits,
+ *  or the divisor element is 0.
+ *
+ *  \note See vec_divdqu_inline() for implementation details.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -6477,10 +6634,10 @@ vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
  *  @return The quotient in a vector unsigned __int128.
  */
 static inline vui128_t
-vec_modduq (vui128_t x, vui128_t y, vui128_t z)
+vec_modduq_inline (vui128_t x, vui128_t y, vui128_t z)
 {
-  __VEC_U_128P result = vec_divdqu_inline (x, y, z);;
-  return result.vx1;
+  __VEC_U_128RQ result = vec_divdqu_inline (x, y, z);
+  return result.R;
 }
 
 /** \brief Vector Modulo Unsigned Quadword.
@@ -6492,6 +6649,15 @@ vec_modduq (vui128_t x, vui128_t y, vui128_t z)
  *  returning 128-bit remainders.
  *  The remainder of the divide is returned as a vector
  *  unsigned __int128.
+ *
+ *  \note This is the dynamic call ABI for IFUNC selection.
+ *  This call will bind to the appropriate runtime implementation.
+ *
+ *  \note The runtime implementations are vec_moduq_PWR8,
+ *  vec_moduq_PWR9, and vec_moduq_PWR10.
+ *  These are expanded from vec_vmoduq_inline().
+ *  For static runtime calls, the __VEC_PWR_IMP() macro
+ *  will add appropriate suffix based on the compile -mcpu= option.
  *
  *  \note The element results will be undefined if
  *  the divisor is 0.
@@ -6506,11 +6672,8 @@ vec_modduq (vui128_t x, vui128_t y, vui128_t z)
  *  @param z 128-bit vector unsigned __int128.
  *  @return The remainder in a vector unsigned __int128.
  */
-static inline vui128_t
-vec_moduq (vui128_t y, vui128_t z)
-{
-  return vec_vmoduq_inline (y, z);
-}
+extern vui128_t
+vec_moduq (vui128_t y, vui128_t z);
 
 /** \brief Vector Multiply by 10 & write Carry Unsigned Quadword.
  *
@@ -6881,6 +7044,7 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
  *  |--------:|:-----:|:---------|
  *  |power8   | 30-32 | 1/cycle  |
  *  |power9   | 5-7   | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit __vector unsigned long long.
  *  @param b 128-bit __vector unsigned long long.
@@ -6890,40 +7054,7 @@ vec_cmul100ecuq (vui128_t *cout, vui128_t a, vui128_t cin)
 static inline vui128_t
 vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
 {
-  vui128_t res;
-#if defined (_ARCH_PWR10) && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-  res = vec_msumc (a, b, c);
-#else
-  __asm__(
-      "vmsumcud %0,%1,%2,%3;\n"
-      : "=v" (res)
-      : "v" (a), "v" (b), "v" (c)
-      : );
-#endif
-#else
-  vui128_t p_even, p_odd, p_sum1, p_cry1, p_cry2;
-  // Generate separate 128-bit even/odd products to isolate the carries
-  p_even = vec_muleud (a, b);
-  p_odd  = vec_muloud (a, b);
-  // Sum the products and generate the carry
-#ifdef _ARCH_PWR8
-  p_sum1 = vec_adduqm (p_even, p_odd);
-  p_cry1 = vec_addcuq (p_even, p_odd);
-#else
-  p_sum1 = vec_addcq (&p_cry1, p_even, p_odd);
-#endif
-  // Generate the carry from the sum (p_even + p_odd + c)
-  p_cry2 = vec_addcuq (p_sum1, c);
-  // Sum the two carries
-#ifdef _ARCH_PWR9
-  res    = vec_adduqm (p_cry2, p_cry1);
-#else
-  /* Results can be 0-2, So Add Word will do.  */
-  res    = (vui128_t) vec_add ((vui32_t) p_cry2, (vui32_t) p_cry1);
-#endif
-#endif
-  return (res);
+  return vec_vmsumcud_inline (a, b, c);
 }
 
 /** \brief Vector Multiply-Sum Unsigned Doubleword Modulo.
@@ -6940,6 +7071,7 @@ vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
  *  |--------:|:-----:|:---------|
  *  |power8   | 30-32 | 1/cycle  |
  *  |power9   | 5-7   | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit __vector unsigned long int.
  *  @param b 128-bit __vector unsigned long int.
@@ -6951,27 +7083,7 @@ vec_msumcud (vui64_t a, vui64_t b, vui128_t c)
 static inline vui128_t
 vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
 {
-  vui128_t res;
-#if defined (_ARCH_PWR9) && ((__GNUC__ >= 6) || (__clang_major__ >= 11))
-#if (__GNUC__ >= 12)
-  res = vec_msum (a, b, c);
-#else
-  __asm__(
-      "vmsumudm %0,%1,%2,%3;\n"
-      : "=v" (res)
-      : "v" (a), "v" (b), "v" (c)
-      : );
-#endif
-#else
-  vui128_t p_even, p_odd, p_sum;
-
-  p_even = vec_muleud (a, b);
-  p_odd  = vec_muloud (a, b);
-  p_sum  = vec_adduqm (p_even, p_odd);
-  res    = vec_adduqm (p_sum, c);
-#endif
-
-  return (res);
+  return vec_vmsumudm_inline (a, b, c);
 }
 
 /** \brief Vector Multiply Even Unsigned Doublewords.
@@ -6988,6 +7100,7 @@ vec_msumudm (vui64_t a, vui64_t b, vui128_t c)
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit vector unsigned long int.
  *  @param b 128-bit vector unsigned long int.
@@ -7014,6 +7127,7 @@ vec_muleud (vui64_t a, vui64_t b)
  *  |--------:|:-----:|:---------|
  *  |power8   | 28-32 | 1/cycle  |
  *  |power9   | 11-16 | 1/cycle  |
+ *  |power10  | 4-5   | 4/cycle  |
  *
  *  \note This operation can be used to effectively perform a divide
  *  by multiplying by the scaled multiplicative inverse (reciprocal).
@@ -7030,21 +7144,7 @@ vec_muleud (vui64_t a, vui64_t b)
 static inline vui64_t
 vec_mulhud (vui64_t vra, vui64_t vrb)
 {
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-  vui64_t res;
-#if (__GNUC__ >= 12)
-  res = vec_mulh (vra, vrb);
-#else
-  __asm__(
-      "vmulhud %0,%1,%2;\n"
-      : "=v" (res)
-      : "v" (vra), "v" (vrb)
-      : );
-#endif
-  return res;
-#else
-  return vec_mrgahd (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
-#endif
+  return vec_vmulhud_inline (vra, vrb);
 }
 
 /** \brief Vector Multiply Odd Unsigned Doublewords.
@@ -7061,6 +7161,7 @@ vec_mulhud (vui64_t vra, vui64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 21-23 | 1/cycle  |
  *  |power9   | 8-13  | 2/cycle  |
+ *  |power10  | 6-7   | 4/cycle  |
  *
  *  @param a 128-bit vector unsigned long int.
  *  @param b 128-bit vector unsigned long int.
@@ -7083,12 +7184,13 @@ vec_muloud (vui64_t a, vui64_t b)
  *  unsigned long values and return the low order 64-bits of the
  *  128-bit product for each element.
  *
+ *  \note the core implementation is moved to vec_vmulld_inline().
  *  \note vec_muludm can be used for unsigned or signed integers.
  *  It is the vector equivalent of Multiply Low Doubleword.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 19-28 | 1/cycle  |
+ *  |power8   |  17   | 1/cycle  |
  *  |power9   | 11-16 | 1/cycle  |
  *  |power10  |  4-5  | 4/cycle  |
  *
@@ -7102,34 +7204,7 @@ vec_muloud (vui64_t a, vui64_t b)
 static inline vui64_t
 vec_muludm (vui64_t vra, vui64_t vrb)
 {
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-  vui64_t res;
-#if (__GNUC__ >= 12)
-  res = vec_mul (vra, vrb);
-#else
-  __asm__(
-      "vmulld %0,%1,%2;\n"
-      : "=v" (res)
-      : "v" (vra), "v" (vrb)
-      : );
-#endif
-  return res;
-#elif defined (_ARCH_PWR9)
-  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
-#elif defined (_ARCH_PWR8)
-  vui64_t s32 = { 32, 32 }; // shift / rotate amount.
-  vui64_t z = { 0, 0 };
-  vui64_t t2, t3, t4;
-  vui32_t t1;
-
-  t1 = (vui32_t) vec_vrld (vrb, s32);
-  t2 = vec_vmulouw ((vui32_t)vra, (vui32_t)vrb);
-  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
-  t4 = vec_vsld (t3, s32);
-  return (vui64_t) vec_addudm (t4, t2);
-#else
-  return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
-#endif
+  return vec_vmulld_inline (vra, vrb);
 }
 
 /** \brief Vector Multiply High Unsigned Quadword.
@@ -7508,6 +7583,12 @@ vec_mulluq (vui128_t a, vui128_t b)
  *  compute the 256 bit product of two 128 bit values a, b.
  *  The low order 128 bits of the product are returned, while
  *  the high order 128-bits are "stored" via the mulu pointer.
+ *
+ *  \note This operation is appropriate for <B>static inline</B> usage
+ *  where the compiler can eliminate store/reload of the address
+ *  parameter <B>mulu</B>. The equivalent library API is
+ *  vec_mul128x128() were the 256-bit product is returned as a
+ *  pair of vector registers.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -8226,6 +8307,18 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
 {
   vui8_t result;
 
+  if (__builtin_constant_p (shb) && ((shb % 8) == 0))
+    {
+      /* When shifting an multiple of 8 bits (octet), use Vector
+       Shift Left Double By Octet Immediate.  This eliminates
+       loading the shift const into a VR.  */
+      if (shb > 0)
+	result = vec_sld ((vui8_t) vra, (vui8_t) vra, ((shb / 8) & 15));
+      else
+	result = (vui8_t) vra;
+    }
+  else
+    {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   if (__builtin_constant_p (shb) && (shb < 8))
     {
@@ -8247,21 +8340,9 @@ vec_rlqi (vui128_t vra, const unsigned int shb)
 #endif
     }
 #else
-  if (__builtin_constant_p (shb) && ((shb % 8) == 0))
-    {
-      /* When shifting an multiple of 8 bits (octet), use Vector
-       Shift Left Double By Octet Immediate.  This eliminates
-       loading the shift const into a VR.  */
-      if (shb > 0)
-	result = vec_sld ((vui8_t) vra, (vui8_t) vra, ((shb / 8) & 15));
-      else
-	result = (vui8_t) vra;
-    }
-  else
-    {
       result = (vui8_t) vec_sldqi (vra, vra, shb);
-    }
 #endif
+    }
   return ((vui128_t) result);
 }
 
@@ -8888,7 +8969,6 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	  : );
 #endif
 #else
-      vui8_t lshift;
       vui128_t vsgn;
       if (__builtin_constant_p (shb) && ((shb % 8) == 0))
 	{
@@ -8912,8 +8992,9 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	      result = (vui8_t) vec_pasted ((vui64_t) vrshd, (vui64_t) vrshq);
 	    }
 	  else
-	    {
 #endif
+	    {
+	      vui8_t lshift;
 	      const unsigned int lshb = 128 - shb;
 	      if (__builtin_constant_p (shb) && (lshb < 16))
 		lshift = (vui8_t) vec_splat_s8(shb);
@@ -8923,9 +9004,7 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
 	      vsgn = (vui128_t) vec_setb_sq (vra);
 	      result = (vui8_t) vec_sldq (vsgn, (vui128_t) vra,
 					  (vui128_t) lshift);
-#ifdef _ARCH_PWR8
 	    }
-#endif
 	}
 #endif
     }
@@ -9002,19 +9081,6 @@ vec_srqi (vui128_t vra, const unsigned int shb)
 
   if (shb < 128)
     {
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-  vui32_t rshift = vec_splats((unsigned int) shb);
-#if (__GNUC__ >= 12)
-      result = (vui8_t) vec_sr (vra, (vui128_t) rshift);
-#else
-  __asm__(
-	  "vsrq %0,%1,%2;\n"
-	  : "=v" (result)
-	  : "v" (vra), "v" (rshift)
-	  : );
-#endif
-#else
-      vui8_t lshift;
       if (__builtin_constant_p (shb) && ((shb % 8)) == 0)
 	{
 	  /* When shifting an multiple of 8 bits (octet), use Vector
@@ -9034,25 +9100,38 @@ vec_srqi (vui128_t vra, const unsigned int shb)
 	}
       else
 	{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+	  vui32_t rshift = vec_splats((unsigned int) shb);
+#if (__GNUC__ >= 12)
+	  result = (vui8_t) vec_sr (vra, (vui128_t) rshift);
+#else
+	  __asm__(
+	      "vsrq %0,%1,%2;\n"
+	      : "=v" (result)
+	      : "v" (vra), "v" (rshift)
+	      : );
+#endif
+#else
+	  vui8_t rshift;
 	  /* Load the shift const in a vector.  The bit level shifts
 	   require the shift amount is splatted to all 16-bytes of
 	   the shift control.  */
 	  if ((__builtin_constant_p (shb) && (shb < 16)))
-	    lshift = (vui8_t) vec_splat_s8(shb);
+	    rshift = (vui8_t) vec_splat_s8(shb);
 	  else
-	    lshift = vec_splats ((unsigned char) shb);
+	    rshift = vec_splats ((unsigned char) shb);
 
 	  if (shb > 7)
 	    /* Vector Shift right By Octet based on the bits 121-124 of
-	     lshift.  */
-	    result = vec_sro ((vui8_t) vra, lshift);
+	     rshift.  */
+	    result = vec_sro ((vui8_t) vra, rshift);
 	  else
 	    result = ((vui8_t) vra);
 
-	  /* Vector Shift right based on the lower 3-bits of lshift.  */
-	  result = vec_srl (result, lshift);
-	}
+	  /* Vector Shift right based on the lower 3-bits of rshift.  */
+	  result = vec_srl (result, rshift);
 #endif
+	}
     }
   else
     { /* shifts greater then 127 bits return zeros.  */
@@ -9336,7 +9415,7 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
  *  @return The quotient in a vector unsigned __int128.
  */
 static inline vui128_t
-vec_vdivuqe_inline (vui128_t x, vui128_t z)
+vec_vdiveuq_inline (vui128_t x, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui128_t res;
@@ -9946,12 +10025,12 @@ vec_vmulhud_inline (vui64_t vra, vui64_t vrb)
  *  unsigned long values and return the low order 64-bits of the
  *  128-bit product for each element.
  *
- *  \note vec_vmulld can be used for unsigned or signed integers.
- *  It is the vector equivalent of Multiply Low Doubleword.
+ *  \note vec_vmulld_inline can be used for unsigned or signed
+ *  integers. It is the vector equivalent of Multiply Low Doubleword.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 19-28 | 1/cycle  |
+ *  |power8   |  17   | 1/cycle  |
  *  |power9   | 11-16 | 1/cycle  |
  *  |power10  |  4-5  | 4/cycle  |
  *
@@ -9980,15 +10059,30 @@ vec_vmulld_inline (vui64_t vra, vui64_t vrb)
 #elif defined (_ARCH_PWR9)
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
 #elif defined (_ARCH_PWR8)
-  vui64_t s32 = { 32, 32 }; // shift / rotate amount.
-  vui64_t z = { 0, 0 };
-  vui64_t t2, t3, t4;
+  vui32_t z = { 0, 0, 0, 0 };
+  vui64_t t2, t3, t3e, t3o, t4;
   vui32_t t1;
 
-  t1 = (vui32_t) vec_vrld (vrb, s32);
+  // Rotate words within doublewords
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Nullify the little endian transform to generate vmrgow/vmrgew
+  t1 = vec_mrgew ((vui32_t) vrb, (vui32_t) vrb);
+  t1 = vec_mrgow ((vui32_t) vrb, t1);
+#else
+  t1 = vec_mrgow ((vui32_t) vrb, (vui32_t) vrb);
+  t1 = vec_mrgew ((vui32_t) t1, (vui32_t) vrb);
+#endif
   t2 = vec_vmulouw ((vui32_t)vra, (vui32_t)vrb);
-  t3 = vec_vmsumuwm ((vui32_t)vra, t1, z);
-  t4 = vec_vsld (t3, s32);
+  t3e = vec_vmuleuw ((vui32_t)vra, t1);
+  t3o = vec_vmulouw ((vui32_t)vra, t1);
+  t3  = vec_addudm (t3e, t3o);
+  // Shift left doublewords by 32-bits
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Nullify the little endian transform to generate vmrgow
+  t4 = (vui64_t) vec_mrgew (z, (vui32_t)t3);
+#else
+  t4 = (vui64_t) vec_mrgow ((vui32_t)t3, z);
+#endif
   return (vui64_t) vec_addudm (t4, t2);
 #else
   return vec_mrgald (vec_vmuleud (vra, vrb), vec_vmuloud (vra, vrb));
@@ -10281,8 +10375,8 @@ vec_vmsumudm_inline (vui64_t a, vui64_t b, vui128_t c)
 #else
   vui128_t p_even, p_odd, p_sum;
 
-  p_even = vec_muleud (a, b);
-  p_odd  = vec_muloud (a, b);
+  p_even = vec_vmuleud (a, b);
+  p_odd  = vec_vmuloud (a, b);
   p_sum  = vec_adduqm (p_even, p_odd);
   res    = vec_adduqm (p_sum, c);
 #endif

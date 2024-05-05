@@ -338,10 +338,10 @@ vec_ctzb (vui8_t vra)
   return ((vui8_t) r);
 }
 
-/** \brief Vector isalpha.
+/** \brief Vector isalnum.
  *
  * Return a vector boolean char with a true indicator for any character
- * that is either Lower Case Alpha ASCII or Upper Case ASCII.
+ * that is either Lower Case Alpha ASCII, Upper Case ASCII, or numeric ASCII.
  * False otherwise.
  *
  *  |processor|Latency|Throughput|
@@ -350,8 +350,8 @@ vec_ctzb (vui8_t vra)
  *  |power9   | 11-21 | 1/cycle  |
  *
  * @param vec_str vector of 16 ASCII characters
- * @return vector bool char of the isalpha operation applied to each
- * character of vec_str. For each byte 0xff indicates true (isalpha),
+ * @return vector bool char of the isalnum operation applied to each
+ * character of vec_str. For each byte 0xff indicates true (isalnum),
  * 0x00 indicates false.
  */
 static inline vui8_t
@@ -397,10 +397,10 @@ vec_isalnum (vui8_t vec_str)
   return (result);
 }
 
-/** \brief Vector isalnum.
+/** \brief Vector isalpha.
  *
  * Return a vector boolean char with a true indicator for any character
- * that is either Lower Case Alpha ASCII, Upper Case ASCII, or numeric ASCII.
+ * that is either Lower Case Alpha ASCII or Upper Case ASCII.
  * False otherwise.
  *
  *  |processor|Latency|Throughput|
@@ -409,7 +409,7 @@ vec_isalnum (vui8_t vec_str)
  *  |power9   | 10-19 | 1/cycle  |
  *
  * @param vec_str vector of 16 ASCII characters
- * @return vector bool char of the isalnum operation applied to each
+ * @return vector bool char of the isalpha operation applied to each
  * character of vec_str. For each byte 0xff indicates true (isalpha),
  * 0x00 indicates false.
  */

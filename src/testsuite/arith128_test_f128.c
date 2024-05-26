@@ -13382,5 +13382,8 @@ test_vec_f128 (void)
   rc += test_msub_qpo_zero_c ();
   rc += test_msub_qpo_xtra ();
 #endif
+
+  rc += test_div_qpo ();
+  rc += test_div_qpo_xtra ();
   return (rc);
 }

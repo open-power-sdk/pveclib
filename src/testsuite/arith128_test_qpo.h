@@ -23,6 +23,9 @@
   extern int test_add_qpo ();
   extern int test_add_qpo_xtra ();
 
+  extern int test_div_qpo ();
+  extern int test_div_qpo_xtra ();
+
   extern int test_mul_qpo ();
   extern int test_mul_qpo_xtra ();
 

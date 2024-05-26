@@ -904,9 +904,9 @@ db_example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
 #endif
   return rh;
 }
+#endif
 
-
-//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
 vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
@@ -926,7 +926,7 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
   vui128_t v = z;
   const vui64_t zeros = vec_splat_u64(0);
   const vui128_t mone = (vui128_t) CONST_VINT128_DW (-1, -1);
-  vui128_t u0, u1, v0, v1, q0, q1, k, t, vn;
+  vui128_t u0, u1, v1, q0, k, t, vn;
   vui64_t vdh, vdl, udh, qdl, qdh;
 #ifdef __DEBUG_PRINT__
   print_vint128x ("db_vec_divuqe u ", (vui128_t) u);
@@ -1025,7 +1025,7 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
       //if (/*vec_cmpuq_all_ge (u1, (vui128_t) vdh)*/ 1)
 	{
 	  vui128_t u2, k1, t2;
-	  vb128_t B0, Bgt;
+	  vb128_t Bgt;
       // Here v >= 2**64, Normalize the divisor so MSB is 1
       //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
 #if 1
@@ -1148,7 +1148,7 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 	  u0 = vec_sldqi (u0, u2, 64);
 	  //if (vec_cmpuq_all_gt (k, u1))
 	    {
-	      vui128_t q2, t2, v3, v4;
+	      vui128_t q2;
 	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
 	      q2 = (vui128_t) vec_mrgahd ((vui128_t) q2, (vui128_t) zeros);
 	      //vdh = vec_mrgahd (v1, (vui128_t) zeros);
@@ -1226,15 +1226,14 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 		      && vec_cmpuq_all_ne (k1, (vui128_t) zeros)))
 #endif
 		{
-		  vb128_t CCk, CCke, CCk1;
-		  vui128_t kc, k2;
+		  vb128_t CCk;
 		  u2 = vec_subuqm ((vui128_t) zeros, k1);
 		  t = vec_subcuq ((vui128_t) zeros, k1);
 		  u0 = vec_subeuqm (u1, k, t);
 		  t2 = vec_subecuq (u1, k, t);
 		  CCk = vec_setb_ncq (t2);
 	#ifdef __DEBUG_PRINT__
-		  print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+		  print_vint128x (" hq(q0*v1) = k  ", (vui128_t) k);
 		  print_vint128x (" lq(q0*v1) = k1 ", (vui128_t) k1);
 		  print_vint128x ("     u1-k = u0  ", (vui128_t) u0);
 		  print_vint128x ("     u1-k = u2  ", (vui128_t) u2);
@@ -1242,13 +1241,17 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 	#endif
 		  q2 = vec_adduqm (q0, mone);
 		  q0 = vec_seluq (q0, q2, CCk);
-		      if (vec_cmpuq_all_eq ((vui128_t) CCk, mone))
-			{
+		  if (vec_cmpuq_all_eq ((vui128_t) CCk, mone))
+		    {
+		      t = vec_subcuq (u2, v1);
+		      u2 = vec_subuqm (u2, v1);
+		      u0 = vec_subeuqm (u0, v1, t);
 #ifdef __DEBUG_PRINT__
-		  print_vint128x (" hq(v1*q0')> u1 ", (vui128_t) CCk);
-		  print_vint128x ("         q0''-1 ", (vui128_t) q0);
-			}
+		      print_vint128x ("         q0''-1 ", (vui128_t) q0);
+		      print_vint128x ("     u0-v1 = u0 ", (vui128_t) u0);
+		      print_vint128x ("     u2-v1 = u2 ", (vui128_t) u2);
 #endif
+		    }
 #if 0
 #ifdef __DEBUG_PRINT__
 		  t = vec_muludq (&k, q0, v1);
@@ -1292,7 +1295,9 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
   return y;
 #endif
 }
+#endif
 
+#ifdef __DEBUG_PRINT__
 vui128_t db_vec_divuq (vui128_t y, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
@@ -11111,7 +11116,7 @@ test_xfer_int128 (void)
 #if 0
 extern vui128_t test_vec_divduq (vui128_t x, vui128_t y, vui128_t z);
 #define test_divduq	test_vec_divduq
-#if 0
+#if 1
 #define test_diveuq	db_vec_diveuq
 #else
 extern vui128_t test_vec_diveuq (vui128_t x, vui128_t z);
@@ -11139,6 +11144,7 @@ extern vui128_t test_diveuq (vui128_t x, vui128_t z);
 extern vui128_t test_divuq (vui128_t y, vui128_t z);
 #endif
 #endif
+
 //#define __DEBUG_PRINT__
 int
 test_vec_divide_QW (void)

@@ -54,6 +54,9 @@ extern int timed_gcc_mulqpn_f128 (void);
 extern int timed_lib_mulqpo_f128 (void);
 extern int timed_lib_mulqpn_f128 (void);
 
+extern int timed_gcc_divqpn_f128 (void);
+extern int timed_lib_divqpo_f128 (void);
+
 extern int timed_gcc_addqpn_f128 (void);
 extern int timed_lib_addqpo_f128 (void);
 

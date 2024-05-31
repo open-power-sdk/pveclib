@@ -38,6 +38,83 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui128_t
+test_diveuqo_PWR10 (vui128_t x, vui128_t z)
+{
+  return vec_diveuqo_inline (x, z);
+}
+
+vui128_t
+test_vec_diveuqo_PWR10 (vui128_t x, vui128_t z)
+{
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t y = {0};
+  vui128_t Q, R;
+  vui128_t Rt, r1, t;
+  vb128_t CC;
+  // Based on vec_divdqu with parm y = 0
+  Q  = vec_vdiveuq_inline (x, z);
+  // R = -(Q * z)
+  r1 = vec_mulluq (Q, z);
+  R  = vec_subuqm (y, r1);
+
+  CC = vec_cmpgeuq (R, z);
+  // Corrected Quotient before rounding.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  // Corrected Remainder
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  // Convert nonzero remainder into a carry (=1).
+  t = vec_addcuq (R, mone);
+  Q = (vui128_t) vec_or ((vui32_t) Q, (vui32_t) t);
+  return Q;
+}
+
+vui128_t
+test_divdqu_rto_PWR10 (vui128_t x, vui128_t z)
+{
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t y = {0};
+  vui128_t Q, R;
+  vui128_t Rt, t2;
+  vui128_t r1, r2, q1;
+  vb128_t CC, c2;
+  // Based on the PowerISA, Programming Note for
+  // Divide Word Extended [Unsigned] but vectorized
+  // for vector __int128
+
+  // Based on vec_divdqu with y = 0
+  q1 = vec_vdiveuq_inline (x, z);
+  // q2 = vec_vdivuq_inline  (y, z);
+  r1 = vec_mulluq (q1, z);
+
+  // r2 = vec_mulluq (q2, z) == 0;
+  r2 = y; //vec_subuqm (y, r2);
+  Q  = q1; //vec_adduqm (q1, q2);
+  R  = vec_subuqm (r2, r1);
+
+#if 0
+  c1 = (vb128_t) y; //vec_cmpltuq (R, r2);
+  c2 = vec_cmpgtuq (z, R);
+  CC = (vb128_t) vec_orc ((vb32_t)c1, (vb32_t)c2);
+#else
+  c2 = vec_cmpgeuq (R, z);
+  CC = c2; //(vb128_t) vec_or ((vb32_t)c1, (vb32_t)c2);
+#endif
+  // Corrected Quotient returned for divduq.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  //result.Q = Q;
+// Corrected Remainder returned for modduq.
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  // Convert nonzero remainder into a carry (=1).
+  t2 = vec_addcuq (R, mone);
+  Q = (vui128_t) vec_or ((vui32_t) Q, (vui32_t) t2);
+  return Q;
+}
+
 vui128_t test_diveuq_PWR10 (vui128_t x, vui128_t z)
 {
   return vec_vdiveuq_inline (x, z);

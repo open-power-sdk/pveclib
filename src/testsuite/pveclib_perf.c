@@ -976,6 +976,34 @@ test_time_f128 (void)
   printf ("\n%s mulqpn_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
 	  t_delta, delta_sec);
 
+  printf ("\n%s divqpn_gcc start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_gcc_divqpn_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s divqpn_gcc end", __FUNCTION__);
+  printf ("\n%s divqpn_gcc tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
+  printf ("\n%s divqpo_lib start, ...\n", __FUNCTION__);
+  t_start = __builtin_ppc_get_timebase ();
+  for (i = 0; i < TIMING_ITERATIONS; i++)
+    {
+      rc += timed_lib_divqpo_f128 ();
+    }
+  t_end = __builtin_ppc_get_timebase ();
+  t_delta = t_end - t_start;
+  delta_sec = TimeDeltaSec (t_delta);
+
+  printf ("\n%s divqpo_lib end", __FUNCTION__);
+  printf ("\n%s divqpo_lib tb delta = %lu, sec = %10.6g\n", __FUNCTION__,
+	  t_delta, delta_sec);
+
   printf ("\n%s addqpn_gcc start, ...\n", __FUNCTION__);
   t_start = __builtin_ppc_get_timebase ();
   for (i = 0; i < TIMING_ITERATIONS; i++)

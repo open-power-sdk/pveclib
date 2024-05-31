@@ -60,55 +60,65 @@
  * operations via soft-float emulation for earlier processors.
  * The soft-float implementation follows the ABI and passes __float128
  * parameters and return values in vector registers.
+ * This requires transfers between vector  __float128 and 64-bit
+ * integer GPR pairs as the generic soft-float implementation is
+ * integer based.
+ *
+ * These transfers occur at the interface (at call entry and return).
+ * This be reasonable for POWER8 when the direct move from/to vector
+ * instructions are used. But this is not available for POWER7
+ * (and earlier) which requires a transfer through storage.
+ * There is also contention for the XER carry bit used for extending
+ * 64-bit integer arithmetic to 128-bit.
+ * Both issues could be avoided by keeping __float128 values in VRs and
+ * operating on them directly using quadword logical and arithmetic
+ * operations provided by the vector unit.
  *
  * \note The performance of the libgcc soft-float (KF Mode) runtime for
  * __float128 varies between releases of GCC. Some GCC versions
  * introduced a bug that miss-compiled the transfer of __float128
  * parameters to GPR pairs as required for generic soft-float
- * implementation. For POWER8 this results in a significant performance
- * hit.
+ * implementation. For POWER8 this can result in a significant
+ * performance hit.
  *
- * The PowerISA 3.0 also defines a number of useful quad-precision
+ * The PowerISA 3.0 also defines a number of useful Quad-Precision
  * operations using the "round-to-odd" override. This is useful when
- * the results of quad-precision arithmetic must be rounded to a
+ * the results of Quad-Precision arithmetic must be rounded to a
  * shorter precision while avoiding double rounding. Recent GCC
  * compilers support these operations as built-ins for the POWER9
  * target, but they not supported by the C language or GCC runtime
  * library. This means that round-to-odd is not easily available to
- * libraries that need to support IEEE-128 on POWER8. Again it may be
- * reasonable to add these to pveclib.
+ * libraries that need to support IEEE-128 on POWER8. It seems
+ * reasonable to add these round-to-odd operations to PVECLIB.
  *
  * \note See
  * <a href="https://www.exploringbinary.com/gcc-avoids-double-rounding-errors-with-round-to-odd/">
  * GCC Avoids Double Rounding Errors With Round-To-Odd</a>
  *
- * Another issue is the performance of GCC soft-float runtime for
- * IEEE-128 (KF mode). There seem to be a number of issues with code
- * generation for transfers from __float128 to 64-bit integer GPRs.
- * This is required to match the ABI (vector) parameters to the
- * soft-float runtime using integer scalars. For POWER8 targets
- * the GCC compiler generates store vector followed by two load
- * doubleword instructions. This generates high frequencies of
- * load-hit-store rejects at runtime.
- * It also looks like there is significant instruction latency
- * associated with the XER carry bit required for extended (128-bit)
- * integer arithmetic.
- * \note The first issue (parameter store reload) is a compiler bug.
- * The second issue is an attribute of the hardware implementation
- * and associate trade-offs.
- * Both of these issues can be avoided by providing a soft-float
- * implementation for __float128 using VSX vector 128-bit arithmetic and
- * logical operations.
+ * PVECLIB provides implementations for (most) Quad-Precision
+ * round-to-odd operations supported for PowerISA 3.0 and 3.1.
+ * Implementations for Pre-3.0 ISA can be complex,
+ * so both in-line expansion and
+ * out-of-line function implementations are provided.
+ * For POWER9/10 the implementations uses the appropriate
+ * Quad-Precision round-to-odd instructions.
+ * For POWER7/8 the implementations use conditional logic and
+ * vector quadword/doubleword operations provided by compiler
+ * built-ins and PVECLIB operations.
+ *
+ * \note At this time PVEClIB has no plans to provide soft-float
+ * Quad-Precision arithmetic operations for the the IEEE standard
+ * rounding modes. These are covered by the libgcc soft-float runtime.
  *
  * For the QP operations that have libgcc implementations and we have
- * corresponding PVECLIB implementations we can do direct
+ * corresponding PVECLIB implementations we can provide direct
  * performance comparisons. So far micro-benchmarks show a significant
  * performance gain for the PVECLIB vector implementations vs the
  * GCC KF mode runtime.
  *
- * | Power8 QP  | cmpqp |cvtdpqp|cvtqpdp|cvtuqqp|cvtqpuq| mulqp | addqp |
- * |-----------:|:-----:|:------:|:-----:|:-----:|:-----:|:-----:|:------|
- * |\%improvement| 22.4 |  60.7  | 46.2* |  28.9 |  72.4 |  1.8* | 10.1* |
+ * | Power8 QP  | cmpqp |cvtdpqp|cvtqpdp|cvtuqqp|cvtqpuq| mulqp | addqp | divqp |
+ * |-----------:|:-----:|:------:|:-----:|:-----:|:-----:|:-----:|:-----:|:------|
+ * |\%improvement| 22.4 |  60.7  | 46.2* |  28.9 |  72.4 |  1.8* | 10.1* | 14.0* |
  *
  * \note These micro-benchmarks and others are included in
  * src/testsuite. Specifically files vec_perf_f128.c and
@@ -147,7 +157,7 @@
  *
  * The PVECLIB implementations for quad-precision arithmetic and
  * conversion operations are large enough
- * that most applications will want to call a library.
+ * that most applications will want to call a library function.
  * PVECLIB will build and release the appropriate CPU tuned libraries.
  * This will follow the general design used for multiple
  * quadword integer multiply functions (vec_int512_ppc.h).
@@ -155,7 +165,8 @@
  * \note At this time, PVECLIB does not intend to replace existing
  * GCC/libm IEEE-128 runtime APIs and will maintain it own unique
  * name-space. However if the maintainers of these projects want to
- * leverage PVECLIB they are allowed under the terms of the
+ * leverage PVECLIB (or the techniques documented here)
+ * they are allowed under the terms of the
  * <a href="http://www.apache.org/licenses/LICENSE-2.0">
  * Apache License, Version 2.0.</a>
  *
@@ -4022,6 +4033,161 @@ test_vec_msubqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
  * \endcode
  * We prefer use a compiler built-in for POWER9 but only
  * __builtin_fmaf128_round_to_odd() is currently provided.
+ *
+ * \subsubsection f128_softfloat_0_0_3_6 Divide Quad-Precision with Round-to-Odd.
+ *
+ * The PVECLIB implementation of
+ * <B>Divide Quad-Precision with Round-to-Odd</B>
+ * will use the POWER9 xsdivqpo instruction if the compile target
+ * supports it. Otherwise provide a POWER8 VSX implementation using
+ * operations from vec_int128_ppc.h and vec_int64_ppc.
+ * For example:
+ * \code
+__binary128
+test_divqpo_PWR9 (__binary128 vfa, __binary128 vfb)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 6)
+#if defined (__FLOAT128__) && (__GNUC__ > 7)
+  // Earlier GCC versions may not support this built-in.
+  result = __builtin_divf128_round_to_odd (vfa, vfb);
+#else
+  // If the compiler supports _ARCH_PWR9, must support mnemonics.
+  __asm__(
+      "xsdivqpo %0,%1,%2"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#endif
+#else
+  // Soft-float implementation
+#endif
+  return result;
+}
+ * \endcode
+ * We prefer the compiler built-in (if available) but can substitute
+ * in-line assembler if needed.
+ * The built-in is subject to additional compiler optimizations
+ * (like instruction scheduling) while in-line assembler is not.
+ *
+ * \paragraph f128_softfloat_0_0_3_6_0 Divide Quad-Precision Soft-float implementation.
+ *
+ * The first step after expanding the _binary128 operands into internal
+ * form, is to verify that both operands are finite
+ * (including denormal and 0.0). If either operand is not-finite
+ * the else-leg of this test executes dedicated logic to return
+ * specific results.
+ * (See: \ref f128_softfloat_0_0_3_6_2).
+ * Otherwise assuming both operands are finite,
+ * the logic completes expanding the operands to internal form and
+ * tests for denormal/0.0.
+ * This where the hidden bit is restored for normal values and the
+ * special case for divide by zero is handled.
+ *
+ * The soft-float Divide follows that same structure as Multiply
+ * including:
+ * - Using the same IR format.
+ * - Using the similar code for post normalization, rounding and
+ *   overflow.
+ *
+ * There are some obvious differences:
+ * - Special handling for divide by zero.
+ * - Using a custom Divide Extended quadword
+ *   (See: \ref f128_softfloat_0_0_3_6_1) to produce
+ *   the result significand.
+ * - Subtracting the exponents instead of adding.
+ *
+ * There are some less obvious differences. For example;
+ * to use divide extended quadword we need to insure some constraints.
+ * - Insure that the divide extended result:
+ *   - Does not overflow (the divisor is greater than the dividend).
+ *   - The result has additional bits below the Fraction for the
+ *     Guard/Round/Sticky-bits (GRX).
+ *     (See: \ref f128_softfloat_IRRN_0_1)
+ *   - And continuing fraction-bits, below GRX, can be captured for
+ *     the Sticky-bit (X).
+ * - Preconditioning before divide includes:
+ *   - Normalize both significands (including denormal fractions) so
+ *     that the Hidden-bit (L) is set. This requires we maintain an
+ *     extend exponent range until post normalization and rounding
+ *     is complete.
+ *   - Before the divide extended, shift the divisor left 8-bits.
+ *     This insures that the divisor is greater than the dividend
+ *     and provides 8 low-order bits for GRX in the result.
+ *
+ * After the quadword divide extended (vec_diveuqo_inline());
+ * shift the result right 8-bits for the high quadword,
+ * and left 120-bits to isolate the GRX-bits into the low quadword.
+ * The result is now in the common 256-bit
+ * IR format and is ready for post normalization and rounding.
+ * (See: \ref f128_softfloat_IRRN_0_1_3)
+ *
+ * \paragraph f128_softfloat_0_0_3_6_1 NaN and Infinity handling for Divide
+ * When operands are not finite (infinite or Not-a-Number) or the
+ * divisor is 0.0 we have to deal with a matrix of operand pairs and
+ * return specific result values.
+ *
+ * \note The PowerISA provides a table with specified results for each
+ * combination of operands.
+ * See PowerISA 3.0B Table 67 Actions for xsdivqp[o].
+ *
+ * \paragraph f128_softfloat_0_0_3_6_2 Customized quadword Divide Extended
+ * A customized divide extended (vec_diveuqo_inline()) is required:
+ * - To capture the final remainder which represents any continuing
+ *   fraction bits. A nonzero remainder is reduced to a single bit
+ *   and ORed with X-bit(s) before rounding.
+ * - And take advantage of what is known about preconditioned
+ *   values from Quad-Precision divide operations.
+ *   We can assume that:
+ *   - operands are nonzero,
+ *   - normalized,
+ *   - the divisor is greater than the dividend.
+ *   - and there is a good chance the low order doubleword of the
+ *     divisor is zero.
+ *
+ * To capture repeating fraction bits (below X)
+ * the vec_diveuqo_inline() implementation checks the (final)
+ * remainder and sets the LSB if the remainder is nonzero.
+ * This is effectively a fixed-point round to odd.
+ *
+ * This custom divide extended implementation aggressively scales
+ * both operands so that the divisor is right justified in the
+ * quadword.
+ * This increases the probability that the low-order doubleword of the
+ * divisor is zero. This case simplifies the long division to be
+ * <I>divide by a single (doubleword) digit</I> using
+ * vec_divqud_inline() in two steps.
+ *
+ * This optimization allows direct use of the remainder from the 1st
+ * divide step in the second step of the long division (generating the
+ * second doubleword digit of the quotient).
+ * As vec_divqud_inline() is used again for the second divide,
+ * the remainder from this stage
+ * is used directly to generate the X-bit for round-to-odd.
+ *
+ * Otherwise the long division entails a two (doubleword) digit
+ * divisor. In this case the 1st division step using
+ * vec_divqud_inline() produces an estimate of the 1st quotient digit.
+ * So multiply the quotient digit estimate by the two digit divisor
+ * and compute the (three digit) remainder.
+ * If this remainder is larger than the the divisor then we need to
+ * correct the 1st digit quotient and the remainder.
+ *
+ * \note In this case the dividend is logically a zero extended
+ * 256-bit double quadword. Or four (doubleword) digits. The
+ * remainder calculation and compare are handled as double quadword
+ * values.
+ *
+ * The corrected remainder form the 1st step it shifted left 64-bits
+ * and used as the dividend for the second step division to generate
+ * the second quotient digit estimate. Combine the 1st and 2nd quotient
+ * digit to form the two digit quotient estimate.
+ * Multiply the two digit quotient estimate by the two digit divisor
+ * and compute the (four digit) remainder.
+ * If this remainder is larger than the the divisor then we need to
+ * correct the quotient and the remainder.
+ * If the corrected remainder is nonzero, OR a 1b in to LSB of the
+ * quotient quadword.
  *
  * \subsubsection f128_softfloat_0_0_4_1 Special Constants for Quad-Precision Soft-float
  *
@@ -8550,6 +8716,196 @@ vec_cmpqp_exp_unordered (__binary128 vfa, __binary128 vfb)
 #endif
 }
 
+/** \brief Vector Divide Extended Unsigned Quadword with round to odd.
+ *
+ *  Divide the [zero] extended quadword element x by the
+ *  corresponding quadword element z. The dividend is
+ *  (logically) extended on the right with 128-bits of 0b.
+ *  This is effectively a 256x128 bit unsigned integer divide
+ *  returning 128-bit quotient.
+ *  If the the remainder of this division is nonzero the quotient
+ *  is rounded to an odd value.
+ *  This quotient is returned as a vector unsigned __int128.
+ *
+ *  \note The results may be undefined if;
+ *  the quotient cannot be represented in 128-bits,
+ *  or the divisor is 0.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |176-236|   NA     |
+ *  |power9   |127-163|   NA     |
+ *  |power10  | 22-61 |1/13 cycle|
+ *
+ *  @param x 128-bit vector unsigned __int128.
+ *  @param z 128-bit vector unsigned __int128.
+ *  @return The quotient in a vector unsigned __int128.
+ */
+static inline vui128_t
+vec_diveuqo_inline (vui128_t x, vui128_t z)
+{
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+#if defined (_ARCH_PWR10)
+  vui128_t Q, R;
+  vui128_t Rt, r1, t;
+  vb128_t CC;
+  // Based on vec_divdqu with parm y = 0
+  Q  = vec_vdiveuq_inline (x, z);
+  // R = -(Q * z)
+  r1 = vec_mulluq (Q, z);
+  R  = vec_subuqm ((vui128_t) zeros, r1);
+
+  CC = vec_cmpgeuq (R, z);
+  // Corrected Quotient before rounding.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  // Corrected Remainder
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  // Convert nonzero remainder into a carry (=1).
+  t = vec_addcuq (R, mone);
+  Q = (vui128_t) vec_or ((vui32_t) Q, (vui32_t) t);
+  return Q;
+#else
+  vui128_t x0, x1, z1, q0, k, s, t, zn;
+  vui64_t zdh, qdl, qdh;
+
+  // For xsdivqpo x and z will always be normalized quadword
+  // significands, and divisor (z) is greater than the dividend (x).
+  // Shift the divisor and dividend as far left as possible
+  // by re-normalizing the divisor so the MSB is 1.
+  // Could use vec_clzq(), but we know  z >= 2**64, So:
+  zn = (vui128_t) vec_clzd ((vui64_t) z);
+  // zn = zn >> 64;, So we can use it with vec_slq ()
+  zn = (vui128_t) vec_splatd ((vui64_t) zn, VEC_DW_H);
+  // renormalize dividend and divisor
+  x1 = vec_slq (x, zn);
+  z1 = vec_slq (z, zn);
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  // zdl == 0 is an important case.
+	  // Optimize for zdl ==  0 as single (DW) digit long division
+	  if (__builtin_expect (vec_cmpud_any_eq ((vui64_t) z1, zeros), 1))
+	   {
+	      zdh = vec_splatd ((vui64_t) z1, VEC_DW_H);
+	      // Generate the 1st quotient digit
+	      qdh = vec_divqud_inline (x1, zdh);
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = x1 - q1*z;  Simplifies to:
+	      x1 = (vui128_t) vec_pasted (qdh, (vui64_t) zeros);
+	      // generate the 2nd quotient digit
+	      qdl = vec_divqud_inline (x1, zdh);
+	      //return (vui128_t) {qlh, qdl}; After round to odd
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      s = (vui128_t) vec_mrgahd ((vui128_t) qdl, (vui128_t) zeros);
+	      // Convert nonzero remainder into a carry (=1).
+	      t = vec_addcuq (s, mone);
+	      return (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t);
+	    }
+	  else
+	    {
+	      vui128_t k1, x2, t2, q2;
+	      vui128_t s, s0, s1;
+	      vb128_t Bgt;
+	      vb64_t Beq;
+
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+	      // q0 = qdh << 64
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+	      // Compute 1st digit remainder
+	      // {k, k1}  = vec_muludq (z1, q0);
+	      { // Optimized for 128-bit by 64-bit multiply
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * q-estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // Also a double QW compare for {x1 || 0} > {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+
+	      x0 = vec_sldqi (x0, x2, 64);
+	      // Adjust Q if initial guess is too high ( Q+1 )
+	      // q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      q2 = vec_adduqm (q0, mone);
+	      //t2 = vec_subuqm (x0, (vui128_t) zdh);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+	      qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      k1 = vec_muludq (&k, q0, z1);
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      // x0 = vec_subeuqm (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+	      // The remainder should fit into x2 (x0 == 0) and
+	      // should be less than z1.
+	      // If not it will be after correction.
+	      // Collect initial remainder for sticky-bits.
+	      s0 = x2;
+	      // Adjust Q if initial guess is too high ( Q+1 )
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      // Subtract divisor (z1) from initial remainder (x2)
+	      // for corrected remainder.
+	      // t = vec_subcuq (x2, z1);
+	      x2 = vec_subuqm (x2, z1);
+	      // x0 = vec_subeuqm (x0, (vui128_t) zeros, t);
+	      // Collect corrected remainder for sticky-bits.
+	      s1 = x2;
+	      // Test for nonzero remainder and round to odd
+	      // Select from initial or corrected sticky bits
+	      s  = vec_seluq (s0, s1, Bgt);
+	      // Convert nonzero remainder into a carry (=1).
+	      t2 = vec_addcuq (s, mone);
+	      q0 = (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t2);
+	      return q0;
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made divide any value by 0
+      // then the results are undefined. We use __UINT128_MAX__.
+      return mone;
+    }
+#endif
+}
+
 /** \brief Return 128-bit vector boolean true if the __float128 value
  *  is Finite (Not NaN nor Inf).
  *
@@ -10495,6 +10851,397 @@ static inline vec_xscvuqqp (vui128_t int128)
     }
 #else
   result = int128[0];
+#endif
+  return result;
+}
+
+/** \brief VSX Scalar Divide Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vector vfa is divided by vfb
+ *  to produce the quad-precision quotient result.
+ *  The rounding mode is round to odd.
+ *
+ *  This is the dynamic call ABI for IFUNC selection when dynamically
+ *  linked to the <I>libpvec.so</I> runtime library. The IFUNC resolver
+ *  will dynamically select the best implementation for processor the
+ *  application is running on. This will be one of the <B>-mcpu</B>
+ *  specific builds from the <I>libpvecstatic</I> archive. This binding occurs
+ *  on first call to the function each time the application runs.
+ *
+ *  \note For POWER9/10 use the xsdivqpo instruction.
+ *  For POWER8 use the soft-float implementation from
+ *  vec_xsmulqpo_inline().
+ *
+ *  The application may choose to statically bind to a <B>-mcpu</B>
+ *  specific build when the application is linked to <I>libpvecstatic.a</I>.
+ *  The static implementations are vec_xsdivqpo_PWR7 (BE only),
+ *  vec_xsmulqpo_PWR8, vec_xsdivqpo_PWR9 and vec_xsmulqpo_PWR10.
+ *  For applications calling a static implementation based on the
+ *  compilers <B>-mcpu=</B> option use the __VEC_PWR_IMP() macro.
+ *  For example:
+ * \code
+  result = __VEC_PWR_IMP(vec_xsdivqpo) (qpfact1, vf1);
+ * \endcode
+ *  __VEC_PWR_IMP() will add the appropriate suffix for the
+ *  compile target.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsdivqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |160-240|    NA    |
+ *  |power9   | 56-58 |1/45 cycle|
+ *  |power10  | 57-59 |1/50 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return a scalar __binary128 value.
+ */
+extern __binary128
+vec_xsdivqpo (__binary128 vfa, __binary128 vfb);
+
+/** \brief VSX Scalar Divide Quad-Precision using round to Odd.
+ *
+ *  The quad-precision element of vector vfa is divided by vfb
+ *  to produce the quad-precision quotient result.
+ *  The rounding mode is round to odd.
+ *
+ *  For POWER9 use the xsdivqpo instruction.
+ *  For POWER8 use this soft-float implementation using
+ *  vector instruction generated by PVECLIB operations.
+ *
+ *  \note This operation <I>may not</I> follow the PowerISA
+ *  relative to setting the FPSCR.
+ *  However if the hardware target includes the xsdivqpo instruction,
+ *  the implementation may use that.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |160-240|    NA    |
+ *  |power9   | 56-58 |1/45 cycle|
+ *  |power10  | 57-59 |1/50 cycle|
+ *
+ *  @param vfa 128-bit vector treated as a scalar __binary128.
+ *  @param vfb 128-bit vector treated as a scalar __binary128.
+ *  @return a scalar __binary128 value.
+ */
+static inline __binary128
+vec_xsdivqpo_inline (__binary128 vfa, __binary128 vfb)
+{
+  __binary128 result;
+#if defined (_ARCH_PWR9) && (__GNUC__ > 7)
+#if defined (__FLOAT128__) && (__GNUC__ > 8)
+  // earlier GCC versions generate extra data moves for this.
+  result = __builtin_divf128_round_to_odd (vfa, vfb);
+#else
+  // No extra data moves here.
+  __asm__(
+      "xsdivqpo %0,%1,%2"
+      : "=v" (result)
+      : "v" (vfa), "v" (vfb)
+      : );
+#endif
+#elif  defined (_ARCH_PWR7)
+  vui64_t q_exp, a_exp, b_exp, x_exp;
+  vui32_t q_sign,  a_sign,  b_sign;
+  vui128_t q_sig, a_mag, b_mag;
+  const vui64_t q_zero = { 0, 0 };
+  const vui64_t q_ones = { -1, -1 };
+  const vui64_t exp_naninf = vec_mask64_f128exp ();
+  const vui32_t magmask = vec_mask128_f128mag ();
+
+  // Vector extract the exponents from vfa, vfb
+  x_exp = vec_xxxexpqpp (vfa, vfb);
+  a_exp = vec_splatd (x_exp, VEC_DW_H);
+  b_exp = vec_splatd (x_exp, VEC_DW_L);
+  // Mask off sign bits so can use integers for magnitude compare.
+  a_mag = (vui128_t) vec_and_bin128_2_vui32t (vfa, magmask);
+  b_mag = (vui128_t) vec_and_bin128_2_vui32t (vfb, magmask);
+  a_sign = vec_andc_bin128_2_vui32t (vfa, magmask);
+  b_sign = vec_andc_bin128_2_vui32t (vfb, magmask);
+  q_sign = vec_xor (a_sign, b_sign);
+
+//  if (vec_all_isfinitef128 (vfa) && vec_all_isfinitef128 (vfb))
+//  The above can be optimized to the following
+  if (__builtin_expect (vec_cmpud_all_lt (x_exp, exp_naninf), 1))
+    {
+      const vui64_t exp_dnrm = q_zero;
+      vui32_t hidden = vec_mask128_f128Lbit();
+      vi64_t exp_min = vec_splat_s64 ( 1 );
+      vui128_t a_sig, b_sig, p_sig_h, p_sig_l, p_odd;
+      vui64_t exp_bias;
+      vui32_t q_inf = vec_mask128_f128exp ();
+
+      if (__builtin_expect (vec_cmpud_any_eq (x_exp, exp_dnrm), 0))
+	{ // Involves zeros or denormals
+	  // check for zero significands in Divide
+	  // Can use magnitude compare here
+	  if (vec_cmpuq_all_eq (b_mag, (vui128_t) q_zero))
+	    { // Divide by zero, return QP Infinity OR QNAN
+	      if (vec_cmpuq_all_eq (a_mag, (vui128_t) q_zero))
+		{ // Divide by zero, return QP Infinity
+		  result = vec_const_nanf128 ();
+		}
+	      else
+		{ // Divide by zero, return QP Infinity
+		  q_sign = vec_or (q_sign, q_inf);
+		  result = vec_xfer_vui32t_2_bin128 (q_sign);
+		}
+	      return result;
+	    }
+	  else if (__builtin_expect (vec_cmpuq_all_eq (a_mag, (vui128_t) q_zero), 0))
+	    { // finite divisor with zero dividend , return QP signed zero
+	      return vec_xfer_vui32t_2_bin128 (q_sign);
+	    }
+	  else
+	    {
+	      // need to Normalize Denormals before divide
+	      vui128_t a_tmp, b_tmp;
+	      vui64_t a_adj = q_zero;
+	      vui64_t b_adj = q_zero;
+	      vui64_t x_adj;
+	      vui32_t a_frac, b_frac;
+	      // Extract the Fraction without restoring the hidden bit.
+	      // This is enough for denormals before normalization.
+	      a_frac = vec_andc ((vui32_t) a_mag, q_inf);
+	      b_frac = vec_andc ((vui32_t) b_mag, q_inf);
+
+	      vb64_t exp_mask;
+	      exp_mask = vec_cmpequd (x_exp, exp_dnrm);
+	      x_exp = (vui64_t) vec_sel (x_exp, (vui64_t) exp_min, exp_mask);
+
+	      if  (__builtin_expect (vec_cmpud_all_eq (a_exp, exp_dnrm), 0))
+		{
+		  a_tmp = vec_slqi ((vui128_t) a_frac, 15);
+		  a_adj = (vui64_t) vec_clzq (a_tmp);
+		  a_sig = vec_slq ((vui128_t) a_frac, (vui128_t) a_adj);
+		}
+	      else // vfa is finite and normal, insert hidden-bit
+		  a_sig = (vui128_t) vec_or (a_frac, hidden);
+
+	      if  (__builtin_expect (vec_cmpud_all_eq (b_exp, exp_dnrm), 0 ))
+		{
+		  b_tmp = vec_slqi ((vui128_t) b_frac, 15);
+		  b_adj = (vui64_t) vec_clzq (b_tmp);
+		  b_sig = vec_slq ((vui128_t) b_frac, (vui128_t) b_adj);
+		}
+	      else // vfb is finite and normal, insert hidden-bit
+		  b_sig = (vui128_t) vec_or (b_frac, hidden);
+
+	      // Adjust exponents with extended range
+	      x_adj = vec_mrgald ((vui128_t) a_adj, (vui128_t) b_adj);
+	      x_exp = vec_subudm (x_exp, x_adj);
+
+	      a_exp = vec_splatd (x_exp, VEC_DW_H);
+	      b_exp = vec_splatd (x_exp, VEC_DW_L);
+	    }
+	}
+      else
+	{
+	  // Both are finite and normal
+	  vui32_t a_frac, b_frac;
+	  // Extract the Fraction then set the hidden bit.
+	  a_frac = vec_andc ((vui32_t) a_mag, q_inf);
+	  b_frac = vec_andc ((vui32_t) b_mag, q_inf);
+	  a_sig = (vui128_t) vec_or (a_frac, hidden);
+	  b_sig = (vui128_t) vec_or (b_frac, hidden);
+	  a_exp = vec_splatd (a_exp, VEC_DW_H);
+	  b_exp = vec_splatd (b_exp, VEC_DW_H);
+	}
+      // Precondition the significands before multiply so that the
+      // high-order 114-bits (C,L,FRACTION) of the product are right
+      // adjusted in p_sig_h. And the low-order 112-bits are left
+      // justified in p_sig_l.
+      // Using Divide extended we are effective performing a 256-bit
+      // by 128-bit divide.
+      b_sig = vec_slqi (b_sig, 8);
+      p_sig_l = vec_diveuqo_inline (a_sig, b_sig);
+
+      p_sig_h = (vui128_t) vec_sld ((vui8_t) q_zero, (vui8_t) p_sig_l, 15);
+      p_sig_l = (vui128_t) vec_sld ((vui8_t) p_sig_l, (vui8_t) q_zero, 15);
+      // Generate exp_bias while avoiding a vector load
+      exp_bias = (vui64_t) vec_srhi ((vui16_t) exp_naninf, 1);
+      // sum exponents
+      q_exp = vec_subudm (a_exp, b_exp);
+      q_exp = vec_addudm (q_exp, exp_bias);
+
+      // There are two cases for denormal (after divide)
+      // 1) The sum of unbiased exponents is less than E_min (tiny).
+      // 2) The significand is less than 1.0 (C and L-bits are zero).
+      //  2a) The exponent is greater than E_min
+      //  2b) The exponent is equal to E_min
+      //
+      if (__builtin_expect (vec_cmpsd_all_lt ((vi64_t) q_exp, exp_min), 0))
+	{
+	    const vui64_t exp_tinyer = (vui64_t) CONST_VINT64_DW( 116, 116 );
+	    // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
+	    vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	    vui32_t tmp;
+	    // Intermediate result is tiny, unbiased exponent < -16382
+	    x_exp = vec_subudm ((vui64_t) exp_min, q_exp);
+
+	    if  (vec_cmpud_all_gt ((vui64_t) x_exp, exp_tinyer))
+	      {
+		// Intermediate result is too tiny, the shift will
+		// zero the fraction and the GR-bit leaving only the
+		// Sticky bit. The X-bit needs to include all bits
+		// from p_sig_h and p_sig_l
+		p_sig_l = vec_srqi (p_sig_l, 16);
+		p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l, (vui32_t) p_sig_h);
+		// generate a carry into bit-2 for any nonzero bits 3-127
+		p_sig_l = vec_adduqm (p_sig_l, (vui128_t) xmask);
+		q_sig = (vui128_t) q_zero;
+		p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+	      }
+	    else
+	      { // Normal tiny, right shift may lose low order bits
+		// from p_sig_l. So collect any 1-bits below GRX and
+		// OR them into the X-bit, before the right shift.
+		vui64_t l_exp;
+		// const vui64_t exp_128 = (vui64_t) CONST_VINT64_DW( 128, 128 );
+		const vui64_t exp_128 = vec_const64_f128_128 ();
+		// Propagate low order bits into the sticky bit
+		// GRX left adjusted in p_sig_l
+		// Isolate bits below GDX (bits 3-128).
+		tmp = vec_and ((vui32_t) p_sig_l, xmask);
+		// generate a carry into bit-2 for any nonzero bits 3-127
+		tmp = (vui32_t) vec_adduqm ((vui128_t) tmp, (vui128_t) xmask);
+		// Or this with the X-bit to propagate any sticky bits into X
+		p_sig_l = (vui128_t) vec_or ((vui32_t) p_sig_l, tmp);
+		p_sig_l = (vui128_t) vec_andc ((vui32_t) p_sig_l, xmask);
+
+		l_exp = vec_subudm (exp_128, x_exp);
+
+		p_sig_l = vec_sldq (p_sig_h, p_sig_l, (vui128_t) l_exp);
+		p_sig_h = vec_srq (p_sig_h, (vui128_t) x_exp);
+		q_sig = p_sig_h;
+	      }
+	    q_exp = q_zero;
+	}
+      else
+	{
+	  // const vui32_t sigovt = CONST_VINT128_W(0x0000ffff, -1, -1, -1);
+	  vui32_t sigovt = vec_sld ((vui32_t) q_zero, (vui32_t) q_ones, 14);
+
+	  // Exponent is not tiny.
+	  if (vec_cmpuq_all_le (p_sig_h, (vui128_t) sigovt))
+	    {
+	      // But the significand is below normal range.
+	      const vui64_t exp_15 = vec_splat_u64 (15);
+	      vui64_t c_exp, d_exp;
+	      vui128_t c_sig;
+
+	      c_sig = vec_clzq (p_sig_h);
+	      c_exp = vec_splatd ((vui64_t) c_sig, VEC_DW_L);
+	      c_exp = vec_subudm (c_exp, exp_15);
+	      d_exp = vec_subudm (q_exp, (vui64_t) exp_min);
+	      d_exp = vec_minud (c_exp, d_exp);
+
+	      if (vec_cmpsd_all_gt ((vi64_t) q_exp, exp_min))
+		{
+		  p_sig_h = vec_sldq (p_sig_h, p_sig_l, (vui128_t) d_exp);
+		  p_sig_l = vec_slq (p_sig_l, (vui128_t) d_exp);
+		  if (vec_cmpud_all_le (q_exp, c_exp))
+		    {
+		      // Intermediate result == tiny, unbiased exponent == -16382
+		      // Check if sig is denormal range (L-bit is 0).
+		      q_exp = q_zero;
+		    }
+		  else
+		    q_exp = vec_subudm (q_exp, d_exp);
+
+		}
+	      else
+		{
+		  // Intermediate result == tiny, unbiased exponent == -16382
+		  // sig is denormal range (L-bit is 0).
+		  q_exp = q_zero;
+		}
+	    }
+	  q_sig = p_sig_h;
+	}
+
+      // Round to odd from lower product bits
+      p_odd = vec_addcuq (p_sig_l, (vui128_t) q_ones);
+      q_sig = (vui128_t)  vec_or ((vui32_t) q_sig, (vui32_t) p_odd);
+
+      // Check for exponent overflow -> __FLT128_MAX__ (round to odd)
+      if (__builtin_expect ((vec_cmpud_all_ge (q_exp, exp_naninf)), 0))
+      {
+	  // Intermediate result is huge, unbiased exponent > 16383
+	  // so return __FLT128_MAX__ with the appropriate sign.
+	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
+	  return vec_xfer_vui32t_2_bin128 (f128_smax);
+      }
+    }
+  else
+    {
+      // One or both operands are NaN or Infinity
+      vui32_t q_nan = vec_mask128_f128Qbit ();
+      vui32_t q_inf = vec_mask128_f128exp ();
+      vui128_t a_frac, b_frac;
+      // Extract the Fraction without restoring the hidden bit.
+      // This is enough to distinguish NaN from Inf.
+      // Note The xor with vec_mask128_f128exp () will leave nonzero
+      // bits in the Exponent for finite values. This is Ok and frac
+      // can distinguish Infinities from finite values.
+      a_frac = (vui128_t) vec_xor ((vui32_t) a_mag, q_inf);
+      b_frac = (vui128_t) vec_xor ((vui32_t) b_mag, q_inf);
+
+      if (vec_cmpuq_all_eq (a_frac, (vui128_t) q_zero)
+	  && vec_cmpuq_all_eq (b_frac, (vui128_t) q_zero))
+	{
+	  // Operands either infinity or zero
+	  if (vec_cmpud_any_eq (x_exp, q_zero))
+	    {
+	      // Inifinty / Zero is Inifinty
+	      vui32_t vf128 = vec_or (q_sign, (vui32_t) a_mag);
+	      return vec_xfer_vui32t_2_bin128 (vf128);
+	    }
+	  else
+	    {
+	      // Infinity / Infinity == Quiet NAN
+	      return vec_const_nanf128 ();
+	    }
+	}
+      else
+	{
+	  // One or both operands are NaN
+	  if (vec_all_isnanf128 (vfa))
+	    {
+	      // vfa is NaN, Convert vfa to QNaN and return
+	      vui32_t vf128 = vec_or_bin128_2_vui32t (vfa, q_nan);
+	      return vec_xfer_vui32t_2_bin128 (vf128);
+	    }
+	  else if (vec_all_isnanf128 (vfb))
+	    {
+	      // vfb is NaN, Convert vfb to QNaN and return
+	      vui32_t vf128 = vec_or_bin128_2_vui32t (vfb, q_nan);
+	      return vec_xfer_vui32t_2_bin128 (vf128);
+	    }
+	  else  // OR an Infinity and a Nonzero finite number
+	    {
+	      if (vec_cmpuq_all_eq (a_frac, (vui128_t) q_zero))
+		{ // vfa is a Infinity, return signed Infinity
+		  vui32_t vf128;
+		  vf128 = vec_or (q_sign, q_inf);
+		  return vec_xfer_vui32t_2_bin128 (vf128);
+		}
+	      else
+		{  // vfb is a Infinity, return signed zero
+		  // Exp and sig are already zero in q_sign;
+		  return vec_xfer_vui32t_2_bin128 (q_sign);
+		}
+	    }
+	}
+    }
+  // Merge sign, significand, and exponent into final result
+  q_sig = (vui128_t) vec_or ((vui32_t) q_sig, q_sign);
+  result = vec_xsiexpqp (q_sig, q_exp);
 #endif
   return result;
 }

@@ -155,6 +155,7 @@ extern vui128_t vec_moduq ## _TARGET (vui128_t, vui128_t);
 #define VEC_F128_LIB_LIST(_TARGET) \
 extern __binary128 vec_xsaddqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xssubqpo ## _TARGET (__binary128, __binary128); \
+extern __binary128 vec_xsdivqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xsmulqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xsmaddqpo ## _TARGET (__binary128, __binary128, __binary128); \
 extern __binary128 vec_xsmsubqpo ## _TARGET (__binary128, __binary128, __binary128);
@@ -290,6 +291,7 @@ __attribute__ ((ifunc ("resolve_vec_mul512_byMN")));
  * vec_f128_ppc.h
  * */
 VEC_RESOLVER_2 (__binary128, vec_xsaddqpo, __binary128, __binary128);
+VEC_RESOLVER_2 (__binary128, vec_xsdivqpo, __binary128, __binary128);
 VEC_RESOLVER_2 (__binary128, vec_xsmulqpo, __binary128, __binary128);
 VEC_RESOLVER_2 (__binary128, vec_xssubqpo, __binary128, __binary128);
 VEC_RESOLVER_3 (__binary128, vec_xsmaddqpo, __binary128, __binary128, __binary128);

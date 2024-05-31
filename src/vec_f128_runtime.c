@@ -35,6 +35,12 @@ __VEC_PWR_IMP (vec_xssubqpo) (__binary128 vfa, __binary128 vfb)
 }
 
 __binary128
+__VEC_PWR_IMP (vec_xsdivqpo) (__binary128 vfa, __binary128 vfb)
+{
+  return vec_xsdivqpo_inline (vfa, vfb);
+}
+
+__binary128
 __VEC_PWR_IMP (vec_xsmulqpo) (__binary128 vfa, __binary128 vfb)
 {
   return vec_xsmulqpo_inline (vfa, vfb);

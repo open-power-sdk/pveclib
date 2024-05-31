@@ -101,7 +101,22 @@ __float128 f128_invfact[] = {
     (1.0Q / 120.0Q),
     (1.0Q / 720.0Q),
     (1.0Q / 5040.0Q),
-    (1.0Q / 40320.0Q)
+    (1.0Q / 40320.0Q),
+    (1.0Q / 362880.0Q),
+    (1.0Q / 3628800.0Q)
+};
+
+__float128 f128_fact[] = {
+    1.0Q,
+    2.0Q,
+    6.0Q,
+    24.0Q,
+    120.0Q,
+    720.0Q,
+    5040.0Q,
+    40320.0Q,
+    362880.0Q,
+    3628800.0Q
 };
 
 const vui128_t i128fact1 = {1};
@@ -240,6 +255,13 @@ test_vec_qpdpo_f128 (vf64_t * vf128,
 
 extern void
 test_gcc_qpdpo_f128 (vf64_t * vf128,
+		    __binary128 vf1, __binary128 vf2,
+		    __binary128 vf3, __binary128 vf4,
+		    __binary128 vf5, __binary128 vf6,
+		    __binary128 vf7, __binary128 vf8);
+
+extern void
+test_gcc_divqpn_f128 (__binary128 * vf128,
 		    __binary128 vf1, __binary128 vf2,
 		    __binary128 vf3, __binary128 vf4,
 		    __binary128 vf5, __binary128 vf6,
@@ -461,6 +483,34 @@ test_lib_subqpo_f128 (__binary128 * vf128,
 
 #if 1
 // Test implementation from libpvecstatic
+extern __binary128 __VEC_PWR_IMP (vec_xsdivqpo) (__binary128 vfa, __binary128 vfb);
+#define test_vec_divqpo(_l,_k)	__VEC_PWR_IMP (vec_xsdivqpo)(_l,_k)
+#else
+// Test implementation from vec_f128_dummy.c
+extern __binary128 test_vec_divqpo (__binary128 vfa, __binary128 vfb);
+#endif
+
+void
+test_lib_divqpo_f128 (__binary128 * vf128,
+		      __binary128 vf1, __binary128 vf2,
+		      __binary128 vf3, __binary128 vf4,
+		      __binary128 vf5, __binary128 vf6,
+		      __binary128 vf7, __binary128 vf8)
+{
+  __binary128 result;
+  result = test_vec_divqpo (qpfact1, vf1);
+  result = test_vec_divqpo (result, vf2);
+  result = test_vec_divqpo (result, vf3);
+  result = test_vec_divqpo (result, vf4);
+  result = test_vec_divqpo (result, vf5);
+  result = test_vec_divqpo (result, vf6);
+  result = test_vec_divqpo (result, vf7);
+  result = test_vec_divqpo (result, vf8);
+  *vf128 = result;
+}
+
+#if 1
+// Test implementation from libpvecstatic
 extern __binary128 __VEC_PWR_IMP (vec_xsmulqpo) (__binary128 vfa, __binary128 vfb);
 #define test_vec_mulqpo(_l,_k)	__VEC_PWR_IMP (vec_xsmulqpo)(_l,_k)
 #else
@@ -629,6 +679,24 @@ int timed_lib_subqpo_f128 (void)
    return 0;
 }
 
+int timed_lib_divqpo_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_lib_divqpo_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
 int timed_lib_mulqpo_f128 (void)
 {
 #ifndef PVECLIB_DISABLE_F128MATH
@@ -691,6 +759,24 @@ int timed_gcc_addqpn_f128 (void)
   for (i=0; i<N; i++)
     {
       test_gcc_addqpn_f128 (tbl,
+			  qpfact1, qpfact2,
+			  qpfact3, qpfact4,
+			  qpfact5, qpfact6,
+			  qpfact7, qpfact8);
+    }
+#endif
+   return 0;
+}
+
+int timed_gcc_divqpn_f128 (void)
+{
+#ifndef PVECLIB_DISABLE_F128MATH
+  __binary128 tbl[10];
+  int i;
+
+  for (i=0; i<N; i++)
+    {
+      test_gcc_divqpn_f128 (tbl,
 			  qpfact1, qpfact2,
 			  qpfact3, qpfact4,
 			  qpfact5, qpfact6,

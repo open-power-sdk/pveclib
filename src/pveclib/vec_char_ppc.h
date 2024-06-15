@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2017, 2018] IBM Corporation.
+ Copyright (c) [2017, 2018, 2024] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -48,8 +48,14 @@
  * PowerISA 3.0B (POWER9) adds several more (absolute difference,
  * compare not equal, count trailing zeros, extend sign,
  * extract/insert, and reverse bytes).
+ * PowerISA 3.1C (POWER10) adds several more (blend, centrifuge,
+ * clear first, clear last, count mask, count under mask,
+ * expand mask, extract, extract mask, generate permute control,
+ * insert, permute extended, string isolate)
  * Most of these intrinsic (compiler built-ins) operations are defined
  * in <altivec.h> and described in the compiler documentation.
+ * \note The list of new (byte/char) operations for POWER9/10 is long.
+ * Might take awhile to fill in the matching POWER8/9 implementations.
  *
  * \note The compiler disables associated <altivec.h> built-ins if the
  * <B>mcpu</B> target does not enable the specific instruction.
@@ -146,6 +152,8 @@ static inline vui8_t vec_popcntb (vui8_t vra);
 #endif
 static inline vui8_t vec_vmrgeb (vui8_t vra, vui8_t vrb);
 static inline vui8_t vec_vmrgob (vui8_t vra, vui8_t vrb);
+static inline int vec_vclzlsbb (vui8_t vra);
+static inline int vec_vctzlsbb (vui8_t vra);
 ///@endcond
 
 /** \brief Vector Absolute Difference Unsigned byte.
@@ -336,6 +344,62 @@ vec_ctzb (vui8_t vra)
   return vec_sub (c8s, vec_clzb (term));
 #endif
   return ((vui8_t) r);
+}
+
+/** \brief Vector Count Leading Zero Least-Significant Bits Byte.
+ *
+ *  Count the number of contiguous leading byte elements in the
+ *  operand [vra] having a zero least-significant bit.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 11-22 | 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_cntlz_lsbb_bi (vui8_t vra)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vctzlsbb (vra);
+#else
+  return vec_vclzlsbb (vra);
+#endif
+}
+
+/** \brief Vector Count Trailing Zero Least-Significant Bits Byte.
+ *
+ *  Count the number of contiguous trailing byte elements in the
+ *  operand [vra] having a zero least-significant bit.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-26 | 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_cnttz_lsbb_bi (vui8_t vra)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vclzlsbb (vra);
+#else
+  return vec_vctzlsbb (vra);
+#endif
 }
 
 /** \brief Vector isalnum.
@@ -1010,6 +1074,240 @@ vec_toupper (vui8_t vec_str)
   result = vec_andc (vec_str, cmask);
 
   return (result);
+}
+
+/** \brief Vector Count Leading Zero Least-Significant Bits Byte.
+ *
+ *  Count the number of contiguous leading byte elements in the
+ *  operand [vra] having a zero least-significant bit.
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.0 instruction vclzlsbb. It does not implement the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *  See vec_cntlz_lsbb_bi().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 11-22 | 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_vclzlsbb (vui8_t vra)
+{
+  int result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cntlz_lsbb
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && ( __GNUC__ >= 12)
+  result = vec_cnttz_lsbb (vra);
+#else
+  result = vec_cntlz_lsbb (vra);
+#endif
+#else
+  __asm__(
+      "vclzlsbb %0,%1;"
+      : "=r" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+  const vui8_t zeros = vec_splat_u8(0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x08, 0x00,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#else
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x07, 0x0F,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#endif
+  vui8_t gbb;
+  vui16_t lsbb, clzls;
+  long long int dwres;
+  // PowerISA 2.07 (P8) has:
+  // Vector Gather Bits by Bytes and Count Leading Zeros
+  // So use vec_gb to collect the Least-Significant Bits by Byte
+  // Vec_gb is Gather Bits by Bytes by Doubleword
+  // so the lsbb's are in bytes 7 and 15.
+  // Use vec_perm to collect all 16 lsbb's into a single Halfword.
+  // Then vec_cntlz to count the leading zeros within lsbb's
+  gbb = vec_gb (vra);
+  lsbb = (vui16_t) vec_perm (gbb, zeros, pgbb);
+  clzls = vec_cntlz (lsbb);
+  dwres = ((vui64_t) clzls) [VEC_DW_H];
+  result = (unsigned short) dwres;
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t LSBBmask = vec_splat_u8(1);
+  const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
+					  3, 2, 1, 0, 3, 2, 1, 0);
+  const vui32_t LSBWshl = CONST_VINT128_W (12, 8, 4, 0);
+  vui8_t gbb, gbbsb;
+  vui32_t gbbsw;
+  long long int dwres;
+
+  gbb = vec_and (vra, LSBBmask);
+  // merge lsbb into nibbles by word
+  gbbsb = vec_sl (gbb, LSBBshl);
+  gbbsw = vec_sum4s (gbbsb, (vui32_t) zeros);
+  // merge lsbw into halfword by word
+  gbbsw = vec_sl (gbbsw, LSBWshl);
+  gbbsw = (vui32_t) vec_sums ((vi32_t) gbbsw, (vi32_t) zeros);
+  // transfer from vector to GPR
+  dwres = ((vui64_t) gbbsw) [VEC_DW_L];
+  // Use GCC Builtin to get final leading zero count
+  // with fake unsigned short clz
+  result = __builtin_clz ((unsigned int) (dwres)) - 16;
+#endif
+  return result;
+}
+
+/** \brief Vector Count Trailing Zero Least-Significant Bits Byte.
+ *
+ *  Count the number of contiguous trailing byte elements in the
+ *  operand [vra] having a zero least-significant bit.
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.0 instruction vctzlsbb. It does not implement the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *  See vec_cnttz_lsbb_bi().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-26 | 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_vctzlsbb (vui8_t vra)
+{
+  int result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cnttz_lsbb
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && ( __GNUC__ >= 12)
+  result = vec_cntlz_lsbb (vra);
+#else
+  result = vec_cnttz_lsbb (vra);
+#endif
+#else
+  __asm__(
+      "vctzlsbb %0,%1;"
+      : "=r" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+  const vui16_t zeros = vec_splat_u16 (0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x08, 0x00,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#else
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x07, 0x0F,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#endif
+  vui8_t gbb;
+  vui16_t lsbb, ctzls, tzmask;
+  long long int dwres;
+  // PowerISA 2.07 (P8) has:
+  // Vector Gather Bits by Bytes but not Count Trailing Zeros.
+  // It does have Vector Population Count.
+  // So after collecting the lsbb's into a Halfword we can use the
+  // formula !(lsbb | -lsbb) to Generate 1's for the trailing
+  // zeros and 0's otherwise. Then count the 1's (via vec_popcnt())
+  // to generate the count of trailing zeros
+  gbb = vec_gb (vra);
+  lsbb = (vui16_t) vec_perm (gbb, (vui8_t) zeros, pgbb);
+  // tzmask = !(lsbb | -lsbb)
+  // tzmask = !(lsbb | (0-lsbb))
+  tzmask = vec_nor (lsbb, vec_sub (zeros, lsbb));
+  // return = vec_popcnt (!lsbb & (lsbb - 1))
+  ctzls = vec_popcnt (tzmask);
+  dwres = ((vui64_t) ctzls) [VEC_DW_H];
+  result = (unsigned short) dwres;
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t LSBBmask = vec_splat_u8(1);
+  const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
+					  3, 2, 1, 0, 3, 2, 1, 0);
+  const vui32_t LSBWshl = CONST_VINT128_W (12, 8, 4, 0);
+  vui8_t gbb, gbbsb;
+  vui32_t gbbsw;
+  long long int dwres;
+
+  // Mask the least significant bit of each byte
+  gbb = vec_and (vra, LSBBmask);
+  // merge lsbb into nibbles by word
+  gbbsb = vec_sl (gbb, LSBBshl);
+  gbbsw = vec_sum4s (gbbsb, (vui32_t) zeros);
+  // merge lsbw into halfword by word
+  gbbsw = vec_sl (gbbsw, LSBWshl);
+  gbbsw = (vui32_t) vec_sums ((vi32_t) gbbsw, (vi32_t) zeros);
+  // transfer from vector to GPR
+  dwres = ((vui64_t) gbbsw) [VEC_DW_L];
+  // Use GCC Builtin to get final trailing zero count
+  // with fake unsigned short ctz
+  result = __builtin_ctz ((unsigned int) (dwres+0x10000));
+#endif
+
+  return result;
+}
+
+/** \brief Vector Compare Not Equal or Zero Byte.
+ *
+ * For each byte element of vra and vrb compare for (vra[i] != vrb[i]
+ * or (vra[i] == 0) or (vrb[i] == 0).
+ * For each byte where any of these conditions are true set that byte
+ * to all 1s (0xff).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 1/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ * @param vra vector of 16 unsigned bytes
+ * @param vrb vector of 16 unsigned bytes
+ * @return vector bool char.
+ */
+static inline vb8_t
+vec_vcmpnezb (vui8_t vra, vui8_t vrb)
+{
+  vb8_t result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cmpnez
+  result = vec_cmpnez (vra, vrb);
+#else
+  __asm__(
+      "vcmpnezb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+#else
+  const vui8_t VEOS = vec_splat_u8(0);
+  vb8_t eosa, eosb, eosc, abne;
+
+  abne = vec_cmpne (vra, vrb);
+  eosa = vec_cmpeq (vra, VEOS);
+  eosb = vec_cmpeq (vrb, VEOS);
+  eosc = vec_or (eosa, eosb);
+  result = vec_or (abne, eosc);
+#endif
+  return result;
 }
 
 /** \brief Vector tolower.

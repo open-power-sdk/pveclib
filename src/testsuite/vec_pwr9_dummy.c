@@ -40,6 +40,29 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+int
+test_vec_cntlz_lsbb_bi_PWR9 (vui8_t vra)
+{
+  return vec_cntlz_lsbb_bi (vra);
+}
+
+int
+test_vec_cnttz_lsbb_bi_PWR9 (vui8_t vra)
+{
+  return vec_cnttz_lsbb_bi (vra);
+}
+
+int
+test_vec_vclzlsbb_PWR9 (vui8_t vra)
+{
+  return vec_vclzlsbb (vra);
+}
+int
+test_vec_vctzlsbb_PWR9 (vui8_t vra)
+{
+  return vec_vctzlsbb (vra);
+}
+
 //const __float128 f128_e = 2.71828182845904523536028747135266249775724709369996Q;
 
 __float128

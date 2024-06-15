@@ -153,6 +153,90 @@ db_vec_tolower (vui8_t vec_str)
   return (result);
 }
 
+long long int
+db_vec_clzlsbb (vui8_t vra)
+{
+  long long int result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cntlz_lsbb
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = vec_cnttz_lsbb (vra);
+#else
+  result = vec_cntlz_lsbb (vra);
+#endif
+#else
+  __asm__(
+      "vclzlsbb %0,%1;"
+      : "=r" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+  vui8_t gbb;
+  vui16_t lsbb, clzls;
+  const vui8_t VEOS = vec_splat_u8(0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x08, 0x00,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#else
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x07, 0x0F,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#endif
+
+  printf ("db_vec_vclzlsbb\n");
+  print_vint8x ("vra   = ", vra);
+  print_vint8x ("pgbb  = ", pgbb);
+  lsbb = (vui16_t) vec_perm (vra, VEOS, pgbb);
+  print_vint8x ("perm  = ", (vui8_t) lsbb);
+  //lsbb = (vui16_t) vec_perm (VEOS, vra, pgbb);
+  //print_vint8x ("perm  = ", (vui8_t) lsbb);
+  gbb = vec_gb (vra);
+  print_vint8x ("gbb   = ", gbb);
+  lsbb = (vui16_t) vec_perm (gbb, VEOS, pgbb);
+  print_vint8x ("lsbb  = ", (vui8_t) lsbb);
+  clzls = vec_cntlz (lsbb);
+  print_vint8x ("clzls = ", (vui8_t) clzls);
+  result = ((vui64_t) clzls) [VEC_DW_H];
+  result = (unsigned short) result;
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t LSBBmask = vec_splat_u8(1);
+  const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
+					  3, 2, 1, 0, 3, 2, 1, 0);
+  const vui32_t LSBWshl = CONST_VINT128_W (12, 8, 4, 0);
+  vui8_t gbb, gbbsb;
+  vui32_t gbbsw;
+
+  printf ("db_vec_vclzlsbb\n");
+  print_vint8x ("vra     = ", vra);
+  print_vint8x ("LSBBshl = ", LSBBshl);
+
+  gbb = vec_and (vra, LSBBmask);
+  print_vint8x ("gbb   = ", gbb);
+  // merge lsbb into nibbles by word
+  gbbsb = vec_sl (gbb, LSBBshl);
+  print_vint8x ("gbbsb = ", gbbsb);
+  gbbsw = vec_sum4s (gbbsb, (vui32_t) zeros);
+  print_vint8x ("gbbsw = ", (vui8_t) gbbsw);
+  // merge lsbw into halfword by word
+  gbbsw = vec_sl (gbbsw, LSBWshl);
+  print_vint8x ("gbbsw = ", (vui8_t) gbbsw);
+  gbbsw = (vui32_t) vec_sums ((vi32_t) gbbsw, (vi32_t) zeros);
+  print_vint8x ("gbbsw = ", (vui8_t) gbbsw);
+  // transfer from vector to GPR
+  result = ((vui64_t) gbbsw) [VEC_DW_L];
+  // Use GCC Builtin to get final leading zero count
+  // with fake unsigned short clz
+  result = __builtin_clz ((unsigned int) (result)) - 16;
+
+#endif
+  return result;
+}
+
 #ifdef __DEBUG_PRINT__
 #define test_vec_tolower(_l)	db_vec_tolower(_l)
 #define test_vec_toupper(_l)	db_vec_toupper(_l)
@@ -672,6 +756,569 @@ test_setbb (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vb8_t test_vec_vcmpnezb (vui8_t, vui8_t);
+#define test_cmpnezb(_l,_k)	test_vec_vcmpnezb(_l,_k)
+#else
+// test from vec_char_dummy.c
+extern vb8_t test_vcmpnezb_v0 (vui8_t, vui8_t);
+#define test_cmpnezb(_l,_k)	test_vcmpnezb_v0(_l,_k)
+#endif
+
+int
+test_vec_cmpnezb (void)
+{
+    vui8_t i, j, k, e;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    e = vec_splat_u8 (0);
+    // e = (vui8_t){0x20, 0x40, 0x7a, 0x5b, 0x61, 0x62, 0x63, 0x64,
+    //             0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    e = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x00, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    e = (vui8_t){0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x00, 0x41, 0x42, 0x43, 0x44,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    e = (vui8_t){0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x00,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x00,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d};
+    e = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    i = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x00,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    j = (vui8_t){0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x00,
+                 0x61, 0x62, 0x63, 0x64, 0x31, 0x38, 0x5c, 0x5d};
+    e = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    k = (vui8_t) test_cmpnezb (i,j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("cmpnez  of ", i);
+    print_vint8x ("         , ", j);
+    print_vint8x ("         = ", k);
+#endif
+    rc += check_vui8 ("vec_cmpnez", k, e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 0
+#define test_clzlsbb(_l)	db_vec_clzlsbb(_l)
+#else
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_vclzlsbb (vui8_t);
+#define test_clzlsbb(_l)	test_vec_vclzlsbb(_l)
+#else
+// test from vec_char_dummy.c
+extern int test_vclzlsbb (vui8_t);
+#define test_clzlsbb(_l)	test_vclzlsbb(_l)
+#endif
+#endif
+
+int
+test_vec_clzlsbb (void)
+{
+    vui8_t i, j, k, e;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27);
+    er = 1;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = vec_splat_u8(0);
+    er = 16;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_s8(-1);
+    er = 0;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_s8(-2);
+    er = 16;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_u16(1);
+    er = 1;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_u32(1);
+    er = 3;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = vec_splat_u8(1);
+    er = 0;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x10, 0x11, 0x12, 0x14, 0x14, 0x16, 0x17,
+                 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27);
+    er = 2;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x10, 0x12, 0x12, 0x14, 0x14, 0x17, 0x17,
+                 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27);
+    er = 6;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x10, 0x12, 0x12, 0x14, 0x14, 0x16, 0x17,
+                 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27);
+    er = 7;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+
+
+    i = CONST_VINT128_B (0x20, 0x20, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26,
+			 0x10, 0x10, 0x11, 0x12, 0x14, 0x14, 0x16, 0x17);
+    er = 10;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x20, 0x20, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26,
+			 0x10, 0x10, 0x12, 0x12, 0x14, 0x14, 0x17, 0x17);
+    er = 14;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x20, 0x20, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26,
+			 0x10, 0x10, 0x12, 0x12, 0x14, 0x14, 0x16, 0x17);
+    er = 15;
+    r = test_clzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_clzlsbb", r, er);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_vctzlsbb (vui8_t);
+#define test_ctzlsbb(_l)	test_vec_vctzlsbb(_l)
+#else
+// test from vec_char_dummy.c
+extern int test_vctzlsbb (vui8_t);
+#define test_ctzlsbb(_l)	test_vctzlsbb(_l)
+#endif
+
+int
+test_vec_ctzlsbb (void)
+{
+    vui8_t i, j, k, e;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27);
+    er = 0;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x26);
+    er = 2;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26);
+    er = 6;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x20, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26);
+    er = 8;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x16,
+                         0x20, 0x22, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26);
+    er = 10;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x11, 0x12, 0x14, 0x14, 0x16, 0x16,
+                         0x20, 0x22, 0x22, 0x22, 0x24, 0x24, 0x26, 0x26);
+    er = 13;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = vec_splat_u8(0);
+    er = 16;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_s8(-1);
+    er = 0;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_s8(-2);
+    er = 16;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+#if ( __GNUC__ == 12)
+#else
+    i = (vui8_t) vec_splat_u16(1);
+    i = vec_sld (i,i,1);
+    er = 1;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+#endif
+
+    i = (vui8_t) vec_splat_u32(1);
+    i = vec_sld (i,i,2);
+    er = 2;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = (vui8_t) vec_splat_u32(1);
+    i = vec_sld (i,i,3);
+    er = 3;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    i = vec_splat_u8(1);
+    er = 0;
+    r = test_ctzlsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_ctzlsbb of ", i);
+    print_int64x ("             = ", r);
+#endif
+    rc += check_uint64 ("vec_ctzlsbb", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_cntlz_lsbb_bi (vui8_t);
+#define test_cntlz_lsbb(_l)	test_vec_cntlz_lsbb_bi(_l)
+#else
+// test from vec_char_dummy.c
+extern int test_cntlz_lsbb_bi (vui8_t);
+#define test_cntlz_lsbb(_l)	test_cntlz_lsbb_bi(_l)
+#endif
+
+int
+test_vec_cntlz_lsbb (void)
+{
+    vui8_t i, j, k, e;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+    er = 0;
+#else
+    er = 1;
+#endif
+    r = test_cntlz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cntlz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cntlz_lsbb", r, er);
+
+    i = CONST_VINT128_B (0x11, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x26);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+    er = 2;
+#else
+    er = 0;
+#endif
+    r = test_cntlz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cntlz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cntlz_lsbb", r, er);
+
+    i = vec_splat_u8(0);
+    er = 16;
+    r = test_cntlz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cntlz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cntlz_lsbb", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_cnttz_lsbb_bi (vui8_t);
+#define test_cnttz_lsbb(_l)	test_vec_cnttz_lsbb_bi(_l)
+#else
+// test from vec_char_dummy.c
+extern int test_cnttz_lsbb_bi (vui8_t);
+#define test_cnttz_lsbb(_l)	test_cnttz_lsbb_bi(_l)
+#endif
+
+int
+test_vec_cnttz_lsbb (void)
+{
+    vui8_t i, j, k, e;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+    er = 1;
+#else
+    er = 0;
+#endif
+    r = test_cnttz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cnttz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cnttz_lsbb", r, er);
+
+    i = CONST_VINT128_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                         0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x26);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+    er = 1;
+#else
+    er = 2;
+#endif
+    r = test_cnttz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cnttz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cnttz_lsbb", r, er);
+
+    i = vec_splat_u8(0);
+    er = 16;
+    r = test_cnttz_lsbb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_cnttz_lsbb of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_cnttz_lsbb", r, er);
+
+    return (rc);
+  }
+
 int
 test_vec_char (void)
 {
@@ -689,6 +1336,11 @@ test_vec_char (void)
   rc += test_mulhsb ();
   rc += test_mulubm ();
   rc += test_setbb ();
+  rc += test_vec_cmpnezb ();
+  rc += test_vec_clzlsbb ();
+  rc += test_vec_ctzlsbb ();
+  rc += test_vec_cntlz_lsbb ();
+  rc += test_vec_cnttz_lsbb ();
 #endif
   return (rc);
 }

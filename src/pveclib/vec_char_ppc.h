@@ -128,6 +128,406 @@
  * inverse as a alternative to integer divide.
  * \sa \ref int16_examples_0_1
  *
+ * \section int8_P9_10_0_0 Implementations for POWER9/10 Intrinsics.
+ *
+ * PowerISA 3.0/3.1 (POWER9/10) added several useful character/byte
+ * element vector instructions that are also specified in the
+ * Power Vector Intrinsic Programming Reference.
+ * In the spirit of PVECLIB equivalent operations should be provided as
+ * in-line functions for both;
+ * - older compilers that support the assembler instruction but not the
+ *   intrinsic for POWER9/10 targets.
+ * - functionally equivalent vector operations for POWER8 and earlier.
+ *
+ * Some examples follow.
+ *
+ * \subsection int8_P9_10_0_0_1 Vector Compare Not Equal or Zero Byte.
+ *
+ * This is one of the new vector string operations added in POWER9.
+ * The intent is to accelerate comparing nul terminated strings of
+ * up to 16 characters. The result is a vector bool char for i=0 to 15;
+ * (src1[i] = 0) | (src2[i] = 0) | (src1[i] != src2[i]).
+ *
+ * The first section of code addresses older compilers that support
+ * the -mcpu=power9 target but may not support the vec_cmpnez()
+ * intrinsic. For example:
+ * \code
+vb8_t
+test_vcmpnezb (vui8_t vra, vui8_t vrb)
+{
+  vb8_t result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cmpnez
+  result = vec_cmpnez (vra, vrb);
+#else
+  __asm__(
+      "vcmpnezb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+#else  // _ARCH_PWR8 and earlier
+ ...
+#endif
+  return result;
+}
+ * \endcode
+ *
+ * For the mcpu=power8 and earlier targets we use an implementation
+ * restricted to the original Altivec<SUP>tm</SUP> intrinsics
+ * plus one POWER8 VMX extension (vector OR complement).
+ * This insures compatibility across compilers and will run on
+ * POWER7/8 processors.
+ *
+ * The logic requires a <I>not equal</I> compare which is not available
+ * as an instruction or intrinsic until POWER9. So we have to use an
+ * equal compare with a separate <I>not</I> or <I>compliment</I>
+ * operation feeding the final <I>or</I>. For example:
+ * \code
+#else  // _ARCH_PWR8 and earlier
+  const vui8_t VEOS = vec_splat_u8(0);
+  vb8_t eosa, eosb, eosc, abne;
+  // vcmpneb requires _ARCH_PWR9, so use cmpeq and orc
+  abne = vec_cmpeq (vra, vrb);
+  eosa = vec_cmpeq (vra, VEOS);
+  eosb = vec_cmpeq (vrb, VEOS);
+  eosc = vec_or (eosa, eosb);
+  result = vec_orc (eosc, abne);
+#endif
+ * \endcode
+ *
+ * The generated code should look like this:
+ * \code
+ <test_vec_vcmpnezb>:
+      vspltisw v0,0
+      vcmpequb v1,v2,v0
+      vcmpequb v0,v3,v0
+      vcmpequb v2,v2,v3
+      vor      v0,v1,v0
+      vorc     v2,v0,v2
+ * \endcode
+ * The vspltisw is generated for the VEOS constant and can be shared
+ * across invocations or hoisted out of loops or into the containing
+ * functions prologue.
+ *
+ * For processors before POWER8 using the Vector OR complement
+ * extension is a problem. The original Altivec<SUP>tm</SUP> only
+ * supports vec_cmpeq, vec_nor and vec_or. The follow modification
+ * extends this operation to POWER6/7 and 970 based processors.
+ * \code
+#ifdef _ARCH_PWR8
+  result = vec_orc (eosc, abne);
+#else // vorc requires _ARCH_PWR8, so use cmpeq, nor and or
+  abne = vec_nor (abne, abne);
+  result = vec_or (eosc, abne);
+#endif
+ * \endcode
+ *
+ * \subsection int8_P9_10_0_0_2 Vector Count Leading/Trailing Zero LSBB etc.
+ *
+ * Vector Count Leading Zero Least-Significant Bits Byte (LSBB)
+ * and its opposite,
+ * Vector Count Trailing Zero Least-Significant Bits Byte (LSBB),
+ * forms the basis for a large set of string first/last match
+ * intrinsic operations added to to Power Vector Intrinsic
+ * Programming Reference.
+ *
+ * Counting only the <I>Least-Significant Bits Byte</I> compresses
+ * leading/trailing bit counts into a byte element index.
+ * The assumption is the input will be a vector bool generated from
+ * a sequence of char element compare and logical operations.
+ * Another novel aspect is the index is returned to a GPR.
+ * This facilitates using the index to access character string in
+ * storage.
+ * Having both leading/trailing count operations supports first/last
+ * searches. These operations also enables bi-endian vector support by
+ * simply exchanging leading/trailing counts for the LE variant.
+ *
+ * PVECLIB's starts by implementing operations for each instruction
+ * as defined in PowerISA 3.0B (See vec_vclzlsbb() and vec_vctzlsbb()).
+ * This simplifies the coding for older (before POWER9) processors.
+ * Then uses those operations to implement operations to match
+ * bi-endian intrinsics defined by the Power Vector Intrinsic
+ * Programming Reference (See vec_cntlz_lsbb_bi() and vec_cnttz_lsbb_bi()).
+ * For example:
+ * \code
+static inline int
+vec_cntlz_lsbb_bi (vui8_t vra)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vctzlsbb (vra);
+#else
+  return vec_vclzlsbb (vra);
+#endif
+}
+ * \endcode
+ * \note The vclzlsbb and vctzlsbb instructions are used in a number of
+ * Power intrinsics including;
+ * vec_cntlz_lsbb, vec_cnttz_lsbb,
+ * vec_first_match_index, vec_first_match_or_eos_index,
+ * vec_first_mismatch_index, vec_first_mismatch_or_eos_index.
+ * The specific instruction used depends on the platform Endian.
+ *
+ * \subsubsection int8_P9_10_0_0_2_1 Vector Count Leading Zero LSBB
+ *
+ * The first section of code addresses compilers that support
+ * the -mcpu=power9 target.
+ * For this operation we want to generate the vclzlsbb (or equivalent)
+ * instruction (independent of endian).
+ * If the compiler supports the vec_cntlz_lsbb/vec_cnttz_lsbb intrinsics
+ * use those but undo the compilers little-endian adjustment.
+ * Otherwise use inline assembler to generate vclzlsbb.
+ * For example:
+ * \code
+int test_vclzlsbb (vui8_t vra)
+{
+  int result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cntlz_lsbb
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && ( __GNUC__ >= 12)
+  result = vec_cnttz_lsbb (vra);
+#else
+  result = vec_cntlz_lsbb (vra);
+#endif
+#else
+  __asm__(
+      "vclzlsbb %0,%1;"
+      : "=r" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+  // ../
+#endif
+  return result;
+}
+ * \endcode
+ *
+ * For the mcpu=power8 target we need an implementation within the
+ * existing PowerISA 2.07 instruction set.
+ * This implementation must:
+ * - isolate the Least-Significant Bits by Bytes,
+ * - compress those bits into a contiguous 16-bit halfword,
+ * - count the leading zeros of that halfword,
+ * - return this count in a GPR.
+ *
+ * PowerISA 2.07 has a <I>Vector Gather Bits by Bytes by Doubleword</I>
+ * (vec_gb()) instructions which seems like a good start.
+ * It isolates the Least-Significant Bits into two bytes in separate
+ * doublewords. A permute collects all 16 LSBB's into a single halfword
+ * (in the high doubleword) for counting.
+ * Then we can use <I>Vector Count Leading Zeros Halfword</I> to
+ * count the leading zero LSBB's.
+ * This result in the high-order doubleword ([VEC_DW_H]) of the vector
+ * which is transfered to fixed-point (GPR) register as an integer.
+ * \note This requires some halfword element operations that might be
+ * sourced from vec_int16_ppc.h. But including vec_int16_ppc.h here
+ * would be a circular dependency. So generic intrinsic operations
+ * from the original Altivec<SUP>tm</SUP> are used.
+ *
+ * For example:
+ * \code
+#elif _ARCH_PWR8
+  const vui8_t zeros = vec_splat_u8(0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x08, 0x00,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#else
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x07, 0x0F,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#endif
+  vui8_t gbb;
+  vui16_t lsbb, clzls;
+  long long int dwres;
+
+  gbb = vec_gb (vra);
+  // Convert Gather Bits by Bytes by Doubleword
+  // to Gather Bits by Halfwords by Quadword
+  lsbb = (vui16_t) vec_perm (gbb, zeros, pgbb);
+  clzls = vec_cntlz (lsbb);
+  dwres = ((vui64_t) clzls) [VEC_DW_H];
+  result = (unsigned short) dwres;
+#else //  _ARCH_PWR7 and earlier
+ * \endcode
+ *
+ * POWER7 (and earlier) processors don't support either
+ * <I>Vector Gather Bits by Bytes by Doubleword</I> (vec_gb()) nor
+ * <I>Vector Count Leading Zeros Halfword</I> (vec_cntlz ()).
+ * The FXU does include a <I>Count Leading Zeros Word</I> instruction.
+ * We can use this once we have isolated and compressed the LSBB bits
+ * and transfered them to a GPR.
+ *
+ * Also the implementation needs to work within the original
+ * Altivec<SUP>tm</SUP> vector intrinsics.
+ * One implementation use vector bit-masks, shifts, and sum across
+ * intrinsics to isolate the 16 LSBB bits.
+ * \note This requires some word element operations that might be
+ * sourced from vec_int32_ppc.h. But including vec_int32_ppc.h here
+ * would be a circular dependency.
+ *
+ * For example:
+ * \code
+#else //  _ARCH_PWR7 and earlier
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t LSBBmask = vec_splat_u8(1);
+  const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
+					  3, 2, 1, 0, 3, 2, 1, 0);
+  const vui32_t LSBWshl = CONST_VINT128_W (12, 8, 4, 0);
+  vui8_t gbb, gbbsb;
+  vui32_t gbbsw;
+  long long int dwres;
+  // isolate LSBB bits
+  gbb = vec_and (vra, LSBBmask);
+  // merge lsbb into nibbles by word
+  gbbsb = vec_sl (gbb, LSBBshl);
+  gbbsw = vec_sum4s (gbbsb, (vui32_t) zeros);
+  // merge lsbw into halfword by word
+  gbbsw = vec_sl (gbbsw, LSBWshl);
+  gbbsw = (vui32_t) vec_sums ((vi32_t) gbbsw, (vi32_t) zeros);
+  // transfer from vector to GPR
+  dwres = ((vui64_t) gbbsw) [VEC_DW_L];
+  // Use GCC Builtin to get final leading zero count
+  // with fake unsigned short clz
+  result = __builtin_clz ((unsigned int) (dwres)) - 16;
+#endif
+ * \endcode
+ *
+ * \subsubsection int8_P9_10_0_0_2_2 Vector Count Trailing Zero LSBB
+ *
+ * The first section of code addresses compilers that support
+ * the -mcpu=power9 target.
+ * For this operation we want to generate the vctzlsbb (or equivalent)
+ * instruction (independent of endian).
+ * If the compiler supports the vec_cntlz_lsbb/vec_cnttz_lsbb intrinsics
+ * use those but undo the compilers little-endian adjustment.
+ * Otherwise use inline assembler to generate vctzlsbb.
+ * For example:
+ * \code
+int test_vctzlsbb (vui8_t vra)
+{
+  int result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cnttz_lsbb
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && ( __GNUC__ >= 12)
+  result = vec_cntlz_lsbb (vra);
+#else
+  result = vec_cnttz_lsbb (vra);
+#endif
+#else
+  __asm__(
+      "vctzlsbb %0,%1;"
+      : "=r" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif _ARCH_PWR8
+  // ../
+#endif
+  return result;
+}
+ * \endcode
+ *
+ * For the mcpu=power8 target we need an implementation within the
+ * existing PowerISA 2.07 instruction set.
+ * This implementation must:
+ * - isolate the Least-Significant Bits by Bytes,
+ * - compress those bits into a contiguous 16-bit halfword,
+ * - count the trailing zeros of that halfword,
+ * - return this count in a GPR.
+ *
+ * PowerISA 2.07 has Vector Gather Bits by Bytes but no Count Trailing
+ * Zeros. It does have Vector Population Count.
+ * We use the formula <B>!(lsbb | -lsbb)</B> to convert the trailing
+ * 0's into to trailing 1's and 0's elsewhere.
+ * Then use <I>vec_popcnt()</I> to count the 1's, which is equivalent to
+ * counting trailing 0's.
+ * This result in the high-order doubleword ([VEC_DW_H]) of the vector
+ * which is transfered to fixed-point (GPR) register as an integer.
+ * \note Need to use altivec.h intrinsics here to avoid circular
+ * dependencies. Older GCC compilers supporting power8 will provide
+ * vec_vpopcntb/vec_vpopcnth but may not provide the generic vec_popcnt
+ * for byte/halfword. Newer GCC compilers still support vec_vpopcntb,
+ * vec_vpopcnth and the generic vec_popcnt. Clang compilers that
+ * support power8 and vpopcntb/h instructions only support the generic
+ * vec_popcnt intrinsic.
+ *
+ * For example:
+ * \code
+#elif _ARCH_PWR8
+  const vui16_t zeros = vec_splat_u16 (0);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x08, 0x00,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#else
+  const vui8_t pgbb = CONST_VINT128_B (0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x07, 0x0F,
+				       0x10, 0x10, 0x10, 0x10,
+				       0x10, 0x10, 0x10, 0x10);
+#endif
+  vui8_t gbb;
+  vui16_t lsbb, ctzls, tzmask;
+  long long int dwres;
+
+  gbb = vec_gb (vra);
+  lsbb = (vui16_t) vec_perm (gbb, (vui8_t) zeros, pgbb);
+  // tzmask = !(lsbb | -lsbb) -> tzmask = !(lsbb | (0-lsbb))
+  tzmask = vec_nor (lsbb, vec_sub (zeros, lsbb));
+  // return = vec_popcnt (!lsbb & (lsbb - 1))
+  // GCC _ARCH_PWR8 supports vpopcnth
+#if defined (vec_vpopcntb)
+  ctzls = vec_vpopcnth (tzmask);
+#else // clang
+  ctzls = vec_popcnt (tzmask);
+#endif
+  dwres = ((vui64_t) ctzls) [VEC_DW_H];
+  result = (unsigned short) dwres;
+#else //  _ARCH_PWR7 and earlier
+ * \endcode
+ *
+ * POWER7 (and earlier) processors don't support
+ * <I>Vector Gather Bits by Bytes by Doubleword</I> (vec_gb()),
+ * <I>Vector Count Leading Zeros Halfword</I> (vec_cntlz ())
+ * or <I>Vector Population Count Halfword</I> (vec_popcnt()).
+ * The FXU does include the <I>Population Count Byte/Word</I>
+ * instruction and the GCC __builtin_ctz() uses those.
+ * We use the same code as vclzlsbb (above) to isolate/compress
+ * LSBB's and transfered them to a GPR.
+ * Then use the GCC __builtin_ctz() to count the trailing 0's.
+ *
+ * For example:
+ * \code
+#else //  _ARCH_PWR7 and earlier
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t LSBBmask = vec_splat_u8(1);
+  const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
+					  3, 2, 1, 0, 3, 2, 1, 0);
+  const vui32_t LSBWshl = CONST_VINT128_W (12, 8, 4, 0);
+  vui8_t gbb, gbbsb;
+  vui32_t gbbsw;
+  long long int dwres;
+
+  // Mask the least significant bit of each byte
+  gbb = vec_and (vra, LSBBmask);
+  // merge lsbb into nibbles by word
+  gbbsb = vec_sl (gbb, LSBBshl);
+  gbbsw = vec_sum4s (gbbsb, (vui32_t) zeros);
+  // merge lsbw into halfword by word
+  gbbsw = vec_sl (gbbsw, LSBWshl);
+  gbbsw = (vui32_t) vec_sums ((vi32_t) gbbsw, (vi32_t) zeros);
+  // transfer from vector to GPR
+  dwres = ((vui64_t) gbbsw) [VEC_DW_L];
+  // Use GCC Builtin to get final trailing zero count
+  // with fake unsigned short ctz
+  result = __builtin_ctz ((unsigned int) (dwres+0x10000));
+#endif
+ * \endcode
+ *
  * \section int8_perf_0_0 Performance data.
  *
  * The performance characteristics of the merge and multiply byte
@@ -1235,7 +1635,12 @@ vec_vctzlsbb (vui8_t vra)
   // tzmask = !(lsbb | (0-lsbb))
   tzmask = vec_nor (lsbb, vec_sub (zeros, lsbb));
   // return = vec_popcnt (!lsbb & (lsbb - 1))
+  // _ARCH_PWR8 supports vpopcnth
+#if defined (vec_vpopcntb)
+  ctzls = vec_vpopcnth (tzmask);
+#else // clang
   ctzls = vec_popcnt (tzmask);
+#endif
   dwres = ((vui64_t) ctzls) [VEC_DW_H];
   result = (unsigned short) dwres;
 #else
@@ -1297,15 +1702,20 @@ vec_vcmpnezb (vui8_t vra, vui8_t vrb)
       : "v" (vra), "v" (vrb)
       : );
 #endif
-#else
+#else  // _ARCH_PWR8 and earlier
   const vui8_t VEOS = vec_splat_u8(0);
   vb8_t eosa, eosb, eosc, abne;
-
-  abne = vec_cmpne (vra, vrb);
+  // vcmpneb requires _ARCH_PWR9, so use cmpeq and orc
   eosa = vec_cmpeq (vra, VEOS);
   eosb = vec_cmpeq (vrb, VEOS);
+  abne = vec_cmpeq (vra, vrb);
   eosc = vec_or (eosa, eosb);
-  result = vec_or (abne, eosc);
+#ifdef _ARCH_PWR8
+  result = vec_orc (eosc, abne);
+#else // vorc requires _ARCH_PWR8, so use cmpeq, nor and or
+  abne = vec_nor (abne, abne);
+  result = vec_or (eosc, abne);
+#endif
 #endif
   return result;
 }

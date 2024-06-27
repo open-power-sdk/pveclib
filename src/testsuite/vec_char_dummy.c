@@ -96,11 +96,13 @@ test_vclzlsbb (vui8_t vra)
   // Use vec_perm to collect all 16 lsbb's into a single Halfword.
   // Then vec_cntlz to count the leading zeros within lsbb's
   gbb = vec_gb (vra);
+  // Convert Gather Bits by Bytes by Doubleword
+  // to Gather Bits by Halfwords by Quadword
   lsbb = (vui16_t) vec_perm (gbb, zeros, pgbb);
   clzls = vec_cntlz (lsbb);
   dwres = ((vui64_t) clzls) [VEC_DW_H];
   result = (unsigned short) dwres;
-#else
+#else //  _ARCH_PWR7 and earlier
   const vui8_t zeros = vec_splat_u8(0);
   const vui8_t LSBBmask = vec_splat_u8(1);
   const vui8_t LSBBshl = CONST_VINT128_B (3, 2, 1, 0, 3, 2, 1, 0,
@@ -174,7 +176,12 @@ test_vctzlsbb (vui8_t vra)
   // tzmask = !(lsbb | (0-lsbb))
   tzmask = vec_nor (lsbb, vec_sub (zeros, lsbb));
   // return = vec_popcnt (!lsbb & (lsbb - 1))
+  // _ARCH_PWR8 supports vpopcnth
+#if defined (vec_vpopcntb)
+  ctzls = vec_vpopcnth (tzmask);
+#else // clang
   ctzls = vec_popcnt (tzmask);
+#endif
   dwres = ((vui64_t) ctzls) [VEC_DW_H];
   result = (unsigned short) dwres;
 #else
@@ -272,7 +279,7 @@ test_vctzlsbb_V0 (vui8_t vra)
 #endif
 #endif
       // return = vec_popcnt (!lsbb & (lsbb - 1))
-      ctzls = vec_popcnt (tzmask);
+      ctzls = vec_vpopcnth (tzmask);
   }
   result = ((vui64_t) ctzls) [VEC_DW_H];
   result = (unsigned short) result;
@@ -326,12 +333,17 @@ test_vcmpnezb_v0 (vui8_t vra, vui8_t vrb)
 #else
   const vui8_t VEOS = vec_splat_u8(0);
   vb8_t eosa, eosb, eosc, abne;
-
-  abne = vec_cmpne (vra, vrb);
+  // vcmpneb requires _ARCH_PWR9, so use cmpeq and orc
   eosa = vec_cmpeq (vra, VEOS);
   eosb = vec_cmpeq (vrb, VEOS);
+  abne = vec_cmpeq (vra, vrb);
   eosc = vec_or (eosa, eosb);
-  result = vec_or (abne, eosc);
+#ifdef _ARCH_PWR8
+  result = vec_orc (eosc, abne);
+#else // vorc requires _ARCH_PWR8, so use cmpeq, nor and or
+  abne = vec_nor (abne, abne);
+  result = vec_or (eosc, abne);
+#endif
 #endif
   return result;
 }

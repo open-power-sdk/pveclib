@@ -886,7 +886,7 @@ extern int test_vclzlsbb (vui8_t);
 int
 test_vec_clzlsbb (void)
 {
-    vui8_t i, j, k, e;
+    vui8_t i;
     int r, er;
     int rc = 0;
     printf ("\n%s\n", __FUNCTION__);
@@ -1047,7 +1047,7 @@ extern int test_vctzlsbb (vui8_t);
 int
 test_vec_ctzlsbb (void)
 {
-    vui8_t i, j, k, e;
+    vui8_t i;
     int r, er;
     int rc = 0;
     printf ("\n%s\n", __FUNCTION__);
@@ -1210,7 +1210,7 @@ extern int test_cntlz_lsbb_bi (vui8_t);
 int
 test_vec_cntlz_lsbb (void)
 {
-    vui8_t i, j, k, e;
+    vui8_t i;
     int r, er;
     int rc = 0;
     printf ("\n%s\n", __FUNCTION__);
@@ -1271,7 +1271,7 @@ extern int test_cnttz_lsbb_bi (vui8_t);
 int
 test_vec_cnttz_lsbb (void)
 {
-    vui8_t i, j, k, e;
+    vui8_t i;
     int r, er;
     int rc = 0;
     printf ("\n%s\n", __FUNCTION__);

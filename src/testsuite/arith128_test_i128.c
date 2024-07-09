@@ -906,8 +906,294 @@ db_example_longdiv_10e31 (vui128_t *q, vui128_t *d, long int _N)
 }
 #endif
 
+//#define __DEBUG_PRINT__
 #ifdef __DEBUG_PRINT__
-vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
+vui128_t
+db_vec_diveuq (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  vui128_t u = x;
+  vui128_t v = z;
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t u0, u1, v1, q0, k, t, vn;
+  vui64_t vdh, vdl, udh, qdl, qdh;
+#ifdef __DEBUG_PRINT__
+  print_vint128x ("db_vec_divuqe u ", (vui128_t) u);
+  print_vint128x ("              v ", (vui128_t) v);
+#endif
+
+  if (vec_cmpuq_all_ge (x, z) || vec_cmpuq_all_eq (z, (vui128_t) zeros))
+    {
+      printf (" undef -- overlow or zero divide\n");
+      return mone;
+    }
+  else
+    {
+      udh = vec_splatd ((vui64_t) u, 1);
+      vdh = vec_splatd ((vui64_t) v, 1);
+      vdl = vec_splatd ((vui64_t) v, 0);
+
+      if (/*v >> 64 == 0UL*/vec_cmpud_all_eq (vdh, zeros))
+	{
+	  if (/*u >> 64 < v*/vec_cmpud_all_lt (udh, vdl))
+	    {
+	      u0 = (vui128_t) vec_swapd ((vui64_t) u);
+	      qdh = vec_divqud_inline (u0, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x (" (udh < vdl) u0  ", (vui128_t) u0);
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+#endif
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = u1 - q1*v; ((k << 64) + u0);
+	      // Simplifies to:
+	      u1 = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+	      qdl = vec_divqud_inline (u1, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             u1  ", (vui128_t) u1);
+	      print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	      //return (vui128_t) qdl;
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	  else
+	    {
+	      // TODO 1st test for overflow means this can not happen?!
+	      //u1 = u >> 64;
+	      u1 = (vui128_t) vec_mrgahd ((vui128_t) zeros, u);
+	      // u0 = u & lmask;
+	      u0 = (vui128_t) vec_mrgald ((vui128_t) zeros, u);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x (" (udh >= vdl) u0 ", (vui128_t) u0);
+	      print_vint128x ("             u1  ", (vui128_t) u1);
+	      print_vint128x ("             vd1 ", (vui128_t) vdl);
+#endif
+	      //q1 = scalar_divdud (u1, (unsigned long long) v) & lmask;
+	      qdh = vec_divqud_inline (u1, vdl);
+	      //k = u1 - q1*v;
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = u1 - q1*v; ((k << 64) + u0);
+	      // Simplifies to:
+	      k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
+	      // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
+	      qdl = vec_divqud_inline (k, vdl);
+#ifdef __DEBUG_PRINT__
+	      print_vint128x ("             qdh ", (vui128_t) qdh);
+	      print_vint128x ("             k   ", (vui128_t) k);
+	      print_vint128x ("             qdl ", (vui128_t) qdl);
+#endif
+	      //return (q1 << 64) + q0;
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	}
+      else
+      //if (/*vec_cmpuq_all_ge (u1, (vui128_t) vdh)*/ 1)
+	{
+	  vui128_t u2, k1, t2;
+	  vb128_t Bgt;
+	  // Here v >= 2**64, Normalize the divisor so MSB is 1
+	  //n = __builtin_clzl ((unsigned long long)(v >> 64)); // 0 <= n <= 63
+#if 1
+	  // Could use vec_clzq(), but we know  v >= 2**64, So:
+	  vn = (vui128_t) vec_clzd ((vui64_t) v);
+	  // vn = vn >> 64;, So we can use it with vec_slq ()
+	  vn = (vui128_t) vec_mrgahd ((vui128_t) zeros, vn);
+#else
+	  vn = vec_clzq(v);
+#endif
+	  //v1 = (v << n) >> 64;
+	  //v1 = vec_slq (v, vn);
+
+	  //u1 = u >> 1; 	// to insure no overflow
+	  //u1 = vec_srqi (u, 1);
+	  v1 = v;
+	  u1 = u;
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("             vn ", (vui128_t) vn);
+	  print_vint128x ("             v1 ", (vui128_t) v1);
+	  print_vint128x ("             u1 ", (vui128_t) u1);
+#endif
+//#if 1
+	  vdh = vec_mrgahd (v1, (vui128_t) zeros);
+	  if (vec_cmpuq_all_eq (u1, (vui128_t) zeros))
+	    {
+	      return ((vui128_t) zeros);
+	    }
+	  const vui64_t ones = vec_splat_u64 (1);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("        ovf vdh ", (vui128_t) vdh);
+	  print_vint128x ("            u1  ", (vui128_t) u1);
+#endif
+	  u1 = vec_slq (u1, vn);
+	  v1 = vec_slq (v1, vn);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x ("         u1<<vn ", (vui128_t) u1);
+	  print_vint128x ("         v1<<vn ", (vui128_t) v1);
+#endif
+	  //u1 = vec_srqi (u1, 1);
+	  vdh = vec_mrgahd ((vui128_t) zeros, v1);
+	  udh = vec_mrgahd ((vui128_t) zeros, u1); // !!
+	  qdh = vec_divqud_inline (u1, (vui64_t) v1);
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+#ifdef __DEBUG_PRINT__
+	  print_v2xint64 ("   u1/v1h = qdh ", qdh);
+	  print_vint128x ("            q0  ", (vui128_t) q0);
+#endif
+	  if (vec_cmpud_all_eq ((vui64_t) q0, zeros)
+	  /* && vec_cmpud_all_eq (vdh, udh)*/) // !!
+	    { // this depends on U != 0
+	      vb64_t Beq;
+	      // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) u1, (vui64_t) v1);
+	      // Beq >> 64
+	      Beq = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+#ifdef __DEBUG_PRINT__
+	      print_v2xint64 (" qdh<-UINT128_MAX ", qdh);
+	      print_v2xint64 ("     vdh eq udh = ", (vui64_t) Beq);
+#endif
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+#ifdef __DEBUG_PRINT__
+	      print_v2xint64 ("  corrected qdh = ", qdh);
+#endif
+	    }
+#if 1
+	  q0 = vec_slqi ((vui128_t) qdh, 64);
+#else
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) zeros);
+#endif
+#ifdef __DEBUG_PRINT__
+	  print_v2xint64 ("   u1/v1h = qdh", qdh);
+	  print_vint128x ("             q0 ", (vui128_t) q0);
+#endif
+	  // {k, k1}  = vec_muludq (v1, q0);
+	    {
+	      vui128_t l128, h128;
+	      vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+	      l128 = vec_vmuloud ((vui64_t) v1, b_eud);
+	      h128 = vec_vmaddeud ((vui64_t) v1, b_eud, (vui64_t) l128);
+	      // 192-bit product of v1 * qdh
+	      k = h128;
+	      k1 = vec_slqi (l128, 64);
+	    }
+	  u2 = vec_subuqm ((vui128_t) zeros, k1);
+	  t = vec_subcuq ((vui128_t) zeros, k1);
+	  u0 = vec_subeuqm (u1, k, t);
+	  t2 = vec_subecuq (u1, k, t);
+	  Bgt = vec_setb_ncq (t2);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+	  print_vint128x (" lq(q0*v1) = k1 ", (vui128_t) k1);
+	  print_vint128x ("     u1-k = u0  ", (vui128_t) u0);
+	  print_vint128x ("     u1-k = u2  ", (vui128_t) u2);
+	  print_vint128x ("     u1-k = t2  ", (vui128_t) t2);
+	  print_vint128x ("     k>u1 = Bgt ", (vui128_t) Bgt);
+#endif
+	  u0 = vec_sldqi (u0, u2, 64);
+	  //if (vec_cmpuq_all_gt (k, u1))
+	    {
+	      vui128_t q2;
+	      q2 = (vui128_t) vec_subudm ((vui64_t) q0, ones);
+	      q2 = (vui128_t) vec_mrgahd ((vui128_t) q2, (vui128_t) zeros);
+	      //vdh = vec_mrgahd (v1, (vui128_t) zeros);
+	      u2 = vec_adduqm ((vui128_t) u0, v1);
+	      //t2 = vec_subuqm (u0, (vui128_t) vdh);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      u0 = vec_seluq (u0, u2, Bgt);
+	      if (vec_cmpuq_all_eq ((vui128_t) Bgt, mone))
+		{
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" hq(v1*q0) > u1 ", (vui128_t) u1);
+		  print_vint128x ("     q0-1 = q0  ", (vui128_t) q0);
+		  print_vint128x ("     u1-k'= u0  ", (vui128_t) u0);
+		  print_vint128x ("     u1-k'= u2  ", (vui128_t) u2);
+#endif
+		}
+	    }
+	  qdh = (vui64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) q0);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x (" (u0|u2)<<64=u0 ", (vui128_t) u0);
+	  print_vint128x ("   q0>>64 = qdh ", (vui128_t) qdh);
+#endif
+	  qdl = vec_divqud_inline (u0, (vui64_t) v1);
+#ifdef __DEBUG_PRINT__
+	    {
+	      print_vint128x ("            u0  ", (vui128_t) u0);
+	      print_v2xint64 ("            v1 ", (vui64_t) v1);
+	      print_v2xint64 (" u0/v1[h] = qdl", (vui64_t) qdl);
+	    }
+#endif
+
+	  printf (" qdl 192-bit mul\n");
+	  u1 = u0;
+	    {
+	      vui128_t l128, h128;
+	      vui64_t b_eud = vec_mrgald ((vui128_t) qdl, (vui128_t) qdl);
+	      l128 = vec_vmuloud ((vui64_t) v1, b_eud);
+	      h128 = vec_vmaddeud ((vui64_t) v1, b_eud, (vui64_t) l128);
+	      // 192-bit product of v1 * qdl
+	      k = h128;
+	      k1 = vec_slqi (l128, 64);
+	    }
+	  u2 = vec_subuqm ((vui128_t) zeros, k1);
+	  t = vec_subcuq ((vui128_t) zeros, k1);
+	  u0 = vec_subeuqm (u1, k, t);
+	  t2 = vec_subecuq (u1, k, t);
+	  Bgt = vec_setb_ncq (t2);
+#ifdef __DEBUG_PRINT__
+	    {
+	      print_vint128x ("            u1  ", (vui128_t) u1);
+	      print_vint128x (" hq(v1*q0) = k  ", (vui128_t) k);
+	      print_vint128x (" lq(v1*q0) = k1 ", (vui128_t) k1);
+	      print_vint128x ("    'u1-k = u0  ", (vui128_t) u0);
+	      print_vint128x ("    'u1-k1= u2  ", (vui128_t) u2);
+	      print_vint128x ("    'u1-k = t2  ", (vui128_t) t2);
+	      print_vint128x ("    'k>u1 = Bgt ", (vui128_t) Bgt);
+	    }
+#endif
+	  u0 = vec_sldqi (u0, u2, 64);
+	  q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+#ifdef __DEBUG_PRINT__
+	  print_vint128x (" (u0|u2)<<64=u0 ", (vui128_t) u0);
+	  print_vint128x (" [qdh,qdl] = q0 ", (vui128_t) q0);
+#endif
+	  //if (vec_cmpuq_all_gt (k, u1))
+	    {
+	      vui128_t q2;
+	      q2 = (vui128_t) vec_adduqm (q0, mone);
+	      u2 = vec_adduqm ((vui128_t) u0, v1);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      u0 = vec_seluq (u0, u2, Bgt);
+	      if (vec_cmpuq_all_eq ((vui128_t) Bgt, mone))
+		{
+#ifdef __DEBUG_PRINT__
+		  print_vint128x (" lq(u0*ql) > u1 ", (vui128_t) u1);
+		  print_vint128x ("     'q0-1 = q0 ", (vui128_t) q0);
+		  print_vint128x ("     'u1-k'= u0 ", (vui128_t) u0);
+#endif
+		}
+	    }
+	  printf (" qdl end\n");
+	  return q0;
+	}
+    }
+#endif
+}
+
+vui128_t db_vec_diveuq_V0 (vui128_t x, vui128_t z)
 {
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
   vui128_t res;
@@ -1002,13 +1288,13 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 	      k = (vui128_t) vec_pasted (qdh, (vui64_t) u0);
 #else
 	      t = vec_muleud (qdh, vdl);
+	      k = vec_subuqm (u1, t);
+	      // ((k << 64) + u0)
+	      k = (vui128_t) vec_mrgald (k, u0);
 #ifdef __DEBUG_PRINT__
 	      print_vint128x ("             qdh ", (vui128_t) qdh);
 	      print_vint128x ("             t   ", (vui128_t) t);
 #endif
-	      k = vec_subuqm (u1, t);
-	      // ((k << 64) + u0)
-	      k = (vui128_t) vec_mrgald (k, u0);
 #endif
 	      // q0 = scalar_divdud ((k << 64) + u0, (unsigned long long) v) & lmask;
 	      qdl = vec_divqud_inline (k, vdl);
@@ -1296,6 +1582,8 @@ vui128_t db_vec_diveuq (vui128_t x, vui128_t z)
 #endif
 }
 #endif
+
+//#undef __DEBUG_PRINT__
 
 #ifdef __DEBUG_PRINT__
 vui128_t db_vec_divuq (vui128_t y, vui128_t z)

@@ -225,6 +225,227 @@ vui128_t test_vec_diveuq (vui128_t x, vui128_t z)
   // - First check for overflow (x >= z) and zero divide (z == 0).
   //   - return __UINT128_MAX__
   // - For the case; divisor < 2**64
+  //   - zdh == 0 and can be ignored.
+  //   - Divide x by zdl, the 1st quotient digit (qdh) is exact.
+  //   - Shift the remainder left 64-bits and divide again by zdl,
+  //     the 2nd quotient digit is exact.
+  //   - Combine 1st/2nd quotient digits and return the 128-bit result.
+  // - For the case divisor >= 2**64
+  //   - So check for z == 0 first and return 0 as the quotient
+  //   - We know that x < z, but we don't know if x < {zdh || 0},
+  //     vec_divqud_inline can only divide by one digit (zdh) to
+  //     compute 1st quotient digit estimate.
+  //     - We can normalize the dividend and divisor by shifting
+  //       left by vec_clzd ((vui64_t) z). This makes zdh a more
+  //       reasonable divisor.
+  //     - Then we use vec_divqud_inline to compute the 1st quotient
+  //       digit estimate (DW qdh).
+  //     - if (xdh >= zdh) the quotient (qdh) will overflow, which
+  //       looks like quotient of 0 but is really (vui64_t) {1, 0}
+  //     - For this case we force qdh to __UINT64_MAX__, which a
+  //       reasonable estimate for the 1st quotient digit.
+  //   - Use the 1st quotient digit estimate to compute the
+  //     1st quotient remainder. For divide extended this requires
+  //     a QW x DW multiply returning a 192-bit product (z1*qdh).
+  //     This product is right justified in a double QW {k, k1}.
+  //     - The remainder is the double quadword {x1, 0} - {k, k1} and
+  //       the carry-out (t2==0) gives the boolean (Bgt) for
+  //       double quadword {k,k1} > {x1,0}.
+  //     - if ({k,k1} > {x1.0}) then the quotient estimate is too high
+  //       and we need to reduce the quotient by 1 and adjust the
+  //       remainder by adding double quadword (z1>>64).
+  //     - The resulting remainder has a DW of leading zeros,
+  //       2 x DWs of remainder, followed by another DW of zeros.
+  //     - For the next step we need to normalize this by shifting this
+  //       double QW left 64-bits for the 2nd stage QW dividend
+  //       (using vec_sldqi()).
+  //   - Now we have the corrected 1st DW (qdh) quotient digit and the
+  //     corrected QW remainder.
+  //     - Use vec_divqud_inline to compute the 2nd digit estimate.
+  //     - Here We don't really need the remainder but we do need to
+  //       verify the 2nd DW (qdl) guess is correct.
+  //     - Again generate a 192-bit product (z1*qdl) right justified
+  //       in a double QW {k, k1} and compute the remainder and
+  //       the carry-out (t2==0) which gives the boolean (Bgt)
+  //       - If ({k,k1} > {x0,0}) then subtract 1 from qdl.
+  //     - Then combine the 1st and 2nd quotient digits to form the
+  //       final QW quotient result.
+
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+  vui128_t x0, x1, z1, q0, k, t, zn;
+  vui64_t zdh, zdl, qdl, qdh;
+
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  zdh = vec_splatd ((vui64_t) z, VEC_DW_H);
+	  zdl = vec_splatd ((vui64_t) z, VEC_DW_L);
+
+          // (z < 2**64) simplifies to z >> 64 == 0UL
+	  if (vec_cmpud_all_eq (zdh, zeros))
+	    {
+	      x0 = (vui128_t) vec_swapd ((vui64_t) x);
+	      qdh = vec_divqud_inline (x0, zdl);
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = x1 - q1*z; ((k << 64) + x0);
+	      // Simplifies to:
+	      x1 = (vui128_t) vec_pasted (qdh, (vui64_t) x0);
+	      qdl = vec_divqud_inline (x1, zdl);
+	      //return (vui128_t) {qlh, qdl};
+	      return (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	    }
+	  else
+	    {
+	      const vui64_t ones = vec_splat_u64 (1);
+	      vui128_t k1, x2, t2, q2;
+	      vb128_t Bgt;
+	      vb64_t Beq;
+	      // Here z >= 2**64, Normalize the divisor so MSB is 1
+	      // Could use vec_clzq(), but we know  z >= 2**64, So:
+	      zn = (vui128_t) vec_clzd ((vui64_t) z);
+	      // zn = zn >> 64;, So we can use it with vec_slq ()
+	      zn = (vui128_t) vec_mrgahd ((vui128_t) zeros, zn);
+
+	      // Normalize dividend and divisor
+	      x1 = vec_slq (x, zn);
+	      z1 = vec_slq (z, zn);
+	      // estimate the 1st quotient digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+	      // Long division with multi-digit divisor
+	      // divqud by zdh might overflow the estimated quotient
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+	      // Compute 1st digit remainder
+	      // {k, k1}  = vec_muludq (z1, q0);
+	      // simplify to 128x64 bit product as only have 64-bit qdh
+	      {
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of z1 * qdh-estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // Calc double QW remainder {x1||0} - {k||k1} = {x0||x2}
+	      // Also a double QW compare for {x1||0} > {k||k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+	      // Correct 1st remainder/quotient if negative
+	      // Remainder will fit into 128-bits
+	      x0 = vec_sldqi (x0, x2, 64);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      x0 = vec_seluq (x0, x2, Bgt);
+	      // Correct qdh estimate
+	      q2 = (vui128_t) vec_subudm (qdh, ones);
+	      qdh = (vui64_t) vec_seluq ((vui128_t) qdh, q2, Bgt);
+
+	      // estimate the 2nd quotient digit
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      // Compute 2nd digit remainder
+	      // {k, k1}  = vec_muludq (z1, qdl);
+	      // simplify to 128x64 bit product with 64-bit qdl
+	      x1 = x0;
+	      {
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdl, (vui128_t) qdl);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * qdl estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // A double QW compare for {x1||0} > {k||k1}
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+#if 0 // only if corrected remainder is required
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      // Remainder will fit into 128-bits
+	      x0 = vec_sldqi (x0, x2, 64);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      x0 = vec_seluq (x0, x2, Bgt);
+#endif
+	      // Correct combined quotient if 2nd remainder negative
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      return q0;
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made divide any value by 0
+      // then the results are undefined. We use __UINT128_MAX__.
+      return mone;
+    }
+#endif
+}
+
+vui128_t test_vec_diveuq_V0 (vui128_t x, vui128_t z)
+{
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  vui128_t res;
+#if (__GNUC__ >= 12)
+  res = vec_dive (x, z);
+#else
+  __asm__(
+      "vdiveuq %0,%1,%2;\n"
+      : "=v" (res)
+      : "v" (x), "v" (z)
+      : );
+#endif
+  return res;
+#elif  (_ARCH_PWR8)
+  // See "Hacker's Delight, 2nd Edition,"
+  // Henry S. Warren, Jr, Addison Wesley, 2013.
+  // Chapter 9, Section 9-5 Doubleword Division from Long Division.
+  //
+  // Here we will use long division by doubleword to compute the
+  // quadword division. We use the 128 by 64 division operation
+  // vec_divqud_inline() for 2 cases.
+  // - divisor < 2**64
+  // - divisor >= 2**64
+  // This also allows the use of doubleword operations for permutes,
+  // compares, and count leading zeros.
+  // It does require some quadword shifts, add/subtract, and  multiply.
+  // TBD explain diff from divuq and clean up if/then/else where possible
+  // The difference from divuq is:
+  // - The dividend is really 256-bits
+  //   - with x as the high order 128-bits
+  //   - with 0s implied for the low order 128-bits.
+  // - The divisor is 128-bits
+  // - We treat this like a 4-digit by 2 digit long division,
+  //   where a digit is a 64-bit DW.
+  // - Use vec_divqud_inline() to do the 2-digit by 1-digit divide step
+  //   to generate a provisional quotient digit.
+  // - First check for overflow (x >= z) and zero divide (z == 0).
+  //   - return __UINT128_MAX__
+  // - For the case; divisor < 2**64
   //   - Divide x by zdl, the 1st quotient digit (qdh) is exact.
   //   - Shift the remainder left 64-bits and divide again by zdl,
   //     the 2nd quotient digit is exact.

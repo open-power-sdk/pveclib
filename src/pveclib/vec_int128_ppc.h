@@ -5988,8 +5988,8 @@ vec_divuq_10e32 (vui128_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |198-398|   NA     |
- *  |power9   |113-303|   NA     |
+ *  |power8   |190-365|   NA     |
+ *  |power9   |113-260|   NA     |
  *  |power10  | 69-114|1/66 cycle|
  *
  *  @param x vector of the high 128-bit element of the 256-bit dividend.
@@ -6025,8 +6025,8 @@ vec_divdqu (vui128_t x, vui128_t y, vui128_t z);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |198-398|   NA     |
- *  |power9   |113-303|   NA     |
+ *  |power8   |190-365|   NA     |
+ *  |power9   |113-260|   NA     |
  *  |power10  | 69-114|1/66 cycle|
  *
  *  @param x vector of the high 128-bit element of the 256-bit dividend.
@@ -6102,8 +6102,8 @@ vec_divdqu_inline (vui128_t x, vui128_t y, vui128_t z)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |198-398|   NA     |
- *  |power9   |113-303|   NA     |
+ *  |power8   |190-365|   NA     |
+ *  |power9   |113-260|   NA     |
  *  |power10  | 61-104|1/66 cycle|
  *
  *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
@@ -6132,8 +6132,8 @@ vec_divduq (vui128_t x, vui128_t y, vui128_t z);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |198-398|   NA     |
- *  |power9   |113-303|   NA     |
+ *  |power8   |190-365|   NA     |
+ *  |power9   |113-260|   NA     |
  *  |power10  | 61-104|1/66 cycle|
  *
  *  @param x 128-bit vector of the high 128-bit element of the 256-bit dividend.
@@ -6173,7 +6173,7 @@ vec_divduq_inline (vui128_t x, vui128_t y, vui128_t z)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |176-236|    NA    |
+ *  |power8   |122-211|   NA     |
  *  |power9   |127-163|   NA     |
  *  |power10  | 22-61 |1/13 cycle|
  *
@@ -6208,7 +6208,7 @@ vec_diveuq (vui128_t x, vui128_t z);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 34-141|    NA    |
+ *  |power8   | 34-141|   NA     |
  *  |power9   | 51-114|   NA     |
  *  |power10  | 22-61 |1/13 cycle|
  *
@@ -9359,7 +9359,7 @@ vec_subuqm (vui128_t vra, vui128_t vrb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |176-236|   NA     |
+ *  |power8   |122-211|   NA     |
  *  |power9   |127-163|   NA     |
  *  |power10  | 22-61 |1/13 cycle|
  *

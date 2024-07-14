@@ -335,6 +335,318 @@ test_vec_diveuqo_V0 (vui128_t x, vui128_t z)
 #endif
 }
 
+vui128_t
+test_vec_diveuqo_V1 (vui128_t x, vui128_t z)
+{
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+#if defined (_ARCH_PWR10)
+  vui128_t Q, R;
+  vui128_t Rt, r1, t;
+  vb128_t CC;
+  // Based on vec_divdqu with parm y = 0
+  Q  = vec_vdiveuq_inline (x, z);
+  // R = -(Q * z)
+  r1 = vec_mulluq (Q, z);
+  R  = vec_subuqm ((vui128_t) zeros, r1);
+
+  CC = vec_cmpgeuq (R, z);
+  // Corrected Quotient before rounding.
+  // if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+  // Corrected Remainder
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+  // Convert nonzero remainder into a carry (=1).
+  t = vec_addcuq (R, mone);
+  Q = (vui128_t) vec_or ((vui32_t) Q, (vui32_t) t);
+  return Q;
+#else
+  vui128_t x0, x1, z1, q0, k, s, t, zn;
+  vui64_t zdh, qdl, qdh;
+
+  // For xsdivqpo x and z will always be normalized quadword
+  // significands, and divisor (z) is greater than the dividend (x).
+  // Shift the divisor and dividend as far left as possible
+  // by re-normalizing the divisor so the MSB is 1.
+  // Could use vec_clzq(), but we know  z >= 2**64, So:
+  zn = (vui128_t) vec_clzd ((vui64_t) z);
+  // zn = zn >> 64;, So we can use it with vec_slq ()
+  zn = (vui128_t) vec_splatd ((vui64_t) zn, VEC_DW_H);
+  // renormalize dividend and divisor
+  x1 = vec_slq (x, zn);
+  z1 = vec_slq (z, zn);
+
+  // Check for overflow (x >= z) where the quotient can not be
+  // represented in 128-bits, or zero divide
+  if (__builtin_expect (
+      vec_cmpuq_all_lt (x, z) && vec_cmpuq_all_ne (z, (vui128_t) zeros), 1))
+    {
+      // Check for x != 0
+      if (__builtin_expect (vec_cmpuq_all_ne (x, (vui128_t) zeros), 1))
+	{
+	  zdh = vec_splatd ((vui64_t) z1, VEC_DW_H);
+	  // zdl == 0 is an important case.
+	  // Optimize for zdl ==  0 as single (DW) digit long division
+	  if (__builtin_expect (vec_cmpud_any_eq ((vui64_t) z1, zeros), 1))
+	    {
+	      // Generate the 1st quotient digit
+	      qdh = vec_divqud_inline (x1, zdh);
+	      // vec_divqud already provides the remainder in qdh[1]
+	      // k = x1 - q1*z;  Simplifies to:
+	      x0 = (vui128_t) vec_pasted (qdh, (vui64_t) zeros);
+	      // generate the 2nd quotient digit
+	      qdl = vec_divqud_inline (x0, zdh);
+	      //return (vui128_t) {qlh, qdl}; After round to odd
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      // Isolate remainder Doubleword
+	      s = (vui128_t) vec_mrgahd ((vui128_t) qdl, (vui128_t) zeros);
+	      // Convert nonzero remainder into a carry (=1).
+	      t = vec_addcuq (s, mone);
+	      return (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t);
+	    }
+	  else
+	    {
+	      vui128_t k1, x2, t2, q2;
+	      vb128_t Bgt;
+	      vb64_t Beq;
+
+	      // already re-normalizing so divisor MSB is 1, above
+	      // estimate the quotient 1st digit
+	      qdh = vec_divqud_inline (x1, (vui64_t) z1);
+              // detect overflow if ((x >> 64) == ((z >> 64)))
+	      // a doubleword boolean true == __UINT64_MAX__
+	      Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+	      // Beq >> 64
+	      Beq  = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+	      // Adjust quotient (-1) for divide overflow
+	      qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+	      // Compute 1st digit remainder
+	      // {k, k1}  = vec_muludq (z1, q0);
+	      { // Optimized for 128-bit by 64-bit multiply
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * q-estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // Also a double QW compare for {x1 || 0} > {k || k1}
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      t2 = vec_subecuq (x1, k, t);
+	      // NOT carry of (x - k) -> k gt x
+	      Bgt = vec_setb_ncq (t2);
+
+	      x0 = vec_sldqi (x0, x2, 64);
+	      // Doubleword add will do here, only 64-bits so far
+	      q2 = (vui128_t) vec_addudm (qdh, (vui64_t) mone);
+	      qdh = (vui64_t) vec_seluq ((vui128_t) qdh, q2, Bgt);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+              // estimate the 2nd quotient digit
+	      qdl = vec_divqud_inline (x0, (vui64_t) z1);
+	      // Compute 2nd digit remainder
+	      // simplify to 128x64 bit product with 64-bit qdl
+	      x1 = x0;
+	      {
+		vui128_t l128, h128;
+		vui64_t b_eud = vec_mrgald ((vui128_t) qdl, (vui128_t) qdl);
+		l128 = vec_vmuloud ((vui64_t ) z1, b_eud);
+		h128 = vec_vmaddeud ((vui64_t ) z1, b_eud, (vui64_t ) l128);
+		// 192-bit product of v1 * qdl estimate
+		k  = h128;
+		k1 = vec_slqi (l128, 64);
+	      }
+	      // A double QW compare for {x1||0} > {k||k1}
+	      // NOT carry of (x - k) -> k gt x
+	      t = vec_subcuq ((vui128_t) zeros, k1);
+	      t2 = vec_subecuq (x1, k, t);
+	      Bgt = vec_setb_ncq (t2);
+
+	      // corrected 2nd remainder if remainder is negative
+	      x2 = vec_subuqm ((vui128_t) zeros, k1);
+	      x0 = vec_subeuqm (x1, k, t);
+	      // Remainder will fit into 128-bits
+	      x0 = vec_sldqi (x0, x2, 64);
+	      x2 = vec_adduqm ((vui128_t) x0, z1);
+	      x0 = vec_seluq (x0, x2, Bgt);
+
+	      // Correct combined quotient if 2nd remainder negative
+	      q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+	      q2 = vec_adduqm (q0, mone);
+	      q0 = vec_seluq (q0, q2, Bgt);
+	      // Convert nonzero remainder into a carry (=1).
+	      t2 = vec_addcuq (x0, mone);
+	      // If remainder nonzero then Round to Odd
+	      q0 = (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t2);
+	      return q0;
+	    }
+	}
+      else  // if (x == 0) return 0 as Quotient
+	{
+	  return ((vui128_t) zeros);
+	}
+    }
+  else
+    { //  undef -- overlow or zero divide
+      // If the quotient cannot be represented in 128 bits, or if
+      // an attempt is made divide any value by 0
+      // then the results are undefined. We use __UINT128_MAX__.
+      return mone;
+    }
+#endif
+}
+
+vui128_t
+test_vec_diveuq_qpo (vui128_t x, vui128_t z)
+{
+  const vui64_t zeros = vec_splat_u64 (0);
+  const vui128_t mone = (vui128_t) CONST_VINT128_DW(-1, -1);
+#if defined (_ARCH_PWR10)
+  vui128_t Q, R;
+  vui128_t Rt, r1, t;
+  vb128_t CC;
+	// Based on vec_divdqu with parm y = 0
+  Q = vec_vdiveuq_inline (x, z);
+	// R = -(Q * z)
+  r1 = vec_mulluq (Q, z);
+  R = vec_subuqm ((vui128_t) zeros, r1);
+
+  CC = vec_cmpgeuq (R, z);
+	// Corrected Quotient before rounding.
+	// if Q needs correction (Q+1), Bool CC is True, which is -1
+  Q = vec_subuqm (Q, (vui128_t) CC);
+	// Corrected Remainder
+  Rt = vec_subuqm (R, z);
+  R = vec_seluq (R, Rt, CC);
+	// Convert nonzero remainder into a carry (=1).
+  t = vec_addcuq (R, mone);
+  Q = (vui128_t) vec_or ((vui32_t) Q, (vui32_t) t);
+  return Q;
+#else
+  vui128_t x0, x1, z1, q0, k, s, t, zn;
+  vui64_t zdh, qdl, qdh;
+
+	// For xsdivqpo x and z will always be normalized quadword
+	// significands, and divisor (z) is greater than the dividend (x).
+	// Shift the divisor and dividend as far left as possible
+	// by re-normalizing the divisor so the MSB is 1.
+	// Could use vec_clzq(), but we know  z >= 2**64, So:
+  zn = (vui128_t) vec_clzd ((vui64_t) z);
+    // zn = zn >> 64;, So we can use it with vec_slq ()
+  zn = (vui128_t) vec_splatd ((vui64_t) zn, VEC_DW_H);
+    // renormalize dividend and divisor
+  x1 = vec_slq (x, zn);
+  z1 = vec_slq (z, zn);
+    // >>>>
+  zdh = vec_splatd ((vui64_t) z1, VEC_DW_H);
+    // zdl == 0 is an important case.
+    // Optimize for zdl ==  0 as single (DW) digit long division
+  if (__builtin_expect (vec_cmpud_any_eq ((vui64_t) z1, zeros), 1))
+  {
+    // Generate the 1st quotient digit
+    qdh = vec_divqud_inline (x1, zdh);
+    // vec_divqud already provides the remainder in qdh[1]
+    // k = x1 - q1*z;  Simplifies to:
+    x0 = (vui128_t) vec_pasted (qdh, (vui64_t) zeros);
+    // generate the 2nd quotient digit
+    qdl = vec_divqud_inline (x0, zdh);
+    //return (vui128_t) {qlh, qdl}; After round to odd
+    q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+    // Isolate remainder Doubleword
+    s = (vui128_t) vec_mrgahd ((vui128_t) qdl, (vui128_t) zeros);
+    // Convert nonzero remainder into a carry (=1).
+    t = vec_addcuq (s, mone);
+    return (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t);
+  }
+  else
+  {
+    vui128_t k1, x2, t2, q2;
+    vb128_t Bgt;
+    vb64_t Beq;
+
+    // already re-normalizing so divisor MSB is 1, above
+    // estimate the quotient 1st digit
+    qdh = vec_divqud_inline (x1, (vui64_t) z1);
+    // detect overflow if ((x >> 64) == ((z >> 64)))
+    // a doubleword boolean true == __UINT64_MAX__
+    Beq = vec_cmpequd ((vui64_t) x1, (vui64_t) z1);
+    // Beq >> 64
+    Beq = (vb64_t) vec_mrgahd ((vui128_t) zeros, (vui128_t) Beq);
+    // Adjust quotient (-1) for divide overflow
+    qdh = (vui64_t) vec_or ((vui32_t) Beq, (vui32_t) qdh);
+
+    // Compute 1st digit remainder
+    // {k, k1}  = vec_muludq (z1, q0);
+      { // Optimized for 128-bit by 64-bit multiply
+	vui128_t l128, h128;
+	vui64_t b_eud = vec_mrgald ((vui128_t) qdh, (vui128_t) qdh);
+	l128 = vec_vmuloud ((vui64_t) z1, b_eud);
+	h128 = vec_vmaddeud ((vui64_t) z1, b_eud, (vui64_t) l128);
+	// 192-bit product of v1 * q-estimate
+	k = h128;
+	k1 = vec_slqi (l128, 64);
+      }
+    // Also a double QW compare for {x1 || 0} > {k || k1}
+    x2 = vec_subuqm ((vui128_t) zeros, k1);
+    t = vec_subcuq ((vui128_t) zeros, k1);
+    x0 = vec_subeuqm (x1, k, t);
+    t2 = vec_subecuq (x1, k, t);
+    // NOT carry of (x - k) -> k gt x
+    Bgt = vec_setb_ncq (t2);
+
+    x0 = vec_sldqi (x0, x2, 64);
+    // Doubleword add will do here, only 64-bits so far
+    q2 = (vui128_t) vec_addudm (qdh, (vui64_t) mone);
+    qdh = (vui64_t) vec_seluq ((vui128_t) qdh, q2, Bgt);
+    x2 = vec_adduqm ((vui128_t) x0, z1);
+    x0 = vec_seluq (x0, x2, Bgt);
+
+    // estimate the 2nd quotient digit
+    qdl = vec_divqud_inline (x0, (vui64_t) z1);
+    // Compute 2nd digit remainder
+    // simplify to 128x64 bit product with 64-bit qdl
+    x1 = x0;
+      {
+	vui128_t l128, h128;
+	vui64_t b_eud = vec_mrgald ((vui128_t) qdl, (vui128_t) qdl);
+	l128 = vec_vmuloud ((vui64_t) z1, b_eud);
+	h128 = vec_vmaddeud ((vui64_t) z1, b_eud, (vui64_t) l128);
+	// 192-bit product of v1 * qdl estimate
+	k = h128;
+	k1 = vec_slqi (l128, 64);
+      }
+    // A double QW compare for {x1||0} > {k||k1}
+    // NOT carry of (x - k) -> k gt x
+    t = vec_subcuq ((vui128_t) zeros, k1);
+    t2 = vec_subecuq (x1, k, t);
+    Bgt = vec_setb_ncq (t2);
+
+    // corrected 2nd remainder if remainder is negative
+    x2 = vec_subuqm ((vui128_t) zeros, k1);
+    x0 = vec_subeuqm (x1, k, t);
+    // Remainder will fit into 128-bits
+    x0 = vec_sldqi (x0, x2, 64);
+    x2 = vec_adduqm ((vui128_t) x0, z1);
+    x0 = vec_seluq (x0, x2, Bgt);
+
+    // Correct combined quotient if 2nd remainder negative
+    q0 = (vui128_t) vec_mrgald ((vui128_t) qdh, (vui128_t) qdl);
+    q2 = vec_adduqm (q0, mone);
+    q0 = vec_seluq (q0, q2, Bgt);
+    // Convert nonzero remainder into a carry (=1).
+    t2 = vec_addcuq (x0, mone);
+    // If remainder nonzero then Round to Odd
+    return (vui128_t) vec_or ((vui32_t) q0, (vui32_t) t2);
+  }
+#endif
+}
+
 vui64_t
 force_eMin (vui64_t x_exp)
 {
@@ -2862,10 +3174,14 @@ test_vec_divqpo (__binary128 vfa, __binary128 vfb)
       // Using Divide extended we are effective performing a 256-bit
       // by 128-bit divide.
       b_sig = vec_slqi (b_sig, 8);
-#if 1 //defined (_ARCH_PWR9)
+#if  0 //defined (_ARCH_PWR9)
       p_sig_l = vec_diveuqo_inline (a_sig, b_sig);
 #else
-      p_sig_l = test_vec_diveuqo (a_sig, b_sig);
+#if 1
+      p_sig_l = test_vec_diveuq_qpo (a_sig, b_sig);
+#else
+      p_sig_l = test_vec_diveuqo_V1 (a_sig, b_sig);
+#endif
 #endif
       p_sig_h = (vui128_t) vec_sld ((vui8_t) q_zero, (vui8_t) p_sig_l, 15);
       p_sig_l = (vui128_t) vec_sld ((vui8_t) p_sig_l, (vui8_t) q_zero, 15);

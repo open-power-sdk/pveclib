@@ -118,7 +118,7 @@
  *
  * | Power8 QP  | cmpqp |cvtdpqp|cvtqpdp|cvtuqqp|cvtqpuq| mulqp | addqp | divqp |
  * |-----------:|:-----:|:------:|:-----:|:-----:|:-----:|:-----:|:-----:|:------|
- * |\%improvement| 22.4 |  60.7  | 46.2* |  28.9 |  72.4 |  1.8* | 10.1* | 14.0* |
+ * |\%improvement| 22.4 |  60.7  | 46.2* |  28.9 |  72.4 |  1.8* | 10.1* | 23.2* |
  *
  * \note These micro-benchmarks and others are included in
  * src/testsuite. Specifically files vec_perf_f128.c and
@@ -11054,7 +11054,7 @@ static inline vec_xscvuqqp (vui128_t int128)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |160-240|    NA    |
+ *  |power8   |160-215|    NA    |
  *  |power9   | 56-58 |1/45 cycle|
  *  |power10  | 57-59 |1/50 cycle|
  *

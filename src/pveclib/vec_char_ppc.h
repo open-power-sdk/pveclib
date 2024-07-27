@@ -554,6 +554,8 @@ static inline vui8_t vec_vmrgeb (vui8_t vra, vui8_t vrb);
 static inline vui8_t vec_vmrgob (vui8_t vra, vui8_t vrb);
 static inline int vec_vclzlsbb (vui8_t vra);
 static inline int vec_vctzlsbb (vui8_t vra);
+static inline vb8_t vec_vcmpneb (vui8_t vra, vui8_t vrb);
+static inline vb8_t vec_vcmpnezb (vui8_t vra, vui8_t vrb);
 ///@endcond
 
 /** \brief Vector Absolute Difference Unsigned byte.
@@ -799,6 +801,186 @@ vec_cnttz_lsbb_bi (vui8_t vra)
   return vec_vclzlsbb (vra);
 #else
   return vec_vctzlsbb (vra);
+#endif
+}
+
+/** \brief Vector First Match Byte Index.
+ *
+ *  Comparison of equality for each of the corresponding elements of
+ *  vra and vrb, and returns the byte index of the first position of
+ *  equality.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 17-28 |    NA    |
+ *  |power9   |   6   | 2/cycle  |
+ *  |power10  |  2-6  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @param vrb vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_first_match_byte_index (vui8_t vra, vui8_t vrb)
+{
+#if defined(_ARCH_PWR9) && (__GNUC__ > 10)
+  return vec_first_match_index (vra, vrb);
+#else
+  vui8_t abeq;
+  int result;
+
+  abeq = (vui8_t) vec_cmpeq(vra, vrb);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abeq);
+#else
+  result = vec_vclzlsbb (abeq);
+#endif
+  return result;
+#endif
+}
+
+/** \brief Vector First Match Byte or EOS Index.
+ *
+ *  Comparison of equality for each of the corresponding elements of
+ *  vra and vrb, and returns the byte index of the first position of
+ *  equality, or the zero string terminator.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 21-32 |    NA    |
+ *  |power9   | 12-15 | 2/cycle  |
+ *  |power10  |  4-5  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @param vrb vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_first_match_byte_or_eos_index (vui8_t vra, vui8_t vrb)
+{
+#if defined(_ARCH_PWR9) && (__GNUC__ > 13)
+  return vec_first_match_or_eos_index (vra, vrb);
+#else
+  const vui8_t VEOS = vec_splat_u8(0);
+  vui8_t abeqz;
+  vb8_t abeq, eosa, eosb, eosc;
+  int result;
+
+  eosa = vec_cmpeq (vra, VEOS);
+  eosb = vec_cmpeq (vrb, VEOS);
+  abeq = vec_cmpeq (vra, vrb);
+  eosc = vec_or (eosa, eosb);
+  abeqz = (vui8_t) vec_or (abeq, eosc);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abeqz);
+#else
+  result = vec_vclzlsbb (abeqz);
+#endif
+  return result;
+#endif
+}
+
+/** \brief Vector First Mismatch Byte Index.
+ *
+ *  Comparison of inequality for each of the corresponding elements of
+ *  vra and vrb, and returns the byte index of the first position of
+ *  inequality.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 19-30 |    NA    |
+ *  |power9   |   6   | 2/cycle  |
+ *  |power10  |  2-6  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @param vrb vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_first_mismatch_byte_index (vui8_t vra, vui8_t vrb)
+{
+#if defined(_ARCH_PWR9) && (__GNUC__ > 10)
+  return vec_first_mismatch_index (vra, vrb);
+#else
+  vui8_t abeq;
+  int result;
+
+  abeq = (vui8_t) vec_vcmpneb(vra, vrb);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abeq);
+#else
+  result = vec_vclzlsbb (abeq);
+#endif
+  return result;
+#endif
+}
+
+/** \brief Vector First Mismatch Byte or EOS Index.
+ *
+ *  Comparison of equality for each of the corresponding elements of
+ *  vra and vrb, and returns the byte index of the first position of
+ *  equality, or the zero string terminator.
+ *
+ *  \note This operation implements the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 21-32 |    NA    |
+ *  |power9   |   6   | 2/cycle  |
+ *  |power10  |  2-6  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @param vrb vector of 16 unsigned char
+ *  @return int value (0-16).
+ */
+static inline int
+vec_first_mismatch_byte_or_eos_index (vui8_t vra, vui8_t vrb)
+{
+#ifdef _ARCH_PWR9
+#if (__GNUC__ > 13)
+  return vec_first_mismatch_or_eos_index (vra, vrb);
+#else
+  vui8_t abnez;
+  abnez  = (vui8_t) vec_cmpnez (vra, vrb);
+  return vec_cntlz_lsbb_bi (abnez);
+#endif
+#else // _ARCH_PWR8
+  const vui8_t VEOS = vec_splat_u8(0);
+  vui8_t abnez;
+  vb8_t ab_b, eosa, eosb, eosc;
+  int result;
+
+  eosa = vec_cmpeq (vra, VEOS);
+  eosb = vec_cmpeq (vrb, VEOS);
+  // vcmpneb requires _ARCH_PWR9, so use NOT cmpeq
+  ab_b = vec_cmpeq (vra, vrb);
+  eosc = vec_or (eosa, eosb);
+#ifdef _ARCH_PWR8
+  abnez = (vui8_t) vec_orc (eosc, ab_b);
+#else // vorc requires _ARCH_PWR8, so use cmpeq, nor and or
+  abnez = (vui8_t) vec_nor (ab_b, ab_b);
+  abnez = vec_or ((vui8_t) eosc, abnez);
+#endif
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abnez);
+#else
+  result = vec_vclzlsbb (abnez);
+#endif
+  return result;
 #endif
 }
 
@@ -1435,6 +1617,86 @@ vec_shift_leftdo (vui8_t vrw, vui8_t vrx, vui8_t vrb)
 	return (result);
 }
 
+/** \brief Vector Test Least-Significant Bit by Byte for All Ones.
+ *
+ *  Test whether the least-significant bit of all bytes of the input
+ *  operand are equal to one.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-6  | 2/cycle  |
+ *  |power9   |  6-9  | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-1).
+ */
+static inline int
+vec_testlsbb_all_ones (vui8_t vra)
+{
+#if defined(_ARCH_PWR10) && (__GNUC__ > 9)
+#if defined (vec_test_lsbb_all_ones)
+  return vec_test_lsbb_all_ones (vra);
+#else
+  int r;
+  __asm__(
+      "xvtlsbb 0,%x1;\n"
+      "setbc   %0,lt;\n"
+      : "=r" (r)
+      : "wa" (vra)
+      : "cr0"
+	);
+  return r;
+#endif
+#else
+  const vui8_t ones = vec_splat_u8(1);
+  vui8_t lsbb;
+
+  lsbb = vec_and (vra, ones);
+  return vec_all_eq (lsbb, ones);
+#endif
+}
+
+/** \brief Vector Test Least-Significant Bit by Byte for All Zeros.
+ *
+ *  Test whether the least-significant bit of all bytes of the input
+ *  operand are not equal to one.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-6  | 2/cycle  |
+ *  |power9   |  6-9  | 4/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra vector of 16 unsigned char
+ *  @return int value (0-1).
+ */
+static inline int
+vec_testlsbb_all_zeros (vui8_t vra)
+{
+#if defined(_ARCH_PWR10) && (__GNUC__ > 9)
+#if defined (vec_test_lsbb_all_ones)
+  return vec_test_lsbb_all_zeros (vra);
+#else
+  int r;
+  __asm__(
+      "xvtlsbb 0,%x1;\n"
+      "setbc   %0,eq;\n"
+      : "=r" (r)
+      : "wa" (vra)
+      : "cr0"
+	);
+  return r;
+#endif
+#else
+  const vui8_t ones = vec_splat_u8(1);
+  vui8_t lsbb;
+
+  lsbb = vec_and (vra, ones);
+  return vec_all_ne (lsbb, ones);
+#endif
+}
+
 /** \brief Vector toupper.
  *
  *  Convert any Lower Case Alpha ASCII characters within a vector
@@ -1668,6 +1930,46 @@ vec_vctzlsbb (vui8_t vra)
   result = __builtin_ctz ((unsigned int) (dwres+0x10000));
 #endif
 
+  return result;
+}
+
+/** \brief Vector Compare Not Equal Byte.
+ *
+ * For each byte element of vra and vrb compare for (vra[i] != vrb[i].
+ * For each byte where any of these conditions are true set that byte
+ * to all 1s (0xff).
+ *
+ * \note This operation can be used for unsigned or signed char.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   4   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ * @param vra vector of 16 unsigned bytes
+ * @param vrb vector of 16 unsigned bytes
+ * @return vector bool char.
+ */
+static inline vb8_t
+vec_vcmpneb (vui8_t vra, vui8_t vrb)
+{
+  vb8_t result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cmpne
+  result = vec_cmpne (vra, vrb);
+#else
+  __asm__(
+      "vcmpneb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+#else
+  vb8_t abne;
+  abne = vec_cmpeq (vra, vrb);
+  result = vec_nor (abne, abne);
+#endif
   return result;
 }
 

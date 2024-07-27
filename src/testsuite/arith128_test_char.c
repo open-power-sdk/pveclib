@@ -1319,6 +1319,589 @@ test_vec_cnttz_lsbb (void)
     return (rc);
   }
 
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_first_match_byte_index (vui8_t, vui8_t);
+#define test_first_match_index(_l,_k)	\
+        test_vec_first_match_byte_index(_l,_k)
+#else
+// test from vec_char_dummy.c
+extern int test_first_match_byte_index (vui8_t, vui8_t);
+#define test_first_match_index(_l,_k)	\
+        test_first_match_byte_index(_l,_k)
+#endif
+
+int
+test_first_match (void)
+{
+    vui8_t i, j;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x14, 0x35, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 4;
+    r = test_first_match_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match", r, er);
+
+    i = (vui8_t) vec_splat_u8(1);
+    j = (vui8_t) vec_splat_u8(0);
+
+    er = 16;
+    r = test_first_match_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match", r, er);
+
+    i = (vui8_t) vec_splat_u8(1);
+    j = (vui8_t) vec_splat_u8(1);
+
+    er = 0;
+    r = test_first_match_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x15, 0x36, 0x37, 0x38,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x27};
+
+    er = 15;
+    r = test_first_match_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x15, 0x36, 0x37, 0x38,
+                  0x40, 0x41, 0x42, 0x43, 0x24, 0x45, 0x46, 0x27};
+
+    er = 12;
+    r = test_first_match_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_first_mismatch_byte_index (vui8_t, vui8_t);
+#define test_first_mismatch_index(_l,_k)	\
+        test_vec_first_mismatch_byte_index(_l,_k)
+#else
+// test from vec_char_dummy.c
+extern int test_first_mismatch_byte_index (vui8_t, vui8_t);
+#define test_first_mismatch_index(_l,_k)	\
+        test_first_mismatch_byte_index(_l,_k)
+#endif
+
+int
+test_first_mismatch (void)
+{
+    vui8_t i, j;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+
+    er = 16;
+    r = test_first_mismatch_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch", r, er);
+
+    i = (vui8_t) {0x18, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+
+    er = 0;
+    r = test_first_mismatch_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x28};
+
+    er = 15;
+    r = test_first_mismatch_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x18, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x28};
+
+    er = 4;
+    r = test_first_mismatch_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int
+test_vec_first_match_byte_or_eos_index (vui8_t vra, vui8_t vrb);
+#define test_first_match_or_eos_index(_l,_k)	\
+        test_vec_first_match_byte_or_eos_index(_l,_k)
+#else
+// test from vec_char_dummy.c
+extern int
+test_first_match_byte_or_eos_index (vui8_t, vui8_t);
+#define test_first_match_or_eos_index(_l,_k)	\
+        test_first_match_byte_or_eos_index(_l,_k)
+#endif
+
+int
+test_first_match_or_eos (void)
+{
+    vui8_t i, j;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x14, 0x35, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 4;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x00,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x14, 0x35, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 4;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x14, 0x00, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 4;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x00, 0x14, 0x35, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 3;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x00, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x14, 0x35, 0x36, 0x37,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x47, 0x47};
+
+    er = 3;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) vec_splat_u8(1);
+    j = (vui8_t) vec_splat_u8(0);
+
+    er = 0;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) vec_splat_u8(1);
+    j = (vui8_t) vec_splat_u8(2);
+
+    er = 16;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) vec_splat_u8(1);
+    j = (vui8_t) vec_splat_u8(1);
+
+    er = 0;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x15, 0x36, 0x37, 0x38,
+                  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x27};
+
+    er = 15;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x11, 0x12, 0x13, 0x14, 0x15, 0x36, 0x37, 0x38,
+                  0x40, 0x41, 0x42, 0x43, 0x24, 0x45, 0x46, 0x27};
+
+    er = 12;
+    r = test_first_match_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_match_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_match_or_eos", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int
+test_vec_first_mismatch_byte_or_eos_index (vui8_t vra, vui8_t vrb);
+#define test_first_mismatch_or_eos_index(_l,_k)	\
+    test_vec_first_mismatch_byte_or_eos_index(_l,_k)
+#else
+// test from vec_char_dummy.c
+extern int test_first_mismatch_byte_or_eos_index (vui8_t, vui8_t);
+#define test_first_mismatch_or_eos_index(_l,_k)	\
+    test_first_mismatch_byte_or_eos_index(_l,_k)
+#endif
+
+int
+test_first_mismatch_or_eos (void)
+{
+    vui8_t i, j;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+
+    er = 16;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x00, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+
+    er = 6;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x00, 0x25, 0x27, 0x27};
+
+    er = 12;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x18, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+
+    er = 0;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x18, 0x11, 0x12, 0x13, 0x00, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x00, 0x27};
+
+    er = 0;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x28};
+
+    er = 15;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x00, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x00, 0x28};
+
+    er = 4;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x18, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x28};
+
+    er = 4;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x00, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    j = (vui8_t) {0x10, 0x11, 0x12, 0x13, 0x18, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x28};
+
+    er = 3;
+    r = test_first_mismatch_or_eos_index (i, j);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_first_mismatch_or_eos of ", i);
+    print_int64x ("                 = ", r);
+#endif
+    rc += check_uint64 ("vec_first_mismatch_or_eos", r, er);
+
+    return (rc);
+  }
+
+#if 1
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_lsbb_all_ones (vui8_t);
+#define test_lsbb_all_ones(_l)	test_vec_lsbb_all_ones(_l)
+
+extern int test_vec_lsbb_all_zeros (vui8_t);
+#define test_lsbb_all_zeros(_l)	test_vec_lsbb_all_zeros(_l)
+#else
+// test from vec_char_dummy.c
+extern int test_lsbb_all_ones (vui8_t vra);
+extern int test_lsbb_all_zeros (vui8_t vra);
+#endif
+
+int
+test_lsbb (void)
+{
+    vui8_t i;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = vec_splat_u8(1);
+    er = 1;
+    r = test_lsbb_all_ones (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_ones of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_ones-1", r, er);
+
+    i = vec_splat_u8(-1);
+    er = 1;
+    r = test_lsbb_all_ones (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_ones of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_ones-2", r, er);
+
+    i = vec_splat_u8(-2);
+    er = 0;
+    r = test_lsbb_all_ones (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_ones of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_ones-3", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x00, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    er = 0;
+    r = test_lsbb_all_ones (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_ones of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_ones-4", r, er);
+
+    i = vec_splat_u8(1);
+    er = 0;
+    r = test_lsbb_all_zeros (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_zeros of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_zeros-1", r, er);
+
+    i = vec_splat_u8(-2);
+    er = 1;
+    r = test_lsbb_all_zeros (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_zeros of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_zeros-2", r, er);
+
+    i = vec_splat_u8(-1);
+    er = 0;
+    r = test_lsbb_all_zeros (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_zeros of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_zeros-3", r, er);
+
+    i = (vui8_t) {0x10, 0x11, 0x12, 0x00, 0x14, 0x15, 0x16, 0x17,
+                  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27, 0x27};
+    er = 0;
+    r = test_lsbb_all_zeros (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_test_lsbb_all_zeros of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_test_lsbb_all_zeros=4", r, er);
+
+    return (rc);
+  }
+
 int
 test_vec_char (void)
 {
@@ -1341,6 +1924,11 @@ test_vec_char (void)
   rc += test_vec_ctzlsbb ();
   rc += test_vec_cntlz_lsbb ();
   rc += test_vec_cnttz_lsbb ();
+  rc += test_first_match ();
+  rc += test_first_match_or_eos ();
+  rc += test_first_mismatch ();
+  rc += test_first_mismatch_or_eos ();
+  rc += test_lsbb ();
 #endif
   return (rc);
 }

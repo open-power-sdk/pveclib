@@ -41,6 +41,138 @@
 #include <pveclib/vec_bcd_ppc.h>
 
 int
+test_first_match_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+#if defined(_ARCH_PWR9) && (__GNUC__ > 10)
+  return vec_first_match_index (vra, vrb);
+#else
+  vui8_t abeq;
+  int result;
+  abeq = (vui8_t) vec_cmpeq(vra, vrb);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abeq);
+#else
+  result = vec_vclzlsbb (abeq);
+#endif
+  return result;
+#endif
+}
+
+int
+test_first_match_byte_or_eos_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  const vui8_t VEOS = vec_splat_u8(0);
+  vui8_t abeq;
+  vb8_t eosa, eosb, eosc;
+  int result;
+#if 1
+  vb8_t ab_b;
+  // vcmpneb requires _ARCH_PWR9, so use cmpeq and orc
+  eosa = vec_cmpeq (vra, VEOS);
+  eosb = vec_cmpeq (vrb, VEOS);
+  ab_b = vec_cmpeq (vra, vrb);
+  eosc = vec_or (eosa, eosb);
+  abeq = (vui8_t) vec_or (ab_b, eosc);
+#else
+  vb8_t abnez, abne;
+  eosa =  vec_vcmpneb(vra, VEOS);
+  eosb =  vec_vcmpneb(vrb, VEOS);
+  abnez = vec_vcmpnezb(vra, vrb);
+  eosc = vec_and (eosa, eosb);
+#ifdef _ARCH_PWR8
+  abeq = (vui8_t) vec_nand (eosc, abnez);
+#else
+  abeq = (vui8_t) vec_and (eosc, abnez);
+  abeq = (vui8_t) vec_nor (abeq, abeq);
+#endif
+#endif
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abeq);
+#else
+  result = vec_vclzlsbb (abeq);
+#endif
+
+  return result;
+}
+
+int
+test_first_mismatch_byte_or_eos_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+#ifdef _ARCH_PWR9
+  vui8_t abnez;
+  int result;
+
+#if (__GNUC__ > 12)
+  abnez  = (vui8_t) vec_cmpnez (vra, vrb);
+  result = vec_cntlz_lsbb (abnez);
+#else
+  abnez = (vui8_t) vec_vcmpnezb(vra, vrb);
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vctzlsbb (abnez);
+#else
+  result = vec_vclzlsbb (abnez);
+#endif
+#endif
+  return result;
+#endif
+}
+
+#if defined(_ARCH_PWR9) && \
+    ((__GNUC__ > 10) || (defined(__clang__) && __clang_major__ > 7))
+int
+test_intrn_first_match_byte_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  return vec_first_match_index (vra, vrb);
+}
+
+int
+test_intrn_first_mismatch_byte_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  return vec_first_mismatch_index (vra, vrb);
+}
+
+int
+test_intrn_first_match_or_eos_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  return vec_first_match_or_eos_index (vra, vrb);
+}
+
+int
+test_intrn_first_mismatch_or_eos_index_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  return vec_first_mismatch_or_eos_index (vra, vrb);
+}
+#endif
+
+vb8_t
+test_vec_vcmpneb_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  return vec_vcmpneb (vra, vrb);
+}
+
+vb8_t
+test_vcmpneb_PWR9 (vui8_t vra, vui8_t vrb)
+{
+  vb8_t result;
+#ifdef _ARCH_PWR9
+#ifdef vec_cmpne
+  result = vec_cmpne (vra, vrb);
+#else
+  __asm__(
+      "vcmpneb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+#else
+  vb8_t abne;
+  abne = vec_cmpeq (vra, vrb);
+  result = vec_nor (abne, abne);
+#endif
+  return result;
+}
+
+int
 test_vec_cntlz_lsbb_bi_PWR9 (vui8_t vra)
 {
   return vec_cntlz_lsbb_bi (vra);
@@ -57,10 +189,40 @@ test_vec_vclzlsbb_PWR9 (vui8_t vra)
 {
   return vec_vclzlsbb (vra);
 }
+
 int
 test_vec_vctzlsbb_PWR9 (vui8_t vra)
 {
   return vec_vctzlsbb (vra);
+}
+
+int
+test_intrn_cnttz_lsbb_PWR9 (vui8_t vra)
+{
+  // Missing Bi-Endian adjust before GCC 12/AT16
+#if defined(_ARCH_PWR9) && \
+    ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
+  return vec_cnttz_lsbb (vra);
+#endif
+}
+
+int
+test_intrn_cntlz_lsbb_PWR9 (vui8_t vra)
+{
+  // Missing Bi-Endian adjust before GCC 12/AT16
+#if defined(_ARCH_PWR9) && \
+    ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
+  return vec_cntlz_lsbb (vra);
+#endif
+}
+
+vui32_t
+test_intrn_parity_lsbb_word_PWR9 (vui32_t vra)
+{
+#if defined(_ARCH_PWR9) && \
+    ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
+  return vec_parity_lsbb (vra);
+#endif
 }
 
 //const __float128 f128_e = 2.71828182845904523536028747135266249775724709369996Q;

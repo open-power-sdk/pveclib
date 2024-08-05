@@ -38,6 +38,93 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+int
+test_vec_lsbb_all_ones_PWR10 (vui8_t vra)
+{
+  return vec_testlsbb_all_ones (vra);
+}
+
+int
+test_vec_lsbb_all_zeros_PWR10 (vui8_t vra)
+{
+  return vec_testlsbb_all_zeros (vra);
+}
+
+int
+test_lsbb_all_ones_PWR10 (vui8_t vra)
+{
+#if defined(_ARCH_PWR10) && (__GNUC__ > 9)
+  int r;
+  __asm__(
+#if 0
+      "xvtlsbb %0,%x2;\n"
+      "setbc   %1,4*(%0)+lt;\n"
+      : "=&y" (?), "=r" (r)
+      : "wa" (vra)
+      : "cc"
+#else
+      "xvtlsbb 6,%x1;\n"
+      "setbc   %0,24;\n"
+      : "=r" (r)
+      : "wa" (vra)
+      : "cr6"
+#endif
+	);
+  return r;
+#else
+  const vui8_t ones = vec_splat_u8(1);
+  vui8_t lsbb;
+
+  lsbb = vec_and (vra, ones);
+  return vec_all_eq (lsbb, ones);
+#endif
+}
+
+int
+test_lsbb_all_zeros_PWR10 (vui8_t vra)
+{
+#if defined(_ARCH_PWR10) && (__GNUC__ > 9)
+  int r;
+  __asm__(
+#if 0
+      "xvtlsbb %0,%x2;\n"
+      "setbc   %1,4*(%0)+eq;\n"
+      : "=&y" (cc), "=r" (r)
+      : "wa" (vra)
+      :
+#else
+      "xvtlsbb 6,%x1;\n"
+      "setbc   %0,26;\n"
+      : "=r" (r)
+      : "wa" (vra)
+      : "cr6"
+#endif
+	);
+  return r;
+#else
+  const vui8_t ones = vec_splat_u8(1);
+  vui8_t lsbb;
+
+  lsbb = vec_and (vra, ones);
+  return vec_all_ne (lsbb, ones);
+#endif
+}
+
+#if defined(_ARCH_PWR10) && \
+    ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+int
+test_intrn_test_lsbb_all_ones_PWR10 (vui8_t vra)
+{
+  return vec_test_lsbb_all_ones (vra);
+}
+
+int
+test_intrn_test_lsbb_all_zeros_PWR10 (vui8_t vra)
+{
+  return vec_test_lsbb_all_zeros (vra);
+}
+#endif
+
 vui128_t
 test_diveuqo_PWR10 (vui128_t x, vui128_t z)
 {

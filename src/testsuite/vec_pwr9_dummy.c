@@ -2283,6 +2283,12 @@ test_vec_issubnormalf128_PWR9 (__binary128 f128)
 }
 
 vb128_t
+test_vec_isunorderedf128_PWR9 (__binary128 f128a, __binary128 f128b)
+{
+  return vec_isunorderedf128 (f128a, f128b);
+}
+
+vb128_t
 test_vec_iszerof128_PWR9 (__binary128 f128)
 {
   return vec_iszerof128 (f128);

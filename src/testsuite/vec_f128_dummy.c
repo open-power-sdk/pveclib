@@ -820,6 +820,14 @@ test_mask128_f128exp (void)
 }
 
 vui32_t
+test_mask128_f128exp_v3(void)
+{
+  const vui32_t mag = vec_mask128_f128mag ();
+  const vui32_t sig = vec_mask128_f128sig ();
+  return vec_andc (mag, sig);
+}
+
+vui32_t
 test_mask128_f128exp_V2 (void)
 {
   //  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
@@ -883,6 +891,13 @@ vui32_t
 test_mask128_f128sign(void)
 {
   return vec_mask128_f128sign ();
+}
+
+vui32_t
+test_mask128_f128sign_v1(void)
+{
+  const vui32_t mag = vec_mask128_f128mag ();
+  return vec_nor (mag, mag);
 }
 
 vui32_t

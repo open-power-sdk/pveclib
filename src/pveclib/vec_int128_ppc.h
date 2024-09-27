@@ -4197,6 +4197,7 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
 #endif
   return ((vui128_t) t);
 #else
+  vui32_t t;
   vui32_t c2, c;
   vui32_t z  = { 0,0,0,0};
   vui32_t co = { 1,1,1,1};

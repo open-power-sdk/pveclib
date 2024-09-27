@@ -516,60 +516,8 @@ vec_clzw (vui32_t vra)
       : );
 #endif
 #else
-//#warning Implememention pre POWER8
-  vui32_t n, nt, y, x, s, m;
-  vui32_t z= {0,0,0,0};
-  vui32_t one = {1,1,1,1};
-
-  /* n = 32 s = 16 */
-  s = vec_splat_u32(8);
-  s = vec_add (s, s);
-  n = vec_add (s, s);
-
-  x = vra;
-  /* y=x>>16 if (y!=0) (n=n-16 x=y)  */
-  y = vec_sr(x, s);
-  nt = vec_sub(n,s);
-  m = (vui32_t)vec_cmpgt(y, z);
-  s = vec_sr(s,one);
-  x = vec_sel (x, y, m);
-  n = vec_sel (n, nt, m);
-
-  /* y=x>>8 if (y!=0) (n=n-8 x=y)  */
-  y = vec_sr(x, s);
-  nt = vec_sub(n,s);
-  m = (vui32_t)vec_cmpgt(y, z);
-  s = vec_sr(s,one);
-  x = vec_sel (x, y, m);
-  n = vec_sel (n, nt, m);
-
-  /* y=x>>4 if (y!=0) (n=n-4 x=y)  */
-  y = vec_sr(x, s);
-  nt = vec_sub(n,s);
-  m = (vui32_t)vec_cmpgt(y, z);
-  s = vec_sr(s,one);
-  x = vec_sel (x, y, m);
-  n = vec_sel (n, nt, m);
-
-  /* y=x>>2 if (y!=0) (n=n-2 x=y)  */
-  y = vec_sr(x, s);
-  nt = vec_sub(n,s);
-  m = (vui32_t)vec_cmpgt(y, z);
-  s = vec_sr(s,one);
-  x = vec_sel (x, y, m);
-  n = vec_sel (n, nt, m);
-
-  /* y=x>>1 if (y!=0) return (n=n-2)   */
-  y = vec_sr(x, s);
-  nt = vec_sub(n,s);
-  nt = vec_sub(nt,s);
-  m = (vui32_t)vec_cmpgt(y, z);
-  n = vec_sel (n, nt, m);
-
-  /* else return (x-n)  */
-  nt = vec_sub (n, x);
-  n = vec_sel (nt, n, m);
-  r = n;
+  // vec_common_ppc.h implementation will handle PWR7
+  r = vec_clzw_PWR7 (vra);
 #endif
   return ((vui32_t) r);
 }
@@ -615,13 +563,9 @@ vec_ctzw (vui32_t vra)
 // For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
 // and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
 // the hardware vpopcntw instruction. _ARCH_PWR7 and earlier use the
-// PVECLIB vec_popcntw implementation which runs ~20-28 instructions.
-  const vui32_t ones = { 1, 1, 1, 1 };
-  vui32_t tzmask;
-  // tzmask = (!vra & (vra - 1))
-  tzmask = vec_andc (vec_sub (vra, ones), vra);
-  // return = vec_popcnt (!vra & (vra - 1))
-  r = vec_popcntw (tzmask);
+// PVECLIB vec_popcntw_PWR7 implementation.
+// vec_common_ppc.h implementation will handle PWR8/7
+  r = vec_ctzw_PWR8 (vra);
 #endif
   return ((vui32_t) r);
 }
@@ -1197,11 +1141,8 @@ vec_popcntw (vui32_t vra)
       : );
 #endif
 #else
-//#warning Implememention pre power8
-  vui32_t z= { 0,0,0,0};
-  vui8_t x;
-  x = vec_popcntb ((vui8_t)vra);
-  r = vec_vsum4ubs (x, z);
+  // vec_common_ppc.h implementation will handle PWR7
+  r = vec_popcntw_PWR7 (vra);
 #endif
   return (r);
 }
@@ -1529,16 +1470,12 @@ vec_vgl4wwo (unsigned int *array, vi32_t vra)
   vui32_t r;
 
 #ifdef _ARCH_PWR8
-#if 1
   vi64_t off01, off23;
 
   off01 = vec_vupkhsw (vra);
   off23 = vec_vupklsw (vra);
 
   r = vec_vgl4wso (array, off01[0], off01[1], off23[0], off23[1]);
-#else
-  r = vec_vgl4wso (array, vra[0], vra[1], vra[2], vra[3]);
-#endif
 #else
   // Need to explicitly manage the VR/GPR xfer for PWR7
   unsigned __int128 gprp = vec_transfer_vui128t_to_uint128 ((vui128_t) vra);

@@ -1366,34 +1366,7 @@ vec_popcntb (vui8_t vra)
       : );
 #endif
 #else
-//#warning Implememention pre power8
-  vui8_t n, x1, x2, x, s;
-  vui8_t ones = { 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1};
-  vui8_t fives =
-      {0x55,0x55,0x55,0x55, 0x55,0x55,0x55,0x55,
-	  0x55,0x55,0x55,0x55, 0x55,0x55,0x55,0x55};
-  vui8_t threes =
-      {0x33,0x33,0x33,0x33, 0x33,0x33,0x33,0x33,
-	  0x33,0x33,0x33,0x33, 0x33,0x33,0x33,0x33};
-  vui8_t fs =
-      {0x0f,0x0f,0x0f,0x0f, 0x0f,0x0f,0x0f,0x0f,
-	  0x0f,0x0f,0x0f,0x0f, 0x0f,0x0f,0x0f,0x0f};
-  /* n = 8 s = 4 */
-  s = ones;
-  x = vra;
-  /* x = x - ((x >> 1) & 0x55)  */
-  x2 = vec_and (vec_sr (x, s), fives);
-  n = vec_sub (x, x2);
-  s = vec_add (s, s);
-  /* x = (x & 0x33) + ((x & 0xcc) >> 2)  */
-  x1 = vec_and (n, threes);
-  x2 = vec_andc (n, threes);
-  n = vec_add (x1, vec_sr (x2, s));
-  s = vec_add (s, s);
-  /* x = (x + (x >> 4)) & 0x0f)  */
-  x1 = vec_add (n, vec_sr (n, s));
-  n  = vec_and (x1, fs);
-  r = n;
+  r = vec_popcntb_PWR7 (vra);
 #endif
   return (r);
 }
@@ -1736,6 +1709,171 @@ vec_toupper (vui8_t vec_str)
   result = vec_andc (vec_str, cmask);
 
   return (result);
+}
+
+/** \brief Vector Clear Leftmost Bytes.
+ *
+ *  Clear the leftmost N - rb bytes of vra to 0x00.
+ *  If rb >= 16 then vra is returned unchanged.
+ *  If rb == 0 then the zeros vector is returned.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-21  | 2/cycle  |
+ *  |power9   | 5-21  | 2/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  \note For POWER8/9, best performance is when rb is a constant.
+ *
+ *  @param vra Vector of 16 byte elements.
+ *  @param rb Byte count.
+ *  @return Vector char with rb bytes cleared from vra.
+ */
+static inline vui8_t
+vec_vclrlb (vui8_t vra, unsigned int rb)
+{
+#if defined(_ARCH_PWR10)
+#if (__GNUC__ > 10)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clrr (vra, rb);
+#else
+  return vec_clrl (vra, rb);
+#endif
+#elif defined(__clang__) && (__clang_major__ > 12)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clr_last (vra, rb);
+#else
+  return vec_clr_first (vra, rb);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vclrlb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "r" (rb)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t clrmask;
+  // In case rb==0 clear all 16 bytes.
+  vui8_t result = vec_splat_u8(0);
+  unsigned int N;
+  // rb == 0 clears 16 bytes
+  if (rb != 0)
+    {
+      // rb >= 16 clears no bytes
+      clrmask = ones;
+      if (rb < 16)
+	{
+	  // Clear N bytes in the range 15-1
+	  N = 16 - rb;
+	  if (__builtin_constant_p(rb))
+	    {
+	      // If rb/N is const use vsldoi
+	      clrmask = vec_sld (zeros, clrmask, rb);
+	    }
+	  else
+	    { // otherwise xfer N*8 to VR and use vslo
+#if defined(_ARCH_PWR8)
+	      // Take advantage of P8 VSX and direct move.
+	      vui64_t shfcnt;
+	      shfcnt[VEC_DW_L] = N * 8;
+#else
+	      vui32_t shfcnt;
+	      shfcnt [VEC_W_L] = N * 8;
+#endif
+	      clrmask = vec_sro (clrmask, (vui8_t) shfcnt);
+	    }
+	}
+      return vec_and (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+/** \brief Vector Clear Rightmost Bytes.
+ *
+ *  Clear the rightmost N - rb bytes of vra to 0x00.
+ *  If rb >= 16 then vra is returned unchanged.
+ *  If rb == 0 then the zeros vector is returned.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-21  | 2/cycle  |
+ *  |power9   | 5-21  | 2/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  \note For POWER8/9, best performance is when rb is a constant.
+ *
+ *  @param vra Vector of 16 byte elements.
+ *  @param rb Byte count.
+ *  @return Vector char with rb bytes cleared from vra.
+ */
+static inline vui8_t
+vec_vclrrb (vui8_t vra, unsigned int rb)
+{
+#if defined(_ARCH_PWR10)
+#if (__GNUC__ > 10)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clrl (vra, rb);
+#else
+  return vec_clrr (vra, rb);
+#endif
+#elif defined(__clang__) && (__clang_major__ > 12)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clr_first (vra, rb);
+#else
+  return vec_clr_last (vra, rb);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vclrrb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "r" (rb)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t clrmask;
+  vui8_t result = vec_splat_u8(0);
+  unsigned int N;
+
+  if ( rb != 0)
+    {
+      // rb >= 16 clears no bytes
+      clrmask = ones;
+      if (rb < 16)
+	{
+	  // Clear N bytes in the range 15-1
+	  N = 16 - rb;
+	  if (__builtin_constant_p(rb))
+	    {
+	      // If rb/N is const use vsldoi
+	      clrmask = vec_sld (clrmask, zeros, N);
+	    }
+	  else
+	    { // otherwise xfer N*8 to VR and use vslo
+#if defined(_ARCH_PWR8)
+	      // Take advantage of P8 VSX and direct move.
+	      vui64_t shfcnt;
+	      shfcnt[VEC_DW_L] = N * 8;
+#else
+	      vui32_t shfcnt;
+	      shfcnt [VEC_W_L] = N * 8;
+#endif
+	      clrmask = vec_slo (clrmask, (vui8_t) shfcnt);
+	    }
+	}
+      result = vec_and (vra, clrmask);
+    }
+  return result;
+#endif
 }
 
 /** \brief Vector Count Leading Zero Least-Significant Bits Byte.
@@ -2166,6 +2304,248 @@ vec_vmrgob (vui8_t vra, vui8_t vrb)
       { 0x01, 0x11, 0x03, 0x13, 0x05, 0x15, 0x07, 0x17, 0x09, 0x19, 0x0B, 0x1B,
   	0x0D, 0x1D, 0x0F, 0x1F };
   return vec_perm (vra, vrb, (vui8_t)permute);
+#endif
+}
+
+/** \brief Vector String Isolate Byte Left-justified.
+ *
+ *  Copy a null-terminated string of elements from the input vector
+ *  to the output vector, replacing all elements following the first
+ *  (left most) zero element with zeros.
+ *
+ *  For POWER10 (PowerISA 3.1C) or later use the Vector String Isolate
+ *  Byte Left-justified instruction <B>vstribl</B>. Otherwise use a
+ *  sequence of pre ISA 3.1 VMX instructions.
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.1 instruction vstribl. It does not implement the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *  See vec_stril().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 16-20 | 2/cycle  |
+ *  |power9   | 24-30 | 2/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra 128-bit vector treated as string of 16 unsigned char
+ *  (byte) elements.
+ *  @return 128-bit vector String isolated and Left-justified.
+ */
+static inline vui8_t
+vec_vstribl (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_strir (vra);
+#else
+  return vec_stril (vra);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vstribl %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t nulchr, clrmask, clrcnt, result;
+
+  result = vra;
+  if (vec_any_eq(vra, zeros))
+    {
+      nulchr = (vui8_t) vec_cmpeq (vra, zeros);
+      // clrmask == ones unless nullchr == zeros
+      clrmask = ones;
+      // No Quadword Vector Count Leading Zeros yet. So
+      // for POWER7/8/9 we can use the PVECLIB vec_clzq_PWR8/7
+      // Quadword operations from vec_common_ppc.h.
+      clrcnt = (vui8_t) vec_clzq_PWR8 ((vui128_t) nulchr);
+      // Shift clrmask right by quadword clz of nulchar
+      // leaving 0x00 bytes from byte 0 to first null char in vra
+      clrmask = vec_sro (clrmask, clrcnt);
+      // And compliment to clear trailing bytes after first nulchr
+      result = vec_andc (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+/** \brief Vector String Isolate Byte Left-justified (Predicate).
+ *
+ *  Tests whether the input vector contains a zero element.
+ *
+ *  For POWER10 (PowerISA 3.1C) or later use the Vector String Isolate
+ *  Byte Left-justified (record form) instruction <B>vstribl.</B>.
+ *  Otherwise use vec_any_eq (vra, zeros).
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.1 instruction sequence; vstribl.,setbc. If the predicate is used
+ *  to guard the string isolate operations the compile should common
+ *  instructions across both operations.
+ *  See vec_stril().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-21 | 1/cycle  |
+ *  |power9   | 11-14 | 2/cycle  |
+ *  |power10  |  5-10 | 4/cycle  |
+ *
+ *  @param vra 128-bit vector treated as string of 16 unsigned char
+ *  (byte) elements.
+ *  @return int value (0-1).
+ */
+static inline int
+vec_vstribl_p (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_strir_p (vra);
+#else
+  return vec_stril_p (vra);
+#endif
+#else
+  vui8_t tmp;
+  int result;
+  __asm__(
+      "vstribl. %1,%2;"
+      "setbc %0,26;"
+      : "=r" (result), "=v" (tmp)
+      : "v" (vra)
+      : "cr6");
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  return vec_any_eq (vra, zeros);
+#endif
+}
+
+/** \brief Vector String Isolate Byte Right-justified.
+ *
+ *  Copy a null-terminated string of elements from the input vector
+ *  to the output vector, replacing all elements following the first
+ *  (right most) zero element with zeros.
+ *
+ *  For POWER10 (PowerISA 3.1C) or later use the Vector String Isolate
+ *  Byte Left-justified instruction <B>vstribr</B>. Otherwise use a
+ *  sequence of pre ISA 3.1 VMX instructions.
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.1 instruction vstribr. It does not implement the
+ *  Power Bi-Endian Vector Programming Model specified in the
+ *  Power Vector Intrinsic Programming Reference.
+ *  See vec_stril().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 16-20 | 1/cycle  |
+ *  |power9   | 24-30 | 1/cycle  |
+ *  |power10  |  3-4  | 4/cycle  |
+ *
+ *  @param vra 128-bit vector treated as string of 16 unsigned char
+ *  (byte) elements.
+ *  @return 128-bit vector String isolated and right-justified.
+ */
+static inline vui8_t
+vec_vstribr (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_stril (vra);
+#else
+  return vec_strir (vra);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vstribr %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t nulchr, clrmask, clrcnt, result;
+
+  result = vra;
+  if (vec_any_eq(vra, zeros))
+    {
+      nulchr = (vui8_t) vec_cmpeq (vra, zeros);
+      // clrmask == ones unless nullchr == zeros
+      clrmask = ones;
+      // No Quadword Vector Count Trailing Zeros yet. So
+      // for POWER7/8/9 we can use the PVECLIB vec_ctzq_PWR9/8/7
+      // Quadword operations from vec_common_ppc.h.
+      clrcnt = (vui8_t) vec_ctzq_PWR9 ((vui128_t) nulchr);
+      // Shift clrmask left by quadword ctz of nulchar
+      // leaving 0x00 bytes from the first null char to byte 15 in vra
+      clrmask = vec_slo (clrmask, clrcnt);
+      // And compliment to clear trailing bytes before first nulchr
+      result = vec_andc (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+/** \brief Vector String Isolate Byte Right-justified (Predicate).
+ *
+ *  Tests whether the input vector contains a zero element.
+ *
+ *  For POWER10 (PowerISA 3.1C) or later use the Vector String Isolate
+ *  Byte Right-justified (record form) instruction <B>vstribr.</B>.
+ *  Otherwise use vec_any_eq (vra, zeros).
+ *
+ *  \note This operation implements the equivalent of the PowerISA
+ *  3.1 instruction sequence; vstribr.,setbc. If the predicate is used
+ *  to guard string isolate operations the compile should common
+ *  instructions across both operations.
+ *  See vec_strir().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 15-21 | 1/cycle  |
+ *  |power9   | 11-14 | 2/cycle  |
+ *  |power10  |  5-10 | 4/cycle  |
+ *
+ *  @param vra 128-bit vector treated as string of 16 unsigned char
+ *  (byte) elements.
+ *  @return int value (0-1).
+ */
+static inline int
+vec_vstribr_p (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_stril_p (vra);
+#else
+  return vec_strir_p (vra);
+#endif
+#else
+  vui8_t tmp;
+  int result;
+  __asm__(
+      "vstribr. %1,%2;"
+      "setbc %0,26;"
+      : "=r" (result), "=v" (tmp)
+      : "v" (vra)
+      : "cr6");
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  return vec_any_eq (vra, zeros);
 #endif
 }
 

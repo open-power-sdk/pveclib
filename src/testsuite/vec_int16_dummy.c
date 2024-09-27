@@ -22,6 +22,18 @@
 
 #include <pveclib/vec_int16_ppc.h>
 
+vui16_t
+test_vec_popcnth (vui16_t vra)
+{
+  return vec_popcnth (vra);
+}
+
+vui16_t
+test_vec_popcnth_PWR7 (vui16_t vra)
+{
+  return vec_popcnth_PWR7 (vra);
+}
+
 vb16_t
 test_setb_sh (vi16_t vra)
 {

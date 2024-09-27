@@ -40,6 +40,12 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui128_t
+test_vec_popcntq_PWR9 (vui128_t vra)
+{
+  return vec_popcntq_PWR9 (vra);
+}
+
 int
 test_first_match_index_PWR9 (vui8_t vra, vui8_t vrb)
 {
@@ -119,6 +125,25 @@ test_first_mismatch_byte_or_eos_index_PWR9 (vui8_t vra, vui8_t vrb)
 
 #if defined(_ARCH_PWR9) && \
     ((__GNUC__ > 10) || (defined(__clang__) && __clang_major__ > 7))
+
+vui32_t
+test_intrn_parity_lsbb_word_PWR9 (vui32_t vra)
+{
+  return vec_parity_lsbb (vra);
+}
+
+vui64_t
+test_intrn_parity_lsbb_dword_PWR9 (vui64_t vra)
+{
+  return vec_parity_lsbb (vra);
+}
+
+vui128_t
+test_intrn_parity_lsbb_qword_PWR9 (vui128_t vra)
+{
+  return vec_parity_lsbb (vra);
+}
+
 int
 test_intrn_first_match_byte_index_PWR9 (vui8_t vra, vui8_t vrb)
 {
@@ -213,15 +238,6 @@ test_intrn_cntlz_lsbb_PWR9 (vui8_t vra)
 #if defined(_ARCH_PWR9) && \
     ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
   return vec_cntlz_lsbb (vra);
-#endif
-}
-
-vui32_t
-test_intrn_parity_lsbb_word_PWR9 (vui32_t vra)
-{
-#if defined(_ARCH_PWR9) && \
-    ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
-  return vec_parity_lsbb (vra);
 #endif
 }
 

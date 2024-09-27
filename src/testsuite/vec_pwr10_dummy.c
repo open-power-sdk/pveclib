@@ -38,6 +38,61 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+#if defined(_ARCH_PWR10) && \
+    ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+
+vui64_t
+test_vec_ctzd_PWR10 (vui64_t vra)
+{
+  return vec_ctzd (vra);
+}
+
+vui128_t
+test_vec_ctzq_PWR10 (vui128_t vra)
+{
+  return vec_ctzq (vra);
+}
+
+vui8_t
+test_intrn_clr_first_PWR10 (vui8_t vra)
+{
+  // vec_clr_first LE
+  return vec_clrr (vra, 14);
+}
+
+vui8_t
+test_intrn_clr_last_PWR10 (vui8_t vra)
+{
+  // vec_clr_last LE
+  return vec_clrl (vra, 7);
+}
+
+vui8_t
+test_intrn_stril_PWR10 (vui8_t vra)
+{
+  return vec_stril (vra);
+}
+
+vui8_t
+test_intrn_strir_PWR10 (vui8_t vra)
+{
+  return vec_strir (vra);
+}
+
+int
+test_intrn_stril_p_PWR10 (vui8_t vra)
+{
+  return vec_stril_p (vra);
+}
+
+int
+test_intrn_strir_p_PWR10 (vui8_t vra)
+{
+  return vec_strir_p (vra);
+}
+
+#endif
+
 int
 test_vec_lsbb_all_ones_PWR10 (vui8_t vra)
 {

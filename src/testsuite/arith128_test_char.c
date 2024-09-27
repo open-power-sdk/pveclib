@@ -350,6 +350,21 @@ test_ctzb (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_popcnt_b(_l)	vec_popcntb(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_popcntb (vui8_t);
+#define test_popcnt_b(_l)	test_vec_popcntb(_l)
+#endif
+#else
+// test from vec_char_dummy.c
+extern vui8_t test_vec_popcntb_PWR7 (vui8_t);
+#define test_popcnt_b(_j)	test_vec_popcntb_PWR7(_j)
+#endif
 int
 test_popcntb (void)
 {
@@ -361,7 +376,7 @@ test_popcntb (void)
 
   i = (vui8_t){0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15};
   e = (vui8_t){0,1,1,2, 1,2,2,3, 1,2,2,3, 2,3,3,4};
-  j = vec_popcntb((vui8_t)i);
+  j = test_popcnt_b((vui8_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntb({0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15}) ", (vui128_t)j);
@@ -370,7 +385,7 @@ test_popcntb (void)
 
   i = (vui8_t){0,1,2,4, 8,16,32,64, 128,136,34,17, 240,255,170,85};
   e = (vui8_t){0,1,1,1, 1,1,1,1, 1,2,2,2, 4,8,4,4};
-  j = vec_popcntb((vui8_t)i);
+  j = test_popcnt_b((vui8_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntb({0,1,2,4, 8,16,32,64, 128,136,34,17, 240,255,170,85}) ", (vui128_t)j);
@@ -379,7 +394,7 @@ test_popcntb (void)
 
   i = (vui8_t){7,224,168,133, 15,240,225,170, 31,248,79,229, 63,245,235,190};
   e = (vui8_t){3,3,3,3, 4,4,4,4, 5,5,5,5, 6,6,6,6};
-  j = vec_popcntb((vui8_t)i);
+  j = test_popcnt_b((vui8_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntb({7,224,168,133, 15,240,225,170, 31,248,79,229, 63,245,235,190}) ", (vui128_t)j);
@@ -388,7 +403,7 @@ test_popcntb (void)
 
   i = (vui8_t){127,251,223,239, 255,0,255,0, 24,130,138,176, 49,165,23,60};
   e = (vui8_t){7,7,7,7, 8,0,8,0, 2,2,3,3, 3,4,4,4};
-  j = vec_popcntb((vui8_t)i);
+  j = test_popcnt_b((vui8_t)i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntb({127,251,223,239, 255,0,255,0, 24,130,138,176, 49,165,23,60}) ", (vui128_t)j);
@@ -1902,6 +1917,472 @@ test_lsbb (void)
     return (rc);
   }
 
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 1
+// test directly from vec_char_ppc.h
+#define test_clrlb(_l,_k)	vec_vclrlb(_l,_k)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_vclrlb (vui8_t, unsigned int);
+#define test_clrlb(_l,_k)	test_vec_vclrlb(_l,_k)
+#endif
+#else
+// test from vec_char_dummy.c
+extern vui8_t test_vclrlb (vui8_t, unsigned int);
+#define test_clrlb(_j,_k)	test_vclrlb(_j,_k)
+#endif
+
+int
+test_clear_left(void)
+{
+    vui8_t i, j, e;
+    unsigned int rb;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 8;
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_clrlb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrlb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrlb 8", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 7;
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			 0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_clrlb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrlb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrlb 7", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 9;
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44,
+	                 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_clrlb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrlb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrlb 9", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 16;
+
+    e = i;
+    j = (vui8_t) test_clrlb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrlb  of ", i);
+    printf       ("            , %i", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrlb 16", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 0;
+
+    e = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    j = (vui8_t) test_clrlb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrlb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrlb 0", j, e);
+
+    return (rc);
+  }
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 1
+// test directly from vec_char_ppc.h
+#define test_clrrb(_l,_k)	vec_vclrrb(_l,_k)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_vclrrb (vui8_t, unsigned int);
+#define test_clrrb(_l,_k)	test_vec_vclrrb(_l,_k)
+#endif
+#else
+// test from vec_char_dummy.c
+extern vui8_t test_vclrrb (vui8_t, unsigned int);
+#define test_clrrb(_j,_k)	test_vclrrb(_j,_k)
+#endif
+
+int
+test_clear_right(void)
+{
+    vui8_t i, j, e;
+    unsigned int rb;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 8;
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+			 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 8", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 7;
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x00,
+			 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 7", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 9;
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+	                 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 9", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 16;
+
+    e = i;
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , %i", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 16", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 0;
+
+    e = (vui8_t){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , ", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 0", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    rb = 17;
+
+    e = i;
+    j = (vui8_t) test_clrrb (i,rb);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_clrrb  of ", i);
+    printf       ("            , %i", rb);
+    print_vint8x ("            = ", k);
+#endif
+    rc += check_vui8 ("vec_clrrb 17", j, e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_stribl(_l)	vec_vstribl(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_vstribl (vui8_t);
+#define test_stribl(_l)	test_vec_vstribl(_l)
+#endif
+#else
+// test from vec_char_dummy.c
+extern vui8_t test_vstribl (vui8_t);
+#define test_stribl(_j)	test_vstribl(_j)
+#endif
+
+int
+test_clear_left_justified(void)
+{
+    vui8_t i, j, e;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+			 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_stribl (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribl  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribl 1", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+			 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x00);
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+			 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x00);
+    j = (vui8_t) test_stribl (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribl  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribl 2", j, e);
+
+    i = CONST_VINT128_B (0x00, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_stribl (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribl  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribl 3", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_stribl (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribl  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribl 4", j, e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_stribr(_l)	vec_vstribr(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_vstribr (vui8_t);
+#define test_stribr(_l)	test_vec_vstribr(_l)
+#endif
+#else
+// test from vec_char_dummy.c
+extern vui8_t test_vstribr (vui8_t);
+#define test_stribr(_j)	test_vstribr(_j)
+#endif
+int
+test_clear_right_justified(void)
+{
+    vui8_t i, j, e;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			 0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_stribr (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribr  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribr 1", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+			 0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x00);
+
+    e = CONST_VINT128_B (0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    j = (vui8_t) test_stribr (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribr  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribr 2", j, e);
+
+    i = CONST_VINT128_B (0x00, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x00, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_stribr (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribr  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribr 3", j, e);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+
+    e = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    j = (vui8_t) test_stribr (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vstribr  of ", i);
+    print_vint8x ("            = ", j);
+#endif
+    rc += check_vui8 ("vec_vstribr 4", j, e);
+
+    return (rc);
+  }
+
+// #define __DEBUG_PRINT__ 0
+#if 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_stribr_p(_l)	vec_vstribr_p(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_vstribr_p (vui8_t);
+#define test_stribr_p(_l)	test_vec_vstribr_p(_l)
+#endif
+#else
+// test from vec_char_dummy.c
+extern int test_vstribr_p (vui8_t);
+#define test_stribr_p(_j)	test_vstribr_p(_j)
+#endif
+int
+test_isolate_right_justified_p(void)
+{
+    vui8_t i;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    er = 0;
+    r = test_stribr_p (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vec_vstrir_p of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_vec_vstrir_p 1", r, er);
+
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x00, 0x43, 0x44,
+                         0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    er = 1;
+    r = test_stribr_p (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vec_vstrir_p of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_vec_vstrir_p 2", r, er);
+    return (rc);
+  }
+
+#define __DEBUG_PRINT__ 0
+#if 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_stribl_p(_l)	vec_vstribl_p(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern int test_vec_vstribl_p (vui8_t);
+#define test_stribl_p(_l)	test_vec_vstribl_p(_l)
+#endif
+#else
+// test from vec_char_dummy.c
+extern int test_vstribl_p (vui8_t);
+#define test_stribl_p(_j)	test_vstribl_p(_j)
+#endif
+int
+test_isolate_left_justified_p(void)
+{
+    vui8_t i;
+    int r, er;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x42, 0x43, 0x44,
+                         0x61, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    er = 0;
+    r = test_stribl_p (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vec_vstrir_p of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_vec_vstrir_p 1", r, er);
+
+
+    i = CONST_VINT128_B (0x20, 0x40, 0x5a, 0x5b, 0x41, 0x00, 0x43, 0x44,
+                         0x00, 0x62, 0x63, 0x64, 0x31, 0x39, 0x5c, 0x5d);
+    er = 1;
+    r = test_stribl_p (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_vec_vstrir_p of ", i);
+    print_int64x ("                = ", r);
+#endif
+    rc += check_uint64 ("vec_vec_vstrir_p 2", r, er);
+    return (rc);
+  }
+
 int
 test_vec_char (void)
 {
@@ -1929,6 +2410,12 @@ test_vec_char (void)
   rc += test_first_mismatch ();
   rc += test_first_mismatch_or_eos ();
   rc += test_lsbb ();
+  rc += test_clear_left ();
+  rc += test_clear_right ();
+  rc += test_clear_left_justified ();
+  rc += test_clear_right_justified ();
+  rc += test_isolate_right_justified_p ();
+  rc += test_isolate_left_justified_p ();
 #endif
   return (rc);
 }

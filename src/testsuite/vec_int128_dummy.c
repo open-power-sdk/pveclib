@@ -26,6 +26,335 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+vui128_t
+test_vec_ctzq_PWR7 (vui128_t vra)
+{
+  return vec_ctzq_PWR7 (vra);
+}
+
+void
+test_vec_ctzq_loop7 (vui128_t *vrt, vui128_t *vra, long int N)
+{
+  long int i;
+  for (i=0; i < N; i++)
+    {
+      vrt[i] = vec_ctzq_PWR7 (vra[i]);
+    }
+}
+
+vui128_t
+test_vec_ctzq_PWR8 (vui128_t vra)
+{
+  return vec_ctzq_PWR8 (vra);
+}
+
+void
+test_vec_ctzq_loop8 (vui128_t *vrt, vui128_t *vra, long int N)
+{
+  long int i;
+  for (i=0; i < N; i++)
+    {
+      vrt[i] = vec_ctzq_PWR8 (vra[i]);
+    }
+}
+
+vui128_t
+test_vec_ctzq_PWR9 (vui128_t vra)
+{
+  return vec_ctzq_PWR9 (vra);
+}
+
+vui128_t
+test_ctzq_PWR7 (vui128_t vra)
+{
+  vui32_t result;
+  /* vector ctz instructions were introduced in power9. For power7 and
+   * earlier, use the pveclib vec_ctzw_PWR7 implementation.  For a quadword
+   * clz, this requires pre-conditioning the input before computing the
+   * the word ctz and sum across.   */
+  const vui32_t vzero = vec_splat_u32 (0);
+  vui32_t clz;
+  vui32_t r32, gt32, gt32sr32, gt64sr64;
+
+  // From right to left, any word to the left of the 1st nonzero word
+  // is set to 0xffffffff (ctz(0xffffffff) = 0)
+  gt32 = (vui32_t) vec_cmpgt ((vui32_t) vra, vzero);
+  gt32sr32 = vec_sld (gt32, vzero, 12);
+  gt64sr64 = vec_sld (gt32, vzero, 8);
+  gt32 = vec_sld (gt32, vzero, 4);
+
+  gt32sr32 = vec_or (gt32sr32, gt32);
+  gt64sr64 = vec_or (gt64sr64, (vui32_t) vra);
+  r32 = vec_or (gt32sr32, gt64sr64);
+
+  // This allows quadword ctz to be a simple sum across the words
+  clz = vec_ctzw_PWR7 (r32);
+  result = (vui32_t) vec_sums ((vi32_t) clz, (vi32_t) vzero);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // undo endian for PWR8 testing only, work around!
+  result = vec_sld (result, result, 4);
+#endif
+
+  return ((vui128_t) result);
+}
+
+vui128_t
+test_ctzq_PWR8 (vui128_t vra)
+{
+  vui64_t result;
+
+#ifdef _ARCH_PWR8
+#if 1
+  const vui128_t ones = (vui128_t) vec_splat_s32(-1);
+  vui128_t tzmask;
+
+  // tzmask = (!vra & (vra - 1))
+  tzmask = (vui128_t) vec_andc ((vui64_t) vec_adduqm_PWR8 (vra, ones),
+				(vui64_t) vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return vec_popcntq_PWR8 (tzmask);
+#else
+  /* vector ctz instructions were introduced in power9. For power8 and
+   * earlier, use the pveclib vec_popcntd_PWR8 implementation.  For a
+   * quadword clz, this requires pre-conditioning the input before
+   * computing the the dword ctz and sum across.   */
+  const vui64_t vzero = (vui64_t) vec_splat_u32 (0);
+  const vui64_t vones = (vui64_t) vec_splat_u32 (-1);
+  vui64_t ctz;
+  vui64_t r64, gt64, gt64sr64;
+  vui64_t tzmask;
+
+  // From right to left, any dword to the left of the 1st nonzero
+  // dword is set to 0xffffffffffffffff (for which ctz returns 0).
+  gt64 = (vui64_t) vec_cmpgt ((vui64_t) vra, vzero);
+  gt64sr64 = vec_sld (gt64, vzero, 8);
+
+  r64 = vec_or (gt64sr64, (vui64_t) vra);
+
+  // This allows quadword ctz to be a simple sum across of the dwords
+  // tzmask = (!r64 & (r64 - 1))
+  tzmask = vec_andc (vec_add ((vui64_t) r64, vones), (vui64_t) r64);
+  ctz = vec_popcntd_PWR8 (tzmask);
+#if 1
+  vui64_t h64, l64;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Undo the endian transform
+  h64 = vec_mergel (ctz, vzero);
+  l64 = vec_mergeh (ctz, vzero);
+#else
+  h64 = vec_mergeh (vzero, ctz);
+  l64 = vec_mergel (vzero, ctz);
+#endif
+  result = vec_add (h64, l64);
+#else
+  result = (vui64_t) vec_sums ((vi32_t) clz, (vi32_t) vzero);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // undo endian for PWR8 testing only, work around!
+  result = vec_sld (result, result, 4);
+#endif
+#endif
+#endif
+#else
+  result = (vui64_t) test_ctzq_PWR7 (vra);
+#endif
+
+  return ((vui128_t) result);
+}
+
+vui128_t
+test_ctzq_PWR9 (vui128_t vra)
+{
+  vui64_t result;
+
+#ifdef _ARCH_PWR9
+#if 1
+  const vui128_t ones = (vui128_t) vec_splat_s32(-1);
+  vui128_t tzmask;
+
+  // tzmask = (!vra & (vra - 1))
+  tzmask = (vui128_t) vec_andc ((vui64_t) vec_adduqm_PWR8 (vra, ones),
+				(vui64_t) vra);
+  // return = vec_popcnt (!vra & (vra - 1))
+  return vec_popcntq_PWR9 (tzmask);
+#else
+  /* vector ctz instructions were introduced in power9. For power8 and
+   * earlier, use the pveclib vec_popcntd_PWR8 implementation.  For a
+   * quadword clz, this requires pre-conditioning the input before
+   * computing the the dword ctz and sum across.   */
+  const vui64_t vzero = (vui64_t) vec_splat_u32 (0);
+  const vui64_t vones = (vui64_t) vec_splat_u32 (-1);
+  vui64_t ctz;
+  vui64_t r64, gt64, gt64sr64;
+  vui64_t h64, l64;
+
+  // From right to left, any dword to the left of the 1st nonzero
+  // dword is set to 0xffffffffffffffff (for which ctz returns 0).
+  gt64 = (vui64_t) vec_cmpgt ((vui64_t) vra, vzero);
+  gt64sr64 = vec_sld (gt64, vzero, 8);
+
+  r64 = vec_or (gt64sr64, (vui64_t) vra);
+
+  // This allows quadword ctz to be a simple sum across of the dwords
+  ctz = vec_ctzd_PWR9 (r64);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Undo the endian transform
+  h64 = vec_mergel (ctz, vzero);
+  l64 = vec_mergeh (ctz, vzero);
+#else
+  h64 = vec_mergeh (vzero, ctz);
+  l64 = vec_mergel (vzero, ctz);
+#endif
+  result = vec_add (h64, l64);
+#endif
+#else
+  result = (vui64_t) test_ctzq_PWR8 (vra);
+#endif
+
+  return ((vui128_t) result);
+}
+
+vui128_t
+test_vec_clzq (vui128_t vra)
+{
+  return vec_clzq (vra);
+}
+
+vui128_t
+test_vec_clzq_PWR7 (vui128_t vra)
+{
+  return vec_clzq_PWR7 (vra);
+}
+
+vui128_t
+__test_clzq_PWR7 (vui128_t vra)
+{
+  /*
+   * Use the Vector Count Leading Zeros Double Word instruction to get
+   * the count for the left and right vector halves.  If the left vector
+   * doubleword of the input is nonzero then only the left count is
+   * included and we need to mask off the right count.
+   * Otherwise the left count is 64 and we need to add 64 to the right
+   * count.
+   * After masking we sum across the left and right counts to
+   * get the final 128-bit vector count (0-128).
+   *
+   * Did not use this version as the version based on clzw is more
+   * compact. Turns out the doubleword compare is expensive.
+   */
+  vui32_t result;
+  vui32_t vt1, vt2, vt3, h64, l64;
+  const vui64_t vzero = { 0, 0 };
+
+#if 1
+  {
+    vui32_t v2, v2t, v2x;
+    v2 = (vui32_t) vec_cmpeq((vui32_t) vra, (vui32_t)vzero);
+    v2t = vec_sld (v2, v2, 4);
+    v2x = vec_and (v2, v2t);
+    // DW0 bool vmpeq in DW0
+    vt2 = vec_mergeh (v2x, v2x);
+    // DW1 bool vmpeq in DW0 -< vec_mergel (v2x, v2x)
+  }
+#else
+  vt2 = (vui32_t) vec_cmpequd((vui64_t) vra, vzero);
+#endif
+  vt1 = (vui32_t) vec_clzd_PWR7 ((vui64_t) vra);
+  vt3 = vec_sld ((vui32_t)vzero, vt2, 8);
+  h64 = vec_sld ((vui32_t)vzero, vt1, 8);
+  l64 = vec_and (vt1, vt3);
+  result = vec_add (h64, l64);
+
+  return ((vui128_t) result);
+}
+
+vui128_t
+test_vec_popcntq (vui128_t vra)
+{
+  return vec_popcntq (vra);
+}
+
+vui128_t
+test_vec_popcntq_PWR7 (vui128_t vra)
+{
+  return vec_popcntq_PWR7 (vra);
+}
+
+vui128_t
+test_vec_popcntq_PWR8 (vui128_t vra)
+{
+  return vec_popcntq_PWR8 (vra);
+}
+
+vui128_t
+test_popcntq_PWR8 (vui128_t vra)
+{
+  vui128_t result;
+
+#if defined(_ARCH_PWR8)
+  /*
+   * Use the Vector Population Count Doubleword instruction to get the
+   * count for each DW.  Then sum across the DWs to get the final
+   * 128-bit vector count (0-128). For P8 popcntw is 2 cycles faster
+   * then popcntd but requires vsumsws (7 cycles). Using popcntd
+   *  allows a faster sum and saves a cycle over all.
+   */
+  vui32_t vt1, h64, l64;
+  const vui32_t vzero = { 0, 0, 0, 0 };
+
+  vt1 = (vui32_t) vec_popcntd_PWR8 ((vui64_t)  vra);
+  // Note high words 0,1,2 of vt1 are zero
+  // h64 = { vzero [0] | vt1 [0] | vzero [1] | vt1 [1] }
+  // l64 = { vzero [2] | vt1 [2] | vzero [3] | vt1 [3] }
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Undo the endian transform
+  h64 = vec_mergel (vt1, vzero);
+  l64 = vec_mergeh (vt1, vzero);
+#else
+  h64 = vec_mergeh (vzero, vt1);
+  l64 = vec_mergel (vzero, vt1);
+#endif
+  result = (vui128_t) vec_add (h64, l64);
+
+#else
+  result = vec_popcntq_PWR7 (vra);
+#endif
+  return result;
+}
+
+vui8_t
+test_vstribl_V0 (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_strir (vra);
+#else
+  return vec_stril (vra);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vstribl %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  vui8_t nulchr, clrmask, clrcnt;
+
+  nulchr = (vui8_t) vec_cmpeq (vra, zeros);
+  // clrmask == ones unless nullchr == zeros
+  clrmask = (vui8_t) vec_cmpneuq ((vui128_t) nulchr, (vui128_t) zeros);
+  clrcnt = (vui8_t) vec_clzq ((vui128_t) nulchr);
+  // Shift clrmask right by quadword clz of nulchar
+  // leaving 0x00 bytes from byte 0 to first null char in vra
+  clrmask = vec_sro (clrmask, clrcnt);
+  // And compliment to clear trailing bytes after first nulchr
+  return vec_andc (vra, clrmask);
+#endif
+}
 
 vui128_t test_diveuq (vui128_t x, vui128_t z)
 {
@@ -2147,18 +2476,6 @@ test_vec_vsumsws (vui128_t vra)
   const __vector unsigned long long vzero =
     { 0, 0 };
   return (vui128_t) __builtin_altivec_vsumsws ((__vector int)vra, (__vector int)vzero);
-}
-
-vui128_t
-test_vec_clzq (vui128_t vra)
-{
-  return vec_clzq (vra);
-}
-
-vui128_t
-test_vec_popcntq (vui128_t vra)
-{
-  return vec_popcntq (vra);
 }
 
 vui128_t

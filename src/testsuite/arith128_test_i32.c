@@ -80,6 +80,22 @@ test_revbw (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 0
+// test directly from vec_int32_ppc.h
+#define test_popcnt_w(_l)	vec_popcntw(_l)
+#else
+// test from vec_int32_ppc.h via vec_int32_dummy.c
+extern vui32_t test_vec_popcntw (vui32_t);
+#define test_popcnt_w(_l)	test_vec_popcntw(_l)
+#endif
+#else
+// test from vec_int32_dummy.c
+extern vui32_t test_vec_popcntw_PWR7 (vui32_t);
+#define test_popcnt_w(_j)	test_vec_popcntw_PWR7(_j)
+#endif
+
 int
 test_popcntw (void)
 {
@@ -90,7 +106,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(0, 1, 2, 4);
   e = (vui32_t)CONST_VINT32_W(0, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({0, 1, 2, 4}) ", (vui128_t)j);
@@ -99,7 +115,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(8, 16, 32, 64);
   e = (vui32_t)CONST_VINT32_W(1, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({8, 16, 32, 64}) ", (vui128_t)j);
@@ -108,7 +124,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(128, 256, 512, 1024);
   e = (vui32_t)CONST_VINT32_W(1, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({128, 256, 512, 1024}) ", (vui128_t)j);
@@ -117,7 +133,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(2048, 4096, 8192, 16384);
   e = (vui32_t)CONST_VINT32_W(1, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({2048, 4096, 8192, 16384}) ", (vui128_t)j);
@@ -126,7 +142,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(32768, 65536, 131072, 262144);
   e = (vui32_t)CONST_VINT32_W(1, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({32768, 65536, 131072, 262144}) ", (vui128_t)j);
@@ -135,7 +151,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(134217728, 268435456, 536870912, 1073741824);
   e = (vui32_t)CONST_VINT32_W(1, 1, 1, 1);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({134217728, 268435456, 536870912, 1073741824}) ", (vui128_t)j);
@@ -144,7 +160,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-2147483648, -268435456, -16777216, -1048576);
   e = (vui32_t)CONST_VINT32_W(1, 4, 8, 12);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-2147483648, -268435456, -16777216, -1048576}) ", (vui128_t)j);
@@ -153,7 +169,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-2132741936, 521078531, -219024136, 1311448462);
   e = (vui32_t)CONST_VINT32_W(11, 14, 20, 16);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-2132741936, 521078531, -219024136, 1311448462}) ", (vui128_t)j);
@@ -162,7 +178,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-2143281136, 270549120, 540037232, 1081127120);
   e = (vui32_t)CONST_VINT32_W(4, 4, 8, 10);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-2143281136, 270549120, 540037232, 1081127120}) ", (vui128_t)j);
@@ -171,7 +187,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-1177168454, -1789281621, -1700158118, -1044208472);
   e = (vui32_t)CONST_VINT32_W(20, 18, 16, 12);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-1177168454, -1789281621, -1700158118, -1044208472}) ", (vui128_t)j);
@@ -180,7 +196,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-1143095845, -1957965135, -2008800751, 134480385);
   e = (vui32_t)CONST_VINT32_W(24, 16, 8, 4);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-1143095845, -1957965135, -2008800751, 134480385}) ", (vui128_t)j);
@@ -189,7 +205,7 @@ test_popcntw (void)
 
   i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
   e = (vui32_t)CONST_VINT32_W(32, 32, 32, 32);
-  j = vec_popcntw(i);
+  j = test_popcnt_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntw({-1, -1, -1, -1}) ", (vui128_t)j);
@@ -199,17 +215,32 @@ test_popcntw (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 0
+#if 0
+// test directly from vec_int32_ppc.h
+#define test_clz_w(_l)	vec_clzw(_l)
+#else
+// test from vec_int32_ppc.h via vec_i32_dummy.c
+extern vui32_t test_vec_clzw (vui32_t);
+#define test_clz_w(_l)	test_vec_clzw(_l)
+#endif
+#else
+// test from vec_int32_dummy.c
+extern vui32_t test_clzw_PWR7 (vui32_t);
+#define test_clz_w(_j)	test_clzw_PWR7(_j)
+#endif
 int
-test_clzw (void)
+test_clz_word (void)
 {
   vui32_t i, e, j;
   int rc = 0;
 
-  printf ("\ntest_clzw Vector Count Leading Zeros in words\n");
+  printf ("\ntest_clz_w Vector Count Leading Zeros in words\n");
 
   i = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
   e = (vui32_t)CONST_VINT32_W(32, 32, 32, 32);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(0) ", j);
@@ -218,7 +249,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(-1, 0, -1, 0);
   e = (vui32_t)CONST_VINT32_W(0, 32, 0, 32);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(-1, 0, -1, 0) ", j);
@@ -227,7 +258,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(0, 1, 2, 4);
   e = (vui32_t)CONST_VINT32_W(32, 31, 30, 29);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(0, 1, 2, 4) ", j);
@@ -236,7 +267,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(8, 16, 32, 64);
   e = (vui32_t)CONST_VINT32_W(28, 27, 26, 25);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(8, 16, 32, 64) ", j);
@@ -245,7 +276,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(128, 256, 512, 1024);
   e = (vui32_t)CONST_VINT32_W(24, 23, 22, 21);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(128, 256, 512, 1024) ", j);
@@ -254,7 +285,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(2048, 4096, 8192, 16384);
   e = (vui32_t)CONST_VINT32_W(20, 19, 18, 17);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(2048, 4096, 8192, 16384) ", j);
@@ -263,7 +294,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(32768, 65536, 131072, 262144);
   e = (vui32_t)CONST_VINT32_W(16, 15, 14, 13);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(32768, 65536, 131072, 262144) ", j);
@@ -272,7 +303,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(524288, 1048576, 2097152, 4194304);
   e = (vui32_t)CONST_VINT32_W(12, 11, 10, 9);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(524288, 1048576, 2097152, 4194304) ", j);
@@ -281,7 +312,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(8388608, 16777216, 33554432, 67108864);
   e = (vui32_t)CONST_VINT32_W(8, 7, 6, 5);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(8388608, 16777216, 33554432, 67108864) ", j);
@@ -290,7 +321,7 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(134217728, 268435456, 536870912, 1073741824);
   e = (vui32_t)CONST_VINT32_W(4, 3, 2, 1);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(134217728, 268435456, 536870912, 1073741824) ", j);
@@ -299,10 +330,19 @@ test_clzw (void)
 
   i = (vui32_t)CONST_VINT32_W(-2147483648, -268435456, -16777216, -1048576);
   e = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
-  j = vec_clzw(i);
+  j = test_clz_w(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("clz(-2147483648, -268435456, -16777216, -1048576) ", j);
+#endif
+  rc += check_vuint128x ("vec_clzw:", (vui128_t)j, (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(4294967295, 2147483647, 1073741823, 536870911);
+  e = (vui32_t)CONST_VINT32_W(0, 1, 2, 3);
+  j = test_clz_w(i);
+
+#ifdef __DEBUG_PRINT__
+  print_vint128 ("clz(4294967295, 2147483647, 1073741823, 536870911) ", j);
 #endif
   rc += check_vuint128x ("vec_clzw:", (vui128_t)j, (vui128_t) e);
 
@@ -310,7 +350,7 @@ test_clzw (void)
 }
 
 int
-test_ctzw (void)
+test_ctz_word (void)
 {
   vui32_t i, e, j;
   int rc = 0;
@@ -1744,8 +1784,8 @@ test_vec_i32 (void)
   printf ("\n%s\n", __FUNCTION__);
 
   rc += test_revbw ();
-  rc += test_clzw ();
-  rc += test_ctzw ();
+  rc += test_ctz_word ();
+  rc += test_ctz_word ();
   rc += test_popcntw();
   rc += test_sumsw ();
   rc += test_sum2sw ();

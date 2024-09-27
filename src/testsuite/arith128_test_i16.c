@@ -31,7 +31,7 @@
 #include <testsuite/arith128_test_i16.h>
 
 int
-test_clzh (void)
+test_clz_hw (void)
 {
   vui16_t i, e, j;
   int rc = 0;
@@ -87,7 +87,7 @@ test_clzh (void)
 }
 
 int
-test_ctzh (void)
+test_ctz_hw (void)
 {
   vui16_t i, e, j;
   int rc = 0;
@@ -142,8 +142,24 @@ test_ctzh (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 1
+#if 0
+// test directly from vec_int16_ppc.h
+#define test_popcnt_h(_l)	vec_popcnth(_l)
+#else
+// test from vec_int16_ppc.h via vec_int16_dummy.c
+extern vui16_t test_vec_popcnth (vui16_t);
+#define test_popcnt_h(_l)	test_vec_popcnth(_l)
+#endif
+#else
+// test from vec_int16_dummy.c
+extern vui16_t test_vec_popcnth_PWR7 (vui16_t);
+#define test_popcnt_h(_j)	test_vec_popcnth_PWR7(_j)
+#endif
+
 int
-test_popcnth (void)
+test_popcnt_hw (void)
 {
   vui16_t i, e;
   vui16_t j;
@@ -153,7 +169,7 @@ test_popcnth (void)
 
   i = (vui16_t){0, 1, 2, 4, 8, 16, 32, 64};
   e = (vui16_t){0, 1, 1, 1, 1, 1, 1, 1};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({0, 1, 2, 4, 8, 16, 32, 64}) ", (vui128_t)j);
@@ -162,7 +178,7 @@ test_popcnth (void)
 
   i = (vui16_t){128, 256, 256, 512, 1024, 2048, 4096, 8192};
   e = (vui16_t){1, 1, 1, 1, 1, 1, 1, 1};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({128, 256, 256, 512, 1024, 2048, 4096, 8192}) ", (vui128_t)j);
@@ -171,7 +187,7 @@ test_popcnth (void)
 
   i = (vui16_t){16384, 32768, 61440, 65280, 65520, 65535, 43690, 21845};
   e = (vui16_t){1, 1, 4, 8, 12, 16, 8, 8};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({16384, 32768, 61440, 65280, 65520, 65535, 43690, 21845}) ", (vui128_t)j);
@@ -180,7 +196,7 @@ test_popcnth (void)
 
   i = (vui16_t){1, 516, 2064, 8256, 32904, 8721, 61695, 43605};
   e = (vui16_t){1, 2, 2, 2, 3, 4, 12, 8};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({1, 516, 2064, 8256, 32904, 8721, 61695, 43605}) ", (vui128_t)j);
@@ -189,7 +205,7 @@ test_popcnth (void)
 
   i = (vui16_t){2016, 43141, 4080, 57770, 8184, 20453, 16373, 60350};
   e = (vui16_t){6, 6, 8, 8, 10, 10, 12, 12};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({2016, 43141, 4080, 57770, 8184, 20453, 16373, 60350}) ", (vui128_t)j);
@@ -198,7 +214,7 @@ test_popcnth (void)
 
   i = (vui16_t){32763, 57327, 65280, 65280, 6274, 35504, 12709, 5948};
   e = (vui16_t){14, 14, 8, 8, 4, 6, 7, 8};
-  j = vec_popcnth(i);
+  j = test_popcnt_h(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcnth({32763, 57327, 65280, 65280, 6274, 35504, 12709, 5948}) ", (vui128_t)j);
@@ -626,9 +642,9 @@ test_vec_i16 (void)
   printf ("\n%s\n", __FUNCTION__);
 #if 1
   rc += test_revbh ();
-  rc += test_clzh ();
-  rc += test_ctzh ();
-  rc += test_popcnth();
+  rc += test_clz_hw ();
+  rc += test_ctz_hw ();
+  rc += test_popcnt_hw();
   rc += test_mrgeoh();
   rc += test_mrgahlh();
   rc += test_mulhuh();

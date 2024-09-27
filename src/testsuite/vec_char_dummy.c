@@ -11,6 +11,449 @@
 
 #include <pveclib/vec_char_ppc.h>
 
+vui8_t
+test_vec_popcntb (vui8_t vra)
+{
+  return vec_popcntb (vra);
+}
+
+vui8_t
+test_vec_popcntb_PWR7 (vui8_t vra)
+{
+  return vec_popcntb_PWR7 (vra);
+}
+
+vui8_t
+test_popcntb_PWR7 (vui8_t vra)
+{
+  const vui8_t nibmask = vec_splat_u8 (15);
+  const vui8_t nibshft = vec_splat_u8 (4);
+  const vui8_t popc_perm = { 0, 1, 1, 2, 1, 2, 2, 3,
+                             1, 2, 2, 3, 2, 3, 3, 4};
+  vui8_t nib_h, nib_l;
+  vui8_t result, rl, rh;
+
+  nib_l = vec_and (vra, nibmask);
+  nib_h = vec_sr  (vra, nibshft);
+  rl = vec_perm (popc_perm, popc_perm, nib_l);
+  rh = vec_perm (popc_perm, popc_perm, nib_h);
+  result = vec_add (rh, rl);
+
+  return result;
+}
+
+vui8_t
+test_vec_vstribr (vui8_t vra)
+{
+  return vec_vstribr (vra);
+}
+
+int
+test_vec_vstribr_p (vui8_t vra)
+{
+  return vec_vstribr_p (vra);
+}
+
+int
+test_vstribr_p (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_stril_p (vra);
+#else
+  return vec_strir_p (vra);
+#endif
+#else
+  vui8_t tmp;
+  int result;
+  __asm__(
+      "vstribr. %1,%2;"
+      "setbc %0,26;"
+      : "=r" (result), "=v" (tmp)
+      : "v" (vra)
+      : "cr6");
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  return vec_any_eq (vra, zeros);
+#endif
+}
+
+vui8_t
+test_vstribr (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_stril (vra);
+#else
+  return vec_strir (vra);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vstribr %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t nulchr, clrmask, clrcnt, result;
+
+  result = vra;
+  if (vec_any_eq(vra, zeros))
+    {
+      nulchr = (vui8_t) vec_cmpeq (vra, zeros);
+      // clrmask == ones unless nullchr == zeros
+      clrmask = ones;
+#if 1
+      // No Quadword Vector Count Trailing Zeros yet. So
+      // for POWER7/8/9 we can use the PVECLIB vec_ctzq_PWR9/8/7
+      // Quadword operations from vec_common_ppc.h.
+      clrcnt = (vui8_t) vec_ctzq_PWR9 ((vui128_t) nulchr);
+#else
+	{ // quadword ctz of nulchar
+#ifdef _ARCH_PWR8
+	// For POWER8/9 we can use the Vector Count Leading Zeros
+	// DoubleWord instruction then sum across to get the
+	// quadword clz.
+	  clrcnt = (vui8_t) vec_ctzq_PWR8 ((vui128_t) nulchr);
+#else
+	  /* vector clz instructions were introduced in power8. For power7 and
+	   * earlier, use the pveclib vec_clzq_PWR7 implementation. */
+	  clrcnt = (vui8_t) vec_ctzq_PWR7 ((vui128_t) nulchr);
+#endif
+	}
+#endif
+      // Shift clrmask left by quadword ctz of nulchar
+      // leaving 0x00 bytes from the first null char to byte 15 in vra
+      clrmask = vec_slo (clrmask, clrcnt);
+      // And compliment to clear trailing bytes before first nulchr
+      result = vec_andc (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+vui8_t
+test_vec_vstribl (vui8_t vra)
+{
+  return vec_vstribl (vra);
+}
+
+int
+test_vec_vstribl_p (vui8_t vra)
+{
+  return vec_vstribl_p (vra);
+}
+
+int
+test_vstribl_p (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_strir_p (vra);
+#else
+  return vec_stril_p (vra);
+#endif
+#else
+  vui8_t tmp;
+  int result;
+  __asm__(
+      "vstribl. %1,%2;"
+      "setbc %0,26;"
+      : "=r" (result), "=v" (tmp)
+      : "v" (vra)
+      : "cr6");
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  return vec_any_eq (vra, zeros);
+#endif
+}
+
+vui8_t
+test_vstribl (vui8_t vra)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_strir (vra);
+#else
+  return vec_stril (vra);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vstribl %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t nulchr, clrmask, clrcnt, result;
+
+  result = vra;
+  if (vec_any_eq(vra, zeros))
+    {
+      nulchr = (vui8_t) vec_cmpeq (vra, zeros);
+      // clrmask == ones unless nullchr == zeros
+      clrmask = ones;
+#if 1
+      // No Quadword Vector Count Leading Zeros yet. So
+      // for POWER7/8/9 we can use the PVECLIB vec_clzq_PWR8/7
+      // Quadword operations from vec_common_ppc.h.
+      clrcnt = (vui8_t) vec_clzq_PWR8 ((vui128_t) nulchr);
+#else
+	{ // quadword clz of nulchar
+#ifdef _ARCH_PWR8
+	// For POWER8/9 we can use the Vector Count Leading Zeros
+	// DoubleWord instruction then sum across to get the
+	// quadword clz.
+	  clrcnt = (vui8_t) vec_clzq_PWR8 ((vui128_t) nulchr);
+#else
+	  /* vector clz instructions were introduced in power8. For power7 and
+	   * earlier, use the pveclib vec_clzq_PWR7 implementation. */
+	  clrcnt = (vui8_t) vec_clzq_PWR7 ((vui128_t) nulchr);
+#endif
+	}
+#endif
+      // Shift clrmask right by quadword clz of nulchar
+      // leaving 0x00 bytes from byte 0 to first null char in vra
+      clrmask = vec_sro (clrmask, clrcnt);
+      // And compliment to clear trailing bytes after first nulchr
+      result = vec_andc (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+vui8_t
+test_vec_vclrlb (vui8_t vra, unsigned int rb)
+{
+  return vec_vclrlb (vra, rb);
+}
+
+vui8_t
+test_vec_vclrrb (vui8_t vra, unsigned int rb)
+{
+  return vec_vclrrb (vra, rb);
+}
+
+// Verify CSE of mask generation
+vui8_t
+test_vec_vclrxb_rb79 (vui8_t vral, vui8_t vrar)
+{
+  vui8_t left, right;
+  right = vec_vclrrb (vrar, 9);
+  left  = vec_vclrlb (vral, 7);
+  return vec_or (left, right);
+}
+
+vui8_t
+test_vclrlb (vui8_t vra, unsigned int rb)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clrr (vra, rb);
+#else
+  return vec_clrl (vra, rb);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vclrlb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "r" (rb)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t clrmask;
+  // In case rb==0 clear all 16 bytes.
+  vui8_t result = vec_splat_u8(0);
+  unsigned int N;
+  // rb == 0 clears 16 bytes
+  if (rb != 0)
+    {
+      // rb >= 16 clears no bytes
+      clrmask = ones;
+      if (rb < 16)
+	{
+	  // Clear N bytes in the range 15-1
+	  N = 16 - rb;
+	  if (__builtin_constant_p(rb))
+	    {
+	      // If rb/N is const use vsldoi
+	      clrmask = vec_sld (zeros, clrmask, rb);
+	    }
+	  else
+	    { // otherwise xfer N*8 to VR and use vslo
+#if defined(_ARCH_PWR8)
+	      // Take advantage of P8 VSX and direct move.
+	      vui64_t shfcnt;
+	      shfcnt[VEC_DW_L] = N * 8;
+#else
+	      vui32_t shfcnt;
+	      shfcnt [VEC_W_L] = N * 8;
+#endif
+	      clrmask = vec_sro (clrmask, (vui8_t) shfcnt);
+	    }
+	}
+      return vec_and (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+vui8_t
+test_vclrlb_rb0 (vui8_t vra)
+{
+  return test_vclrlb (vra, 0);
+}
+
+vui8_t
+test_vclrlb_rb1 (vui8_t vra)
+{
+  return test_vclrlb (vra, 1);
+}
+
+vui8_t
+test_vclrlb_rb15 (vui8_t vra)
+{
+  return test_vclrlb (vra, 15);
+}
+
+vui8_t
+test_vclrlb_rb16 (vui8_t vra)
+{
+  return test_vclrlb (vra, 16);
+}
+
+vui8_t
+test_vclrrb (vui8_t vra, unsigned int rb)
+{
+#if defined(_ARCH_PWR10)
+#if ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_clrl (vra, rb);
+#else
+  return vec_clrr (vra, rb);
+#endif
+#else
+  vui8_t result;
+  __asm__(
+      "vclrrb %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra), "r" (rb)
+      : );
+  return result;
+#endif
+#else
+  const vui8_t zeros = vec_splat_u8(0);
+  const vui8_t ones = (vui8_t) vec_splat_s8(-1);
+  vui8_t clrmask;
+  vui8_t result = vec_splat_u8(0);
+  unsigned int N;
+
+  if ( rb != 0)
+    {
+      // rb >= 16 clears no bytes
+      clrmask = ones;
+      if (rb < 16)
+	{
+	  // Clear N bytes in the range 15-1
+	  N = 16 - rb;
+	  if (__builtin_constant_p(rb))
+	    {
+	      // If rb/N is const use vsldoi
+	      clrmask = vec_sld (clrmask, zeros, N);
+	    }
+	  else
+	    { // otherwise xfer N*8 to VR and use vslo
+#if defined(_ARCH_PWR8)
+	      // Take advantage of P8 VSX and direct move.
+	      vui64_t shfcnt;
+	      shfcnt[VEC_DW_L] = N * 8;
+#else
+	      vui32_t shfcnt;
+	      shfcnt [VEC_W_L] = N * 8;
+#endif
+	      clrmask = vec_slo (clrmask, (vui8_t) shfcnt);
+	    }
+	}
+      result = vec_and (vra, clrmask);
+    }
+  return result;
+#endif
+}
+
+vui8_t
+test_vclrrb_rb0 (vui8_t vra)
+{
+  return test_vclrrb (vra, 0);
+}
+
+vui8_t
+test_vclrrb_rb1 (vui8_t vra)
+{
+  return test_vclrrb (vra, 1);
+}
+
+vui8_t
+test_vclrrb_rb8 (vui8_t vra)
+{
+  return test_vclrrb (vra, 8);
+}
+
+vui8_t
+test_vclrrb_rb15 (vui8_t vra)
+{
+  return test_vclrrb (vra, 15);
+}
+
+vui8_t
+test_vclrrb_rb16 (vui8_t vra)
+{
+  return test_vclrrb (vra, 16);
+}
+
+// Verify CSE of mask generation
+vui8_t
+test_vclrxb_rb79 (vui8_t vral, vui8_t vrar)
+{
+  vui8_t left, right;
+  right = test_vclrrb (vrar, 9);
+  left  = test_vclrlb (vral, 7);
+  return vec_or (left, right);
+}
+
+// Verify constant propagation for rb
+vui8_t
+test_vclrxb_rb79x (vui8_t vral, vui8_t vrar)
+{
+  vui8_t left, right;
+  int rb;
+  rb = 9;
+  right = test_vclrrb (vrar, rb);
+  rb = 7;
+  left  = test_vclrlb (vral, rb);
+  return vec_or (left, right);
+}
+
 int
 test_vec_first_match_byte_index (vui8_t vra, vui8_t vrb)
 {

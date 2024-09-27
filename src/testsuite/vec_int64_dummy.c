@@ -24,6 +24,207 @@
 #include <pveclib/vec_int128_ppc.h>
 
 vui64_t
+test_vec_clzd (vui64_t a)
+{
+  return vec_clzd (a);
+}
+
+vui64_t
+test_vec_clzd_PWR7 (vui64_t a)
+{
+  return vec_clzd_PWR7 (a);
+}
+
+vui64_t
+test_clzd_PWR7 (vui64_t vra)
+{
+  const vui32_t zero = vec_splat_u32 (0);
+  // generated const (vui32_t) {20, 20, 20, 20}
+  const vui32_t v10 = vec_splat_u32 (10);
+  const vui32_t v20 = vec_add (v10, v10);
+  // need a dword vector of 1086 which is the exponent for 2**63
+  // f2_63 = (vector double) 2**63
+  const vf64_t f2_63 =  (vf64_t) {0x1.0p63, 0x1.0p63};
+  // Generate expmask = (vui32_t) {0, 0xffffffff, 0, 0xffffffff}
+  const vui32_t ones = vec_splat_u32 (-1);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Only for testing only, PWR7 is only BE
+  const vui32_t expmask = vec_mergel (ones, zero);
+#else
+  const vui32_t expmask = vec_mergeh (zero, ones);
+#endif
+  // Generate const (vui32_t) {64, 64, 64, 64}
+  const vui32_t v4 = vec_splat_u32 (4);
+  const vui32_t v64 = vec_sl (v4, v4);
+  vb32_t zmask;
+  vui32_t k, n;
+  vf64_t kf;
+
+  // Avoid rounding in floating point conversion
+  k = (vui32_t) vra & ~((vui32_t) vra >> 1);
+  kf = vec_double ((vui64_t) k);
+  // Exponent difference is the leading zeros count
+  n = (vui32_t) f2_63 - (vui32_t) kf;
+  // right justify exponent for long int
+  n = vec_sld (n, n, 12);
+  n = vec_vsrw(n, v20);
+  // clear extraneous data from words 0/2
+  n = vec_and (n, (vui32_t) expmask);
+  // Fix-up: vra=0 case where the exponent is zero and diff is 1086
+  zmask = vec_cmpgt (n, v64);
+  n = vec_sel (n, v64, zmask);
+
+  return ((vui64_t) n);
+}
+
+vui64_t
+test_clzd_PWR7_V1 (vui64_t vra)
+{
+  const vui32_t zero = vec_splat_u32 (0);
+  // const vui32_t vone = vec_splat_u32 (1);
+  // const vui32_t ones = vec_splat_u32 (-1);
+  // generated const (vui32_t) {20, 20, 20, 20}
+  const vui32_t v10 = vec_splat_u32 (10);
+  const vui32_t v20 = vec_add (v10, v10);
+  // fp5 = 1.0 / 2.0 == 0.5
+  //const vf64_t fp5 = (vf64_t) {0.5, 0.5};
+  // need a dword vector of 1086 which is the exponent for 2**63
+  // f2_63 = (vector double) 2**63
+  const vf64_t f2_63 =  (vf64_t) {0x1.0p63, 0x1.0p63};
+  vui64_t expmask;
+#if 1
+  const vui32_t ones = vec_splat_u32 (-1);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  expmask = (vui64_t) vec_mergel (ones, zero);
+#else
+  expmask = (vui64_t) vec_mergeh (zero, ones);
+#endif
+#else
+  expmask =  (vui64_t) CONST_VINT64_DW (0xffffffff, 0xffffffff);
+#endif
+
+  vui32_t k, n;
+  vf64_t kf;
+  // Avoid rounding in floating point conversion
+  k = (vui32_t) vra & ~((vui32_t) vra >> 1);
+  // Handle all 0s case by insuring min exponent is 1066-64
+  kf = vec_double ((vui64_t) k) /*+ fp5*/;
+  // Exponent difference is the leading zeros count
+  n = (vui32_t) f2_63 - (vui32_t) kf;
+  // right justify exponent for long int
+  n = vec_vsrw(n, v20);
+  n = vec_sld (zero, n, 12);
+  n = vec_and (n, (vui32_t) expmask);
+#if 1
+  const vui32_t v4 = vec_splat_u32 (4);
+  const vui32_t v64 = vec_sl (v4, v4);
+  vb32_t mask;
+  // Fix-up: vra=0 case where the exponent is zero and diff is 1086
+  mask = vec_cmpgt (n, v64);
+  n = vec_sel (n, v64, mask);
+#else
+  const vui32_t v9 = vec_splat_u32 (9);
+  const vui64_t clzmask =  (vui64_t) CONST_VINT64_DW (63, 63);
+  vui32_t n1, n2;
+  n1 = vec_and (n, (vui32_t) clzmask);
+  n2 = vec_vsrw (n, v9);
+  n = vec_add (n1, n2);
+#endif
+  return ((vui64_t) n);
+}
+
+vui64_t
+test_clzd_PWR7_V0 (vui64_t vra)
+{
+  const vui32_t zero = vec_splat_u32 (0);
+  // const vui32_t vone = vec_splat_u32 (1);
+  // const vui32_t ones = vec_splat_u32 (-1);
+  // generated const (vui32_t) {20, 20, 20, 20}
+  const vui32_t v10 = vec_splat_u32 (10);
+  const vui32_t v20 = vec_add (v10, v10);
+  // fp5 = 1.0 / 2.0 == 0.5
+  //const vf64_t fp5 = (vf64_t) {0.5, 0.5};
+  // need a dword vector of 1086 which is the exponent for 2**63
+  // f2_63 = (vector double) 2**63
+  const vf64_t f2_63 =  (vf64_t) {0x1.0p63, 0x1.0p63};
+  vui64_t expmask;
+#if 1
+  const vui32_t ones = vec_splat_u32 (-1);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  expmask = (vui64_t) vec_mergel (ones, zero);
+#else
+  expmask = (vui64_t) vec_mergeh (zero, ones);
+#endif
+#else
+  expmask =  (vui64_t) CONST_VINT64_DW (0x7ff, 0x7ff);
+#endif
+
+  vui32_t k, n;
+  vf64_t kf;
+  // Avoid rounding in floating point conversion
+  k = (vui32_t) vra & ~((vui32_t) vra >> 1);
+  // Handle all 0s case by insuring min exponent is 1066-64
+  kf = vec_double ((vui64_t) k) /*+ fp5*/;
+  // Exponent difference is the leading zeros count
+  n = (vui32_t) f2_63 - (vui32_t) kf;
+  // right justify exponent for long int
+  n = vec_vsrw(n, v20);
+#if 1
+  n = vec_sld (zero, n, 12);
+  n = vec_and (n, (vui32_t) expmask);
+#if 1
+  const vui32_t v4 = vec_splat_u32 (4);
+  const vui32_t v64 = vec_sl (v4, v4);
+  vb32_t mask;
+  // Fix-up for 0 case where the exponent is zero and diff is 1086.
+  mask = vec_cmpgt (n, v64);
+  n = vec_sel (n, v64, mask);
+#else
+  const vui32_t v9 = vec_splat_u32 (9);
+  const vui64_t clzmask =  (vui64_t) CONST_VINT64_DW (63, 63);
+  vui32_t n1, n2;
+  n1 = vec_and (n, (vui32_t) clzmask);
+  n2 = vec_vsrw (n, v9);
+  n = vec_add (n1, n2);
+#endif
+#else
+  vui32_t nh, nl, nhl;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // undo endian for PWR8 testing only, work around!
+  // word0 in word0
+  nh = n ; //vec_mergel (n, zero);
+  // word2 in word1
+  nl = vec_mergeh (n, zero);
+  nhl = vec_or (nh, nl);
+  n = vec_mergeh (zero, nhl);
+  // {zero, word0, zero, word2}
+  n = vec_mergel (nhl, zero);
+#else
+  // word0 in word0
+  nh = n; //vec_mergeh (zero, n);
+  // word2 in word1
+  nl = vec_mergel (zero, n);
+  nhl = vec_or (nh, nl);
+  // {zero, word0, zero, word2}
+  n = vec_mergeh (zero, nhl);
+#endif
+#endif
+  return ((vui64_t) n);
+}
+
+vui64_t
+test_vec_popcntd (vui64_t vra)
+{
+  return vec_popcntd (vra);
+}
+
+vui64_t
+test_vec_popcntd_PWR7 (vui64_t vra)
+{
+  return vec_popcntd_PWR7 (vra);
+}
+
+vui64_t
 __test_shift_cse (vui64_t a)
 {
   vui64_t r;
@@ -992,6 +1193,12 @@ vui64_t
 test_addudm (vui64_t a, vui64_t b)
 {
   return vec_addudm (a, b);
+}
+
+vui64_t
+test_addudm_PWR7 (vui64_t a, vui64_t b)
+{
+  return vec_addudm_PWR7 (a, b);
 }
 
 vui64_t

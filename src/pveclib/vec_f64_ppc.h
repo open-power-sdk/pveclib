@@ -1499,7 +1499,7 @@ vec_vlxsfdx (const signed long long ra, const double *rb)
   __VEC_U_128 t;
   unsigned long long *p = (unsigned long long *)((char *)rb + ra);
   t.ulong.upper = *p;
-  xt = t.vx1;
+  xt = t.vf2;
 #else
   if (__builtin_constant_p (ra) && (ra < 32760) && (ra >= -32768)
       && ((ra & 3) == 0))
@@ -1590,7 +1590,7 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
 #if defined (__clang__)
   __VEC_U_128 t;
   unsigned long long *p = (unsigned long long *)((char *)rb + ra);
-  t.vx1 = xs;
+  t.vf2 = xs;
   *p = t.ulong.upper;
 #else
   if (__builtin_constant_p (ra) && (ra <= 32760) && (ra >= -32768)

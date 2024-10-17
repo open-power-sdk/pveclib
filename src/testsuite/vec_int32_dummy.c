@@ -22,6 +22,174 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vui32_t
+test_vec_popcntw (vui32_t vra)
+{
+  return vec_popcntw (vra);
+}
+
+vui32_t
+test_vec_popcntw_PWR7 (vui32_t vra)
+{
+  return vec_popcntw_PWR7 (vra);
+}
+
+vui32_t
+test_vec_clzw (vui32_t vra)
+{
+  return vec_clzw (vra);
+}
+
+vui32_t
+test_vec_clzw_PWR7 (vui32_t vra)
+{
+  return vec_clzw_PWR7 (vra);
+}
+
+vui32_t
+test_clzw_PWR7 (vui32_t vra)
+{
+  const vui32_t vone = vec_splat_u32 (1);
+  const vui32_t ones = vec_splat_u32 (-1);
+  // generated const (vui32_t) {23, 23, 23, 23}
+  const vui32_t v15 = vec_splat_u32 (15);
+  const vui32_t v8 = vec_splat_u32 (8);
+  const vui32_t v23 = vec_add (v15, v8);
+  // fp5 = 1.0 / 2.0 == 0.5
+  const vf32_t fp5 = vec_ctf (vone, 1);
+  // need a word vector of 158 which is the exponent for 2**31
+  // const vui32_t v2_31 = ones & ~(ones>>1);
+  const vui32_t v2_31 = vec_vslw (ones, ones);
+  // f2_31 = (vector float) 2**31
+  const vf32_t f2_31 =  vec_ctf (v2_31, 0);
+
+  vui32_t k, n;
+  vf32_t kf;
+  // Avoid rounding in floating point conversion
+  k = vra & ~(vra >> 1);
+  // Handle all 0s case by insuring min exponent is 158-32
+  kf = vec_ctf (k, 0) + fp5;
+  // Exponent difference is the leading zeros count
+  n = (vui32_t) f2_31 - (vui32_t) kf;
+  // right justify exponent for int
+  n = vec_vsrw(n, v23);
+  return n;
+}
+
+vui32_t
+test_clzw_PWR7_V2 (vui32_t vra)
+{
+  const vui32_t vone = vec_splat_u32 (1);
+  const vui32_t ones = vec_splat_u32 (-1);
+  // const vui32_t vzero = vec_splat_u32 (0);
+#if 0
+  const vui32_t v3 = vec_splat_u32 (3);
+  const vui32_t v24 = vec_vslw (v3, v3);
+  //const vui32_t v23 = vec_sub (v24, vone);
+  vui32_t v23 = vec_sub (v24, vone);
+#else
+  const vui32_t v15 = vec_splat_u32 (15);
+  const vui32_t v8 = vec_splat_u32 (8);
+  // const vui32_t v9 = vec_splat_u32 (9);
+  // const vui32_t v2 = vec_splat_u32 (2);
+  // const vui32_t v32 = vec_vslw (v8, v2);
+  const vui32_t v23 = vec_add (v15, v8);
+  // const vui32_t fsigmask = vec_vsrw (ones, v9);
+#endif
+  // fp5 = 1.0 / 2.0 == 0.5
+  const vf32_t fp5 = vec_ctf (vone, 1);
+  // need a word vector of 158 which is the exponent for 2**31
+  // const vui32_t v2_31 = ones & ~(ones>>1);
+  const vui32_t v2_31 = vec_vslw (ones, ones);
+  // f2_31 = (vector float) 2**31
+  const vf32_t f2_31 =  vec_ctf (v2_31, 0);
+
+  vui32_t k, n;
+  vf32_t kf;
+  // Avoid rounding in floating point conversion
+  k = vra & ~(vra >> 1);
+  // Handle all 0s case by insuring min exponent is 158-32
+#if 1
+  kf = vec_ctf (k, 0) + fp5;
+#else
+  vb32_t zmask = vec_cmpeq (vra, vzero);
+  kf = vec_ctf (k, 0);
+  kf = vec_sel (kf, fp5, zmask);
+#endif
+#if 1
+#if 0
+  n = vec_andc ((vui32_t) f2_31, fsigmask)
+      - vec_andc ((vui32_t) kf, fsigmask);
+  n = vec_rl (n, v9);
+#else
+  n = (vui32_t) f2_31 - (vui32_t) kf;
+#if 0
+  n = vec_andc (n, fsigmask);
+  n = vec_rl (n, v9);
+#else
+  n = vec_vsrw(n, v23);
+#endif
+#endif
+#else
+  ki = (vui32_t) kf;
+#if 1
+  const vui32_t v158 =  (vec_vsrw((vui32_t) f2_31, v23));
+  n = v158 - (vec_vsrw(ki, v23));
+  // n = vec_sel (n, v32, zmask);
+#else
+  n = 158 - (vec_vsrw(ki, v23));
+#endif
+#endif
+  return n;
+}
+
+vui32_t
+test_clzw_PWR7_v1 (vui32_t vra)
+{
+  const vui32_t vone = vec_splat_u32 (1);
+  const vui32_t ones = vec_splat_u32 (-1);
+  const vui32_t vzero = vec_splat_u32 (0);
+#if 0
+  const vui32_t v3 = vec_splat_u32 (3);
+  const vui32_t v24 = vec_vslw (v3, v3);
+  //const vui32_t v23 = vec_sub (v24, vone);
+  vui32_t v23 = vec_sub (v24, vone);
+#else
+  const vui32_t v15 = vec_splat_u32 (15);
+  const vui32_t v8 = vec_splat_u32 (8);
+  vui32_t v23 = vec_add (v15, v8);
+#endif
+  // 0.5 Substituted for vec_clzw(0) which returns 32.
+  // fp5 = 1.0 / 2.0 == 0.5
+  const vf32_t fp5 = vec_ctf (vone, 1);
+  // f2_31 = 2**31
+  const vui32_t v2_31 = vec_vslw (ones, ones);
+  const vf32_t f2_31 =  vec_ctf (v2_31, 0);
+  const vui32_t v158 =  (vec_vsrw((vui32_t) f2_31, v23));;
+  vui32_t k, k1, ki, n;
+  vb32_t zmask = vec_cmpeq (vra, vzero);
+  vf32_t kf;
+#if 1
+  k1 = ~(vra >> 1);
+#else
+  k1 = -(vra >> 1);
+#endif
+  k = vra & k1;
+#if 0
+  kf = vec_ctf (k, 0) + fp5;
+#else
+  kf = vec_ctf (k, 0);
+  kf = vec_sel (kf, fp5, zmask);
+#endif
+  ki = (vui32_t) kf;
+#if 1
+  n = v158 - (vec_vsrw(ki, v23));
+#else
+  n = 158 - (vec_vsrw(ki, v23));
+#endif
+  return n;
+}
+
 vb32_t
 test_setb_sw (vi32_t vra)
 {
@@ -677,13 +845,13 @@ test_cmpuw_all_le (vui32_t a, vui32_t b)
 }
 
 vui32_t
-__test_popcntw (vui32_t a)
+__test_vec_popcntw (vui32_t a)
 {
   return (vec_popcntw (a));
 }
 
 vui32_t
-__test_clzw (vui32_t a)
+__test_vec_clzw (vui32_t a)
 {
   return (vec_clzw (a));
 }

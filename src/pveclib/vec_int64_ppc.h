@@ -1994,13 +1994,12 @@ static inline
 vui64_t
 vec_addudm(vui64_t a, vui64_t b)
 {
-  vui32_t r;
-
 #ifdef _ARCH_PWR8
+  vui64_t r;
 #if defined (vec_vaddudm)
-  r = (vui32_t) vec_vaddudm (a, b);
+  r = vec_vaddudm (a, b);
 #elif defined (__clang__)
-  r = (vui32_t) vec_add (a, b);
+  r = vec_add (a, b);
 #else
   __asm__(
       "vaddudm %0,%1,%2;"
@@ -2009,18 +2008,11 @@ vec_addudm(vui64_t a, vui64_t b)
       "v" (b)
       : );
 #endif
+  return (r);
 #else
-  vui32_t c;
-  vui32_t z= { 0,0,0,0};
-  vui32_t cm= { 0,1,0,1};
-
-  c = vec_vaddcuw ((vui32_t)a, (vui32_t)b);
-  r = vec_vadduwm ((vui32_t)a, (vui32_t)b);
-  c = vec_and (c, cm);
-  c = vec_sld (c, z, 4);
-  r = vec_vadduwm (r, c);
+  // vec_common_ppc.h implementation will handle PWR7
+  return vec_addudm_PWR7 (a, b);
 #endif
-  return ((vui64_t) r);
 }
 
 /** \brief Vector Count Leading Zeros Doubleword for unsigned
@@ -2060,19 +2052,8 @@ vec_clzd (vui64_t vra)
       : );
 #endif
 #else
-  vui32_t n, nt, y, x, m;
-  vui32_t z = { 0, 0, 0, 0 };
-  vui32_t dlwm = { 0, -1, 0, -1 };
-
-  x = (vui32_t) vra;
-
-  m = (vui32_t) vec_cmpgt (x, z);
-  n = vec_sld (z, m, 12);
-  y = vec_and (n, dlwm);
-  nt = vec_or (x, y);
-
-  n = vec_clzw (nt);
-  r = (vui64_t) vec_vsum2sw ((vi32_t) n, (vi32_t) z);
+  // vec_common_ppc.h implementation will handle PWR7
+  r = vec_clzd_PWR7 (vra);
 #endif
   return (r);
 }
@@ -2119,13 +2100,9 @@ vec_ctzd (vui64_t vra)
 // For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
 // and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
 // the hardware vpopcntd instruction. _ARCH_PWR7 and earlier use the
-// PVECLIB vec_popcntd implementation which runs ~24-33 instructions.
-  const vui64_t ones = { -1, -1 };
-  vui64_t tzmask;
-  // tzmask = (!vra & (vra - 1))
-  tzmask = vec_andc (vec_addudm (vra, ones), vra);
-  // return = vec_popcnt (!vra & (vra - 1))
-  r = vec_popcntd (tzmask);
+// PVECLIB vec_popcntd implementation.
+// vec_common_ppc.h implementation will handle PWR8/7
+  r = vec_ctzd_PWR8 (vra);
 #endif
   return ((vui64_t) r);
 }
@@ -4348,10 +4325,8 @@ vec_popcntd (vui64_t vra)
       : );
 #endif
 #else
-  vui32_t z= { 0,0,0,0};
-  vui32_t x;
-  x = vec_popcntw ((vui32_t) vra);
-  r = (vui64_t) vec_vsum2sw ((vi32_t) x, (vi32_t) z);
+  // vec_common_ppc.h implementation will handle PWR7
+  r = vec_popcntd_PWR7 (vra);
 #endif
   return (r);
 }
@@ -5016,9 +4991,8 @@ vec_sradi (vi64_t vra, const unsigned int shb)
 static inline vui64_t
 vec_subudm(vui64_t a, vui64_t b)
 {
-  vui32_t r;
-
 #ifdef _ARCH_PWR8
+  vui32_t r;
 #if defined (vec_vsubudm)
   r = (vui32_t) vec_vsubudm (a, b);
 #elif defined (__clang__)
@@ -5031,18 +5005,11 @@ vec_subudm(vui64_t a, vui64_t b)
       "v" (b)
       : );
 #endif
-#else
-  vui32_t c;
-  vui32_t z= { 0,0,0,0};
-  vui32_t cm= { 0,1,0,1};
-
-  c = vec_vsubcuw ((vui32_t)a, (vui32_t)b);
-  r = vec_vsubuwm ((vui32_t)a, (vui32_t)b);
-  c = vec_andc (cm, c);
-  c = vec_sld (c, z, 4);
-  r = vec_vsubuwm (r, c);
-#endif
   return ((vui64_t) r);
+#else
+  // vec_common_ppc.h implementation will handle PWR7
+  return vec_subudm_PWR7 (a, b);
+#endif
 }
 
 /** \brief Vector doubleword swap.

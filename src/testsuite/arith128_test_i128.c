@@ -3837,6 +3837,27 @@ test_revbq (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 0
+#if 0
+// test directly from vec_int128_ppc.h
+#define test_popcnt_q(_l)	vec_popcntq(_l)
+#else
+// test from vec_int128_ppc.h via vec_int128_dummy.c
+extern vui128_t test_vec_popcntq (vui128_t);
+#define test_popcnt_q(_l)	test_vec_popcntq(_l)
+#endif
+#else
+// test from vec_int128_dummy.c
+#if 0
+extern vui128_t test_vec_popcntq_PWR7 (vui128_t);
+#define test_popcnt_q(_j)	test_vec_popcntq_PWR7(_j)
+#else
+extern vui128_t test_popcntq_PWR8 (vui128_t);
+#define test_popcnt_q(_j)	test_popcntq_PWR8(_j)
+#endif
+#endif
+
 int
 test_popcntq (void)
 {
@@ -3848,7 +3869,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(0, 0);
   e = CONST_VINT128_DW128(0, 0);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({0, 0) ", (vui128_t)j);
@@ -3857,7 +3878,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(0, -1);
   e = CONST_VINT128_DW128(0, 64);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({0, -1) ", (vui128_t)j);
@@ -3866,7 +3887,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(-1, 0);
   e = CONST_VINT128_DW128(0, 64);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({-1, 0) ", (vui128_t)j);
@@ -3875,7 +3896,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(-1, -1);
   e = CONST_VINT128_DW128(0, 128);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({-1, -1) ", (vui128_t)j);
@@ -3884,7 +3905,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(10000000000, 1000000000);
   e = CONST_VINT128_DW128(0, 24);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({10000000000, 1000000000) ", (vui128_t)j);
@@ -3893,7 +3914,7 @@ test_popcntq (void)
 
   i = CONST_VINT128_DW128(1000000000, 10000000000);
   e = CONST_VINT128_DW128(0, 24);
-  j = vec_popcntq(i);
+  j = test_popcnt_q(i);
 
 #ifdef __DEBUG_PRINT__
   print_vint128 ("popcntq({1000000000, 10000000000) ", (vui128_t)j);
@@ -3906,7 +3927,19 @@ test_popcntq (void)
 #ifdef __DEBUG_PRINT__
 #define test_vec_clzq(_l)	db_vec_clzq(_l)
 #else
+#if 1
+#if 0
+// test directly from vec_int128_ppc.h
 #define test_vec_clzq(_l)	vec_clzq(_l)
+#else
+// test from vec_int128_ppc.h via vec_int128_dummy.c
+extern vui128_t test_vec_clzq (vui128_t);
+#endif
+#else
+// test from vec_int128_dummy.c
+extern vui128_t test_vec_clzq_PWR7 (vui128_t);
+#define test_vec_clzq(_j)	test_vec_clzq_PWR7(_j)
+#endif
 #endif
 //#undef __DEBUG_PRINT__
 int
@@ -4002,7 +4035,24 @@ test_clzq (void)
   return (rc);
 }
 
+#if 0
+#if 0
+// test directly from vec_int128_ppc.h
 #define test_vec_ctzq(_l)	vec_ctzq(_l)
+#else
+// test from vec_int128_ppc.h via vec_int128_dummy.c
+extern vui128_t test_vec_ctzq (vui128_t);
+#endif
+#else
+// test from vec_int128_dummy.c
+#if 1
+extern vui128_t test_ctzq_PWR9 (vui128_t);
+#define test_vec_ctzq(_j)	test_ctzq_PWR9(_j)
+#else
+extern vui128_t test_ctzq_PWR7 (vui128_t);
+#define test_vec_ctzq(_j)	test_ctzq_PWR7(_j)
+#endif
+#endif
 //#define __DEBUG_PRINT__ 1
 int
 test_ctzq (void)

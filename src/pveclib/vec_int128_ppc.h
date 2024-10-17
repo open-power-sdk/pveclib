@@ -4180,8 +4180,8 @@ vec_addcuq (vui128_t a, vui128_t b)
 static inline vui128_t
 vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
 {
-  vui32_t t;
 #ifdef _ARCH_PWR8
+  vui32_t t;
 #if defined (vec_vaddeuqm)
   t = (vui32_t) vec_vaddeuqm (a, b, ci);
 #elif defined (__clang__)
@@ -4195,7 +4195,9 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
       "v" (ci)
       : );
 #endif
+  return ((vui128_t) t);
 #else
+  vui32_t t;
   vui32_t c2, c;
   vui32_t z  = { 0,0,0,0};
   vui32_t co = { 1,1,1,1};
@@ -4215,8 +4217,8 @@ vec_addeuqm (vui128_t a, vui128_t b, vui128_t ci)
   t = vec_vadduwm (t, c);
   c = vec_sld (c2, z, 4);
   t = vec_vadduwm (t, c);
-#endif
   return ((vui128_t) t);
+#endif
 }
 
 /** \brief Vector Add Unsigned Quadword Modulo.
@@ -4454,7 +4456,7 @@ vec_clzq (vui128_t vra)
   gt64sr64 = vec_or (gt64sr64, (vui32_t) vra);
   r32 = vec_or (gt32sr32, gt64sr64);
 
-  clz = vec_clzw (r32);
+  clz = vec_clzw_PWR7 (r32);
   result = (vui64_t) vec_sums ((vi32_t) clz, (vi32_t) c0);
 #endif
 
@@ -8154,11 +8156,8 @@ vec_popcntq (vui128_t vra)
   result = (vui64_t) vec_vsumsw ((vi32_t) vt1,
                                  (vi32_t) vzero);
 #else
-  //#warning Implememention pre power8
-  vui32_t z= { 0,0,0,0};
-  vui32_t x;
-  x = vec_popcntw ((vui32_t)vra);
-  result = (vui64_t) vec_sums ((vi32_t) x, (vi32_t) z);
+  // vec_common_ppc.h implementation will handle PWR7
+  result = (vui64_t) vec_popcntq_PWR7 (vra);
 #endif
   return ((vui128_t) result);
 }

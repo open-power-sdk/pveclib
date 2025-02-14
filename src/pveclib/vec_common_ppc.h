@@ -1730,9 +1730,9 @@ vec_addudm_PWR7 (vui64_t a, vui64_t b)
  *  |--------:|:-----:|:---------|
  *  |power7   | 14-16 |   NA     |
  *
- *  @param a 128-bit vector treated as a __int128.
- *  @param b 128-bit vector treated as a __int128.
- *  @return __int128 sum of a and b.
+ *  @param vra 128-bit vector treated as a __int128.
+ *  @param vrb 128-bit vector treated as a __int128.
+ *  @return __int128 sum of vra and vrb.
  */
 static inline vui128_t
 vec_adduqm_PWR7 (vui128_t vra, vui128_t vrb)
@@ -5761,8 +5761,8 @@ vec_splat6_s64 (const signed int sim6)
 
 /** \brief Vector Subtract Unsigned Doubleword Modulo for POWER7 and earlier.
  *
- *  For each unsigned long (64-bit) integer element c[i] = a[i] +
- *  NOT(b[i]) + 1.
+ *  For each unsigned long (64-bit) integer element r[i] = vra[i] +
+ *  NOT(vrb[i]) + 1.
  *
  *  For POWER8 (PowerISA 2.07B) or later use the Vector Subtract
  *  Unsigned Doubleword Modulo (<B>vsubudm</B>) instruction.
@@ -5773,10 +5773,10 @@ vec_splat6_s64 (const signed int sim6)
  *  |--------:|:-----:|:---------|
  *  |power7   | 20-27 |   NA     |
  *
- *  @param a 128-bit vector treated as 2 X unsigned long long int.
- *  @param b 128-bit vector treated as 2 X unsigned long long int.
- *  @return  vector unsigned long int sum of a[0] + NOT(b[0]) + 1
- *  and a[1] + NOT(b[1]) + 1.
+ *  @param vra 128-bit vector treated as 2 X unsigned long long int.
+ *  @param vrb 128-bit vector treated as 2 X unsigned long long int.
+ *  @return  vector unsigned long int sum of vra[0] + NOT(vrb[0]) + 1
+ *  and vra[1] + NOT(vrb[1]) + 1.
  */
 static inline vui64_t
 vec_subudm_PWR7 (vui64_t vra, vui64_t vrb)
@@ -5900,7 +5900,7 @@ vec_vexpandbm_PWR10 (vui8_t vra)
       result = vec_expandm (vra);
 #else
   __asm__(
-      "vexpandhm %0,%1;\n"
+      "vexpandbm %0,%1;\n"
       : "=v" (result)
       : "v" (vra)
       : );
@@ -6529,7 +6529,7 @@ vec_vrlq_PWR10 (vui128_t vra, vui8_t vrb)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
 #ifdef __clang__
-  result = vec_rl (vra, (vui128_t) vrb);
+  result = vec_vrlq_PWR9 (vra, vrb);
 #else
   // vrlq takes the shift count from bits 57:63
   __asm__(
@@ -6570,7 +6570,11 @@ vec_vslq_PWR9 (vui128_t vra, vui8_t vrb)
   vui128_t result;
 
 #ifdef __clang__
-  result = vec_sl (vra, (vui128_t) vrb);
+  {
+    vui8_t tmp;
+    tmp = vec_slo ((vui8_t)vra,  vrb);
+    result = (vui128_t) vec_sll (tmp, vrb);
+  }
 #else
   vui128_t tmp;
   __asm__(
@@ -6610,7 +6614,7 @@ vec_vslq_PWR10 (vui128_t vra, vui8_t vrb)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
 #ifdef __clang__
-  result = vec_sl (vra, (vui128_t) vrb);
+  result = vec_vslq_PWR9 (vra, vrb);
 #else
   // vsrq takes the shift count from bits 57:63
   __asm__(
@@ -6651,7 +6655,11 @@ vec_vsrq_PWR9 (vui128_t vra, vui8_t vrb)
   vui128_t result;
 
 #ifdef __clang__
-  result = vec_sr (vra, (vui128_t) vrb);
+  {
+    vui8_t tmp;
+    tmp = vec_sro ((vui8_t)vra,  vrb);
+    result = (vui128_t) vec_srl (tmp, vrb);
+  }
 #else
   vui128_t tmp;
   __asm__(
@@ -6691,7 +6699,7 @@ vec_vsrq_PWR10 (vui128_t vra, vui8_t vrb)
 
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
 #ifdef __clang__
-  result = vec_sr (vra, (vui128_t) vrb);
+  result = vec_vsrq_PWR9 (vra, vrb);
 #else
   // vsrq takes the shift count from bits 57:63
   __asm__(
@@ -6729,12 +6737,16 @@ vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb)
 {
   vui8_t result;
 #if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#ifdef __clang__
+  result = vec_sraq_PWR9 (vra, vrb);
+#else
   // vsraq takes the shift count from bits 57:63
   __asm__(
       "vsraq %0,%1,%2;\n"
       : "=v" (result)
       : "v" (vra), "v" (vrb)
       : );
+#endif
 #else
   result = (vui8_t) vec_sraq_PWR9 (vra, vrb);
 #endif

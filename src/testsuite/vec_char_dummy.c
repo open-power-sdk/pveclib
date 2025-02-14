@@ -12,6 +12,516 @@
 #include <pveclib/vec_char_ppc.h>
 
 vui8_t
+test_vec_expandm_byte (vui8_t vra)
+{
+  return vec_expandm_byte (vra);
+}
+
+vui8_t
+test_splat7_u8_15 ()
+{
+  return vec_splat7_u8 (15);
+}
+
+vui8_t
+test_splat7_u8_16 ()
+{
+  return vec_splat7_u8 (16);
+}
+
+vui8_t
+test_splat7_u8_18 ()
+{
+  return vec_splat7_u8 (18);
+}
+
+vui8_t
+test_splat7_u8_27 ()
+{
+  return vec_splat7_u8 (27);
+}
+
+vui8_t
+test_splat7_u8_30 ()
+{
+  return vec_splat7_u8 (30);
+}
+
+vui8_t
+test_splat7_u8_31 ()
+{
+  return vec_splat7_u8 (31);
+}
+
+vui8_t
+test_splat7_u8_32 ()
+{
+  return vec_splat7_u8 (32);
+}
+
+vui8_t
+test_splat7_u8_33 ()
+{
+  return vec_splat7_u8 (33);
+}
+
+vui8_t
+test_splat7_u8_34 ()
+{
+  return vec_splat7_u8 (34);
+}
+
+vui8_t
+test_splat7_u8_35 ()
+{
+  return vec_splat7_u8 (35);
+}
+
+vui8_t
+test_splat7_u8_36 ()
+{
+  return vec_splat7_u8 (36);
+}
+
+vui8_t
+test_splat7_u8_39 ()
+{
+  return vec_splat7_u8 (39);
+}
+
+vui8_t
+test_splat7_u8_40 ()
+{
+  return vec_splat7_u8 (40);
+}
+
+vui8_t
+test_splat7_u8_42 ()
+{
+  return vec_splat7_u8 (42);
+}
+
+vui8_t
+test_splat7_u8_44 ()
+{
+  return vec_splat7_u8 (44);
+}
+
+vui8_t
+test_splat7_u8_45 ()
+{
+  return vec_splat7_u8 (45);
+}
+
+vui8_t
+test_splat7_u8_48 ()
+{
+  return vec_splat7_u8 (48);
+}
+
+vui8_t
+test_splat7_u8_50 ()
+{
+  return vec_splat7_u8 (50);
+}
+
+vui8_t
+test_splat7_u8_51 ()
+{
+  return vec_splat7_u8 (51);
+}
+
+vui8_t
+test_splat7_u8_52 ()
+{
+  return vec_splat7_u8 (52);
+}
+
+vui8_t
+test_splat7_u8_54 ()
+{
+  return vec_splat7_u8 (54);
+}
+
+vui8_t
+test_splat7_u8_55 ()
+{
+  return vec_splat7_u8 (55);
+}
+
+vui8_t
+test_splat7_u8_60 ()
+{
+  return vec_splat7_u8 (60);
+}
+
+vui8_t
+test_splat7_u8_63 ()
+{
+  return vec_splat7_u8 (63);
+}
+
+vui8_t
+test_splat7_u8_64 ()
+{
+  return vec_splat7_u8 (64);
+}
+
+vui8_t
+test_splat7_u8_65 ()
+{
+  return vec_splat7_u8 (65);
+}
+
+vui8_t
+test_splat7_u8_67 ()
+{
+  return vec_splat7_u8 (67);
+}
+
+vui8_t
+test_splat7_u8_68 ()
+{
+  return vec_splat7_u8 (68);
+}
+
+vui8_t
+test_splat7_u8_72 ()
+{
+  return vec_splat7_u8 (72);
+}
+
+vui8_t
+test_splat7_u8_76 ()
+{
+  return vec_splat7_u8 (76);
+}
+
+vui8_t
+test_splat7_u8_79 ()
+{
+  return vec_splat7_u8 (79);
+}
+
+vui8_t
+test_splat7_u8_80 ()
+{
+  return vec_splat7_u8 (80);
+}
+
+vui8_t
+test_splat7_u8_81 ()
+{
+  return vec_splat7_u8 (81);
+}
+
+vui8_t
+test_splat7_u8_92 ()
+{
+  return vec_splat7_u8 (92);
+}
+
+vui8_t
+test_splat7_u8_94 ()
+{
+  return vec_splat7_u8 (94);
+}
+
+vui8_t
+test_splat7_u8_96 ()
+{
+  return vec_splat7_u8 (96);
+}
+
+vui8_t
+test_splat7_u8_97 ()
+{
+  return vec_splat7_u8 (97);
+}
+
+vui8_t
+test_splat7_u8_98 ()
+{
+  return vec_splat7_u8 (98);
+}
+
+vui8_t
+test_splat7_u8_100 ()
+{
+  return vec_splat7_u8 (100);
+}
+
+vui8_t
+test_splat7_u8_102 ()
+{
+  return vec_splat7_u8 (102);
+}
+
+vui8_t
+test_splat7_u8_104 ()
+{
+  return vec_splat7_u8 (104);
+}
+
+vui8_t
+test_splat7_u8_106 ()
+{
+  return vec_splat7_u8 (106);
+}
+
+vui8_t
+test_splat7_u8_108 ()
+{
+  return vec_splat7_u8 (108);
+}
+
+vui8_t
+test_splat7_u8_110 ()
+{
+  return vec_splat7_u8 (110);
+}
+
+vui8_t
+test_splat7_u8_111 ()
+{
+  return vec_splat7_u8 (111);
+}
+
+vui8_t
+test_splat7_u8_112 ()
+{
+  return vec_splat7_u8 (112);
+}
+
+vui8_t
+test_splat7_u8_127 ()
+{
+  return vec_splat7_u8 (127);
+}
+
+vi8_t
+test_splat6_s8_1 ()
+{
+  return vec_splat6_s8 (1);
+}
+
+vi8_t
+test_splat6_s8_16 ()
+{
+  return vec_splat6_s8 (16);
+}
+
+vi8_t
+test_splat6_s8_17 ()
+{
+  return vec_splat6_s8 (17);
+}
+
+vi8_t
+test_splat6_s8_30 ()
+{
+  return vec_splat6_s8 (30);
+}
+
+vi8_t
+test_splat6_s8_31 ()
+{
+  return vec_splat6_s8 (31);
+}
+
+vi8_t
+test_splat6_s8_m32 ()
+{
+  return vec_splat6_s8 (-32);
+}
+
+vi8_t
+test_splat6_s8_m31 ()
+{
+  return vec_splat6_s8 (-31);
+}
+
+vi8_t
+test_splat6_s8_m30 ()
+{
+  return vec_splat6_s8 (-30);
+}
+
+vi8_t
+test_splat6_s8_m18 ()
+{
+  return vec_splat6_s8 (-18);
+}
+
+vi8_t
+test_splat6_s8_m17 ()
+{
+  return vec_splat6_s8 (-17);
+}
+
+vi8_t
+test_splat6_s8_m16 ()
+{
+  return vec_splat6_s8 (-16);
+}
+
+vi8_t
+test_splat6_s8_m1 ()
+{
+  return vec_splat6_s8 (-1);
+}
+
+vui8_t
+test_splat6_u8_1 ()
+{
+  return vec_splat6_u8 (1);
+}
+
+vui8_t
+test_splat6_u8_15 ()
+{
+  return vec_splat6_u8 (15);
+}
+
+vui8_t
+test_splat6_u8_16 ()
+{
+  return vec_splat6_u8 (16);
+}
+
+vui8_t
+test_splat6_u8_17 ()
+{
+  return vec_splat6_u8 (17);
+}
+
+vui8_t
+test_splat6_u8_21 ()
+{
+  return vec_splat6_u8 (21);
+}
+
+vui8_t
+test_splat6_u8_25 ()
+{
+  return vec_splat6_u8 (25);
+}
+
+vui8_t
+test_splat6_u8_27 ()
+{
+  return vec_splat6_u8 (27);
+}
+
+vui8_t
+test_splat6_u8_30 ()
+{
+  return vec_splat6_u8 (30);
+}
+
+vui8_t
+test_splat6_u8_31 ()
+{
+  return vec_splat6_u8 (31);
+}
+
+vui8_t
+test_splat6_u8_32 ()
+{
+  return vec_splat6_u8 (32);
+}
+
+vui8_t
+test_splat6_u8_33 ()
+{
+  return vec_splat6_u8 (33);
+}
+
+vui8_t
+test_splat6_u8_39 ()
+{
+  return vec_splat6_u8 (39);
+}
+
+vui8_t
+test_splat6_u8_45 ()
+{
+  return vec_splat6_u8 (45);
+}
+
+vui8_t
+test_splat6_u8_46 ()
+{
+  return vec_splat6_u8 (46);
+}
+
+vui8_t
+test_splat6_u8_47 ()
+{
+  return vec_splat6_u8 (47);
+}
+
+vui8_t
+test_splat6_u8_48 ()
+{
+  return vec_splat6_u8 (48);
+}
+
+vui8_t
+test_splat6_u8_52 ()
+{
+  return vec_splat6_u8 (52);
+}
+
+vui8_t
+test_splat6_u8_54 ()
+{
+  return vec_splat6_u8 (54);
+}
+
+vui8_t
+test_splat6_u8_55 ()
+{
+  return vec_splat6_u8 (55);
+}
+
+vui8_t
+test_splat6_u8_56 ()
+{
+  return vec_splat6_u8 (56);
+}
+
+vui8_t
+test_splat6_u8_63 ()
+{
+  return vec_splat6_u8 (63);
+}
+
+vui8_t
+test_splat5_u8_1 ()
+{
+  return vec_splat5_u8 (1);
+}
+
+vui8_t
+test_splat5_u8_15 ()
+{
+  return vec_splat5_u8 (15);
+}
+
+vui8_t
+test_splat5_u8_16 ()
+{
+  return vec_splat5_u8 (16);
+}
+
+vui8_t
+test_splat5_u8_31 ()
+{
+  return vec_splat5_u8 (31);
+}
+
+vui8_t
 test_vec_popcntb (vui8_t vra)
 {
   return vec_popcntb (vra);
@@ -1033,6 +1543,58 @@ test_setb_sb (vi8_t vra)
 }
 
 vui8_t
+test_clzb_v1 (vui8_t vra)
+{
+  vui8_t x;
+  x = vra | (vra >> 1);
+  x = x | (x >> 2);
+  x = x | (x >> 4);
+  return vec_popcntb_PWR7 (x);
+}
+
+vui8_t
+test_clzb_v0 (vui8_t vra)
+{
+  //#warning Implememention pre power8
+    __vector unsigned char n, nt, y, x, s, m;
+    __vector unsigned char z= { 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+    __vector unsigned char one = { 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1};
+
+    /* n = 8 s = 4 */
+    s = vec_splat_u8(4);
+    n = vec_splat_u8(8);
+    x = vra;
+
+    /* y=x>>4 if (y!=0) (n=n-4 x=y)  */
+    y = vec_sr(x, s);
+    nt = vec_sub(n,s);
+    m = (__vector unsigned char)vec_cmpgt(y, z);
+    s = vec_sr(s,one);
+    x = vec_sel (x , y, m);
+    n = vec_sel (n , nt, m);
+
+    /* y=x>>2 if (y!=0) (n=n-2 x=y)  */
+    y = vec_sr(x, s);
+    nt = vec_sub(n,s);
+    m = (__vector unsigned char)vec_cmpgt(y, z);
+    s = vec_sr(s,one);
+    x = vec_sel (x , y, m);
+    n = vec_sel (n , nt, m);
+
+    /* y=x>>1 if (y!=0) return (n=n-2)   */
+    y = vec_sr(x, s);
+    nt = vec_sub(n,s);
+    nt = vec_sub(nt,s);
+    m = (__vector unsigned char)vec_cmpgt(y, z);
+    n = vec_sel (n , nt, m);
+
+    /* else return (x-n)  */
+    nt = vec_sub (n, x);
+    n = vec_sel (nt , n, m);
+    return n;
+}
+
+vui8_t
 test_ctzb_v1 (vui8_t vra)
 {
   const vui8_t ones = vec_splat_u8 (1);
@@ -1117,6 +1679,12 @@ vui8_t
 __test_clzb (vui8_t a)
 {
   return (vec_clzb (a));
+}
+
+vui8_t
+test_vec_rlbi_4 (vui8_t a)
+{
+  return vec_rlbi (a, 4);
 }
 
 vui8_t

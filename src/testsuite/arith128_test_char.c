@@ -2017,6 +2017,7 @@ test_clear_left(void)
 
     return (rc);
   }
+
 //#define __DEBUG_PRINT__ 1
 #if 1
 #if 1
@@ -2335,7 +2336,7 @@ test_isolate_right_justified_p(void)
     return (rc);
   }
 
-#define __DEBUG_PRINT__ 0
+// #define __DEBUG_PRINT__ 0
 #if 1
 #if 0
 // test directly from vec_char_ppc.h
@@ -2383,6 +2384,791 @@ test_isolate_left_justified_p(void)
     return (rc);
   }
 
+// #define __DEBUG_PRINT__ 1
+#if 1
+// test directly from vec_char_ppc.h
+#define test_splat6(_l)	vec_splat6_u8(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+#endif
+
+int
+test_splat6_u8(void)
+{
+    vui8_t i, j, k, e, m6;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    m6 = (vui8_t) {63, 63, 63, 63, 63, 63, 63, 63,
+                   63, 63, 63, 63, 63, 63, 63, 63};
+
+    i = (vui8_t) {0, 1, 2, 3, 4, 5, 6, 7,
+                  8, 9, 10, 11, 12, 13, 14, 15};
+
+    e = vec_splat (i, 1);
+    j = test_splat6 (1);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 1", j, e);
+
+    e = vec_splat (i, 15);
+    j = test_splat6 (15);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 15", j, e);
+
+    i = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23,
+                  24, 25, 26, 27, 28, 29, 30, 31};
+
+    e = vec_splat (i, (16-16));
+    j = test_splat6 (16);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 16", j, e);
+
+    e = vec_splat (i, (17-16));
+    j = test_splat6 (17);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 17", j, e);
+
+    e = vec_splat (i, (24-16));
+    j = test_splat6 (24);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 24", j, e);
+
+    e = vec_splat (i, (30-16));
+    j = test_splat6 (30);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 30", j, e);
+
+    e = vec_splat (i, (31-16));
+    j = test_splat6 (31);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 31", j, e);
+
+    i = (vui8_t) {32, 33, 34, 35, 36, 37, 38, 39,
+                  40, 41, 42, 43, 44, 45, 46, 47};
+
+    e = vec_splat (i, (32-32));
+    k = test_splat6 (32);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 32", j, e);
+
+    e = vec_splat (i, (33-32));
+    k = test_splat6 (33);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 33", j, e);
+
+    e = vec_splat (i, (46-32));
+    k = test_splat6 (46);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 46", j, e);
+
+    e = vec_splat (i, (47-32));
+    k = test_splat6 (47);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 47", j, e);
+
+    i = (vui8_t) {48, 49, 50, 51, 52, 53, 54, 55,
+                  56, 57, 58, 59, 60, 61, 62, 63};
+
+    e = vec_splat (i, (48-48));
+    k = test_splat6 (48);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 48", j, e);
+
+    e = vec_splat (i, (52-48));
+    k = test_splat6 (52);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 52", j, e);
+
+    e = vec_splat (i, (55-48));
+    k = test_splat6 (55);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 55", j, e);
+
+    e = vec_splat (i, (56-48));
+    k = test_splat6 (56);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 56", j, e);
+
+    e = vec_splat (i, (63-48));
+    k = test_splat6 (63);
+    j = vec_and (k, m6);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_u8 53", j, e);
+
+    return (rc);
+  }
+
+// #define __DEBUG_PRINT__ 1
+#if 1
+// test directly from vec_char_ppc.h
+#define test_splats6(_l)	vec_splat6_s8(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+#endif
+
+int
+test_splat6_s8(void)
+{
+    vi8_t i, j, e;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vi8_t) {0, 1, 2, 3, 4, 5, 6, 7,
+                 8, 9, 10, 11, 12, 13, 14, 15};
+
+    e = vec_splat (i, 1);
+    j = test_splats6 (1);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 1", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, 15);
+    j = test_splats6 (15);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 15", (vui8_t) j, (vui8_t) e);
+
+    i = (vi8_t) {16, 17, 18, 19, 20, 21, 22, 23,
+                  24, 25, 26, 27, 28, 29, 30, 31};
+
+    e = vec_splat (i, (16-16));
+    j = test_splats6 (16);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 16", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (17-16));
+    j = test_splats6 (17);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 17", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (24-16));
+    j = test_splats6 (24);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_e8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_e8 24", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (30-16));
+    j = test_splats6 (30);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 30",(vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (31-16));
+    j = test_splats6 (31);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 31",(vui8_t) j, (vui8_t) e);
+
+    i = (vi8_t) {-32, -31, -30, -29, -28, -27, -26, -25,
+                 -24, -23, -22, -21, -20, -19, -18, -17};
+
+    e = vec_splat (i, (32-32));
+    j = test_splats6 (-32);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -32", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (32-25));
+    j = test_splats6 (-25);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -25", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (32-24));
+    j = test_splats6 (-24);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -24", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (32-23));
+    j = test_splats6 (-23);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -23", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (32-17));
+    j = test_splats6 (-17);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -17", (vui8_t) j, (vui8_t) e);
+
+    i = (vi8_t) {-16, -15, -14, -13, -12, -11, -10, -9,
+                 -8, -7, -6, -5, -4, -3, -2, -1};
+
+    e = vec_splat (i, (16-16));
+    j = test_splats6 (-16);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -16", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (16-8));
+    j = test_splats6 (-8);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -8", (vui8_t) j, (vui8_t) e);
+
+    e = vec_splat (i, (16-1));
+    j = test_splats6 (-1);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat6_s8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat6_s8 -1", (vui8_t) j, (vui8_t) e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 1
+// test directly from vec_char_ppc.h
+#define test_splat7(_l)	vec_splat7_u8(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+#endif
+
+int
+test_splat7_u8(void)
+{
+    vui8_t i, j, k, e, m7;
+    int rc = 0;
+    printf ("\n%s\n", __FUNCTION__);
+
+    m7 = (vui8_t) {127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127};
+
+    i = (vui8_t) {0, 1, 2, 3, 4, 5, 6, 7,
+                  8, 9, 10, 11, 12, 13, 14, 15};
+    e = vec_splat (i, 1);
+    j = test_splat7 (1);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 1", j, e);
+
+    e = vec_splat (i, 15);
+    j = test_splat7 (15);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 15", j, e);
+
+    i = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23,
+                  24, 25, 26, 27, 28, 29, 30, 31};
+
+    e = vec_splat (i, (16-16));
+    j = test_splat7 (16);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 16", j, e);
+
+    e = vec_splat (i, (17-16));
+    j = test_splat7 (17);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 17", j, e);
+    e = vec_splat (i, (18-16));
+    j = test_splat7 (18);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 18", j, e);
+
+    e = vec_splat (i, (24-16));
+    j = test_splat7 (24);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 24", j, e);
+    e = vec_splat (i, (30-16));
+    j = test_splat7 (30);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 30", j, e);
+
+    e = vec_splat (i, (31-16));
+    j = test_splat7 (31);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x ("               = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 31", j, e);
+
+    i = (vui8_t) {32, 33, 34, 35, 36, 37, 38, 39,
+                  40, 41, 42, 43, 44, 45, 46, 47};
+
+    e = vec_splat (i, (32-32));
+    k = test_splat7 (32);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 32", k, e);
+
+    e = vec_splat (i, (33-32));
+    k = test_splat7 (33);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 33", k, e);
+
+    e = vec_splat (i, (40-32));
+    k = test_splat7 (40);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 40", k, e);
+
+    e = vec_splat (i, (47-32));
+    k = test_splat7 (47);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 47", k, e);
+
+    i = (vui8_t) {48, 49, 50, 51, 52, 53, 54, 55,
+                  56, 57, 58, 59, 60, 61, 62, 63};
+
+    e = vec_splat (i, (48-48));
+    k = test_splat7 (48);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 48", k, e);
+
+    e = vec_splat (i, (49-48));
+    k = test_splat7 (49);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 49", k, e);
+
+    e = vec_splat (i, (52-48));
+    k = test_splat7 (52);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 52", k, e);
+
+    e = vec_splat (i, (55-48));
+    k = test_splat7 (55);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 55", k, e);
+
+    e = vec_splat (i, (56-48));
+    k = test_splat7 (56);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 56", k, e);
+
+    e = vec_splat (i, (63-48));
+    k = test_splat7 (63);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 63", k, e);
+
+    i = (vui8_t) {64, 65, 66, 67, 68, 69, 70, 71,
+                  72, 73, 74, 75, 76, 77, 78, 79};
+
+    e = vec_splat (i, (64-64));
+    k = test_splat7 (64);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 64", j, e);
+
+    e = vec_splat (i, (65-64));
+    k = test_splat7 (65);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 65", j, e);
+
+    e = vec_splat (i, (72-64));
+    k = test_splat7 (72);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 72", j, e);
+
+    e = vec_splat (i, (79-64));
+    k = test_splat7 (79);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 79", j, e);
+
+    i = (vui8_t) {80, 81, 82, 83, 84, 85, 86, 87,
+                  88, 89, 90, 91, 92, 93, 94, 95};
+
+    e = vec_splat (i, (80-80));
+    k = test_splat7 (80);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 80", j, e);
+
+    e = vec_splat (i, (81-80));
+    k = test_splat7 (81);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 81", j, e);
+
+    e = vec_splat (i, (88-80));
+    k = test_splat7 (88);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 88", j, e);
+
+    e = vec_splat (i, (95-80));
+    k = test_splat7 (95);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 95", j, e);
+
+    i = (vui8_t) {96, 97, 98, 99, 100, 101, 102, 103,
+                  104, 105, 106, 107, 108, 109, 110, 111};
+
+    e = vec_splat (i, (96-96));
+    k = test_splat7 (96);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 96", j, e);
+
+    e = vec_splat (i, (97-96));
+    k = test_splat7 (97);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 97", j, e);
+
+    e = vec_splat (i, (98-96));
+    k = test_splat7 (98);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 98", j, e);
+
+    e = vec_splat (i, (100-96));
+    k = test_splat7 (100);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 100", j, e);
+
+    e = vec_splat (i, (102-96));
+    k = test_splat7 (102);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 102", j, e);
+
+    e = vec_splat (i, (104-96));
+    k = test_splat7 (104);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 104", j, e);
+
+    e = vec_splat (i, (111-96));
+    k = test_splat7 (111);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                  = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 111", j, e);
+
+    i = (vui8_t) {112, 113, 114, 115, 116, 117, 118, 119,
+                  120, 121, 122, 123, 124, 125, 126, 127};
+
+    e = vec_splat (i, (112-112));
+    k = test_splat7 (112);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                   = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 112", j, e);
+
+    e = vec_splat (i, (127-112));
+    k = test_splat7 (127);
+    j = vec_and (k, m7);
+
+#ifdef __DEBUG_PRINT__
+    printf       ("vec_splat7_u8(%i)", e[0]);
+    print_vint8x (" = ", k);
+    print_vint8x ("                   = ", j);
+#endif
+    rc += check_vui8 ("vec_splat7_u8 127", j, e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_expandm(_l)	vec_expandm_byte(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui8_t test_vec_expandm_byte (vui8_t);
+#define test_expandm(_l)	test_vec_expandm_byte(_l)
+#endif
+
+int
+test_expandm_byte(void)
+{
+    vui8_t i, j, e;
+    int rc = 0;
+
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_B (0x00, 0x80, 0x01, 0xc0, 0x02, 0xe0, 0x04, 0xf0,
+                         0x08, 0x81, 0x10, 0x83, 0x20, 0x87, 0x40, 0x8f);
+
+    e = CONST_VINT128_B (0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff,
+			 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff);
+    j = (vui8_t) test_expandm (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint8x ("vec_expandm of ", i);
+    print_vint8x ("             = ", j);
+#endif
+    rc += check_vui8 ("vec_expandm", j, e);
+
+    return (rc);
+  }
+
 int
 test_vec_char (void)
 {
@@ -2416,6 +3202,10 @@ test_vec_char (void)
   rc += test_clear_right_justified ();
   rc += test_isolate_right_justified_p ();
   rc += test_isolate_left_justified_p ();
+  rc += test_splat6_u8 ();
+  rc += test_splat6_s8 ();
+  rc += test_splat7_u8 ();
+  rc += test_expandm_byte ();
 #endif
   return (rc);
 }

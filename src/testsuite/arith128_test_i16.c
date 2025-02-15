@@ -634,6 +634,88 @@ test_setbh (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_expandm(_l)	vec_expandm_halfword(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui16_t test_vec_expandm_halfword (vui16_t);
+#define test_expandm(_l)	test_vec_expandm_halfword(_l)
+#endif
+
+int
+test_expandm_halfword(void)
+{
+    vui16_t i, j, e;
+    int rc = 0;
+
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = CONST_VINT128_H (0x0000, 0x8000, 0x0001, 0xc000,
+			 0x0002, 0xe000, 0x0004, 0xf000);
+
+    e = CONST_VINT128_H (0x0000, 0xffff, 0x0000, 0xffff,
+			 0x0000, 0xffff, 0x0000, 0xffff);
+    j = test_expandm (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint16x ("vec_expandm of ", i);
+    print_vint16x ("             = ", j);
+#endif
+    rc += check_vuint128x ("vec_expandm:", (vui128_t) j, (vui128_t) e);
+
+    i = CONST_VINT128_H (0x0fff, 0x8001, 0x1fff, 0xc002,
+			 0x3fff, 0xe007, 0x7fff, 0xf00f);
+
+    e = CONST_VINT128_H (0x0000, 0xffff, 0x0000, 0xffff,
+			 0x0000, 0xffff, 0x0000, 0xffff);
+    j = test_expandm (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint16x ("vec_expandm of ", i);
+    print_vint16x ("             = ", j);
+#endif
+    rc += check_vuint128x ("vec_expandm:", (vui128_t) j, (vui128_t) e);
+
+    return (rc);
+  }
+
+//#define __DEBUG_PRINT__ 1
+#if 0
+// test directly from vec_char_ppc.h
+#define test_signextsb(_l)	vec_signexts_byte(_l)
+#else
+// test from vec_char_ppc.h via vec_char_dummy.c
+extern vui16_t test_vec_signexts_byte (vui8_t);
+#define test_signextsb(_l)	test_vec_signexts_byte(_l)
+#endif
+
+int
+test_signexts_b(void)
+{
+    vui8_t i;
+    vui16_t j, e;
+    int rc = 0;
+
+    printf ("\n%s\n", __FUNCTION__);
+
+    i = (vui8_t)  {0x00, 0x00, 0x80, 0x00, 0x01, 0x00, 0xc0, 0xe0,
+	           0xff, 0x00, 0xe0, 0xc0, 0x04, 0x00, 0xf0, 0xf0};
+    e = (vui16_t) {0x0000, 0xff80, 0x0001, 0xffc0,
+		   0xffff, 0xffe0, 0x0004, 0xfff0};
+    j = test_signextsb (i);
+
+#ifdef __DEBUG_PRINT__
+    print_vint16x ("vec_expandm of ", i);
+    print_vint16x ("             = ", j);
+#endif
+    rc += check_vuint128x ("vec_signexts:", (vui128_t) j, (vui128_t) e);
+
+    return (rc);
+  }
+
+
 int
 test_vec_i16 (void)
 {
@@ -652,6 +734,8 @@ test_vec_i16 (void)
   rc += test_muluhm();
   rc += test_vmadduh();
   rc += test_setbh();
+  rc += test_expandm_halfword();
+  rc += test_signexts_b();
 #endif
   return (rc);
 }

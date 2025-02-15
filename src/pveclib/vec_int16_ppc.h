@@ -675,6 +675,27 @@ vec_ctzh (vui16_t vra)
   return ((vui16_t) r);
 }
 
+/** \brief Vector Expand Mask Halfword.
+ *
+ *  Create halfword element masks based on high-order (sign) bit of
+ *  each halfword element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned short.
+ *  @return vector halfword mask from the sign bit.
+ */
+static inline vui16_t
+vec_expandm_halfword (vui16_t vra)
+{
+  return vec_vexpandhm_PWR10 (vra);
+}
+
 /** \brief Vector Merge Algebraic High Halfword operation.
  *
  * Merge only the high halfwords from 8 x Algebraic words
@@ -907,39 +928,8 @@ vec_popcnth (vui16_t vra)
       : );
 #endif
 #else
-  //#warning Implememention pre power8
-    __vector unsigned short n, x1, x2, x, s;
-    __vector unsigned short ones = { 1,1,1,1, 1,1,1,1};
-    __vector unsigned short fives =
-        {0x5555,0x5555,0x5555,0x5555, 0x5555,0x5555,0x5555,0x5555};
-    __vector unsigned short threes =
-        {0x3333,0x3333,0x3333,0x3333, 0x3333,0x3333,0x3333,0x3333};
-    __vector unsigned short fs =
-        {0x0f0f,0x0f0f,0x0f0f,0x0f0f, 0x0f0f,0x0f0f,0x0f0f,0x0f0f};
-    /* n = 8 s = 4 */
-    s = ones;
-    x = vra;
-
-    /* x = x - ((x >> 1) & 0x5555)  */
-    x2 = vec_and (vec_sr (x, s), fives);
-    n = vec_sub (x, x2);
-    s = vec_add (s, s);
-
-    /* x = (x & 0x3333) + ((x & 0xcccc) >> 2)  */
-    x1 = vec_and (n, threes);
-    x2 = vec_andc (n, threes);
-    n = vec_add (x1, vec_sr (x2, s));
-    s = vec_add (s, s);
-
-    /* x = (x + (x >> 4)) & 0x0f0f)  */
-    x1 = vec_add (n, vec_sr (n, s));
-    n  = vec_and (x1, fs);
-    s = vec_add (s, s);
-
-    /* This avoids the extra load const.  */
-    /* x = (x + (x << 8)) >> 8)  */
-    x1 = vec_add (n, vec_sl (n, s));
-    r  = vec_sr (x1, s);
+  // _ARCH_PWR7 use vec_common_ppc.h implementation
+  r = vec_popcnth_PWR7 (vra);
 #endif
   return (r);
 }
@@ -991,6 +981,45 @@ vec_revbh (vui16_t vra)
   return (result);
 }
 
+/** \brief Vector Rotate left halfword Immediate.
+ *
+ *  Rotate left each word element [0-7], 0-15 bits,
+ *  as specified by an immediate value.
+ *  The shift amount is a const unsigned int in the range 0-15.
+ *  A shift count of 0 returns the original value of vra.
+ *  Shift counts greater then 31 bits return zero.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-11  | 2/cycle  |
+ *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned short.
+ *  @param shb shift amount in the range 0-15.
+ *  @return 128-bit vector unsigned short, rotated left shb bits.
+ */
+static inline vui16_t
+vec_rlhi (vui16_t vra, const unsigned  shb)
+{
+  vui16_t lshift;
+  vui16_t result;
+  /* Load the shift const in a vector.  The element shifts require
+     a shift amount for each element. For the immediate form the
+     shift constant is splatted to all elements of the
+     shift control.  */
+  if (__builtin_constant_p (shb) && (shb < 16))
+    lshift = vec_splat_u16(shb);
+  else
+    lshift = vec_splats ((unsigned short) shb);
+
+  /* Vector Rotate Left halfword based on the lower 4-bits of
+     corresponding element of lshift.  */
+  result = vec_vrlh (vra, lshift);
+
+  return result;
+}
+
 /*! \brief Vector Set Bool from Signed Halfword.
  *
  *  For each halfword, propagate the sign bit to all 16-bits of that
@@ -1030,6 +1059,68 @@ vec_setb_sh (vi16_t vra)
   return result;
 }
 
+/** \brief Vector Sign Extent to Short (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to halfword length
+ *  in the result vector. Each halfword element is the sign-extending
+ *  low-order byte of the corresponding halfword element of vra.
+ *
+ *  \Note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of char.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 2 - 10| 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed short.
+ */
+static inline vi16_t
+vec_signexts_byte (vi8_t vra)
+{
+  const vui16_t vshb = vec_splat_u16(8);
+  vi16_t result;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = vec_sl ((vi16_t) vra, vshb);
+#else
+  result = (vi16_t) vra;
+#endif
+  result = vec_sra (result, vshb);
+  return result;
+}
+
+/** \brief Vector Sign Extent to Short (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to halfword length
+ *  in the result vector. Each halfword element is the sign-extending
+ *  low-order byte of the corresponding halfword element of vra.
+ *
+ *  \Note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of short int.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 2 - 10| 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed short.
+ */
+static inline vi16_t
+vec_vextsb2h (vi8_t vra)
+{
+  const vui16_t vshb = vec_splat_u16(8);
+  vi16_t result;
+  result = vec_sl ((vi16_t) vra, vshb);
+  result = vec_sra (result, vshb);
+  return result;
+}
+
 /** \brief Vector Shift left Halfword Immediate.
  *
  *  Shift left each halfword element [0-7], 0-15 bits,
@@ -1042,6 +1133,7 @@ vec_setb_sh (vi16_t vra)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned short.
  *  @param shb Shift amount in the range 0-15.
@@ -1060,7 +1152,7 @@ vec_slhi (vui16_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui16_t) vec_splat_s16(shb);
+	lshift = vec_splat_u16(shb);
       else
 	lshift = vec_splats ((unsigned short) shb);
 
@@ -1088,6 +1180,7 @@ vec_slhi (vui16_t vra, const unsigned int shb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned short.
  *  @param shb Shift amount in the range 0-15.
@@ -1096,7 +1189,7 @@ vec_slhi (vui16_t vra, const unsigned int shb)
 static inline vui16_t
 vec_srhi (vui16_t vra, const unsigned int shb)
 {
-  vui16_t lshift;
+  vui16_t rshift;
   vui16_t result;
 
   if (shb < 16)
@@ -1106,13 +1199,13 @@ vec_srhi (vui16_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui16_t) vec_splat_s16(shb);
+	rshift = vec_splat_u16(shb);
       else
-	lshift = vec_splats ((unsigned short) shb);
+	rshift = vec_splats ((unsigned short) shb);
 
       /* Vector Shift right halfword based on the lower 4-bits of
          corresponding element of lshift.  */
-      result = vec_vsrh (vra, lshift);
+      result = vec_vsrh (vra, rshift);
     }
   else
     { /* shifts greater then 15 bits return zeros.  */
@@ -1134,6 +1227,7 @@ vec_srhi (vui16_t vra, const unsigned int shb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
  *  @param shb Shift amount in the range 0-7.
@@ -1142,7 +1236,7 @@ vec_srhi (vui16_t vra, const unsigned int shb)
 static inline vi16_t
 vec_srahi (vi16_t vra, const unsigned int shb)
 {
-  vui16_t lshift;
+  vui16_t rshift;
   vi16_t result;
 
   if (shb < 16)
@@ -1152,20 +1246,20 @@ vec_srahi (vi16_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui16_t) vec_splat_s16(shb);
+	rshift = vec_splat_u16(shb);
       else
-	lshift = vec_splats ((unsigned short) shb);
+	rshift = vec_splats ((unsigned short) shb);
 
       /* Vector Shift Right Algebraic Halfwords based on the lower 4-bits
          of corresponding element of lshift.  */
-      result = vec_vsrah (vra, lshift);
+      result = vec_vsrah (vra, rshift);
     }
   else
     { /* shifts greater then 15 bits returns the sign bit propagated to
          all bits.  This is equivalent to shift Right Algebraic of
          15 bits.  */
-      lshift = (vui16_t) vec_splat_s16(15);
-      result = vec_vsrah (vra, lshift);
+      rshift = vec_splat_u16(15);
+      result = vec_vsrah (vra, rshift);
     }
 
   return (vi16_t) result;

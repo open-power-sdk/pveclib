@@ -22,6 +22,99 @@
 
 #include <pveclib/vec_int16_ppc.h>
 
+vi16_t
+test_vec_vextsb2h (vi8_t vra)
+{
+  return vec_vextsb2h (vra);
+}
+
+vi16_t
+test_vec_signexts_byte (vi8_t vra)
+{
+  return vec_signexts_byte (vra);
+}
+
+vi16_t
+test_signexts_byte_V1 (vi8_t vra)
+{
+  const vui16_t vshb = vec_splat_u16(8);
+  vi16_t result;
+
+  result = vec_sl ((vi16_t) vra, vshb);
+  result = vec_sra (result, vshb);
+
+  return result;
+}
+
+vi16_t
+test_signexts_byte_V0 (vi8_t vra)
+{
+  const vi8_t vone = vec_splat_s8(1);
+  vi16_t result;
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = vec_mule (vra, vone);
+#else
+  result = vec_mulo (vra, vone);
+#endif
+
+  return result;
+}
+
+vui16_t
+test_vec_expandm_halfword (vui16_t vra)
+{
+  return vec_expandm_halfword (vra);
+}
+
+vui16_t
+test_vec_rlhi_4 (vui16_t a)
+{
+  return vec_rlhi (a, 4);
+}
+
+vui16_t
+test_vec_slhi_4 (vui16_t a)
+{
+  return vec_slhi (a, 4);
+}
+
+vi16_t
+test_vec_srahi_4 (vi16_t a)
+{
+  return vec_srahi (a, 4);
+}
+
+vui16_t
+test_vec_srhi_4 (vui16_t a)
+{
+  return vec_srhi (a, 4);
+}
+
+vui16_t
+test_vec_rlhi_15 (vui16_t a)
+{
+  return vec_rlhi (a, 15);
+}
+
+vui16_t
+test_vec_slhi_15 (vui16_t a)
+{
+  return vec_slhi (a, 15);
+}
+
+vi16_t
+test_vec_srahi_15 (vi16_t a)
+{
+  return vec_srahi (a, 15);
+}
+
+vui16_t
+test_vec_srhi_15 (vui16_t a)
+{
+  return vec_srhi (a, 15);
+}
+
 vui16_t
 test_vec_popcnth (vui16_t vra)
 {

@@ -1028,8 +1028,10 @@ vec_rlhi (vui16_t vra, const unsigned  shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Vector signed short.
  *  @return vector bool short reflecting the sign bit of each
@@ -1039,24 +1041,7 @@ vec_rlhi (vui16_t vra, const unsigned  shb)
 static inline vb16_t
 vec_setb_sh (vi16_t vra)
 {
-  vb16_t result;
-
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-      result = (vb16_t) vec_expandm ((vui16_t) vra);
-#else
-  __asm__(
-      "vexpandhm %0,%1"
-      : "=v" (result)
-      : "v" (vra)
-      : );
-#endif
-#else
-  const vui16_t rshift =  vec_splat_u16( 15 );
-  // Vector Shift Right Algebraic Halfwords 15-bits.
-  result = (vb16_t) vec_sra (vra, rshift);
-#endif
-  return result;
+  return (vb16_t) vec_expandm_halfword ((vui16_t) vra);
 }
 
 /** \brief Vector Sign Extent to Short (from byte).
@@ -1065,12 +1050,13 @@ vec_setb_sh (vi16_t vra)
  *  in the result vector. Each halfword element is the sign-extending
  *  low-order byte of the corresponding halfword element of vra.
  *
- *  \Note This implementation matches the Endian-Sensitive semantics
+ *  \note This implementation matches the Endian-Sensitive semantics
  *  of the Intrinsic Reference. As if you loaded vra from an array
  *  of char.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 2/cycle  |
  *  |power8   | 4 - 6 | 2/cycle  |
  *  |power9   | 4 - 7 | 2/cycle  |
  *  |power10  | 2 - 10| 4/cycle  |
@@ -1098,7 +1084,7 @@ vec_signexts_byte (vi8_t vra)
  *  in the result vector. Each halfword element is the sign-extending
  *  low-order byte of the corresponding halfword element of vra.
  *
- *  \Note This implementation matches the Big-Endian register semantics
+ *  \note This implementation matches the Big-Endian register semantics
  *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
  *  loaded vra from an array of short int.
  *

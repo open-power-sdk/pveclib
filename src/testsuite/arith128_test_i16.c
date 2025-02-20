@@ -636,10 +636,10 @@ test_setbh (void)
 
 //#define __DEBUG_PRINT__ 1
 #if 0
-// test directly from vec_char_ppc.h
+// test directly from vec_int16_ppc.h
 #define test_expandm(_l)	vec_expandm_halfword(_l)
 #else
-// test from vec_char_ppc.h via vec_char_dummy.c
+// test from vec_int16_ppc.h via vec_int16_dummy.c
 extern vui16_t test_vec_expandm_halfword (vui16_t);
 #define test_expandm(_l)	test_vec_expandm_halfword(_l)
 #endif
@@ -683,10 +683,10 @@ test_expandm_halfword(void)
 
 //#define __DEBUG_PRINT__ 1
 #if 0
-// test directly from vec_char_ppc.h
+// test directly from vec_int16_ppc.h
 #define test_signextsb(_l)	vec_signexts_byte(_l)
 #else
-// test from vec_char_ppc.h via vec_char_dummy.c
+// test from vec_int16_ppc.h via vec_int16_dummy.c
 extern vui16_t test_vec_signexts_byte (vui8_t);
 #define test_signextsb(_l)	test_vec_signexts_byte(_l)
 #endif
@@ -707,7 +707,7 @@ test_signexts_b(void)
     j = test_signextsb (i);
 
 #ifdef __DEBUG_PRINT__
-    print_vint16x ("vec_expandm of ", i);
+    print_vint16x ("vec_signexts of ", i);
     print_vint16x ("             = ", j);
 #endif
     rc += check_vuint128x ("vec_signexts:", (vui128_t) j, (vui128_t) e);

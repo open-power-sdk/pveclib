@@ -41,6 +41,36 @@
 #if defined(_ARCH_PWR10) && \
     ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
 
+vui8_t
+test_vexpandbm_PWR10 (vui8_t vra)
+{
+  return vec_vexpandbm_PWR10 (vra);
+}
+
+vui16_t
+test_vexpandhm_PWR10 (vui16_t vra)
+{
+  return vec_vexpandhm_PWR10 (vra);
+}
+
+vui32_t
+test_vexpandwm_PWR10 (vui32_t vra)
+{
+  return vec_vexpandwm_PWR10 (vra);
+}
+
+vui64_t
+test_vexpanddm_PWR10 (vui64_t vra)
+{
+  return vec_vexpanddm_PWR10 (vra);
+}
+
+vui128_t
+test_vexpandqm_PWR10 (vui128_t vra)
+{
+  return vec_vexpandqm_PWR10 (vra);
+}
+
 vui64_t
 test_vec_ctzd_PWR10 (vui64_t vra)
 {

@@ -721,29 +721,18 @@ vec_ctzb (vui8_t vra)
       : "v" (vra)
       : );
 #endif
-#elif _ARCH_PWR8
-// For _ARCH_PWR8. Generate 1's for the trailing zeros
-// and 0's otherwise. Then count (popcnt) the 1's.
-// _ARCH_PWR8 uses the hardware vpopcntb instruction.
+#else
+  // For _ARCH_PWR8 and earlier. Generate 1's for the trailing zeros
+  // and 0's otherwise. Then count (popcnt) the 1's. _ARCH_PWR8 uses
+  // the hardware vpopcntb instruction.
+  // _ARCH_PWR7 use the PVECLIB vec_common_ppc.h implementation
+  // which runs ~6-13 cycles.
   const vui8_t ones = vec_splat_u8 (1);
   vui8_t tzmask;
   // tzmask = (!vra & (vra - 1))
   tzmask = vec_andc (vec_sub (vra, ones), vra);
   // return = vec_popcnt (!vra & (vra - 1))
   r = vec_popcntb (tzmask);
-#else
-  // For _ARCH_PWR7 and earlier (without hardware clz or popcnt).
-  // Generate 1's for the trailing zeros and 0's otherwise.
-  // Then count leading 0's using the PVECLIB vec_clzb implementation
-  // which minimizes the number of constant loads (vs popcntb).
-  // Finally subtract this count from 8.
-  const vui8_t ones = vec_splat_u8 (1);
-  const vui8_t c8s = vec_splat_u8 (8);
-  vui8_t term;
-  // term = (!vra & (vra - 1))
-  term = vec_andc (vec_sub (vra, ones), vra);
-  // return = 8 - vec_clz (!vra & (vra - 1))
-  return vec_sub (c8s, vec_clzb (term));
 #endif
   return ((vui8_t) r);
 }
@@ -774,6 +763,27 @@ vec_cntlz_lsbb_bi (vui8_t vra)
 #else
   return vec_vclzlsbb (vra);
 #endif
+}
+
+/** \brief Vector Expand Mask Byte.
+ *
+ *  Create byte element masks based on high-order (sign) bit of
+ *  each byte element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned char.
+ *  @return vector byte mask from the sign bit.
+ */
+static inline vui8_t
+vec_expandm_byte (vui8_t vra)
+{
+  return vec_vexpandbm_PWR10 (vra);
 }
 
 /** \brief Vector Count Trailing Zero Least-Significant Bits Byte.
@@ -950,7 +960,7 @@ vec_first_mismatch_byte_index (vui8_t vra, vui8_t vrb)
 static inline int
 vec_first_mismatch_byte_or_eos_index (vui8_t vra, vui8_t vrb)
 {
-#ifdef _ARCH_PWR9
+#if defined (_ARCH_PWR9) && defined (__VSX__) && (__GNUC__ > 7)
 #if (__GNUC__ > 13)
   return vec_first_mismatch_or_eos_index (vra, vrb);
 #else
@@ -1376,6 +1386,45 @@ vec_popcntb (vui8_t vra)
 #define vec_popcntb __builtin_vec_vpopcntb
 #endif
 
+/** \brief Vector Rotate left Byte Immediate.
+ *
+ *  Rotate left each word element [0-15], 0-7 bits,
+ *  as specified by an immediate value.
+ *  The shift amount is a const unsigned int in the range 0-7.
+ *  A shift count of 0 returns the original value of vra.
+ *  Shift counts greater then 31 bits return zero.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4-11  | 2/cycle  |
+ *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned char.
+ *  @param shb shift amount in the range 0-7.
+ *  @return 128-bit vector unsigned char, rotated left shb bits.
+ */
+static inline vui8_t
+vec_rlbi (vui8_t vra, const unsigned  shb)
+{
+  vui8_t lshift;
+  vui8_t result;
+  /* Load the shift const in a vector.  The element shifts require
+     a shift amount for each element. For the immediate form the
+     shift constant is splatted to all elements of the
+     shift control.  */
+  if (__builtin_constant_p (shb) && (shb < 8))
+    lshift = vec_splat_u8(shb);
+  else
+    lshift = vec_splats ((unsigned char) shb);
+
+  /* Vector Rotate Left halfword based on the lower 3-bits of
+     corresponding element of lshift.  */
+  result = vec_vrlb (vra, lshift);
+
+  return result;
+}
+
 /*! \brief Vector Set Bool from Signed Byte.
  *
  *  For each byte, propagate the sign bit to all 8-bits of that
@@ -1384,8 +1433,10 @@ vec_popcntb (vui8_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Vector signed char.
  *  @return vector bool char reflecting the sign bit of each
@@ -1395,24 +1446,7 @@ vec_popcntb (vui8_t vra)
 static inline vb8_t
 vec_setb_sb (vi8_t vra)
 {
-  vb8_t result;
-
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-      result = (vb8_t) vec_expandm ((vui8_t) vra);
-#else
-  __asm__(
-      "vexpandbm %0,%1"
-      : "=v" (result)
-      : "v" (vra)
-      : );
-#endif
-#else
-  const vui8_t rshift =  vec_splat_u8( 7 );
-  // Vector Shift Right Algebraic Bytes 7-bits.
-  result = (vb8_t) vec_sra (vra, rshift);
-#endif
-  return result;
+  return (vb8_t) vec_expandm_byte ((vui8_t) vra);
 }
 
 /** \brief Vector Shift left Byte Immediate.
@@ -1427,6 +1461,7 @@ vec_setb_sb (vi8_t vra)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned char.
  *  @param shb Shift amount in the range 0-7.
@@ -1445,7 +1480,7 @@ vec_slbi (vui8_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui8_t) vec_splat_s8(shb);
+	lshift = vec_splat_u8(shb);
       else
 	lshift = vec_splats ((unsigned char) shb);
 
@@ -1474,6 +1509,7 @@ vec_slbi (vui8_t vra, const unsigned int shb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
  *  @param shb Shift amount in the range 0-7.
@@ -1482,7 +1518,7 @@ vec_slbi (vui8_t vra, const unsigned int shb)
 static inline vi8_t
 vec_srabi (vi8_t vra, const unsigned int shb)
 {
-  vui8_t lshift;
+  vui8_t rshift;
   vi8_t result;
 
   if (shb < 8)
@@ -1492,20 +1528,20 @@ vec_srabi (vi8_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui8_t) vec_splat_s8(shb);
+	rshift = vec_splat_u8(shb);
       else
-	lshift = vec_splats ((unsigned char) shb);
+	rshift = vec_splats ((unsigned char) shb);
 
       /* Vector Shift Right Algebraic Bytes based on the lower 3-bits
          of corresponding element of lshift.  */
-      result = vec_vsrab (vra, lshift);
+      result = vec_vsrab (vra, rshift);
     }
   else
     { /* shifts greater then 7 bits returns the sign bit propagated to
          all bits.   This is equivalent to shift Right Algebraic of
          7 bits.  */
-      lshift = (vui8_t) vec_splat_s8(7);
-      result = vec_vsrab (vra, lshift);
+      rshift = vec_splat_u8(7);
+      result = vec_vsrab (vra, rshift);
     }
 
   return (vi8_t) result;
@@ -1523,6 +1559,7 @@ vec_srabi (vi8_t vra, const unsigned int shb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-11  | 2/cycle  |
  *  |power9   | 5-11  | 2/cycle  |
+ *  |power10  | 4-7   | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned char.
  *  @param shb Shift amount in the range 0-7.
@@ -1531,7 +1568,7 @@ vec_srabi (vi8_t vra, const unsigned int shb)
 static inline vui8_t
 vec_srbi (vui8_t vra, const unsigned int shb)
 {
-  vui8_t lshift;
+  vui8_t rshift;
   vui8_t result;
 
   if (shb < 8)
@@ -1541,13 +1578,13 @@ vec_srbi (vui8_t vra, const unsigned int shb)
          shift constant is splatted to all elements of the
          shift control.  */
       if (__builtin_constant_p(shb))
-	lshift = (vui8_t) vec_splat_s8(shb);
+	rshift = vec_splat_u8(shb);
       else
-	lshift = vec_splats ((unsigned char) shb);
+	rshift = vec_splats ((unsigned char) shb);
 
       /* Vector Shift right bytes based on the lower 3-bits of
          corresponding element of lshift.  */
-      result = vec_vsrb (vra, lshift);
+      result = vec_vsrb (vra, rshift);
     }
   else
     { /* shifts greater then 7 bits return zeros.  */

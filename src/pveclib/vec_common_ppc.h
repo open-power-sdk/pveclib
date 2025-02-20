@@ -1691,7 +1691,7 @@ static inline vi128_t vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power7   | 8-16  |   NA     |
+ *  |power7   | 8-12  |   NA     |
  *
  *  @param a 128-bit vector long long int.
  *  @param b 128-bit vector long long int.
@@ -5771,7 +5771,7 @@ vec_splat6_s64 (const signed int sim6)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power7   | 20-27 |   NA     |
+ *  |power7   | 8-12  |   NA     |
  *
  *  @param vra 128-bit vector treated as 2 X unsigned long long int.
  *  @param vrb 128-bit vector treated as 2 X unsigned long long int.
@@ -6051,7 +6051,7 @@ vec_vexpanddm_PWR7 (vui64_t vra)
   const vi8_t zero = vec_splat_s8 (0);
   // Splat the doubleword sign byte across the quadwords
   vi8_t vra_sign_h = vec_splat ((vi8_t) vra, VEC_BYTE_H_DWH);
-  vi8_t vra_sign_l = vec_splat ((vi8_t) vra, VEC_BYTE_L_DWH);
+  vi8_t vra_sign_l = vec_splat ((vi8_t) vra, VEC_BYTE_H_DWL);
   vi8_t vra_sign = (vi8_t) vec_xxpermdi ((vui64_t)vra_sign_h, (vui64_t)vra_sign_l, 0);
 
   vb8_t vsgn;

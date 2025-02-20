@@ -40,6 +40,36 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui8_t
+test_vexpandbm_PWR9 (vui8_t vra)
+{
+  return vec_vexpandbm_PWR7 (vra);
+}
+
+vui16_t
+test_vexpandhm_PWR9 (vui16_t vra)
+{
+  return vec_vexpandhm_PWR7 (vra);
+}
+
+vui32_t
+test_vexpandwm_PWR9 (vui32_t vra)
+{
+  return vec_vexpandwm_PWR7 (vra);
+}
+
+vui64_t
+test_vexpanddm_PWR9 (vui64_t vra)
+{
+  return vec_vexpanddm_PWR8 (vra);
+}
+
+vui128_t
+test_vexpandqm_PWR9 (vui128_t vra)
+{
+  return vec_vexpandqm_PWR7 (vra);
+}
+
 vui128_t
 test_vec_popcntq_PWR9 (vui128_t vra)
 {
@@ -2588,7 +2618,6 @@ __test_scalar_test_data_class_f128 (__binary128 val)
 {
   return scalar_test_data_class (val, 0x7f);
 }
-#endif
 int
 __test_scalar_test_data_class_f64 (double val)
 {
@@ -2600,6 +2629,7 @@ __test_scalar_test_data_class_f32 (float val)
 {
   return scalar_test_data_class (val, 0x7f);
 }
+#endif
 #endif
 
 #ifdef scalar_test_neg
@@ -2619,12 +2649,12 @@ __test_scalar_extract_exp_f128 (__binary128 val)
 {
   return scalar_extract_exp (val);
 }
-#endif
 int
 __test_scalar_extract_exp_f64 (double val)
 {
   return scalar_extract_exp (val);
 }
+#endif
 #endif
 
 #ifdef scalar_extract_sig
@@ -2634,12 +2664,12 @@ __test_scalar_extract_sig_f128 (__binary128 val)
 {
   return scalar_extract_sig (val);
 }
-#endif
 long long int
 __test_scalar_extract_sig_f64 (double val)
 {
   return scalar_extract_sig (val);
 }
+#endif
 #endif
 
 #ifdef scalar_insert_exp
@@ -2649,12 +2679,12 @@ __test_scalar_insert_exp_f128 (__binary128 sig, unsigned long long int exp)
 {
   return scalar_insert_exp (sig, exp);
 }
-#endif
 double
 __test_scalar_insert_exp_f64 (double sig, unsigned long long int exp)
 {
   return scalar_insert_exp (sig, exp);
 }
+#endif
 #endif
 
 #ifdef scalar_cmp_exp_eq
@@ -2666,15 +2696,16 @@ __test_scalar_cmp_exp_eq_f128 (__binary128 vra, __binary128 vrb)
 {
   return scalar_cmp_exp_eq (vra, vrb);
 }
-#endif
 int
 __test_scalar_cmp_exp_eq_f64 (double vra, double vrb)
 {
   return scalar_cmp_exp_eq (vra, vrb);
 }
 #endif
+#endif
 
 #ifdef vec_insert_exp
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 8)
 vf64_t
 __test_vec_insert_exp_f64b (vui64_t sig, vui64_t exp)
 {
@@ -2697,8 +2728,10 @@ __test_vec_insert_exp_f32 (vf32_t sig, vui32_t exp)
   return vec_insert_exp (sig, exp);
 }
 #endif
+#endif
 
 #ifdef vec_test_data_class
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 8)
 vb64_t
 __test_vec_test_data_class_f64 (vf64_t val)
 {
@@ -2711,8 +2744,10 @@ __test_vec_test_data_class_f32 (vf32_t val)
   return vec_test_data_class (val, 0x7f);
 }
 #endif
+#endif
 
 #ifdef vec_extract_exp
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 8)
 vui64_t
 __test_vec_extract_exp_f64 (vf64_t val)
 {
@@ -2724,8 +2759,10 @@ __test_vec_extract_exp_f32 (vf32_t val)
   return vec_extract_exp (val);
 }
 #endif
+#endif
 
 #ifdef vec_extract_sig
+#if defined (_ARCH_PWR9) && defined (__FLOAT128__) && (__GNUC__ > 8)
 vui64_t
 __test_vec_extract_sig_f64 (vf64_t val)
 {
@@ -2736,6 +2773,7 @@ __test_vec_extract_sig_f32 (vf32_t val)
 {
   return vec_extract_sig (val);
 }
+#endif
 #endif
 
 #ifndef PVECLIB_DISABLE_DFP

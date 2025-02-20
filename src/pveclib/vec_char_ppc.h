@@ -1433,8 +1433,10 @@ vec_rlbi (vui8_t vra, const unsigned  shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Vector signed char.
  *  @return vector bool char reflecting the sign bit of each
@@ -1444,24 +1446,7 @@ vec_rlbi (vui8_t vra, const unsigned  shb)
 static inline vb8_t
 vec_setb_sb (vi8_t vra)
 {
-  vb8_t result;
-
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-      result = (vb8_t) vec_expandm ((vui8_t) vra);
-#else
-  __asm__(
-      "vexpandbm %0,%1"
-      : "=v" (result)
-      : "v" (vra)
-      : );
-#endif
-#else
-  const vui8_t rshift =  vec_splat_u8( 7 );
-  // Vector Shift Right Algebraic Bytes 7-bits.
-  result = (vb8_t) vec_sra (vra, rshift);
-#endif
-  return result;
+  return (vb8_t) vec_expandm_byte ((vui8_t) vra);
 }
 
 /** \brief Vector Shift left Byte Immediate.

@@ -24,6 +24,220 @@
 #include <pveclib/vec_int128_ppc.h>
 
 vui64_t
+test_vec_expandm_doubleword (vui64_t vra)
+{
+  return vec_expandm_doubleword (vra);
+}
+
+vui64_t
+test_vexpanddm_PWR (vui64_t vra)
+{
+  return vec_vexpanddm_PWR10 (vra);
+}
+
+vi64_t
+test_vec_signextll_byte (vi8_t vra)
+{
+  return vec_signextll_byte (vra);
+}
+
+vi64_t
+test_vec_vextsb2d (vi8_t vra)
+{
+  return vec_vextsb2d (vra);
+}
+
+vi64_t
+test_vec_signextll_halfword (vi16_t vra)
+{
+  return vec_signextll_halfword (vra);
+}
+
+vi64_t
+test_vec_vextsh2d (vi16_t vra)
+{
+  return vec_vextsh2d (vra);
+}
+
+vi64_t
+test_vec_signextll_word (vi32_t vra)
+{
+  return vec_signextll_word (vra);
+}
+
+vi64_t
+test_vec_vextsw2d (vi32_t vra)
+{
+  return vec_vextsw2d (vra);
+}
+
+vi64_t
+test_vextsb2d_v0 (vi8_t vra)
+{
+  vi64_t tmp;
+
+  tmp = (vi64_t) vec_sldi ((vui64_t) vra, 56);
+  return vec_sradi (tmp, 56);
+}
+
+vi64_t
+test_splat6_s64_1 ()
+{
+  return vec_splat6_s64 (1);
+}
+
+vi64_t
+test_splat6_s64_1_V1 ()
+{
+  const vi32_t rword = vec_splat_s32 (1);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_unpackh ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_1_V0 ()
+{
+  const vui32_t rword = vec_splat_u32 (1);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw ((vi32_t)rword);
+#else
+  return (vi64_t) vec_vupklsh ((vi16_t)rword);
+#endif
+}
+
+vui64_t
+test_splat6_u64_1_V2 ()
+{
+  const vui32_t rword = vec_splat_u32 (1);
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw ((vi32_t)rword);
+#else
+  return (vui64_t) vec_vupklsh ((vi16_t)rword);
+#endif
+}
+
+vui64_t
+test_splat6_u64_1_V1 ()
+{
+  const vui32_t rword = vec_splat_u32 (1);
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_unpackl ((vi32_t)rword);
+#else
+  return (vui64_t) vec_unpackl ((vi16_t)rword);
+#endif
+}
+
+vui64_t
+test_splat6_u64_1_V0 ()
+{
+  const vui32_t rword = vec_splat_u32 (1);
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw ((vi32_t)rword);
+#else
+  return (vui64_t) vec_vupklsh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_15 ()
+{
+  return vec_splat6_s64 (15);
+}
+
+vi64_t
+test_splat6_s64_m16 ()
+{
+  return vec_splat6_s64 (-16);
+}
+
+vi64_t
+test_splat6_s64_m1 ()
+{
+  return vec_splat6_s64 (-1);
+}
+
+vui64_t
+test_splat6_u64_1 ()
+{
+  return vec_splat6_u64 (1);
+}
+
+vui64_t
+test_splat6_u64_15 ()
+{
+  return vec_splat6_u64 (15);
+}
+
+vui64_t
+test_splat6_u64_16 ()
+{
+  return vec_splat6_u64 (16);
+}
+
+vui64_t
+test_splat6_u64_30 ()
+{
+  return vec_splat6_u64 (30);
+}
+
+vui64_t
+test_splat6_u64_31 ()
+{
+  return vec_splat6_u64 (31);
+}
+
+vui64_t
+test_splat6_u64_32 ()
+{
+  return vec_splat6_u64 (32);
+}
+
+vui64_t
+test_splat6_u64_33 ()
+{
+  return vec_splat6_u64 (33);
+}
+
+vui64_t
+test_splat6_u64_34 ()
+{
+  return vec_splat6_u64 (34);
+}
+
+vui64_t
+test_splat6_u64_46 ()
+{
+  return vec_splat6_u64 (46);
+}
+
+vui64_t
+test_splat6_u64_47 ()
+{
+  return vec_splat6_u64 (47);
+}
+
+vui64_t
+test_splat6_u64_48 ()
+{
+  return vec_splat6_u64 (48);
+}
+
+vui64_t
+test_splat6_u64_52 ()
+{
+  return vec_splat6_u64 (52);
+}
+
+vui64_t
+test_splat6_u64_63 ()
+{
+  return vec_splat6_u64 (63);
+}
+
+vui64_t
 test_vec_clzd (vui64_t a)
 {
   return vec_clzd (a);
@@ -37,6 +251,52 @@ test_vec_clzd_PWR7 (vui64_t a)
 
 vui64_t
 test_clzd_PWR7 (vui64_t vra)
+{
+  // generated const (vui32_t) {20, 20, 20, 20}
+  const vui32_t v20 = vec_splat_u32 (20-32);
+  // need a dword vector of 1086 which is the exponent for 2**63
+  // f2_63 = (vector double) 2**63
+  // const vf64_t f2_63 =  (vf64_t) {0x1.0p63D, 0x1.0p63D};
+  // i2_63 = exponent for (vector double) 2**63
+  const vui64_t i2_63 =  (vui64_t) {1086, 1086};
+  // Generate mask = (vui32_t) {0, 0xffffffff, 0, 0xffffffff}
+  const vui32_t zero = vec_splat_u32 (0);
+  const vui32_t ones = vec_splat_u32 (-1);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // Only for testing only, PWR7 is BE only
+  const vui32_t mask = vec_mergel (ones, zero);
+#else
+  const vui32_t mask = vec_mergeh (zero, ones);
+#endif
+  // Generate const (vui32_t) {64, 64, 64, 64}
+  const vui32_t v4 = vec_splat_u32 (4);
+  const vui32_t v64 = vec_sl (v4, v4);
+  vb32_t zmask;
+  vui32_t k, n;
+  vf64_t kf;
+
+  // Avoid rounding in floating point conversion
+  k = (vui32_t) vra & ~((vui32_t) vra >> 1);
+  kf = vec_double ((vui64_t) k);
+  // right justify exponent for long int
+  // Which is tricky because we dont have DW shift.
+  // clear extraneous data from words 1/3
+  n = vec_andc ((vui32_t) kf, (vui32_t) mask);
+  // Rotate right quadword 32-bits, exponents in words 1/3
+  n = vec_sld (n, n, 12);
+  // Shift exponent into low 11-bits of words 1, 3
+  n = vec_vsrw(n, v20);
+  // clzd == 1086 - exponent
+  n = (vui32_t) i2_63 - (vui32_t) n;
+  // Fix-up: DW[i]==0 case where the exponent is zero and diff is 1086
+  zmask = vec_cmpgt (n, v64);
+  n = vec_sel (n, v64, zmask);
+
+  return ((vui64_t) n);
+}
+
+vui64_t
+test_clzd_PWR7_V2 (vui64_t vra)
 {
   const vui32_t zero = vec_splat_u32 (0);
   // generated const (vui32_t) {20, 20, 20, 20}
@@ -878,45 +1138,114 @@ test_vec_ctzd (vui64_t vra)
 }
 
 vui64_t
-__test_vrld (vui64_t a, vui64_t b)
+__test_vrld_builtin (vui64_t a, vui64_t b)
 {
   return vec_vrld (a, b);
 }
 
 vui64_t
-__test_vsld (vui64_t a, vui64_t b)
+__test_vsld_builtin (vui64_t a, vui64_t b)
 {
   return vec_vsld (a, b);
 }
 
 vui64_t
-__test_vsrd (vui64_t a, vui64_t b)
+__test_vsrd_builtin (vui64_t a, vui64_t b)
 {
   return vec_vsrd (a, b);
 }
 
 vi64_t
-__test_vsrad (vi64_t a, vui64_t b)
+__test_vsrad_builtin (vi64_t a, vui64_t b)
 {
   return vec_vsrad (a, b);
 }
 
 vui64_t
+__test_vrld_V1 (vui64_t a, vui8_t b)
+{
+  return vec_vrld_PWR8 (a, b);
+}
+
+vui64_t
 test_rldi_1 (vui64_t a)
 {
-  return vec_rldi (a, 1);
+  return vec_rldi_PWR8 (a, 1);
 }
 
 vui64_t
 test_rldi_15 (vui64_t a)
 {
-  return vec_rldi (a, 15);
+  return vec_rldi_PWR8 (a, 15);
 }
 
 vui64_t
-test_rldi_32 (vui64_t a)
+test_vec_rldi_31 (vui64_t a)
 {
-  return vec_rldi (a, 32);
+  return vec_rldi_PWR8 (a, 31);
+}
+
+vui64_t
+test_vec_rldi_32 (vui64_t a)
+{
+  return vec_rldi_PWR8 (a, 32);
+}
+
+vui64_t
+test_vec_rldi_33 (vui64_t a)
+{
+  return vec_rldi_PWR8 (a, 33);
+}
+
+vui64_t
+test_vec_rldi_48 (vui64_t a)
+{
+  return vec_rldi_PWR8 (a, 48);
+}
+
+vui64_t
+test_vec_rldi_52 (vui64_t a)
+{
+  return vec_rldi_PWR8 (a, 52);
+}
+
+vui64_t
+test_vec_rldi_63 (vui64_t a)
+{
+  return vec_rldi_PWR8 (a, 63);
+}
+
+vui64_t
+test_rldi_32_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (32);
+  return vec_vrld_PWR8 (a, shft);
+}
+
+vui64_t
+test_rldi_52_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (52);
+  return vec_vrld_PWR8 (a, shft);
+}
+
+vui64_t
+test_rldi_63_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (63);
+  return vec_vrld_PWR8 (a, shft);
+}
+
+vui64_t
+__test_vsld_PWR7 (vui64_t a, vui8_t b)
+{
+  return vec_vsld_PWR7 (a, b);
+}
+
+vui64_t
+__test_vsld_PWR8 (vui64_t a, vui8_t b)
+{
+  return vec_vsld_PWR8 (a, b);
 }
 
 vui64_t
@@ -938,6 +1267,54 @@ test_sldi_16 (vui64_t a)
 }
 
 vui64_t
+test_sldi_24 (vui64_t a)
+{
+  return vec_sldi (a, 24);
+}
+
+vui64_t
+test_sldi_31 (vui64_t a)
+{
+  return vec_sldi (a, 31);
+}
+
+vui64_t
+test_vec_sldi_32 (vui64_t a)
+{
+  return vec_sldi (a, 32);
+}
+
+vui64_t
+test_sldi_33 (vui64_t a)
+{
+  return vec_sldi (a, 33);
+}
+
+vui64_t
+test_sldi_46 (vui64_t a)
+{
+  return vec_sldi (a, 46);
+}
+
+vui64_t
+test_sldi_47 (vui64_t a)
+{
+  return vec_sldi (a, 47);
+}
+
+vui64_t
+test_sldi_48 (vui64_t a)
+{
+  return vec_sldi (a, 48);
+}
+
+vui64_t
+test_vec_sldi_52 (vui64_t a)
+{
+  return vec_sldi (a, 52);
+}
+
+vui64_t
 test_sldi_63 (vui64_t a)
 {
   return vec_sldi (a, 63);
@@ -947,6 +1324,34 @@ vui64_t
 test_sldi_64 (vui64_t a)
 {
   return vec_sldi (a, 64);
+}
+
+vui64_t
+__test_sldi_24_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (24);
+  return vec_vsld_PWR8 (a, shft);
+}
+
+vui64_t
+__test_sldi_31_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (31);
+  return vec_vsld_PWR8 (a, shft);
+}
+
+vui64_t
+test_sldi_32_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (32);
+  return vec_vsld_PWR8(a, shft);
+}
+
+vui64_t
+test_sldi_52_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (52);
+  return vec_vsld_PWR8 (a, shft);
 }
 
 vui64_t
@@ -974,7 +1379,7 @@ test_srdi_31 (vui64_t a)
 }
 
 vui64_t
-test_srdi_32 (vui64_t a)
+test_vec_srdi_32 (vui64_t a)
 {
   return vec_srdi (a, 32);
 }
@@ -989,6 +1394,26 @@ vui64_t
 test_srdi_64 (vui64_t a)
 {
   return vec_srdi (a, 64);
+}
+
+vui64_t
+__test_vsrd_b (vui64_t a, vui8_t b)
+{
+  return vec_vsrd_PWR8 (a, b);
+}
+
+vui64_t
+test_srdi_32_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (32);
+  return vec_vsrd_PWR8 (a, shft);
+}
+
+vui64_t
+test_srdi_52_V0 (vui64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (52);
+  return vec_vsrd_PWR8 (a, shft);
 }
 
 vi64_t
@@ -1019,6 +1444,26 @@ vi64_t
 test_sradi_64 (vi64_t a)
 {
   return vec_sradi (a, 64);
+}
+
+vi64_t
+__test_vsrad_b (vi64_t a, vui8_t b)
+{
+  return vec_vsrad_PWR8 (a, b);
+}
+
+vi64_t
+test_sradi_32 (vi64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (32);
+  return vec_vsrad_PWR8 (a, shft);
+}
+
+vi64_t
+test_sradi_52 (vi64_t a)
+{
+  vui8_t shft = vec_splat6_u8 (52);
+  return vec_vsrad_PWR8 (a, shft);
 }
 
 int

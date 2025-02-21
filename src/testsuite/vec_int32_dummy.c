@@ -22,6 +22,386 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vi32_t
+test_vec_vextsh2w (vi16_t vra)
+{
+  return vec_vextsh2w (vra);
+}
+
+vi32_t
+test_vec_signexti_halfword (vi16_t vra)
+{
+  return vec_signexti_halfword (vra);
+}
+
+vi32_t
+test_vec_vextsb2w (vi8_t vra)
+{
+  return vec_vextsb2w (vra);
+}
+
+vi32_t
+test_vec_signexti_byte (vi8_t vra)
+{
+  return vec_signexti_byte (vra);
+}
+
+vui32_t
+test_vec_expandm_word (vui32_t vra)
+{
+  return vec_expandm_word (vra);
+}
+
+vui32_t
+test_vexpandwm_PWR (vui32_t vra)
+{
+  return vec_vexpandwm_PWR10 (vra);
+}
+
+vui32_t
+test_splat7_u32_1 ()
+{
+  return vec_splat7_u32 (1);
+}
+
+vui32_t
+test_splat7_u32_15 ()
+{
+  return vec_splat7_u32 (15);
+}
+
+vui32_t
+test_splat7_u32_16 ()
+{
+  return vec_splat7_u32 (16);
+}
+
+vui32_t
+test_splat7_u32_17 ()
+{
+  return vec_splat7_u32 (17);
+}
+
+vui32_t
+test_splat7_u32_30 ()
+{
+  return vec_splat7_u32 (30);
+}
+
+vui32_t
+test_splat7_u32_31 ()
+{
+  return vec_splat7_u32 (31);
+}
+
+vui32_t
+test_splat7_u32_32 ()
+{
+  return vec_splat7_u32 (32);
+}
+
+vui32_t
+test_splat7_u32_33 ()
+{
+  return vec_splat7_u32 (33);
+}
+
+vui32_t
+test_splat7_u32_40 ()
+{
+  return vec_splat7_u32 (40);
+}
+
+vui32_t
+test_splat7_u32_47 ()
+{
+  return vec_splat7_u32 (47);
+}
+
+vui32_t
+test_splat7_u32_48 ()
+{
+  return vec_splat7_u32 (48);
+}
+
+vui32_t
+test_splat7_u32_49 ()
+{
+  return vec_splat7_u32 (49);
+}
+
+vui32_t
+test_splat7_u32_56 ()
+{
+  return vec_splat7_u32 (56);
+}
+
+vui32_t
+test_splat7_u32_63 ()
+{
+  return vec_splat7_u32 (63);
+}
+
+vui32_t
+test_splat7_u32_64 ()
+{
+  return vec_splat7_u32 (64);
+}
+
+vui32_t
+test_splat7_u32_65 ()
+{
+  return vec_splat7_u32 (65);
+}
+
+vui32_t
+test_splat7_u32_72 ()
+{
+  return vec_splat7_u32 (72);
+}
+
+vui32_t
+test_splat7_u32_79 ()
+{
+  return vec_splat7_u32 (79);
+}
+
+vui32_t
+test_splat7_u32_80 ()
+{
+  return vec_splat7_u32 (80);
+}
+
+vui32_t
+test_splat7_u32_81 ()
+{
+  return vec_splat7_u32 (81);
+}
+
+vui32_t
+test_splat7_u32_88 ()
+{
+  return vec_splat7_u32 (88);
+}
+
+vui32_t
+test_splat7_u32_95 ()
+{
+  return vec_splat7_u32 (95);
+}
+
+vui32_t
+test_splat7_u32_96 ()
+{
+  return vec_splat7_u32 (96);
+}
+
+vui32_t
+test_splat7_u32_97 ()
+{
+  return vec_splat7_u32 (97);
+}
+
+vui32_t
+test_splat7_u32_104 ()
+{
+  return vec_splat7_u32 (104);
+}
+
+vui32_t
+test_splat7_u32_111 ()
+{
+  return vec_splat7_u32 (111);
+}
+
+vui32_t
+test_splat7_u32_112 ()
+{
+  return vec_splat7_u32 (112);
+}
+
+vui32_t
+test_splat7_u32_127 ()
+{
+  return vec_splat7_u32 (127);
+}
+
+// Power8 implementation of vec_sigexti()
+vi32_t
+test_vextsb2w_V1 (vi8_t vra)
+{
+  const vui32_t v24 = vec_splat_u32 (24-32);
+  vi32_t tmp;
+
+  tmp = vec_sl ((vi32_t) vra, v24);
+  return vec_sra (tmp, v24);
+}
+
+vi32_t
+test_vextsb2w_v0 (vi8_t vra)
+{
+  vi32_t tmp;
+
+  tmp = (vi32_t) vec_slwi ((vui32_t) vra, 24);
+  return vec_srawi (tmp, 24);
+}
+
+vi32_t
+test_vextsh2w (vi16_t vra)
+{
+  vi32_t tmp;
+
+  tmp = (vi32_t) vec_slwi ((vui32_t) vra, 16);
+  return vec_srawi (tmp, 16);
+}
+
+vi32_t
+test_splat6_s32_1 ()
+{
+  return vec_splat6_s32 (1);
+}
+
+vi32_t
+test_splat6_s32_16 ()
+{
+  return vec_splat6_s32 (16);
+}
+
+vi32_t
+test_splat6_s32_30 ()
+{
+  return vec_splat6_s32 (30);
+}
+
+vi32_t
+test_splat6_s32_31 ()
+{
+  return vec_splat6_s32 (31);
+}
+
+vi32_t
+test_splat6_s32_m16 ()
+{
+  return vec_splat6_s32 (-16);
+}
+
+vi32_t
+test_splat6_s32_m31 ()
+{
+  return vec_splat6_s32 (-31);
+}
+
+vi32_t
+test_splat6_s32_m32 ()
+{
+  return vec_splat6_s32 (-32);
+}
+
+vui32_t
+test_splat6_u32_1 ()
+{
+  return vec_splat6_u32 (1);
+}
+
+vui32_t
+test_splat6_u32_15 ()
+{
+  return vec_splat6_u32 (15);
+}
+
+vui32_t
+test_splat6_u32_16 ()
+{
+  return vec_splat6_u32 (16);
+}
+
+vui32_t
+test_splat6_u32_32 ()
+{
+  return vec_splat6_u32 (32);
+}
+
+vui32_t
+test_splat6_u32_33 ()
+{
+  return vec_splat6_u32 (33);
+}
+
+vui32_t
+test_splat6_u32_46 ()
+{
+  return vec_splat6_u32 (46);
+}
+
+vui32_t
+test_splat6_u32_47 ()
+{
+  return vec_splat6_u32 (47);
+}
+
+vui32_t
+test_splat6_u32_48 ()
+{
+  return vec_splat6_u32 (48);
+}
+
+vui32_t
+test_splat6_u32_52 ()
+{
+  return vec_splat6_u32 (52);
+}
+
+vui32_t
+test_splat6_u32_63 ()
+{
+  return vec_splat6_u32 (63);
+}
+
+vi32_t
+test_vec_splati_V0_255 ()
+{
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  return vec_splati (255);
+#elif defined (__GNUC__) && (__GNUC__ >= 9)
+  return vec_splats ((int) 255);
+#else
+  return (vi32_t) {255};
+#endif
+}
+
+vi32_t
+test_vec_splati_V0_32 ()
+{
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  return vec_splati (32);
+#else //if defined (__GNUC__) && (__GNUC__ >= 9)
+  return vec_splats ((int) 32);
+#endif
+}
+
+vi32_t
+test_vec_splati_V0_15 ()
+{
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  return vec_splati (15);
+#else //if defined (__GNUC__) && (__GNUC__ >= 9)
+  return vec_splat_s32 (15);
+#endif
+}
+
+vi32_t
+test_vec_splati_V0_23 ()
+{
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  return vec_splati (23);
+#elif defined (_ARCH_PWR9) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  vi8_t tmp = vec_splats ((signed char) 23);
+  return vec_signexti (tmp);
+#else
+  return vec_splats ((int) 23);
+#endif
+}
+
 vui32_t
 test_vec_popcntw (vui32_t vra)
 {
@@ -671,6 +1051,45 @@ test_mrgew (vui32_t a, vui32_t b)
 }
 
 vui32_t
+test_vec_mrgew_V0 (vui32_t vra, vui32_t vrb)
+{
+  vui32_t res;
+#ifdef _ARCH_PWR8
+#ifdef vec_vmrgew
+  res = vec_vmrgew (vra, vrb);
+#else
+  __asm__(
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      "vmrgow %0,%2,%1;\n"
+#else
+      "vmrgew %0,%1,%2;\n"
+#endif
+      : "=v" (res)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#elif defined (_ARCH_PWR7)
+  vui64_t tmph, tmpl;
+
+  // even words are in the high DW, Odd in the low DW
+  tmph = (vui64_t) vec_mergeh (vra, vrb);
+  tmpl = (vui64_t) vec_mergel (vra, vrb);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  // return the odd words with xxpermdi
+  res  = (vui32_t) vec_mergel (tmph, tmpl);
+#else
+  res  = (vui32_t) vec_mergeh (tmph, tmpl);
+#endif
+#else // _ARCH_PWR6/970
+  const vui32_t vconstp =
+      CONST_VINT32_W(0x00010203, 0x10111213, 0x08090a0b, 0x18191a1b);
+  res = (vui32_t) vec_perm ((vui8_t) vra, (vui8_t) vrb, (vui8_t) vconstp);
+#endif
+  return (res);
+}
+
+vui32_t
 test_mrgow (vui32_t a, vui32_t b)
 {
   return vec_mrgow (a, b);
@@ -728,6 +1147,24 @@ vui32_t
 __test_muluwm (vui32_t a, vui32_t b)
 {
   return vec_muluwm (a, b);
+}
+
+vui32_t
+test_rlwi_1 (vui32_t a)
+{
+  return vec_rlwi (a, 1);
+}
+
+vui32_t
+test_rlwi_16 (vui32_t a)
+{
+  return vec_rlwi (a, 16);
+}
+
+vui32_t
+test_rlwi_24 (vui32_t a)
+{
+  return vec_rlwi (a, 24);
 }
 
 vui32_t

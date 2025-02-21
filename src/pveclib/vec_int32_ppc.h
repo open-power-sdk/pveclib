@@ -423,6 +423,7 @@ static inline vui32_t vec_popcntw (vui32_t vra);
 #undef vec_popcntw
 #define vec_popcntw __builtin_vec_vpopcntw
 #endif
+static inline vui32_t vec_slwi (vui32_t vra, const unsigned int shb);
 static inline vi32_t vec_srawi (vi32_t vra, const unsigned int shb);
 static inline vui64_t
 vec_vlxsiwzx (const signed long long ra, const unsigned int *rb);
@@ -435,6 +436,10 @@ vec_vsstwso (vui64_t xs, unsigned int *array,
 	      const long long offset0, const long long offset1);
 static inline void
 vec_vstxsiwx (vui32_t xs, const signed long long ra, unsigned int *rb);
+static inline vui32_t vec_vrlw_byte (vui32_t vra, vui8_t vrb);
+static inline vui32_t vec_vslw_byte (vui32_t vra, vui8_t vrb);
+static inline vi32_t vec_vsraw_byte (vi32_t vra, vui8_t vrb);
+static inline vui32_t vec_vsrw_byte (vui32_t vra, vui8_t vrb);
 ///@endcond
 
 /** \brief Vector Absolute Difference Unsigned Word.
@@ -491,6 +496,7 @@ vec_absduw (vui32_t vra, vui32_t vrb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 16-26 |   NA     |
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
@@ -537,6 +543,7 @@ vec_clzw (vui32_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 17-26 |   NA     |
  *  |power8   |  6-8  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
@@ -568,6 +575,27 @@ vec_ctzw (vui32_t vra)
   r = vec_ctzw_PWR8 (vra);
 #endif
   return ((vui32_t) r);
+}
+
+/** \brief Vector Expand Mask Word.
+ *
+ *  Create word element masks based on high-order (sign) bit of
+ *  each word element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned int.
+ *  @return vector word mask from the sign bit.
+ */
+static inline vui32_t
+vec_expandm_word (vui32_t vra)
+{
+  return vec_vexpandwm_PWR10 (vra);
 }
 
 /** \brief Vector Merge Algebraic High Words.
@@ -686,6 +714,7 @@ vec_mrgalw (vui64_t vra, vui64_t vrb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 1/cycle  |
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
  *
@@ -712,7 +741,15 @@ vec_mrgew (vui32_t vra, vui32_t vrb)
       "v" (vrb)
       : );
 #endif
-#else
+#elif defined (_ARCH_PWR7)
+  vui64_t tmph, tmpl;
+  // PWR7 does not have vmrgew but does have xxmrghw/xxmrglw/xxmrghd
+  // even words are in the high DW, Odd in the low DW
+  tmph = (vui64_t) vec_mergeh (vra, vrb);
+  tmpl = (vui64_t) vec_mergel (vra, vrb);
+  // merge the high DWs to collect the even words
+  res  = (vui32_t) vec_mergeh (tmph, tmpl);
+#else // _ARCH_PWR6/970
   const vui32_t vconstp =
       CONST_VINT32_W(0x00010203, 0x10111213, 0x08090a0b, 0x18191a1b);
   res = (vui32_t) vec_perm ((vui8_t) vra, (vui8_t) vrb, (vui8_t) vconstp);
@@ -736,6 +773,7 @@ vec_mrgew (vui32_t vra, vui32_t vrb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 1/cycle  |
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
  *
@@ -762,7 +800,15 @@ vec_mrgow (vui32_t vra, vui32_t vrb)
       "v" (vrb)
       : );
 #endif
-#else
+#elif defined (_ARCH_PWR7)
+  vui64_t tmph, tmpl;
+  // PWR7 does not have vmrgow but does have xxmrghw/xxmrglw/xxmrgld
+  // even words are in the high DW, Odd in the low DW
+  tmph = (vui64_t) vec_mergeh (vra, vrb);
+  tmpl = (vui64_t) vec_mergel (vra, vrb);
+  // merge the low DWs to collect the odd words
+  res  = (vui32_t) vec_mergel (tmph, tmpl);
+#else // _ARCH_PWR6/970
   const vui32_t vconstp =
       CONST_VINT32_W(0x04050607, 0x14151617, 0x0c0d0e0f, 0x1c1d1e1f);
   res = (vui32_t) vec_perm ((vui8_t) vra, (vui8_t) vrb, (vui8_t) vconstp);
@@ -1115,6 +1161,7 @@ vec_muluwm (vui32_t a, vui32_t b)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 13-20 |   NA     |
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
  *
@@ -1202,8 +1249,10 @@ vec_revbw (vui32_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Vector signed int.
  *  @return vector bool int reflecting the sign bits of each
@@ -1213,24 +1262,194 @@ vec_revbw (vui32_t vra)
 static inline vb32_t
 vec_setb_sw (vi32_t vra)
 {
-  vb32_t result;
+  return (vb32_t) vec_expandm_word ((vui32_t) vra);
+}
 
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-      result = (vb32_t) vec_expandm ((vui32_t) vra);
+/** \brief Vector Sign Extent to Int (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to word length
+ *  in the result vector. Each word element is the sign-extending
+ *  low-order byte of the corresponding word element of vra.
+ *
+ *  \note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of char.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed int.
+ */
+static inline vi32_t
+vec_signexti_byte (vi8_t vra)
+{
+  vi32_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (__GNUC__ >= 11)
+      result = vec_signexti (vra);
 #else
   __asm__(
-      "vexpandwm %0,%1"
+      "vextsb2w %0,%1;\n"
       : "=v" (result)
       : "v" (vra)
       : );
 #endif
 #else
-  // Compare signed word less than zero
-  const vi32_t zero = {0, 0, 0, 0};
-  result = vec_cmplt (vra, zero);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = (vi32_t) vec_slwi ((vui32_t) vra, 24);
+#else
+  result = (vi32_t) vra;
+#endif
+  result = vec_srawi (result, 24);
 #endif
   return result;
+}
+
+/** \brief Vector Sign Extent to Int (from halfword).
+ *
+ *  Sign-extend smaller elements of a source vector to word length
+ *  in the result vector. Each word element is the sign-extending
+ *  low-order halfword of the corresponding word element of vra.
+ *
+ *  \note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of short.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed short.
+ *  @return 128-bit vector signed int.
+ */
+static inline vi32_t
+vec_signexti_halfword (vi16_t vra)
+{
+  vi32_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+    && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (__GNUC__ >= 11)
+      result = vec_signexti (vra);
+#else
+  __asm__(
+      "vextsh2w %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#endif
+#else
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = (vi32_t) vec_slwi ((vui32_t) vra, 16);
+#else
+  result = (vi32_t) vra;
+#endif
+  result = vec_srawi (result, 16);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to Int (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to word length
+ *  in the result vector. Each word element is the sign-extending
+ *  low-order byte of the corresponding word element of vra.
+ *
+ *  \note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of int.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed int.
+ */
+static inline vi32_t
+vec_vextsb2w (vi8_t vra)
+{
+  vi32_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vextsb2w %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+  result = (vi32_t) vec_slwi ((vui32_t) vra, 24);
+  result = vec_srawi (result, 24);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to Int (from halfword).
+ *
+ *  Sign-extend smaller elements of a source vector to word length
+ *  in the result vector. Each word element is the sign-extending
+ *  low-order byte of the corresponding word element of vra.
+ *
+ *  \note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of int.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed int.
+ */
+static inline vi32_t
+vec_vextsh2w (vi16_t vra)
+{
+  vi32_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vextsh2w %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#else
+  result = (vi32_t) vec_slwi ((vui32_t) vra, 16);
+  result = vec_srawi (result, 16);
+#endif
+  return result;
+}
+
+/** \brief Vector Rotate left Word Immediate.
+ *
+ *  Rotate left each word element [0-3], 0-31 bits,
+ *  as specified by an immediate value.
+ *  The shift amount is a const unsigned int in the range 0-31.
+ *  A shift count of 0 returns the original value of vra.
+ *  Shift counts greater then 31 bits return zero.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  2-4  | 2/cycle  |
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  3-8  | 2/cycle  |
+ *  |power10  | 4-11  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector unsigned int.
+ *  @param shb shift amount in the range 0-31.
+ *  @return 128-bit vector unsigned int, rotated left shb bits.
+ */
+static inline vui32_t
+vec_rlwi (vui32_t vra, const unsigned int shb)
+{
+  return vec_vrlw_byte (vra, vec_splat5_u8 (shb));
 }
 
 /** \brief Vector Shift left Word Immediate.
@@ -1243,8 +1462,10 @@ vec_setb_sw (vi32_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4-11  | 2/cycle  |
- *  |power9   | 5-11  | 2/cycle  |
+ *  |power7   |  2-4  | 2/cycle  |
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  3-8  | 2/cycle  |
+ *  |power10  | 4-11  | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned int.
  *  @param shb shift amount in the range 0-31.
@@ -1253,29 +1474,16 @@ vec_setb_sw (vi32_t vra)
 static inline vui32_t
 vec_slwi (vui32_t vra, const unsigned int shb)
 {
-  vui32_t lshift;
   vui32_t result;
 
   if (shb < 32)
     {
-      /* Load the shift const in a vector.  The element shifts require
-         a shift amount for each element. For the immediate form the
-         shift constant is splatted to all elements of the
-         shift control.  */
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui32_t) vec_splat_s32(shb);
-      else
-	lshift = vec_splats ((unsigned int) shb);
-
-      /* Vector Shift right bytes based on the lower 5-bits of
-         corresponding element of lshift.  */
-      result = vec_vslw (vra, lshift);
+      result = vec_vslw_byte (vra, vec_splat5_u8 (shb));
     }
   else
     { /* shifts greater then 31 bits return zeros.  */
       result = vec_xor ((vui32_t) vra, (vui32_t) vra);
     }
-
   return (vui32_t) result;
 }
 
@@ -1290,8 +1498,10 @@ vec_slwi (vui32_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4-11  | 2/cycle  |
- *  |power9   | 5-11  | 2/cycle  |
+ *  |power7   |  2-4  | 2/cycle  |
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  3-8  | 2/cycle  |
+ *  |power10  | 4-11  | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed int.
  *  @param shb shift amount in the range 0-31.
@@ -1300,30 +1510,17 @@ vec_slwi (vui32_t vra, const unsigned int shb)
 static inline vi32_t
 vec_srawi (vi32_t vra, const unsigned int shb)
 {
-  vui32_t lshift;
   vi32_t result;
 
   if (shb < 32)
     {
-      /* Load the shift const in a vector.  The element shifts require
-         a shift amount for each element. For the immediate form the
-         shift constant is splatted to all elements of the
-         shift control.  */
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui32_t) vec_splat_s32(shb);
-      else
-	lshift = vec_splats ((unsigned int) shb);
-
-      /* Vector Shift Right Algebraic Words based on the lower 5-bits
-         of corresponding element of lshift.  */
-      result = vec_vsraw (vra, lshift);
+      result = vec_vsraw_byte (vra, vec_splat5_u8 (shb));
     }
   else
     { /* shifts greater then 31 bits returns the sign bit propagated to
          all bits.   This is equivalent to shift Right Algebraic of
          31 bits.  */
-      lshift = (vui32_t) vec_splats(31);
-      result = vec_vsraw (vra, lshift);
+      result = vec_vsraw_byte (vra, vec_splat5_u8 (31));
     }
 
   return (vi32_t) result;
@@ -1339,8 +1536,10 @@ vec_srawi (vi32_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4-11  | 2/cycle  |
- *  |power9   | 5-11  | 2/cycle  |
+ *  |power7   |  2-4  | 2/cycle  |
+ *  |power8   |  2-4  | 2/cycle  |
+ *  |power9   |  3-8  | 2/cycle  |
+ *  |power10  | 4-11  | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned char.
  *  @param shb shift amount in the range 0-31.
@@ -1349,23 +1548,11 @@ vec_srawi (vi32_t vra, const unsigned int shb)
 static inline vui32_t
 vec_srwi (vui32_t vra, const unsigned int shb)
 {
-  vui32_t lshift;
   vui32_t result;
 
   if (shb < 32)
     {
-      /* Load the shift const in a vector.  The element shifts require
-         a shift amount for each element. For the immediate form the
-         shift constant is splatted to all elements of the
-         shift control.  */
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui32_t) vec_splat_s32(shb);
-      else
-	lshift = vec_splats ((unsigned int) shb);
-
-      /* Vector Shift right bytes based on the lower 5-bits of
-         corresponding element of lshift.  */
-      result = vec_vsrw (vra, lshift);
+      result = vec_vsrw_byte (vra, vec_splat5_u8 (shb));
     }
   else
     { /* shifts greater then 31 bits return zeros.  */
@@ -2741,6 +2928,154 @@ vec_vstxsiwx (vui32_t xs, const signed long long ra, unsigned int *rb)
   // store a word element at the EA (ra+rb)
   vec_ste (xss, ra, rb);
 #endif
+}
+
+/** \brief Vector Rotate Left Word by Byte.
+ *
+ *  Vector Rotate Left Doubleword 0-31 bits.
+ *  The shift amount is from bits 27-31, 59-63, 91-95 and 123-127 of vrb.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  word as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned int. Also it is
+ *  much easier to splat byte constants than word constants.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned long integers.
+ *  @param vrb shift amount in bits 27:31, 59:63, 91:95 and 123:127.
+ *  @return Left rotated vector unsigned int.
+ */
+static inline vui32_t
+vec_vrlw_byte (vui32_t vra, vui8_t vrb)
+{
+  vui32_t r;
+#ifdef __clang__
+  r = vec_rl (vra, (vui32_t) vrb);
+#else
+  __asm__(
+      "vrlw %0,%1,%2;"
+      : "=v" (r)
+      : "v" (vra),
+	"v" (vrb)
+      : );
+#endif
+  return (r);
+}
+
+/** \brief Vector Shift Left Word by Byte.
+ *
+ *  Vector Shift Left word 0-31 bits.
+ *  The shift amount is from bits 27-31, 59-63, 91-95 and 123-127 of vrb.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  word as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned int. Also it is
+ *  much easier to splat byte constants than word constants.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned long integers.
+ *  @param vrb shift amount in bits 27:31, 59:63, 91:95 and 123:127.
+ *  @return Left shifted vector unsigned int.
+ */
+static inline vui32_t
+vec_vslw_byte (vui32_t vra, vui8_t vrb)
+{
+  vui32_t r;
+#ifdef __clang__
+  r = vec_sl (vra, (vui32_t) vrb);
+#else
+  __asm__(
+      "vslw %0,%1,%2;"
+      : "=v" (r)
+      : "v" (vra),
+	"v" (vrb)
+      : );
+#endif
+  return (r);
+}
+
+/** \brief Vector Shift Right Word by Byte.
+ *
+ *  Vector Shift Right word 0-31 bits.
+ *  The shift amount is from bits 27-31, 59-63, 91-95 and 123-127 of vrb.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  word as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned int. Also it is
+ *  much easier to splat byte constants than word constants.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned long integers.
+ *  @param vrb shift amount in bits 27:31, 59:63, 91:95 and 123:127.
+ *  @return Right shifted vector unsigned int.
+ */
+static inline vui32_t
+vec_vsrw_byte (vui32_t vra, vui8_t vrb)
+{
+  vui32_t r;
+#ifdef __clang__
+  r = vec_sr (vra, (vui32_t) vrb);
+#else
+  __asm__(
+      "vsrw %0,%1,%2;"
+      : "=v" (r)
+      : "v" (vra),
+	"v" (vrb)
+      : );
+#endif
+  return (r);
+}
+
+/** \brief Vector Shift Right Algebraic Word by Byte.
+ *
+ *  Vector Shift Right Algebraic Word 0-31 bits.
+ *  The shift amount is from bits 27-31, 59-63, 91-95 and 123-127 of vrb.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  word as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned int. Also it is
+ *  much easier to splat byte constants than word constants.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned long integers.
+ *  @param vrb shift amount in bits 27:31, 59:63, 91:95 and 123:127.
+ *  @return Right Algebraic shifted vector unsigned int.
+ */
+static inline vi32_t
+vec_vsraw_byte (vi32_t vra, vui8_t vrb)
+{
+  vi32_t r;
+#ifdef __clang__
+  r = vec_sra (vra, (vui32_t) vrb);
+#else
+  __asm__(
+      "vsraw %0,%1,%2;"
+      : "=v" (r)
+      : "v" (vra),
+	"v" (vrb)
+      : );
+#endif
+  return (r);
 }
 
 /** \brief Vector Sum-across Half Signed Word Saturate.

@@ -1946,6 +1946,7 @@ static inline vui64_t vec_sldi (vui64_t vra, const unsigned int shb);
 static inline vi64_t vec_splat_s64 (const int sim);
 static inline vui64_t vec_splat_u64 (const int sim);
 static inline vui64_t vec_splatd (vui64_t vra, const int ctl);
+static inline vi64_t vec_sradi (vi64_t vra, const unsigned int shb);
 static inline vui64_t vec_subudm (vui64_t a, vui64_t b);
 static inline vui64_t vec_vdiveud_inline (vui64_t x, vui64_t z);
 static inline vui64_t vec_vdivud_inline (vui64_t y, vui64_t z);
@@ -1983,8 +1984,10 @@ vec_absdud (vui64_t vra, vui64_t vrb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 8-12  |   NA     |
  *  |power8   | 2     | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  @param a 128-bit vector long int.
  *  @param b 128-bit vector long int.
@@ -2027,6 +2030,7 @@ vec_addudm(vui64_t a, vui64_t b)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 22-33 |   NA     |
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
  *
@@ -2074,6 +2078,7 @@ vec_clzd (vui64_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 20-34 |   NA     |
  *  |power8   | 8-10  |2/2 cycles|
  *  |power9   |   3   | 2/cycle  |
  *
@@ -3613,6 +3618,27 @@ vec_divqud_inline (vui128_t x_y, vui64_t z)
 extern vui64_t
 vec_divud (vui64_t y, vui64_t z);
 
+/** \brief Vector Expand Mask Doubleword.
+ *
+ *  Create doubleword element masks based on high-order (sign) bit of
+ *  each doubleword element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned long long.
+ *  @return vector doubleword mask from the sign bit.
+ */
+static inline vui64_t
+vec_expandm_doubleword (vui64_t vra)
+{
+  return vec_vexpanddm_PWR10 (vra);
+}
+
 /** \brief Vector Maximum Signed Doubleword.
  *
  *  For each doubleword element [0|1] of vra and vrb compare as
@@ -4294,6 +4320,7 @@ vec_permdi (vui64_t vra, vui64_t vrb, const int ctl)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 20-27 |   NA     |
  *  |power8   |   4   |2/2 cycles|
  *  |power9   |   3   | 2/cycle  |
  *
@@ -4394,8 +4421,10 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   | 3 - 6 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Vector signed long long.
  *  @return vector bool long long reflecting the sign bits of each
@@ -4405,31 +4434,7 @@ static inline vi64_t vec_vsrad (vi64_t vra, vui64_t vrb);
 static inline vb64_t
 vec_setb_sd (vi64_t vra)
 {
-  vb64_t result;
-
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
-#if (__GNUC__ >= 12)
-      result = (vb64_t) vec_expandm ((vui64_t) vra);
-#else
-  __asm__(
-      "vexpanddm %0,%1;\n"
-      : "=v" (result)
-      : "v" (vra)
-      : );
-#endif
-#elif defined (_ARCH_PWR8)
-  // Compare signed doubleword less than zero
-  const vi64_t zero = {0, 0};
-  result = vec_cmpltsd (vra, zero);
-#else // ARCH_PWR7 or older, without compare signed doubleword
-  const vui8_t rshift =  vec_splat_u8( 7 );
-  const vui8_t sperm = { 0,0,0,0, 0,0,0,0, 8,8,8,8, 8,8,8,8 };
-  // Splat the high byte of each doubleword across.
-  vui8_t splat = vec_perm ((vui8_t) vra, (vui8_t) vra, sperm);
-  // Vector Shift Right Algebraic Bytes 7-bits.
-  result = (vb64_t) vec_sra (splat, rshift);
-#endif
-  return result;
+  return (vb64_t) vec_expandm_doubleword ((vui64_t) vra);
 }
 
 /** \brief Vector Rotate left Doubleword Immediate.
@@ -4442,8 +4447,10 @@ vec_setb_sd (vi64_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   |  6-10 | 2/cycle  |
+ *  |power8   |  2-10 | 2/cycle  |
+ *  |power9   |  2-7  | 2/cycle  |
+ *  |power10  |  4-11 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb rotate amount in the range 0-63.
@@ -4452,23 +4459,16 @@ vec_setb_sd (vi64_t vra)
 static inline vui64_t
 vec_rldi (vui64_t vra, const unsigned int shb)
 {
-  vui64_t lshift;
   vui64_t result;
 
   if ((shb%64) != 0)
     {
-      /* Load the rotate const in a vector.  The element rotates require
-         a rotate amount for each element. For the immediate form the
-         rotate constant is splatted to all elements of the
-         rotate control.  */
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui64_t) vec_splat_s32(shb);
-      else
-	lshift = vec_splats ((unsigned long long) shb);
-
-      /* Vector Shift right bytes based on the lower 6-bits of
-         corresponding element of lshift.  */
-      result = vec_vrld (vra, lshift);
+#if defined(_ARCH_PWR8)
+      //result = vec_vrld_byte (vra, vec_splat6_u8 (shb));
+      result = vec_rldi_PWR8 (vra, (shb%64));
+#else
+      result = vec_rldi_PWR7 (vra, (shb%64));
+#endif
     }
   else
     { /* Rotation of 0 bits returns vra unchanged.  */
@@ -4488,8 +4488,10 @@ vec_rldi (vui64_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   |  6-12 | 2/cycle  |
+ *  |power8   |  2-10 | 2/cycle  |
+ *  |power9   |  2-7  | 2/cycle  |
+ *  |power10  |  4-11 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
@@ -4506,52 +4508,10 @@ vec_sldi (vui64_t vra, const unsigned int shb)
          a shift amount for each element. For the immediate form the
          shift constant is splatted to all elements of the
          shift control.  */
-#ifdef _ARCH_PWR8
-      vui64_t lshift;
-
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = (vui64_t) vec_splat_s32(shb);
-      else
-	lshift = vec_splats ((unsigned long long) shb);
-      /* Vector Shift left doubleword from the lower 6-bits of
-         corresponding element of lshift.  */
-      result = vec_vsld (vra, lshift);
+#if defined(_ARCH_PWR8)
+      result = vec_vsld_PWR8 (vra, vec_splat6_u8 (shb));
 #else
-      /*
-       * POWER7 and earlier do not have vsld. So use the vector shift
-       * left bit/octet instructions. But these may shift bits from
-       * element 1 in the low bits of element 0. So generate a mask of
-       * '1's, shifted left by the same shb and rotated into the
-       * element 0 position.
-       */
-      vui8_t lshift;
-
-      if (__builtin_constant_p (shb) && (shb < 16))
-	lshift = vec_splat_u8(shb);
-      else
-	lshift = vec_splats ((unsigned char) shb);
-
-      {
-	vui8_t sl_a;
-	vui8_t sl_m = (vui8_t) vec_splat_s8(-1);
-
-	sl_a = ((vui8_t) vra);
-	if (shb > 7)
-	  {
-	    /* Vector Shift Left By Octet by bits 121-124 of lshift.  */
-	    sl_m = vec_slo (sl_m, lshift);
-	    sl_a = vec_slo ((vui8_t) vra, lshift);
-	  }
-	if ((shb & 7) != 0)
-	  {
-	    /* Vector Shift Left by bits 125-127 of lshift.  */
-	    sl_m = vec_sll (sl_m, lshift);
-	    sl_a = vec_sll (sl_a, lshift);
-	  }
-	/* Rotate mask and clear low order bits of Element 0. */
-	sl_m = vec_sld (sl_m, sl_m, 8);
-	result = (vui64_t) vec_and (sl_a, sl_m);
-      }
+      result = vec_sldi_PWR7 (vra, (shb));
 #endif
     }
   else
@@ -4600,6 +4560,171 @@ static inline vui64_t
 vec_selud (vui64_t vra, vui64_t vrb, vb64_t vrc)
 {
   return (vui64_t) vec_sel ((vui32_t) vra, (vui32_t)vrb, (vui32_t)vrc);
+}
+
+/** \brief Vector Sign Extent to long (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each doubleword element is the
+ *  sign-extending low-order byte of the corresponding doubleword
+ *  element of vra.
+ *
+ *  \note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of char.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 8 - 10| 1/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed long.
+ */
+static inline vi64_t
+vec_signextll_byte (vi8_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (__GNUC__ >= 11)
+      result = vec_signextll (vra);
+#else
+  __asm__(
+      "vextsb2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif defined (_ARCH_PWR8)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 56);
+#else
+  result = (vi64_t) vra;
+#endif
+  result = vec_sradi (result, 56);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vi32_t sexpw;
+  vui32_t expmw;
+  // extend the bytes to words
+  sexpw = vec_signexti_byte (vra);
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) sexpw);
+  // merge the even word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgew (expmw, (vui32_t) sexpw);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to long long (from halfword).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each doubleword element is the
+ *  sign-extending low-order halfword of the corresponding doubleword
+ *  element of vra.
+ *
+ *  \note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of short.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 8 - 10| 1/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed short.
+ *  @return 128-bit vector signed long.
+ */
+static inline vi64_t
+vec_signextll_halfword (vi16_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (__GNUC__ >= 11)
+      result = vec_signextll (vra);
+#else
+  __asm__(
+      "vextsh2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif defined (_ARCH_PWR8)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 48);
+#else
+  result = (vi64_t) vra;
+#endif
+  result = vec_sradi (result, 48);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vi32_t sexpw;
+  vui32_t expmw;
+  // extend the halfwords to words
+  sexpw = vec_signexti_halfword (vra);
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) sexpw);
+  // merge the even word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgew (expmw, (vui32_t) sexpw);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to long long (from word).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each doubleword element is the
+ *  sign-extending low-order word of the corresponding doubleword
+ *  element of vra.
+ *
+ *  \note This implementation matches the Endian-Sensitive semantics
+ *  of the Intrinsic Reference. As if you loaded vra from an array
+ *  of int.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 1/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed int.
+ *  @return 128-bit vector signed long long.
+ */
+static inline vi64_t
+vec_signextll_word (vi32_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (__GNUC__ >= 11)
+      result = vec_signextll (vra);
+#else
+  __asm__(
+      "vextsw2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#endif
+#elif defined (_ARCH_PWR8)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 32);
+#else
+  result = (vi64_t) vra;
+#endif
+  result = vec_sradi (result, 32);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vui32_t expmw;
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) vra);
+  // merge the even word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgew (expmw, (vui32_t) vra);
+#endif
+  return result;
 }
 
 /** \brief Vector splat doubleword.
@@ -4839,8 +4964,10 @@ vec_spltd (vui64_t vra, const int ctl)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   |  6-12 | 2/cycle  |
+ *  |power8   |  2-10 | 2/cycle  |
+ *  |power9   |  2-7  | 2/cycle  |
+ *  |power10  |  4-11 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
@@ -4853,60 +4980,10 @@ vec_srdi (vui64_t vra, const unsigned int shb)
 
   if (shb < 64)
     {
-      /* Load the shift const in a vector.  The element shifts require
-         a shift amount for each element. For the immediate form the
-         shift constant is splatted to all elements of the
-         shift control.  */
-#ifdef _ARCH_PWR8
-      vui64_t rshift;
-
-#if defined (__GNUC__) && (__GNUC__ < 8)
-      if (__builtin_constant_p (shb) && (shb < 16))
-	rshift = (vui64_t) vec_splat_s32(shb);
-      else
-	rshift = vec_splats ((unsigned long long) shb);
+#if defined(_ARCH_PWR8)
+      result = vec_vsrd_PWR8 (vra, vec_splat6_u8 (shb));
 #else
-      rshift = CONST_VINT128_DW (shb, shb);
-#endif
-      /* Vector Shift right bytes based on the lower 6-bits of
-         corresponding element of rshift.  */
-      result = vec_vsrd (vra, rshift);
-#else
-      /*
-       * POWER7 and earlier do not have vsrd. So use the vector shift
-       * right bit/octet instructions. But these may shift bits from
-       * element 0 in the high bits of element 1. So generate a mask of
-       * '1's, shifted right by the same shb and rotated into the
-       * element 1 position.
-       */
-      vui8_t rshift;
-
-      if (__builtin_constant_p (shb) && (shb < 16))
-	rshift = vec_splat_u8(shb);
-      else
-	rshift = vec_splats ((unsigned char) shb);
-
-      {
-	vui8_t sr_a;
-	vui8_t sr_m = (vui8_t) vec_splat_s8(-1);
-
-	sr_a = ((vui8_t) vra);
-	if (shb > 7)
-	  {
-	    /* Vector Shift Right By Octet by bits 121-124 of rshift.  */
-	    sr_m = vec_sro (sr_m, rshift);
-	    sr_a = vec_sro ((vui8_t) vra, rshift);
-	  }
-	if ((shb & 7) != 0)
-	  {
-	    /* Vector Shift Right by bits 125-127 of rshift.  */
-	    sr_m = vec_srl (sr_m, rshift);
-	    sr_a = vec_srl (sr_a, rshift);
-	  }
-	/* Rotate mask and clear high order bits of Element 1. */
-	sr_m = vec_sld (sr_m, sr_m, 8);
-	result = (vui64_t) vec_and (sr_a, sr_m);
-      }
+      result = vec_srdi_PWR7 (vra, (shb));
 #endif
     }
   else
@@ -4927,8 +5004,10 @@ vec_srdi (vui64_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-4   | 2/cycle  |
- *  |power9   | 2-5   | 2/cycle  |
+ *  |power7   | 12-18 | 2/cycle  |
+ *  |power8   |  2-10 | 2/cycle  |
+ *  |power9   |  2-7  | 2/cycle  |
+ *  |power10  |  4-11 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed long int.
  *  @param shb shift amount in the range 0-63.
@@ -4937,35 +5016,23 @@ vec_srdi (vui64_t vra, const unsigned int shb)
 static inline vi64_t
 vec_sradi (vi64_t vra, const unsigned int shb)
 {
-  vui64_t rshift;
   vi64_t result;
 
   if (shb < 64)
     {
-      /* Load the shift const in a vector.  The element shifts require
-         a shift amount for each element. For the immediate form the
-         shift constant is splatted to all elements of the
-         shift control.  */
-#if defined (__GNUC__) && (__GNUC__ < 8)
-      if (__builtin_constant_p (shb) && (shb < 16))
-	rshift = (vui64_t) vec_splat_s32(shb);
-      else
-	rshift = vec_splats ((unsigned long long) shb);
+#if  defined(_ARCH_PWR8)
+      result = vec_vsrad_PWR8 (vra, vec_splat6_u8 (shb));
 #else
-      rshift = CONST_VINT128_DW (shb, shb);
+      result = vec_sradi_PWR7 (vra, shb);
 #endif
-      /* Vector Shift Right Algebraic Doublewords based on the lower 6-bits
-         of corresponding element of rshift.  */
-      result = vec_vsrad (vra, rshift);
     }
   else
     { /* shifts greater then 63 bits returns the sign bit propagated to
-         all bits.   This is equivalent to shift Right Algebraic of
-         63 bits.  */
-      rshift = (vui64_t) vec_splats(63);
-      result = vec_vsrad (vra, rshift);
+         all bits. This is equivalent to shift Right Algebraic of
+         63 bits or expand mask.  */
+      // result = vec_vsrad_PWR8 (vra, vec_splat6_u8 (63));
+      result = (vi64_t) vec_vexpanddm_PWR10 ((vui64_t) vra);
     }
-
   return (vi64_t) result;
 }
 
@@ -4976,8 +5043,10 @@ vec_sradi (vi64_t vra, const unsigned int shb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
+ *  |power7   | 8-12  |   NA     |
  *  |power8   | 2     | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  For POWER8 (PowerISA 2.07B) or later use the Vector Subtract
  *  Unsigned Doubleword Modulo (<B>vsubudm</B>) instruction. Otherwise
@@ -5600,6 +5669,7 @@ vec_vpkudum (vui64_t vra, vui64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  \note Use vec_vrld naming but only
  *  if the compiler does not define it in <altivec.h>.
@@ -5643,6 +5713,59 @@ vec_vrld (vui64_t vra, vui64_t vrb)
 }
 #endif
 
+/** \brief Vector Rotate Left Doubleword by Byte.
+ *
+ *  Vector Rotate Left Doubleword 0-63 bits.
+ *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  \note The PowerISA only requires the low order 6-bits of each
+ *  doubleword as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned long long. Also it is
+ *  much easier to splat byte constants than doubleword constants.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
+ *  @return Left shifted vector unsigned long.
+ */
+static inline vui64_t
+vec_vrld_dep (vui64_t vra, vui8_t vrb)
+{
+  vui64_t r;
+#ifdef _ARCH_PWR8
+#ifdef __clang__
+  r = vec_rl (vra, (vui64_t) vrb);
+#else
+  __asm__(
+      "vrld %0,%1,%2;"
+      : "=v" (r)
+      : "v" (vra),
+	"v" (vrb)
+      : );
+#endif
+#else
+  vui64_t hd, ld;
+  vui32_t t1, t2;
+  vui8_t shh, shl;
+
+  shh = vec_splat ((vui8_t) vrb, VEC_BYTE_L_DWH);
+  shl = vec_splat ((vui8_t) vrb, VEC_BYTE_L_DWL);
+  hd = vec_xxspltd (vra, VEC_DW_H);
+  ld = vec_xxspltd (vra, VEC_DW_L);
+  t1 = vec_vslo ((vui32_t)hd, shh);
+  t2 = vec_vslo ((vui32_t)ld, shl);
+  t1 = vec_vsl (t1, shh);
+  t2 = vec_vsl (t2, shl);
+  r = vec_mrghd ((vui64_t)t1, (vui64_t)t2);
+#endif
+  return (r);
+}
+
 /** \brief Vector Shift Left Doubleword.
  *
  *  Vector Shift Left Doubleword 0-63 bits.
@@ -5652,6 +5775,7 @@ vec_vrld (vui64_t vra, vui64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  \note Can not use vec_sld naming here as that would conflict
  *  with the generic Shift Left Double Vector. Use vec_vsld but only
@@ -5710,6 +5834,73 @@ vec_vsld (vui64_t vra, vui64_t vrb)
 }
 #endif
 
+/** \brief Vector Shift Left Doubleword by Byte.
+ *
+ *  Vector Shift Left Doubleword 0-63 bits.
+ *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  \note The PowerISA only requires the low order 6-bits of each
+ *  doubleword as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned long long. Also it is
+ *  much easier to splat byte constants than doubleword constants.
+ *
+ *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
+ *  @return Left shifted vector unsigned long long.
+ */
+static inline vui64_t
+vec_vsld_dep (vui64_t vra, vui8_t vrb)
+{
+  vui64_t result;
+
+#ifdef _ARCH_PWR8
+#ifdef __clang__
+  result = vec_sl (vra, (vui64_t) vrb);
+#else
+  __asm__(
+      "vsld %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  vui8_t  vsh_h, vsh_l;
+  vui8_t  vr_h, vr_l;
+  vui64_t sel_mask = CONST_VINT128_DW(0, -1LL);
+  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+
+  /* constrain the dword shift amounts to 0-63.  */
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
+  /* Isolate the high dword so that bits from the low dword
+   * do not contaminate the result.  */
+  vr_h = vec_andc ((vui8_t) vra, (vui8_t) sel_mask);
+  /* The low dword is just vra as the 128-bit shift left generates
+   * '0's on the right and the final merge (vec_sel)
+   * cleans up 64-bit overflow on the left.  */
+  vr_l  = (vui8_t) vra;
+  /* The vsr instruction only works correctly if the bit shift
+   * value is splatted to each byte of the vector.  */
+  vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
+  vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
+  /* Shift the high dword by vsh_h.  */
+  vr_h = vec_vslo (vr_h,  vsh_h);
+  vr_h = vec_vsl  (vr_h, vsh_h);
+  /* Shift the low dword by vsh_l.  */
+  vr_l = vec_vslo (vr_l,  vsh_l);
+  vr_l = vec_vsl  (vr_l, vsh_l);
+  /* Merge the dwords after shift.  */
+  result = (vui64_t) vec_sel (vr_h, vr_l, (vui8_t) sel_mask);
+#endif
+  return ((vui64_t) result);
+}
+
 /** \brief Vector Shift Right Algebraic Doubleword.
  *
  *  Vector Shift Right Algebraic Doubleword 0-63 bits.
@@ -5719,6 +5910,7 @@ vec_vsld (vui64_t vra, vui64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  \note Use the vec_vsrad for consistency with vec_vsld above.
  *  Define vec_vsrad only if the compiler does not define it in
@@ -5782,6 +5974,78 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
 }
 #endif
 
+/** \brief Vector Shift Right Algebraic Doubleword by Byte.
+ *
+ *  Vector Shift Right Algebraic Doubleword 0-63 bits.
+ *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  \note The PowerISA only requires the low order 6-bits of each
+ *  doubleword as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned long long. Also it is
+ *  much easier to splat byte constants than doubleword constants.
+ *
+ *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
+ *  @return Right shifted vector unsigned long.
+ */
+static inline vi64_t
+vec_vsrad_dep (vi64_t vra, vui8_t vrb)
+{
+  vi64_t result;
+
+#ifdef _ARCH_PWR8
+#ifdef __clang__bad
+// clang8/9 has code gen bug here, disabled for now
+  result = vec_sra (vra, (vui64_t) vrb);
+#else
+  __asm__(
+      "vsrad %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  vui8_t  vsh_h, vsh_l;
+  vui8_t  vr_h, vr_l;
+  vi32_t exsa;
+  vui32_t shw31 = CONST_VINT128_W (-1, -1, -1, -1);
+  vui64_t exsah, exsal;
+  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+
+  /* Need to extend each signed long int to __int128. So the unsigned
+   * (128-bit) shift right behaves as a arithmetic (64-bit) shift.  */
+  exsa = vec_vsraw ((vi32_t) vra, shw31);
+  exsah = (vui64_t) vec_vmrghw (exsa, exsa);
+  exsal = (vui64_t) vec_vmrglw (exsa, exsa);
+  /* constrain the dword shift amounts to 0-63.  */
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
+  /* The vsr instruction only works correctly if the bit shift
+   * value is splatted to each byte of the vector.  */
+  vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
+  vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
+  /* Merge the extended sign with high dword.  */
+  exsah = vec_mrghd (exsah, (vui64_t) vra);
+  /* Shift the high dword by vsh_h.  */
+  vr_h = vec_vsro ((vui8_t) exsah,  vsh_h);
+  vr_h = vec_vsr  (vr_h, vsh_h);
+  /* Merge the extended sign with high dword.  */
+  exsal = vec_pasted (exsal, (vui64_t) vra);
+  /* Shift the low dword by vsh_l.  */
+  vr_l = vec_vsro ((vui8_t) exsal, vsh_l);
+  vr_l = vec_vsr  (vr_l, vsh_l);
+  /* Merge the dwords after shift.  */
+  result = (vi64_t) vec_mrgld ((vui64_t) vr_h, (vui64_t) vr_l);
+#endif
+  return ((vi64_t) result);
+}
+
 /** \brief Vector Shift Right Doubleword.
  *
  *  Vector Shift Right Doubleword 0-63 bits.
@@ -5791,6 +6055,7 @@ vec_vsrad (vi64_t vra, vui64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |   2   | 2/cycle  |
  *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
  *
  *  \note Use the vec_vsrd for consistency with vec_vsld above.
  *  Define vec_vsrd only if the compiler does not define it in
@@ -5844,6 +6109,69 @@ vec_vsrd (vui64_t vra, vui64_t vrb)
   return ((vui64_t) result);
 }
 #endif
+
+/** \brief Vector Shift Right Doubleword by Byte.
+ *
+ *  Vector Shift Right Doubleword 0-63 bits.
+ *  The shift amount is from bits 58-63 and 122-127 of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  \note The PowerISA only requires the low order 6-bits of each
+ *  doubleword as the shift count. So there is no reason to force
+ *  the shift count to conform to be a unsigned long long. Also it is
+ *  much easier to splat byte constants than doubleword constants.
+ *
+ *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
+ *  @param vrb shift amount in bits 58:63 and 122:127.
+ *  @return Right shifted vector unsigned long.
+ */
+static inline vui64_t
+vec_vsrd_dep (vui64_t vra, vui8_t vrb)
+{
+  vui64_t result;
+
+#ifdef _ARCH_PWR8
+#ifdef __clang__
+  result = vec_sr (vra, (vui64_t) vrb);
+#else
+  __asm__(
+      "vsrd %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  vui8_t  vsh_h, vsh_l;
+  vui8_t  vr_h, vr_l;
+  vui64_t sel_mask = CONST_VINT128_DW(0, -1LL);
+  vui64_t shft_mask = CONST_VINT128_DW(63, 63);
+
+  /* constrain the dword shift amounts to 0-63.  */
+  vsh_l = vec_and ((vui8_t) vrb, (vui8_t) shft_mask);
+  /* Isolate the low dword so that bits from the high dword,
+   * do not contaminate the result.  */
+  vr_l  = vec_and ((vui8_t) vra, (vui8_t) sel_mask);
+  /* The vsr instruction only works correctly if the bit shift
+   * value is splatted to each byte of the vector.  */
+  vsh_h = vec_splat (vsh_l, VEC_BYTE_L_DWH);
+  vsh_l = vec_splat (vsh_l, VEC_BYTE_L_DWL);
+  /* Shift the high dword by vsh_h.  */
+  vr_h = vec_vsro ((vui8_t) vra,  vsh_h);
+  vr_h = vec_vsr  (vr_h, vsh_h);
+  /* Shift the low dword by vsh_l.  */
+  vr_l = vec_vsro (vr_l,  vsh_l);
+  vr_l = vec_vsr  (vr_l, vsh_l);
+  /* Merge the dwords after shift.  */
+  result = (vui64_t) vec_sel (vr_h, vr_l, (vui8_t) sel_mask);
+#endif
+  return ((vui64_t) result);
+}
 
 /** \brief Vector Scatter-Store Integer Doublewords to Vector Doublewords Offsets.
  *
@@ -6263,6 +6591,142 @@ vec_vmsumuwm (vui32_t vra, vui32_t vrb, vui64_t vrc)
   psum  = vec_addudm (peven, podd);
 
   return vec_addudm (psum, vrc);
+}
+
+/** \brief Vector Sign Extent to long long (from byte).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each word element is the
+ *  sign-extending low-order byte of the corresponding word element
+ *  of vra.
+ *
+ *  \note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of long long.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed char.
+ *  @return 128-bit vector signed long long.
+ */
+static inline vi64_t
+vec_vextsb2d (vi8_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vextsb2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#elif defined (_ARCH_PWR8)
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 56);
+  result = vec_sradi (result, 56);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vi32_t sexpw;
+  vui32_t expmw;
+  // extend the bytes to words
+  sexpw = vec_vextsb2w (vra);
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) sexpw);
+  // merge the odd word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgow (expmw, (vui32_t) sexpw);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to long long (from halfword).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each doubleword element is the
+ *  sign-extending low-order halfword of the corresponding doubleword
+ *  element of vra.
+ *
+ *  \note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of long long.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed short.
+ *  @return 128-bit vector signed long long.
+ */
+static inline vi64_t
+vec_vextsh2d (vi16_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vextsh2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#elif defined (_ARCH_PWR8)
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 48);
+  result = vec_sradi (result, 48);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vi32_t sexpw;
+  vui32_t expmw;
+  // extend the halfwords to words
+  sexpw = vec_vextsh2w (vra);
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) sexpw);
+  // merge the odd word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgow (expmw, (vui32_t) sexpw);
+#endif
+  return result;
+}
+
+/** \brief Vector Sign Extent to long long (from word).
+ *
+ *  Sign-extend smaller elements of a source vector to doubleword
+ *  length in the result vector. Each doubleword element is the
+ *  sign-extending low-order byte of the corresponding doubleword
+ *  element of vra.
+ *
+ *  \note This implementation matches the Big-Endian register semantics
+ *  of the PowerISA 3.1C Vector Extend Sign instructions. As if you
+ *  loaded vra from an array of long long.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as a vector signed short.
+ *  @return 128-bit vector signed long long.
+ */
+static inline vi64_t
+vec_vextsw2d (vi32_t vra)
+{
+  vi64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+  __asm__(
+      "vextsw2d %0,%1;\n"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#elif defined (_ARCH_PWR8)
+  result = (vi64_t) vec_sldi ((vui64_t) vra, 32);
+  result = vec_sradi (result, 32);
+#else // _ARCH_PWR7 lacks dw shifts/compares but has word forms
+  vui32_t expmw;
+  // Expand the word mask from sign of extended words
+  expmw = vec_vexpandwm_PWR7((vui32_t) vra);
+  // merge the odd word masks with the extended words for doubleword
+  result = (vi64_t) vec_mrgow (expmw, (vui32_t) vra);
+  return result;
+#endif
+  return result;
 }
 
 #endif /* VEC_INT64_PPC_H_ */

@@ -12525,6 +12525,15 @@ test_splatisd (void)
   e = (vi64_t)CONST_VINT64_DW(-16, -16);
   rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
 
+  k = (vi64_t) vec_splat_s64 (-32);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -32 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-32, -32);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
   k = (vi64_t) vec_splat_s64 (-128);
 
 #ifdef __DEBUG_PRINT__
@@ -12543,6 +12552,24 @@ test_splatisd (void)
   e = (vi64_t)CONST_VINT64_DW(-129, -129);
   rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
 
+  k = (vi64_t) vec_splat_s64 (-256);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -256 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-256, -256);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (-1024);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( -1024 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(-1024, -1024);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
   k = (vi64_t) vec_splat_s64 (15);
 
 #ifdef __DEBUG_PRINT__
@@ -12550,6 +12577,15 @@ test_splatisd (void)
   print_v2xint64 ("        =", (vui64_t) k);
 #endif
   e = (vi64_t)CONST_VINT64_DW(15, 15);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (30);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 30 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(30, 30);
   rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
 
   k = (vi64_t) vec_splat_s64 (127);
@@ -12568,6 +12604,33 @@ test_splatisd (void)
   print_v2xint64 ("        =", (vui64_t) k);
 #endif
   e = (vi64_t)CONST_VINT64_DW(128, 128);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (246);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 246 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(246, 246);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (255);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 255 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(255, 255);
+  rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vi64_t) vec_splat_s64 (1024);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_s64 ( 1024 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vi64_t)CONST_VINT64_DW(1024, 1024);
   rc += check_v2ui64x ("vec_splat_s64 :", (vui64_t) k, (vui64_t) e);
 
   return (rc);
@@ -12601,6 +12664,24 @@ test_splatiud (void)
   e = (vui64_t)CONST_VINT64_DW(15, 15);
   rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
 
+  k = (vui64_t) vec_splat_u64 (32);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 32 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(32, 32);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (64);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 64 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(64, 64);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
   k = (vui64_t) vec_splat_u64 (127);
 
 #ifdef __DEBUG_PRINT__
@@ -12617,6 +12698,24 @@ test_splatiud (void)
   print_v2xint64 ("        =", (vui64_t) k);
 #endif
   e = (vui64_t)CONST_VINT64_DW(128, 128);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (1024);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 1024 ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(1024, 1024);
+  rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
+
+  k = (vui64_t) vec_splat_u64 (0x7FFFFFFF);
+
+#ifdef __DEBUG_PRINT__
+  printf         ("vec_splat_u64 ( 0x7FFFFFFF ) \n");
+  print_v2xint64 ("        =", (vui64_t) k);
+#endif
+  e = (vui64_t)CONST_VINT64_DW(0x7FFFFFFF, 0x7FFFFFFF);
   rc += check_v2ui64x ("vec_splat_u64 :", (vui64_t) k, (vui64_t) e);
 
   return (rc);

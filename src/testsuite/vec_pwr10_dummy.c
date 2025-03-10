@@ -38,6 +38,198 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+// latency 4-7
+vi64_t
+__test_splatisd_PWR10_V3 (void)
+{
+  const int sim = -128;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return  vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim))
+    {
+      vi32_t vword;
+      vi64_t vdw;
+      vword = vec_splati (sim);
+      return  vec_signextll_word (vword);
+    }
+  else
+    return vec_splats ((signed long long) sim);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (-1, -1, -1, -128);
+  return (vi64_t) tmp_PWR10;
+#endif
+}
+
+// latency 4-7 , throughput 4
+vui64_t
+__test_splatiud_PWR10_V2 (void)
+{
+  const int sim = 125;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (sim <= 127))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim) && (sim <= 2147483647))
+    {
+      vi32_t vw;
+      vi64_t vdw;
+      vw = vec_splati (sim);
+      vdw = vec_signextll_word (vw);
+      return (vui64_t) vdw;
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+// latency 4-7 , throughput 4
+vui64_t
+__test_splatiud_PWR10_V1 (void)
+{
+  const int sim = 1023;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (sim <= 2147483647))
+    {
+      vi32_t vw;
+      vi64_t vdw;
+      vw = vec_splati (sim);
+      vdw = vec_signextll_word (vw);
+      return (vui64_t) vdw;
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+// latency 5-10
+vi128_t
+__test_splatisq_PWR10_V3 (void)
+{
+  const int sim = -2147483648;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vi64_t vdw;
+      vbyte = vec_splats ((signed char)sim);
+      vdw   = vec_signextll_byte (vbyte);
+      return vec_signextq_doubleword (vdw);
+    }
+  else if (__builtin_constant_p (sim))
+    {
+      vi32_t vword;
+      vi64_t vdw;
+      vword = vec_splati (sim);
+      vdw   = vec_signextll_word (vword);
+      return vec_signextq_doubleword (vdw);
+    }
+  else
+    return vec_splats ((signed __int128) sim);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (-1, -1, -1, -128);
+  return (vi128_t) tmp_PWR10;
+#endif
+}
+
+// latency 5-10
+vui128_t
+__test_splatiuq_PWR10_V3 (void)
+{
+  const int sim = 248;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (sim < 128))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vi64_t vdw;
+      vbyte = vec_splats ((signed char)sim);
+      vdw   = vec_signextll_byte (vbyte);
+      return (vui128_t) vec_signextq_doubleword (vdw);
+    }
+  else if (__builtin_constant_p (sim) && (sim <= 2147483647))
+    {
+      vi32_t vword;
+      vi64_t vdw;
+      vword = vec_splati (sim);
+      vdw   = vec_signextll_word (vword);
+      return (vui128_t) vec_signextq_doubleword (vdw);
+    }
+  else
+    return vec_splats ((unsigned __int128) sim);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  return tmp_PWR10;
+#endif
+}
+
+// latency 6-8
+vui128_t
+__test_splatiuq_PWR10_V2 (void)
+{
+  const int sim = 248;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (sim < 256))
+    { // Saves a word of code space
+      const vui8_t q_zero = vec_splat_u8(0);
+      vui8_t vai = vec_splats ((unsigned char)sim);
+      return (vui128_t) vec_sld (q_zero, vai, 1);
+    }
+  else if (__builtin_constant_p (sim) && (sim <= 2147483647))
+    {
+  // For ((sim < 256)) use vec_splats()
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t vai = (vui32_t) vec_splati (sim);
+  return (vui128_t) vec_sldw (q_zero, vai, 1);
+    }
+  else
+    return vec_splats ((unsigned __int128) sim);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  return tmp_PWR10;
+#endif
+}
+
+// latency 6-8
+vui128_t
+__test_splatiuq_PWR10_V1 (void)
+{
+  const int sim = 1023;
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  // For ((sim < 256)) use vec_splats()
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t vai = (vui32_t) vec_splati (sim);
+  //return (vui128_t) vec_sld (q_zero, vai, 4);
+  return (vui128_t) vec_sldw (q_zero, vai, 1);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  return tmp_PWR10;
+#endif
+}
+
+// latency 4-6
+vui128_t
+__test_splatiuq_PWR10_V0 (void)
+{
+  const int sim = 127;
+#if (__GNUC__ > 6) // AT11 (GCC 7) for splats __int128
+  return vec_splats ((unsigned __int128) sim);
+#else
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 127);
+  return tmp_PWR10;
+#endif
+}
+
 #if defined(_ARCH_PWR10) && \
     ((__GNUC__ > 10) || (defined(__clang__) && (__clang_major__ > 12)))
 
@@ -667,43 +859,37 @@ __test_cmsumudm_V2_PWR10 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 vui128_t
 test_vec_srdbi_PWR10  (vui128_t a, vui128_t b, const unsigned int  sh)
 {
-  return (vec_vsrdbi (a, b, sh));
+  return ((vui128_t) vec_srdbi_PWR10 ((vui8_t) a, (vui8_t) b, sh));
 }
 
 vui128_t
 test_vec_srdbi_PWR10_0  (vui128_t a, vui128_t b)
 {
-  return (vec_vsrdbi (a, b, 0));
+  return ((vui128_t) vec_srdbi_PWR10 ((vui8_t) a, (vui8_t) b, 0));
 }
 
 vui128_t
 test_vec_srdbi_PWR10_7  (vui128_t a, vui128_t b)
 {
-  return (vec_vsrdbi (a, b, 7));
-}
-
-vui128_t
-test_vec_sldbi_PWR10  (vui128_t a, vui128_t b, const unsigned int  sh)
-{
-  return (vec_vsldbi (a, b, sh));
+  return ((vui128_t) vec_srdbi_PWR10 ((vui8_t) a, (vui8_t) b, 7));
 }
 
 vui128_t
 test_vec_sldbi_PWR10_0  (vui128_t a, vui128_t b)
 {
-  return (vec_vsldbi (a, b, 0));
+  return ((vui128_t) vec_sldbi_PWR10 ((vui8_t) a, (vui8_t) b, 0));
 }
 
 vui128_t
 test_vec_sldbi_PWR10_7  (vui128_t a, vui128_t b)
 {
-  return (vec_vsldbi (a, b, 7));
+  return ((vui128_t) vec_sldbi_PWR10 ((vui8_t) a, (vui8_t) b, 7));
 }
 
 vui128_t
 test_vec_sldbi_PWR10_8  (vui128_t a, vui128_t b)
 {
-  return (vec_vsldbi (a, b, 8));
+  return ((vui128_t) vec_sldbi_PWR10 ((vui8_t) a, (vui8_t) b, 8));
 }
 
 vui128_t

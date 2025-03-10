@@ -40,6 +40,216 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vi64_t
+__test_splatisd_PWR9_V3 (void)
+{
+  // latency 7, throughput 2
+  const int sim = -128;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim >= -128) && (sim < 127))
+    {
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)(sim-256));
+      // right shift in 56 leading 0's
+      return vec_sradi ((vi64_t) vbyte, 56);
+      //return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else
+  return vec_splats ((signed long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((signed long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatisd_PWR9_V2 (void)
+{
+  // latency 7, throughput 2
+  const int sim = -254;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (-256 <= sim) && (sim < 256) && (sim % 2 == 0))
+    {
+      vi8_t vbyte;
+      vi64_t vdw;
+      vbyte = vec_splats ((signed char)(sim/2));
+      vdw = vec_signextll_byte (vbyte);
+      return (vui64_t) vec_add (vdw, vdw);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatisd_PWR9_254_V2 (void)
+{
+  // latency 7, throughput 2
+  const int sim = 254;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (-256 <= sim) && (sim < 256) && (sim % 2 == 0))
+    {
+      vi8_t vbyte;
+      vi64_t vdw;
+      vbyte = vec_splats ((signed char)(sim/2));
+      vdw = vec_signextll_byte (vbyte);
+      return (vui64_t) vec_add (vdw, vdw);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_V3 (void)
+{
+  // latency 7, throughput 2
+  const int sim = 192;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 256))
+    {
+      vi8_t vbyte;
+      if (sim < 128)
+      vbyte = vec_splats ((signed char)(sim));
+      else
+      vbyte = vec_splats ((signed char)(sim-256));
+      // right shift in 56 leading 0's
+      return (vui64_t) vec_srdi_PWR8 ((vui64_t) vbyte, 56);
+      //return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_V2 (void)
+{
+  // latency 7, throughput 2
+  const int sim = 254;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 256) && (sim % 2 == 0))
+    {
+      vi8_t vbyte;
+      vi64_t vdw;
+      vbyte = vec_splats ((signed char)(sim/2));
+      vdw = vec_signextll_byte (vbyte);
+      return (vui64_t) vec_add (vdw, vdw);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_V1 (void)
+{
+  // latency 5, throughput 2
+  const int sim = 127;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 128))
+    {
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_255_V1 (void)
+{
+  const int sim = 255;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 128))
+    {
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_V0 (void)
+{
+  const int sim = 127;
+#if (__GNUC__ > 6) // AT11 (GCC 7) for splats __int128
+  return vec_splats ((unsigned long long) sim);
+#else
+  vui128_t tmp_PWR9 = CONST_VUINT128_QxW (0, 127, 0, 127);
+  return tmp_PWR9;
+#endif
+}
+
+// latency 13-16
+vui128_t
+__test_splatiuq_PWR9_V2 (void)
+{
+  const int sim = 1023;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  // For ((sim < 1024)) use vec_splats(unsigned char)
+  const vui32_t q_zero = vec_splat_u32(0);
+  const vui8_t va = vec_splats ((unsigned char) (sim/4));
+  const vui32_t vb = vec_splat_u32 ((sim%4));
+  vui32_t tmp = vec_sum4s (va, vb);
+  //return (vui128_t) vec_sld (q_zero, tmp, 4);
+  return (vui128_t) vec_sldw (q_zero, tmp, 1);
+#else
+  vui128_t tmp_PWR9 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  return tmp_PWR9;
+#endif
+}
+
+// latency 6-9
+vui128_t
+__test_splatiuq_PWR9_V1 (void)
+{
+  const int sim = 127;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  // For ((sim < 256)) use vec_splats(unsigned char)
+  const vui8_t q_zero = vec_splat_u8(0);
+  vui8_t vbi = vec_splats ((unsigned char) sim);
+  return (vui128_t) vec_sld (q_zero, vbi, 1);
+#else
+  vui128_t tmp_PWR9 = CONST_VUINT128_QxW (0, 0, 0, 127);
+  return tmp_PWR9;
+#endif
+}
+
+vui128_t
+__test_splatiuq_PWR9_V0 (void)
+{
+  const int sim = 127;
+#if (__GNUC__ > 6) // AT11 (GCC 7) for splats __int128
+  return vec_splats ((unsigned __int128) sim);
+#else
+  vui128_t tmp_PWR9 = CONST_VUINT128_QxW (0, 0, 0, 127);
+  return tmp_PWR9;
+#endif
+}
+
 vui8_t
 test_vexpandbm_PWR9 (vui8_t vra)
 {
@@ -258,6 +468,8 @@ test_intrn_cnttz_lsbb_PWR9 (vui8_t vra)
 #if defined(_ARCH_PWR9) && \
     ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
   return vec_cnttz_lsbb (vra);
+#else
+  return 0;
 #endif
 }
 
@@ -268,6 +480,8 @@ test_intrn_cntlz_lsbb_PWR9 (vui8_t vra)
 #if defined(_ARCH_PWR9) && \
     ((__GNUC__ > 9) || (defined(__clang__) && __clang_major__ > 7))
   return vec_cntlz_lsbb (vra);
+#else
+  return 0;
 #endif
 }
 

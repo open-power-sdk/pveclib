@@ -4577,7 +4577,7 @@ vec_selud (vui64_t vra, vui64_t vrb, vb64_t vrc)
  *  |--------:|:-----:|:---------|
  *  |power7   | 8 - 10| 1/cycle  |
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
@@ -4587,7 +4587,7 @@ static inline vi64_t
 vec_signextll_byte (vi8_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10) \
   && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #if (__GNUC__ >= 11)
       result = vec_signextll (vra);
@@ -4633,7 +4633,7 @@ vec_signextll_byte (vi8_t vra)
  *  |--------:|:-----:|:---------|
  *  |power7   | 8 - 10| 1/cycle  |
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed short.
@@ -4643,7 +4643,7 @@ static inline vi64_t
 vec_signextll_halfword (vi16_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10) \
   && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #if (__GNUC__ >= 11)
       result = vec_signextll (vra);
@@ -4688,8 +4688,8 @@ vec_signextll_halfword (vi16_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power7   | 6 - 8 | 1/cycle  |
- *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power8   | 4 - 8 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed int.
@@ -4699,7 +4699,7 @@ static inline vi64_t
 vec_signextll_word (vi32_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10) \
   && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #if (__GNUC__ >= 11)
       result = vec_signextll (vra);
@@ -4780,18 +4780,22 @@ vec_splatd (vui64_t vra, const int ctl)
  *  Vector Splat Immediate Signed (Byte | Halfword |Word).
  *
  *  \note POWER9/10 will generate the 2 instruction sequence
- *  xxspltib/vextsb2d for values -128 to 128. Larger values
- *  will be loaded as a quadword constant from the read-only
- *  data (.rodata) section.
+ *  xxspltib/vextsb2d for values -128 to 128. POWER10 will
+ *  generate the sequence xxspltiw/vextsw2d for values between
+ *  -2147483648 and +2147483647.
  *  POWER8 (and earlier) does not have vextsb2d instructions.
- *  For a smaller range (-16 -> 15) POWER8 can use the sequence
- *  vec_splat_s32/vec_unpackl but the latest compilers are too clever
- *  for this and generate a load from .rodata anyway.
+ *  PVECLIB can use sequences of
+ *  vec_splat immediate/Vec_add/vec_sl/vec_unpackl/vec_sum2sws
+ *  and a number of techniques to generate doubleword constants
+ *  between -256 and 255 using 3-6 instructions.
+ *  Larger values will be loaded as a quadword constant from the
+ *  read-only data (.rodata) section.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 9 | 2/cycle  |
- *  |power9   |   5   | 2/cycle  |
+ *  |power9   | 5 - 9 | 2/cycle  |
+ *  |power10  | 4 - 9 | 4/cycle  |
  *
  *  @param sim a small signed integer const.
  *  @return Vector with sim value splatted to doublewords.
@@ -4800,8 +4804,39 @@ static inline vi64_t
 vec_splat_s64 (const int sim)
 {
   vi64_t result;
-#ifdef _ARCH_PWR9
-  result = vec_splats ((signed long long) sim);
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return  vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim))
+    {
+      vi32_t vword;
+      vi64_t vdw;
+      vword = vec_splati (sim);
+      return  vec_signextll_word (vword);
+    }
+  else
+    return vec_splats ((signed long long) sim);
+#elif defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
+    {
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim) && (-256 <= sim) && (sim < 256) && (sim % 2 == 0))
+      {
+        vi8_t vbyte;
+        vi64_t vdw;
+        vbyte = vec_splats ((signed char)(sim/2));
+        vdw = vec_signextll_byte (vbyte);
+        return (vi64_t) vec_add (vdw, vdw);
+      }
+    else
+  return vec_splats ((signed long long) sim);
 #else
   if (__builtin_constant_p (sim) && ((sim >= -16) && (sim < 16)))
     {
@@ -4819,20 +4854,72 @@ vec_splat_s64 (const int sim)
 	  // Unpack will expand the low HW to low word and high HW
 	  // (sign extend) into the high word of each DW.
 	  // Unpack low/high (or endian) will not change the result.
-#if defined (__GNUC__) && (__GNUC__ == 8)
-	  // GCC 8 (AT12) handle this correctly.
-	  result = (vi64_t) vec_vupklsh ((vi16_t) vwi);
-#else
-	  // But GCC 9+ optimized the above to be load from .rodata.
-	  // With a little register pressure it adds some gratuitous store/reloads.
-	  // So the following work-around is required.
-	  __asm__(
-	      "vupklsh %0,%1;"
-	      : "=v" (result)
-	      : "v" (vwi)
-	      : );
-#endif
+	  result = vec_vupklsw_PWR8 (vwi);
 	}
+    }
+  else if (__builtin_constant_p (sim) && ((sim >= -32) && (sim < 32)) && (sim % 2 == 0))
+    {
+      vi32_t tmp;
+      tmp = vec_splat_s32((sim >> 1));
+      tmp = vec_add (tmp, tmp);
+      result = vec_vupklsw_PWR8 (tmp);
+    }
+#ifdef _ARCH_PWR8
+  else if (sim == 32)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      vui32_t v32 = vec_clzw (q_zero);
+      result = vec_vupklsw_PWR8 ((vi32_t) v32);
+    }
+  else if (sim == 64)
+    {
+      const vui64_t dw0 = {0, 0};
+      return (vi64_t) vec_clzd (dw0);
+    }
+#endif
+  else if (__builtin_constant_p (sim) && (sim > 16 ) && (sim < 46 ))
+    {
+      /* Includes odd values ((sim > 16) && (sim < 32)) and all values
+       * ((sim > 32) && (sim < 46))
+       * Use the Vector Sum across Half Signed Word Saturate (vsum2sws)
+       * instructions. Combining the sum across with word splat
+       * generates A * 2 + B word constant into words 1 and 3.
+       * Words 0 and 2 are filled with 0x00000000 which eliminates the
+       * vec_signextll_word for positive doubleword constants.
+       * There is special case for ((sim % 3) == 0)) where A == B.
+       * Vsum2sws is an expensive instructions (7 cycles latency)
+       * but is does a lot of work. Requires 3 instructions
+       * (or 2 with CSE) and 9 cycles latency total.
+       */
+      if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32(sim / 3);
+	  result = (vi64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+      else if (__builtin_constant_p (sim) && (sim < 32))
+	{
+	  const vi32_t vai = vec_splat_s32(sim / 2);
+	  const vi32_t vbi = vec_splat_s32(sim % 2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vi64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+      else if (__builtin_constant_p (sim) && (sim >= 32) && (sim < 46))
+	{
+	  const vi32_t vai = vec_splat_s32(15);
+	  const vi32_t vbi = vec_splat_s32((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vi64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    }
+  else if (__builtin_constant_p (sim) && ((sim >= -256) && (sim < 256)))
+    {
+      vi32_t tmp;
+      const vui32_t v4 = vec_splat_u32(4);
+      const vi32_t vhnib = vec_splat_s32((sim / 16));
+      const vi32_t vlnib = vec_splat_s32((sim % 16));
+      tmp = vec_sl (vhnib, v4);
+      tmp = vec_add (tmp, vlnib);
+      result = vec_vupklsw_PWR8 (tmp);
     }
   else
     result = vec_splats ((signed long long) sim);
@@ -4846,13 +4933,16 @@ vec_splat_s64 (const int sim)
  *  Vector Splat Immediate Unsigned (Byte | Halfword |Word).
  *
  *  \note POWER9/10 will generate the 2 instruction sequence
- *  xxspltib/vextsb2d for values -128 to 128. Larger values
- *  will be loaded as a quadword constant from the read-only
- *  data (.rodata) section.
+ *  xxspltib/vextsb2d for values 0 to 128. POWER10 will
+ *  generate the sequence xxspltiw/vextsw2d for values between
+ *  -2147483648 and +2147483647.
  *  POWER8 (and earlier) does not have vextsb2d instructions.
- *  For a smaller range (-16 -> 15) POWER8 can use the sequence
- *  vec_splat_s32/vec_unpackl but the latest compilers are too clever
- *  for this and generate a load from .rodata anyway.
+ *  PVECLIB can use sequences of
+ *  vec_splat immediate/Vec_add/vec_sl/vec_unpackl/vec_sum2sws
+ *  and a number of techniques to generate doubleword constants
+ *  between 0 and 255 using 3-6 instructions.
+ *  Larger values will be loaded as a quadword constant from the
+ *  read-only data (.rodata) section.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
@@ -4865,13 +4955,44 @@ vec_splat_s64 (const int sim)
 static inline vui64_t
 vec_splat_u64 (const int sim)
 {
-  vui64_t result;
-#ifdef _ARCH_PWR9
-  result = vec_splats ((unsigned long long) sim);
+#if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  if (__builtin_constant_p (sim) && (sim < 128))
+    { // Saves a word of code space
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim) && (sim <= 2147483647))
+    {
+      vi32_t vword;
+      vi64_t vdw;
+      vword = vec_splati (sim);
+      return (vui64_t) vec_signextll_word (vword);
+    }
+  else
+    return vec_splats ((unsigned long long) sim);
+#elif defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (0 <= sim) && (sim < 128))
+    {
+      vi8_t vbyte;
+      vbyte = vec_splats ((signed char)sim);
+      return (vui64_t) vec_signextll_byte (vbyte);
+    }
+  else if (__builtin_constant_p (sim) && (0 <= sim) && (sim < 256) && (sim % 2 == 0))
+      {
+        vi8_t vbyte;
+        vi64_t vdw;
+        vbyte = vec_splats ((signed char)(sim/2));
+        vdw = vec_signextll_byte (vbyte);
+        return (vui64_t) vec_add (vdw, vdw);
+      }
+    else
+  return vec_splats ((unsigned long long) sim);
 #else
+  vui64_t result;
   if (__builtin_constant_p (sim) && ((sim >= 0) && (sim < 16)))
     {
-      vui32_t vwi = vec_splat_u32 (sim);
+      vi32_t vwi = vec_splat_s32 (sim);
 
       if (__builtin_constant_p (sim) && (sim == 0))
 	{
@@ -4880,30 +5001,83 @@ vec_splat_u64 (const int sim)
 	} else {
 	  // For P8 can use either vupklsh or vupklsw but P7 only has
 	  // vupklsh. Given the reduced range, Either works here.
-	  // Unpack unsigned HW works here because immediate value fits
-	  // into the low HW and zero extends to high HW of each word.
+	  // Unpack signed HW works here because immediate value fits
+	  // into the low HW and sign extends to high HW of each word.
 	  // Unpack will expand the low HW to low word and high HW
-	  // (zero extended) into the high word of each DW.
+	  // (sign extend) into the high word of each DW.
 	  // Unpack low/high (or endian) will not change the result.
-#if defined (__GNUC__) && (__GNUC__ == 8)
-	  // GCC 8 (AT12) handle this correctly.
-	  result = (vui64_t) vec_vupklsh ((vi16_t) vwi);
-#else
-	  // But GCC 9+ optimized the above to be load from .rodata.
-	  // With a little register pressure it adds some gratuitous store/reloads.
-	  // So the following work-around is required.
-	  __asm__(
-	      "vupklsh %0,%1;"
-	      : "=v" (result)
-	      : "v" (vwi)
-	      : );
-#endif
+	  result = (vui64_t) vec_vupklsw_PWR8 (vwi);
 	}
+    }
+  else if (__builtin_constant_p (sim) && ((sim >= 0) && (sim < 32)) && (sim % 2 == 0))
+    {
+      vi32_t tmp;
+      tmp = vec_splat_s32((sim >> 1));
+      tmp = vec_add (tmp, tmp);
+      result = (vui64_t) vec_vupklsw_PWR8 (tmp);
+    }
+#ifdef _ARCH_PWR8
+  else if (sim == 32)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      vui32_t v32 = vec_clzw (q_zero);
+      result = (vui64_t) vec_vupklsw_PWR8 ((vi32_t) v32);
+    }
+  else if (sim == 64)
+    {
+      const vui64_t dw0 = {0, 0};
+      return vec_clzd (dw0);
+    }
+#endif
+  else if (__builtin_constant_p (sim) && (sim > 16 ) && (sim < 46 ))
+    {
+      /* Includes odd values ((sim > 16) && (sim < 32)) and all values
+       * ((sim > 32) && (sim < 46))
+       * Use the Vector Sum across Half Signed Word Saturate (vsum2sws)
+       * instructions. Combining the sum across with word splat
+       * generates A * 2 + B word constant into words 1 and 3.
+       * Words 0 and 2 are filled with 0x00000000 which eliminates the
+       * vec_signextll_word for positive doubleword constants.
+       * There is special case for ((sim % 3) == 0)) where A == B.
+       * Vsum2sws is an expensive instructions (7 cycles latency)
+       * but is does a lot of work. Requires 3 instructions
+       * (or 2 with CSE) and 9 cycles latency total.
+       */
+      if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32(sim / 3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+      else if (__builtin_constant_p (sim) && (sim < 32))
+	{
+	  const vi32_t vai = vec_splat_s32(sim / 2);
+	  const vi32_t vbi = vec_splat_s32(sim % 2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+      else if (__builtin_constant_p (sim) && (sim >= 32) && (sim < 46))
+	{
+	  const vi32_t vai = vec_splat_s32(15);
+	  const vi32_t vbi = vec_splat_s32((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    }
+  else if (__builtin_constant_p (sim) && ((sim > 45) && (sim < 256)))
+    {
+      vi32_t tmp;
+      const vui32_t v4 = vec_splat_u32(4);
+      const vi32_t vhnib = vec_splat_s32((sim / 16));
+      const vi32_t vlnib = vec_splat_s32((sim % 16));
+      tmp = vec_sl (vhnib, v4);
+      tmp = vec_add (tmp, vlnib);
+      result = (vui64_t) vec_vupklsw_PWR8 (tmp);
     }
   else
     result = vec_splats ((unsigned long long) sim);
-#endif
+
   return (result);
+#endif
 }
 
 /** \deprecated Vector splat doubleword.
@@ -6607,7 +6781,7 @@ vec_vmsumuwm (vui32_t vra, vui32_t vrb, vui64_t vrc)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
@@ -6617,7 +6791,7 @@ static inline vi64_t
 vec_vextsb2d (vi8_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10)
   __asm__(
       "vextsb2d %0,%1;\n"
       : "=v" (result)
@@ -6653,7 +6827,7 @@ vec_vextsb2d (vi8_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed short.
@@ -6663,7 +6837,7 @@ static inline vi64_t
 vec_vextsh2d (vi16_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10)
   __asm__(
       "vextsh2d %0,%1;\n"
       : "=v" (result)
@@ -6698,8 +6872,8 @@ vec_vextsh2d (vi16_t vra)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power8   | 4 - 8 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed short.
@@ -6709,7 +6883,7 @@ static inline vi64_t
 vec_vextsw2d (vi32_t vra)
 {
   vi64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10)
   __asm__(
       "vextsw2d %0,%1;\n"
       : "=v" (result)

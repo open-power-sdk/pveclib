@@ -80,10 +80,341 @@ test_vextsb2d_v0 (vi8_t vra)
   return vec_sradi (tmp, 56);
 }
 
-vi64_t
-test_splat6_s64_1 ()
+vui64_t
+test_splat8_u64_V1 ()
 {
-  return vec_splat6_s64 (1);
+  const int sim8 = 64;
+  vui32_t result, tmp;
+  /* This sequence runs 6 instructions or less if any of the 3
+   * splats (v4, vhnib, vlnib) constants are common. Use vupklsw
+   * to convert splat words to doublewords. The latency is
+   * 6 - 8 cycles (beats 9 cycles). While less
+   * elegant then some code it avoids negative values and
+   * multiple dependent adds. This seems to get past GCC's
+   * convert to .rodata filter. Also GCC will convert this to
+   * vupklsw for POWER10. */
+  // PVECLIB_AVOID_RODATA
+  if ((sim8 > 16) && (sim8 < 256))
+    {
+      const vui32_t v4 = vec_splat_u32(4);
+      const vui32_t vhnib = vec_splat_u32(sim8 / 16);
+      const vui32_t vlnib = vec_splat_u32(sim8 % 16);
+      tmp = vec_sl (vhnib, v4);
+      result = vec_add (tmp, vlnib);
+    }
+  // Extend unsigned word to doubleword
+  // OK as long as result < 32768
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) result);
+#else
+  return (vui64_t) vec_unpackh ((vi16_t)result);
+#endif
+}
+
+vui64_t
+test_splat8_u64__248_V1 ()
+{
+  const int sim8 = 248;
+  vui32_t result, tmp;
+  // See comment in test_splat8_u64_V1
+	if ((sim8 > 16) && (sim8 < 256))
+	  {
+	    const vui32_t v4 = vec_splat_u32(4);
+	    const vui32_t vhnib = vec_splat_u32(sim8 / 16);
+	    const vui32_t vlnib = vec_splat_u32(sim8 % 16);
+	    tmp = vec_sl(vhnib, v4);
+	    result = vec_add (tmp, vlnib);
+	  }
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t)result);
+#else
+  return (vui64_t) vec_unpackh ((vi16_t)result);
+#endif
+}
+
+vui64_t
+test_splat8_u64__255_V1 ()
+{
+  const int sim8 = 255;
+  vui32_t result, tmp;
+  // See comment in test_splat8_u64_V1
+	if ((sim8 > 16) && (sim8 < 256))
+	  {
+	    const vui32_t v4 = vec_splat_u32(4);
+	    const vui32_t vhnib = vec_splat_u32(sim8 / 16);
+	    const vui32_t vlnib = vec_splat_u32(sim8 % 16);
+	    tmp = vec_sl(vhnib, v4);
+	    result = vec_add (tmp, vlnib);
+	  }
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t)result);
+#else
+  return (vui64_t) vec_unpackh ((vi16_t)result);
+#endif
+}
+
+vui64_t
+__test_splatid_m31_V3 (void)
+  {
+    const int sim = -31;
+    // Note this is an invalid form as it will not product a signed DW
+    vui64_t result;
+    /* ((sim >= 16) && (sim < 46))
+     * Use the Vector Sum across Half Signed Word Saturate (vsum2sws)
+     * instructions. Combining the sum across with word splat
+     * generates A * 2 + B word constant into words 1 and 3.
+     * Words 0 and 2 are filled with 0x00000000 which eliminates the
+     * vec_signextll_word for doubleword constants.
+     * There is special case for ((sim % 3) == 0)) where A == B.
+     * Vsum2sws is an expensive instructions (7 cycles latency)
+     * but is does a lot of work. Requires 3 instructions
+     * (or 2 with CSE) and 9 cycles latency total.
+     */
+    if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+    else if (__builtin_constant_p (sim) && (sim < 32 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/2);
+	  const vi32_t vbi = vec_splat_s32 (sim%2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    else if (__builtin_constant_p (sim) && (sim >= 32 ) && (sim < 46 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (15);
+	  const vi32_t vbi = vec_splat_s32 ((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vui64_t
+__test_splatiud_31_V3 (void)
+  {
+    const int sim = 31;
+    vui64_t result;
+    /* ((sim >= 16) && (sim < 46))
+     * Use the Vector Sum across Half Signed Word Saturate (vsum2sws)
+     * instructions. Combining the sum across with word splat
+     * generates A * 2 + B word constant into words 1 and 3.
+     * Words 0 and 2 are filled with 0x00000000 which eliminates the
+     * vec_signextll_word for doubleword constants.
+     * There is special case for ((sim % 3) == 0)) where A == B.
+     * Vsum2sws is an expensive instructions (7 cycles latency)
+     * but is does a lot of work. Requires 3 instructions
+     * (or 2 with CSE) and 9 cycles latency total.
+     */
+    if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+    else if (__builtin_constant_p (sim) && (sim < 32 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/2);
+	  const vi32_t vbi = vec_splat_s32 (sim%2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    else if (__builtin_constant_p (sim) && (sim >= 32 ) && (sim < 46 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (15);
+	  const vi32_t vbi = vec_splat_s32 ((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vui64_t
+__test_splatiud_33_V3 (void)
+  {
+    const int sim = 33;
+    // See comment in __test_splatiud_31_V3
+    vui64_t result;
+    if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+    else if (__builtin_constant_p (sim) && (sim < 32 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/2);
+	  const vi32_t vbi = vec_splat_s32 (sim%2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    else if (__builtin_constant_p (sim) && (sim >= 32 ) && (sim < 46 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (15);
+	  const vi32_t vbi = vec_splat_s32 ((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vui64_t
+__test_splatiud_34_V3 (void)
+  {
+    const int sim = 34;
+    // See comment in __test_splatiud_31_V3
+    vui64_t result;
+    if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+    else if (__builtin_constant_p (sim) && (sim < 32 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/2);
+	  const vi32_t vbi = vec_splat_s32 (sim%2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    else if (__builtin_constant_p (sim) && (sim >= 32 ) && (sim < 46 ))
+	{
+	  const vi32_t vai = vec_splat_s32 (15);
+	  const vi32_t vbi = vec_splat_s32 ((sim - 30));
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vui64_t
+__test_splatiud_45_V3 (void)
+  {
+    const int sim = 45;
+    // See comment in __test_splatiud_31_V3
+    vui64_t result;
+    if (__builtin_constant_p (sim) && ((sim % 3) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/3);
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vai);
+	}
+    else
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/2);
+	  const vi32_t vbi = vec_splat_s32 (sim%2);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui64_t) vec_vsum2sws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vi64_t
+test_splat7_u64_30_V2 ()
+{
+  const vui32_t rword = vec_splat7_u32 (30);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat7_u64_31_V2 ()
+{
+  const vui32_t rword = vec_splat7_u32 (31);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat7_u64_32_V2 ()
+{
+  const vui32_t rword = vec_splat7_u32 (32);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat7_u64_48_V2 ()
+{
+  const vui32_t rword = vec_splat7_u32 (48);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat7_u64_63_V2 ()
+{
+  const vui32_t rword = vec_splat7_u32 (63);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_30_V1 ()
+{
+  const vi32_t rword = vec_splat6_s32 (30);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_m30_V1 ()
+{
+  const vi32_t rword = vec_splat6_s32 (-30);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_31_V1 ()
+{
+  const vi32_t rword = vec_splat6_s32 (31);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_m31_V1 ()
+{
+  const vi32_t rword = vec_splat6_s32 (-31);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
+}
+
+vi64_t
+test_splat6_s64_m32_V1 ()
+{
+  const vi32_t rword = vec_splat6_s32 (-32);
+#if defined(_ARCH_PWR8)
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vi64_t) vec_unpackh ((vi16_t)rword);
+#endif
 }
 
 vi64_t
@@ -91,7 +422,7 @@ test_splat6_s64_1_V1 ()
 {
   const vi32_t rword = vec_splat_s32 (1);
 #if defined(_ARCH_PWR8)
-  return (vi64_t) vec_unpackh ((vi32_t)rword);
+  return (vi64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
 #else
   return (vi64_t) vec_unpackh ((vi16_t)rword);
 #endif
@@ -111,9 +442,20 @@ test_splat6_s64_1_V0 ()
 vui64_t
 test_splat6_u64_1_V2 ()
 {
-  const vui32_t rword = vec_splat_u32 (1);
+  const vui32_t rword = vec_splat6_u32 (1);
 #if defined(_ARCH_PWR8)
-  return (vui64_t) vec_vupklsw ((vi32_t)rword);
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
+#else
+  return (vui64_t) vec_vupklsh ((vi16_t)rword);
+#endif
+}
+
+vui64_t
+test_splat6_u64_32_V2 ()
+{
+  const vui32_t rword = vec_splat6_u32 (32);
+#if defined(_ARCH_PWR8)
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
 #else
   return (vui64_t) vec_vupklsh ((vi16_t)rword);
 #endif
@@ -124,7 +466,7 @@ test_splat6_u64_1_V1 ()
 {
   const vui32_t rword = vec_splat_u32 (1);
 #if defined(_ARCH_PWR8)
-  return (vui64_t) vec_unpackl ((vi32_t)rword);
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t)rword);
 #else
   return (vui64_t) vec_unpackl ((vi16_t)rword);
 #endif
@@ -498,6 +840,24 @@ __test_shift_cse (vui64_t a)
 // Want to avoid addr calc and loads for what should be simple
 // splat immediate and unpack/extend.
 vi64_t
+__test_splatisd_256 (void)
+{
+  return vec_splat_s64 (-256);
+}
+
+vi64_t
+__test_splatisd_128 (void)
+{
+  return vec_splat_s64 (-128);
+}
+
+vi64_t
+__test_splatisd_32 (void)
+{
+  return vec_splat_s64 (-32);
+}
+
+vi64_t
 __test_splatisd_16 (void)
 {
   return vec_splat_s64 (-16);
@@ -522,9 +882,75 @@ __test_splatisd_15 (void)
 }
 
 vi64_t
+__test_splatisd_24 (void)
+{
+  return vec_splat_s64 (24);
+}
+
+vi64_t
+__test_splatisd_25 (void)
+{
+  return vec_splat_s64 (25);
+}
+
+vi64_t
+__test_splatisd_30 (void)
+{
+  return vec_splat_s64 (30);
+}
+
+vi64_t
+__test_splatisd_31 (void)
+{
+  return vec_splat_s64 (31);
+}
+
+vi64_t
+__test_splatisd_p32 (void)
+{
+  return vec_splat_s64 (32);
+}
+
+vi64_t
+__test_splatisd_33 (void)
+{
+  return vec_splat_s64 (33);
+}
+
+vi64_t
+__test_splatisd_44 (void)
+{
+  return vec_splat_s64 (44);
+}
+
+vi64_t
+__test_splatisd_45 (void)
+{
+  return vec_splat_s64 (45);
+}
+
+vi64_t
+__test_splatisd_p64 (void)
+{
+  return vec_splat_s64 (64);
+}
+
+vi64_t
 __test_splatisd_127 (void)
 {
   return vec_splat_s64 (127);
+}
+
+vi64_t
+__test_splatisd_240 (void)
+{
+  return vec_splat_s64 (240);
+}
+
+vi64_t
+__test_splatisd_255 (void)
+{
+  return vec_splat_s64 (255);
 }
 
 vui64_t
@@ -540,9 +966,27 @@ __test_splatiud_15 (void)
 }
 
 vui64_t
+__test_splatiud_32 (void)
+{
+  return vec_splat_u64 (32);
+}
+
+vui64_t
+__test_splatiud_64 (void)
+{
+  return vec_splat_u64 (64);
+}
+
+vui64_t
 __test_splatiud_127 (void)
 {
   return vec_splat_u64 (127);
+}
+
+vui64_t
+__test_splatiud_255 (void)
+{
+  return vec_splat_u64 (255);
 }
 
 #define COMPILE_FENCE __asm ("nop":::)

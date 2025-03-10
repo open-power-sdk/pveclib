@@ -5346,14 +5346,14 @@ vec_splat6_u32 (const unsigned int sim6)
 	   * generate the (signed) 5-bit splat immediate word,
 	   * then vec_add (word) the 16 back,
 	   * to generate the 6-bit shift count. */
-	  if (__builtin_constant_p (sim6) && (sim6 < 32))
+	  if (__builtin_constant_p (sim6)  && (sim6 > 16) && (sim6 < 32))
 	    {
 	      tmp = vec_splat_u32(sim6 - 16);
 	      result = vec_sub (tmp, v16);
 	    }
-	  else
+	  else if (__builtin_constant_p (sim6) && (sim6 > 32) && (sim6 < 48))
 	    {
-	      tmp = vec_splat_u32(sim6 - 48);
+	      tmp = vec_splat_u32((sim6 - 48));
 	      result = vec_add (tmp, v16);
 	    }
 	}
@@ -6714,6 +6714,38 @@ vec_vsrq_PWR10 (vui128_t vra, vui8_t vrb)
   return ((vui128_t) result);
 }
 
+/** \brief Vector Shift Right Algebraic Quadword for POWER9 and earlier.
+ *
+ *  Vector Shift Right Algebraic Quadword 0-127 bits.
+ *  The 7-bit shift count is splatted across the 16-bytes of vrb.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10    | 1 cycle  |
+ *  |power9   | 14    | 1/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as signed __int128.
+ *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
+ *  @return Right algebraic shifted vector.
+ */
+static inline vi128_t
+vec_vsraq_PWR9 (vi128_t vra, vui8_t vrb)
+{
+  vui8_t result;
+  vui8_t vsht;
+  vui8_t vsgn;
+  const vui8_t zero = vec_splat_u8 (0);
+
+  /* For some reason the vsr instruction only works
+   * correctly if the bit shift value is splatted to each byte
+   * of the vector.  */
+  vsgn = (vui8_t) vec_vexpandqm_PWR7 ((vui128_t) vra);
+  vsht = vec_sub (zero, (vui8_t) vrb);
+  result = (vui8_t) vec_sldq_PWR7 (vsgn, (vui8_t) vra, (vui8_t) vsht);
+
+  return ((vi128_t) result);
+}
+
 /** \brief Vector Shift Right Algebraic Quadword by Byte for POWER10.
  *
  *  Vector Shift Right Algebraic Quadword 0-127 bits.
@@ -6748,9 +6780,127 @@ vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb)
       : );
 #endif
 #else
-  result = (vui8_t) vec_sraq_PWR9 (vra, vrb);
+  result = (vui8_t) vec_vsraq_PWR9 (vra, vrb);
 #endif
   return ((vi128_t) result);
+}
+
+/** \brief Vector Sum across Half Signed Word Saturate (for POWER7).
+ *
+ *  The sum of the signed integer values in word elements 0 and 1 of
+ *  vra is added to the signed integer value in the word element 1 of
+ *  vrb. The saturated result of 3 word elements is returned in word
+ *  element 1 with word elements 0 set the zero.
+ *  The sum of the signed integer values in word elements 2 and 3 of
+ *  vra is added to the signed integer value in the word element 3 of
+ *  vrb. The saturated result of 3 word elements is returned in word
+ *  element 3 with word elements 2 set the zero.
+ *
+ *  \note This is the equivalent to the generic vec_sum2s without the
+ *  Little Endian transform, and simply returns the PowerISA vsum2sws
+ *  results.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   7   | 2/cycle  |
+ *  |power9   |   7   | 2/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as signed int.
+ *  @param vrb a 128-bit vector treated as signed int.
+ *  @return vector doubleword sums of 3 word element in word elements 1 and 3.
+ */
+static inline vui128_t
+vec_vsum2sws_PWR7 (vi32_t vra, vi32_t vrb)
+{
+  vui128_t result;
+#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(__clang__)
+  result = (vui128_t) vec_sum2s (vra, vrb);
+#else
+  __asm__(
+      "vsum2sws %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+  return (result);
+}
+
+/** \brief Vector Sum across Signed Word Saturate (for POWER7).
+ *
+ *  The sum of the signed integer values in the four word elements of
+ *  vra is added to the signed integer value in the word element 3 of
+ *  vrb. The saturated result of 5 word elements is returned in word
+ *  element 3 with word elements 0 - 2 set the zero.
+ *
+ *  \note This is the equivalent to the generic vec_sums without the
+ *  Little Endian transform, and simply returns the PowerISA vsumsws
+ *  results.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   7   | 2/cycle  |
+ *  |power9   |   7   | 2/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as signed int.
+ *  @param vrb a 128-bit vector treated as signed int.
+ *  @return vector quadword sum of 5 word element in word element 3.
+ */
+static inline vui128_t
+vec_vsumsws_PWR7 (vi32_t vra, vi32_t vrb)
+{
+  vui128_t result;
+#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(__clang__)
+  result = (vui128_t) vec_sums (vra, vrb);
+#else
+  __asm__(
+      "vsumsws %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb)
+      : );
+#endif
+  return (result);
+}
+
+/** \brief Vector Sum across Signed Word Saturate (for POWER8).
+ *
+ *  The sum of the signed integer values in the four word elements of
+ *  vra is added to the signed integer value in the word element 3 of
+ *  vrb. The saturated result of 5 word elements is returned in word
+ *  element 3 with word elements 0 - 2 set the zero.
+ *
+ *  \note This is the equivalent to the generic vec_sums without the
+ *  Little Endian transform, and simply returns the PowerISA vsumsws
+ *  results.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  |  3- 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as signed int.
+ *  @return vector quadword sum of 5 word element in word element 3.
+ */
+static inline vi64_t
+vec_vupklsw_PWR8 (vi32_t vra)
+{
+  vi64_t result;
+#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(__clang__)
+#ifdef vec_vupklsw
+  result = (vi64_t) vec_vupklsw (vra);
+#else
+  result = (vi64_t) vec_vupklsh ((vi16_t) vra);
+#endif
+#else
+  __asm__(
+      "vupklsw %0,%1;"
+      : "=v" (result)
+      : "v" (vra)
+      : );
+#endif
+  return (result);
 }
 
 /** \brief Transfer a vector unsigned __int128 to __int128 scalar.

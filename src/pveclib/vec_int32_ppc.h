@@ -1278,7 +1278,7 @@ vec_setb_sw (vi32_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
@@ -1288,7 +1288,7 @@ static inline vi32_t
 vec_signexti_byte (vi8_t vra)
 {
   vi32_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10) \
   && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #if (__GNUC__ >= 11)
       result = vec_signexti (vra);
@@ -1323,7 +1323,7 @@ vec_signexti_byte (vi8_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed short.
@@ -1333,7 +1333,7 @@ static inline vi32_t
 vec_signexti_halfword (vi16_t vra)
 {
   vi32_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) \
+#if defined (_ARCH_PWR9) && (__GNUC__ >= 10) \
     && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #if (__GNUC__ >= 11)
       result = vec_signexti (vra);
@@ -1368,7 +1368,7 @@ vec_signexti_halfword (vi16_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
@@ -1378,7 +1378,7 @@ static inline vi32_t
 vec_vextsb2w (vi8_t vra)
 {
   vi32_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10)
   __asm__(
       "vextsb2w %0,%1;\n"
       : "=v" (result)
@@ -1404,7 +1404,7 @@ vec_vextsb2w (vi8_t vra)
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
  *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 4 - 7 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
  *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vra a 128-bit vector treated as a vector signed char.
@@ -1414,7 +1414,7 @@ static inline vi32_t
 vec_vextsh2w (vi16_t vra)
 {
   vi32_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 10)
   __asm__(
       "vextsh2w %0,%1;\n"
       : "=v" (result)

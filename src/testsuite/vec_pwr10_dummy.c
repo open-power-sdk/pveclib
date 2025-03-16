@@ -38,6 +38,24 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui128_t
+__test_splatiuq_127_PWR10 (void)
+{
+  return vec_splat_u128 (127);
+}
+
+vui128_t
+__test_splatiuq_128_PWR10 (void)
+{
+  return vec_splat_u128 (128);
+}
+
+vui128_t
+__test_splatiuq_2147483647_PWR10 (void)
+{
+  return vec_splat_u128 (2147483647);
+}
+
 // latency 4-7
 vi64_t
 __test_splatisd_PWR10_V3 (void)
@@ -173,7 +191,7 @@ __test_splatiuq_PWR10_V3 (void)
 #endif
 }
 
-// latency 6-8
+// latency 6-12
 vui128_t
 __test_splatiuq_PWR10_V2 (void)
 {
@@ -200,7 +218,7 @@ __test_splatiuq_PWR10_V2 (void)
 #endif
 }
 
-// latency 6-8
+// latency 6-12
 vui128_t
 __test_splatiuq_PWR10_V1 (void)
 {
@@ -217,7 +235,7 @@ __test_splatiuq_PWR10_V1 (void)
 #endif
 }
 
-// latency 4-6
+// latency 4-6 for .rodata plxv
 vui128_t
 __test_splatiuq_PWR10_V0 (void)
 {

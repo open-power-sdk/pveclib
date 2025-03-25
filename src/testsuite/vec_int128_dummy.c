@@ -2158,6 +2158,17 @@ __test_splatiuq_31 (void)
 }
 
 vui128_t
+__test_splatiuq_31_V1 (void)
+{
+  const int sim = 0x1f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-5));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+}
+
+vui128_t
 __test_splatiuq_32 (void)
 {
   return vec_splat_u128 (32);
@@ -2200,6 +2211,17 @@ __test_splatiuq_63 (void)
 }
 
 vui128_t
+__test_splatiuq_63_V1 (void)
+{
+  const int sim = 0x3f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-6));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+}
+
+vui128_t
 __test_splatiuq_64 (void)
 {
   return vec_splat_u128 (64);
@@ -2233,6 +2255,17 @@ vui128_t
 __test_splatiuq_127 (void)
 {
   return vec_splat_u128 (127);
+}
+
+vui128_t
+__test_splatiuq_127_V1 (void)
+{
+  const int sim = 0x7f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-7));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
 }
 
 vui128_t

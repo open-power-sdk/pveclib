@@ -9263,6 +9263,13 @@ vec_splat_u128 (const int sim)
       vui32_t vwi = vec_splat6_u32 (sim);
       result = (vui128_t) vec_sld (q_zero, vwi, 4);
     }
+  else if (sim == 31)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t q_ones = vec_splat_u32(-1);
+      vui32_t tmp = vec_srwi (q_ones, (32-5));
+      result = (vui128_t) vec_sld (q_zero, tmp, 4);
+    }
 #ifdef _ARCH_PWR8
   else if (sim == 32)
     {
@@ -9271,6 +9278,13 @@ vec_splat_u128 (const int sim)
       result = (vui128_t) vec_sld (q_zero, v32, 4);
     }
 #endif
+  else if (sim == 63)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t q_ones = vec_splat_u32(-1);
+      vui32_t tmp = vec_srwi (q_ones, (32-6));
+      result = (vui128_t) vec_sld (q_zero, tmp, 4);
+    }
   else if (__builtin_constant_p (sim) && ((sim >= 16) && (sim < 64)))
     {
 #ifdef _ARCH_PWR8
@@ -9314,6 +9328,13 @@ vec_splat_u128 (const int sim)
       result = (vui128_t) vec_sld (q_zero, tmp, 4);
 #endif
     }
+  else if (sim == 127)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t q_ones = vec_splat_u32(-1);
+      vui32_t tmp = vec_srwi (q_ones, (32-7));
+      result = (vui128_t) vec_sld (q_zero, tmp, 4);
+    }
   else if (__builtin_constant_p (sim) && ((sim > 64) && (sim < 128)))
     {
       const vui32_t q_zero = vec_splat_u32(0);
@@ -9344,6 +9365,12 @@ vec_splat_u128 (const int sim)
       // Extend left with 120-bits of 0
       const vui32_t q_zero = {0, 0, 0, 0};
       result = (vui128_t) vec_sld ((vui8_t) q_zero, vbi, 1);
+    }
+  else if (sim == 255)
+    {
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t q_ones = vec_splat_u32(-1);
+      result = (vui128_t) vec_sld (q_zero, q_ones, 1);
     }
   else if (__builtin_constant_p (sim) && ((sim > 128) && (sim < 256)))
     {

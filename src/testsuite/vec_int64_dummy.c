@@ -966,9 +966,57 @@ __test_splatiud_15 (void)
 }
 
 vui64_t
+__test_splatiud_31 (void)
+{
+  return vec_splat_u64 (31);
+}
+
+vui64_t
+__test_splatiud_31_V1 (void)
+{
+  const int sim = 0x1f;
+  // latency PWR8 4-6
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  return vec_srdi ((vui64_t) q_ones, (64-5));
+#else
+  // latency PWR7 6-8
+  vui32_t tmp = vec_srwi (q_ones, (32-5));
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) tmp);
+#endif
+}
+
+vui64_t
 __test_splatiud_32 (void)
 {
   return vec_splat_u64 (32);
+}
+
+vui64_t
+__test_splatiud_52 (void)
+{
+  return vec_splat_u64 (52);
+}
+
+vui64_t
+__test_splatiud_63 (void)
+{
+  return vec_splat_u64 (63);
+}
+
+vui64_t
+__test_splatiud_63_V1 (void)
+{
+  const int sim = 0x3f;
+  // latency PWR8 4-6
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  return vec_srdi ((vui64_t) q_ones, (64-6));
+#else
+  // latency PWR7 6-8
+  vui32_t tmp = vec_srwi (q_ones, (32-6));
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) tmp);
+#endif
 }
 
 vui64_t
@@ -981,6 +1029,21 @@ vui64_t
 __test_splatiud_127 (void)
 {
   return vec_splat_u64 (127);
+}
+
+vui64_t
+__test_splatiud_127_V1 (void)
+{
+  const int sim = 0x7f;
+  // latency PWR8 4-6
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  return vec_srdi ((vui64_t) q_ones, (64-7));
+#else
+  // latency PWR7 6-8
+  vui32_t tmp = vec_srwi (q_ones, (32-7));
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) tmp);
+#endif
 }
 
 vui64_t

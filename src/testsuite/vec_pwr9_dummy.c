@@ -134,6 +134,57 @@ __test_splatisd_PWR9_254_V2 (void)
 #endif
 }
 
+vui128_t
+__test_splatiuq_PWR9_V5 (void)
+{
+  // latency 8, throughput 1 (xxlxor is 2 cycles
+  // But compiler rewrites splats/splats/sld/xor to
+  // xxspltib, xxspltib, xxspltib, vsldoi
+  // Stupid compiler
+  const int sim = 0x3fff;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 32768))
+    {
+      vui8_t vbytel, vbyteh;
+      vui16_t vhalf, vzero;
+      vbytel = vec_splats ((unsigned char)(sim%256));
+      vbyteh = vec_splats ((unsigned char)(sim/256));
+      // shift vbyteh, vbytel into high halfword
+      vhalf  = (vui16_t) vec_sld (vbyteh, vbytel, 15);
+      vzero =  (vui16_t) vec_xor (vbytel, vbytel);
+      // shift vhalf in the low halfword
+      return (vui128_t) vec_sld (vzero, vhalf, 14);
+    }
+#else
+  return (vui128_t) vec_splats ((unsigned __int128)(sim));
+#endif
+}
+
+vui64_t
+__test_splatiud_PWR9_V4 (void)
+{
+  // latency 8, throughput 2
+  // But compiler rewrites splats/splats/mergel to const in .rodate/lxv
+  const int sim = 0x3fff;
+#if defined(_ARCH_PWR9) && (__GNUC__ > 9)
+  if (__builtin_constant_p (sim) && (sim < 32768))
+    {
+      vui8_t vbytel, vbyteh;
+      vi16_t vhalf;
+      vbytel = vec_splats ((unsigned char)(sim%256));
+      vbyteh = vec_splats ((unsigned char)(sim/256));
+      //vhalf  = (vi16_t) vec_mergel (vbyteh, vbytel);
+      vhalf  = (vi16_t) vec_mergel (vbyteh, vbytel);
+      return (vui64_t) vec_signextll_halfword (vhalf);
+    }
+  else
+  return vec_splats ((unsigned long long) sim);
+#else
+  // latency 9+, throughput 2
+  return vec_splats ((unsigned long long) sim);
+#endif
+}
+
 vui64_t
 __test_splatiud_PWR9_V3 (void)
 {

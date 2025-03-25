@@ -26,6 +26,314 @@
 #include "arith128.h"
 #include <testsuite/arith128_print.h>
 
+vi128_t
+test_vec_signextq_byte (vi8_t vra)
+{
+  return vec_signextq_byte (vra);
+}
+
+vi128_t
+test_vec_signextq_halfword (vi16_t vra)
+{
+  return vec_signextq_halfword (vra);
+}
+
+vi128_t
+test_vec_signextq_word (vi32_t vra)
+{
+  return vec_signextq_word (vra);
+}
+
+vi128_t
+test_vec_signextq_doubleword (vi64_t vra)
+{
+  return vec_signextq_doubleword (vra);
+}
+
+vi128_t
+test_vec_vextsb2q (vi8_t vra)
+{
+  return vec_vextsb2q (vra);
+}
+
+vi128_t
+test_vec_vextsh2q (vi16_t vra)
+{
+  return vec_vextsh2q (vra);
+}
+
+vi128_t
+test_vec_vextsw2q (vi32_t vra)
+{
+  return vec_vextsw2q (vra);
+}
+
+vi128_t
+test_vec_vextsd2q (vi64_t vra)
+{
+  return vec_vextsd2q (vra);
+}
+
+vui128_t
+test_vec_expandm_quadword (vui128_t vra)
+{
+  return vec_expandm_quadword (vra);
+}
+
+vui128_t
+test_vexpandqm_PWR (vui128_t vra)
+{
+  return vec_vexpandqm_PWR10 (vra);
+}
+
+#if 0 // Deprecated !
+vui128_t
+test_vec_rlq_byte  (vui128_t a, vui8_t b)
+{
+  return (vec_vrlq_byte (a, b));
+}
+
+vui128_t
+test_vec_slq_byte  (vui128_t a, vui8_t b)
+{
+  return (vec_vslq_byte (a, b));
+}
+
+vui128_t
+test_vec_srq_byte  (vui128_t a, vui8_t b)
+{
+  return (vec_vsrq_byte (a, b));
+}
+
+vi128_t
+test_vec_sraq_byte  (vi128_t a, vui8_t b)
+{
+  return (vec_vsraq_byte (a, b));
+}
+#endif
+
+vui128_t
+test_vec_rlqi_PWR_1  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 1));
+}
+
+vui128_t
+test_vec_rlqi_PWR_15  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 15));
+}
+
+vui128_t
+test_vec_rlqi_PWR_16  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 16));
+}
+
+vui128_t
+test_vec_rlqi_PWR_31  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 31));
+}
+
+vui128_t
+test_vec_rlqi_PWR_64  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 64));
+}
+
+vui128_t
+test_vec_rlqi_PWR_112  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 112));
+}
+
+vui128_t
+test_vec_rlqi_PWR_127  (vui128_t a)
+{
+  return (vec_rlqi_PWR10 (a, 127));
+}
+
+vui128_t
+test_vec_rlq_PWR  (vui128_t a, vui8_t sh)
+{
+  return (vec_rlq_PWR10 (a, sh));
+}
+
+vui128_t
+test_vec_slqi_PWR_1  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 1));
+}
+
+vui128_t
+test_vec_slqi_PWR_15  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 15));
+}
+
+vui128_t
+test_vec_slqi_PWR_16  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 16));
+}
+
+vui128_t
+test_vec_slqi_PWR_31  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 31));
+}
+
+vui128_t
+test_vec_slqi_PWR_32  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 32));
+}
+
+vui128_t
+test_vec_slqi_PWR_48  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 48));
+}
+
+vui128_t
+test_vec_slqi_PWR_64  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 64));
+}
+
+vui128_t
+test_vec_slqi_PWR_112  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 112));
+}
+
+vui128_t
+test_vec_slqi_PWR_127  (vui128_t a)
+{
+  return (vec_slqi_PWR10 (a, 127));
+}
+
+vui128_t
+test_vec_slq_PWR  (vui128_t a, vui8_t sh)
+{
+  return (vec_slq_PWR10 (a, sh));
+}
+
+vui128_t
+test_vec_srqi_PWR_1  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 1));
+}
+
+vui128_t
+test_vec_srqi_PWR_15  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 15));
+}
+
+vui128_t
+test_vec_srqi_PWR_16  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 16));
+}
+
+vui128_t
+test_vec_srqi_PWR_31  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 31));
+}
+
+vui128_t
+test_vec_srqi_PWR_52  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 52));
+}
+
+vui128_t
+test_vec_srqi_PWR_60  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 60));
+}
+
+vui128_t
+test_vec_srqi_PWR_64  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 64));
+}
+
+vui128_t
+test_vec_srqi_PWR_112  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 112));
+}
+
+vui128_t
+test_vec_srqi_PWR_127  (vui128_t a)
+{
+  return (vec_srqi_PWR10 (a, 127));
+}
+
+vui128_t
+test_vec_srq_PWR  (vui128_t a, vui8_t sh)
+{
+  return (vec_srq_PWR10 (a, sh));
+}
+
+vi128_t
+test_vec_sraqi_PWR_1  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 1));
+}
+
+vi128_t
+test_vec_sraqi_PWR_15  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 15));
+}
+
+vi128_t
+test_vec_sraqi_PWR_31  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 31));
+}
+
+vi128_t
+test_vec_sraqi_PWR_32  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 32));
+}
+
+vi128_t
+test_vec_sraqi_PWR_63  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 63));
+}
+
+vi128_t
+test_vec_sraqi_PWR_64  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 64));
+}
+
+vi128_t
+test_vec_sraqi_PWR_112  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 112));
+}
+
+vi128_t
+test_vec_sraqi_PWR_127  (vi128_t a)
+{
+  return (vec_sraqi_PWR10 (a, 127));
+}
+
+vi128_t
+test_vec_sraq_PWR  (vi128_t a, vui8_t sh)
+{
+  return (vec_sraq_PWR10 (a, sh));
+}
+
 vui128_t
 test_vec_ctzq_PWR7 (vui128_t vra)
 {
@@ -1605,6 +1913,55 @@ vui128_t test_vec_modduq (vui128_t x, vui128_t y, vui128_t z)
 // Attempts at better code to splat small QW constants.
 // Want to avoid addr calc and loads for what should be simple
 // splat immediate and sld.
+
+vi128_t
+__test_splatisq_256 (void)
+{
+  return vec_splat_s128 (-256);
+}
+
+vi128_t
+__test_splatisq_192 (void)
+{
+  return vec_splat_s128 (-192);
+}
+
+vi128_t
+__test_splatisq_128 (void)
+{
+  return vec_splat_s128 (-128);
+}
+
+vi128_t
+__test_splatisq_96 (void)
+{
+  return vec_splat_s128 (-96);
+}
+
+vi128_t
+__test_splatisq_64 (void)
+{
+  return vec_splat_s128 (-64);
+}
+
+vi128_t
+__test_splatisq_32 (void)
+{
+  return vec_splat_s128 (-32);
+}
+
+vi128_t
+__test_splatisq_33 (void)
+{
+  return vec_splat_s128 (-33);
+}
+
+vi128_t
+__test_splatisq_24 (void)
+{
+  return vec_splat_s128 (-24);
+}
+
 vi128_t
 __test_splatisq_16 (void)
 {
@@ -1621,6 +1978,84 @@ vi128_t
 __test_splatisq_0 (void)
 {
   return vec_splat_s128 (0);
+}
+
+vi128_t
+__test_splatisq_15 (void)
+{
+  return vec_splat_s128 (15);
+}
+
+vi128_t
+__test_splatisq_27 (void)
+{
+  return vec_splat_s128 (27);
+}
+
+vi128_t
+__test_splatisq_31 (void)
+{
+  return vec_splat_s128 (31);
+}
+
+vi128_t
+__test_splatisq_p32 (void)
+{
+  return vec_splat_s128 (32);
+}
+
+vi128_t
+__test_splatisq_p33 (void)
+{
+  return vec_splat_s128 (33);
+}
+
+vi128_t
+__test_splatisq_p56 (void)
+{
+  return vec_splat_s128 (56);
+}
+
+vi128_t
+__test_splatisq_p60 (void)
+{
+  return vec_splat_s128 (60);
+}
+
+vi128_t
+__test_splatisq_p63 (void)
+{
+  return vec_splat_s128 (63);
+}
+
+vi128_t
+__test_splatisq_p64 (void)
+{
+  return vec_splat_s128 (64);
+}
+
+vi128_t
+__test_splatisq_127 (void)
+{
+  return vec_splat_s128 (127);
+}
+
+vi128_t
+__test_splatisq_p128 (void)
+{
+  return vec_splat_s128 (128);
+}
+
+vi128_t
+__test_splatisq_p192 (void)
+{
+  return vec_splat_s128 (192);
+}
+
+vi128_t
+__test_splatisq_p255 (void)
+{
+  return vec_splat_s128 (255);
 }
 
 vi128_t
@@ -1674,18 +2109,6 @@ __test_splatisq_15_V0 (void)
   return (vi128_t) qw_15;
 }
 
-vi128_t
-__test_splatisq_15 (void)
-{
-  return vec_splat_s128 (15);
-}
-
-vi128_t
-__test_splatisq_127 (void)
-{
-  return vec_splat_s128 (127);
-}
-
 vui128_t
 __test_splatiuq_0 (void)
 {
@@ -1699,15 +2122,351 @@ __test_splatiuq_15 (void)
 }
 
 vui128_t
+__test_splatiuq_16 (void)
+{
+  return vec_splat_u128 (16);
+}
+
+vui128_t
+__test_splatiuq_20 (void)
+{
+  return vec_splat_u128 (20);
+}
+
+vui128_t
+__test_splatiuq_24 (void)
+{
+  return vec_splat_u128 (24);
+}
+
+vui128_t
+__test_splatiuq_29 (void)
+{
+  return vec_splat_u128 (29);
+}
+
+vui128_t
+__test_splatiuq_30 (void)
+{
+  return vec_splat_u128 (30);
+}
+
+vui128_t
+__test_splatiuq_31 (void)
+{
+  return vec_splat_u128 (31);
+}
+
+vui128_t
+__test_splatiuq_31_V1 (void)
+{
+  const int sim = 0x1f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-5));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+}
+
+vui128_t
+__test_splatiuq_32 (void)
+{
+  return vec_splat_u128 (32);
+}
+
+vui128_t
+__test_splatiuq_33 (void)
+{
+  return vec_splat_u128 (33);
+}
+
+vui128_t
+__test_splatiuq_48 (void)
+{
+  return vec_splat_u128 (48);
+}
+
+vui128_t
+__test_splatiuq_55 (void)
+{
+  return vec_splat_u128 (55);
+}
+
+vui128_t
+__test_splatiuq_56 (void)
+{
+  return vec_splat_u128 (56);
+}
+
+vui128_t
+__test_splatiuq_60 (void)
+{
+  return vec_splat_u128 (60);
+}
+
+vui128_t
+__test_splatiuq_63 (void)
+{
+  return vec_splat_u128 (63);
+}
+
+vui128_t
+__test_splatiuq_63_V1 (void)
+{
+  const int sim = 0x3f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-6));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+}
+
+vui128_t
+__test_splatiuq_64 (void)
+{
+  return vec_splat_u128 (64);
+}
+
+vui128_t
+__test_splatiuq_65 (void)
+{
+  return vec_splat_u128 (65);
+}
+
+vui128_t
+__test_splatiuq_72 (void)
+{
+  return vec_splat_u128 (72);
+}
+
+vui128_t
+__test_splatiuq_112 (void)
+{
+  return vec_splat_u128 (112);
+}
+
+vui128_t
+__test_splatiuq_120 (void)
+{
+  return vec_splat_u128 (120);
+}
+
+vui128_t
 __test_splatiuq_127 (void)
 {
   return vec_splat_u128 (127);
 }
 
 vui128_t
+__test_splatiuq_127_V1 (void)
+{
+  const int sim = 0x7f;
+  // latency PWR8 6-8
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t tmp = vec_srwi (q_ones, (32-7));
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+}
+
+vui128_t
 __test_splatiuq_128 (void)
 {
   return vec_splat_u128 (128);
+}
+
+vui128_t
+__test_splatiuq_129 (void)
+{
+  return vec_splat_u128 (129);
+}
+
+vui128_t
+__test_splatiuq_136 (void)
+{
+  return vec_splat_u128 (136);
+}
+
+vui128_t
+__test_splatiuq_143 (void)
+{
+  return vec_splat_u128 (143);
+}
+
+vui128_t
+__test_splatiuq_144 (void)
+{
+  return vec_splat_u128 (144);
+}
+
+vui128_t
+__test_splatiuq_159 (void)
+{
+  return vec_splat_u128 (159);
+}
+
+vui128_t
+__test_splatiuq_192 (void)
+{
+  return vec_splat_u128 (192);
+}
+
+vui128_t
+__test_splatiuq_255 (void)
+{
+  return vec_splat_u128 (255);
+}
+
+vui128_t
+__test_splatiuq_V3 (void)
+  {
+    const int sim = 63;
+    vui128_t result;
+    /* ((sim >= 16) && (sim < 64))
+     * Use the Vector Sum across Signed Word Saturate (vsumsws)
+     * instructions. Combining the sum across with word splat
+     * generates A * 4 + B word constant in word 3. Words 0-2 are
+     * filled with 0x00000000 which eliminates the normal splat 0
+     * and terminating vsldoi required for quadword constants.
+     * There is special case for ((sim % 5) == 0)) where A == B.
+     * Vsumsws is an expensive instructions (7 cycles latency)
+     * but is does a lot of work. Requires 3 instructions
+     * (or 2 with CSE) and 9 cycles latency total.
+     */
+    if (__builtin_constant_p (sim) && ((sim % 5) == 0))
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/5);
+	  result = (vui128_t) vec_vsumsws_PWR7 (vai, vai);
+	}
+    else
+	{
+	  const vi32_t vai = vec_splat_s32 (sim/4);
+	  const vi32_t vbi = vec_splat_s32 (sim%4);
+	  // need inline asm to avoid unnecessary LE correction.
+	  result = (vui128_t) vec_vsumsws_PWR7 (vai, vbi);
+	}
+    return result;
+  }
+
+vui128_t
+__test_splatiuq_V2 (void)
+{
+  // 7-bit const ((sim > 16) && (sim < 255))
+      const int sim = 159;
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t v4 = vec_splat_u32(4);
+      const vui32_t vhnib = vec_splat_u32(sim / 16);
+      vui32_t tmp;
+      /* 8-bit pattern to cover constants 16-255.
+       * Use splat immediates and shift left to generate the
+       * high nibble (high 4-bits). Then splat immediate
+       * the low nibble (low 4-bits). Then combine (ADD or OR)
+       * to generate the 8-bit const. Skip this if ((sim % 16) != 0).
+       * Then shift in (vsldoi) 96-bits of zeros to complete the
+       * unsigned __int128 const. Requires 5-7 instructions
+       * (or 3-5 with CSE) and 6-12 cycles latency.
+       *  */
+      // v8bit = vhnib * 16
+      tmp = vec_sl (vhnib, v4);
+      if ((sim % 16) != 0)
+	{ // generate low nibble 0-15
+	  const vui32_t vlnib = vec_splat_u32((sim % 16));
+	  // 7-bit shift count == voctet + vbit
+	  tmp = vec_add (tmp, vlnib);
+	}
+      return (vui128_t) vec_sld (q_zero, tmp, 4);
+    }
+
+vui128_t
+__test_splatiuq_V1 (void)
+{
+  // 7-bit const ((sim > 64) && (sim < 128))
+      const int sim = 76;
+      const vui32_t q_zero = vec_splat_u32(0);
+      const vui32_t v3 = vec_splat_u32(3);
+      const vui32_t vbyte = vec_splat_u32(sim / 8);
+      vui32_t tmp;
+      /* 7-bit shift-count pattern to cover constants 65-127.
+       * Use splat immediates and shift left to generate the
+       * octet shift count (high 4-bits). Then splat immediate
+       * the byte bit shift count (low 3-bits). Then sum (add)
+       * to generate the 7-bit const. Skip this if ((sim % 8) != 0).
+       * Then shift in (vsldoi) 96-bits of zeros to complete the
+       * unsigned __int128 const. Requires 5-7 instructions
+       * __int128 const. Requires 5-7 instructions
+       * (or 3-5 with CSE) and 6-12 cycles latency.
+       *  */
+      // voctet = vbyte * 8
+      tmp = vec_sl (vbyte, v3);
+      if ((sim % 8) != 0)
+	{
+	  const vui32_t vbit = vec_splat_u32((sim % 8));
+	  // 7-bit shift count == voctet + vbit
+	  tmp = vec_add (tmp, vbit);
+	}
+      return (vui128_t) vec_sld (q_zero, tmp, 4);
+    }
+
+vui128_t
+__test_splatiuq_V0 (void)
+{
+  // For (((sim % 2) == 0) && (sim < 32))) use vec_splat6_u32
+  // from vec_common_ppc.
+  const int sim = 24;
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t vwi = vec_splat6_u32 (sim);
+  return (vui128_t) vec_sld (q_zero, vwi, 4);
+}
+
+vui128_t
+__test_splatiuq_32_V0 (void)
+{
+  /* Special case for constant 64.
+   * For PWR8 we can use Vector Count Leading Zeros Word.
+   * For a value of zero returns a bit count of 64.
+   * We need to zero extent the doubleword for a quadword result.
+   * We use vsldoi with the zero const.
+   * This runs 3 instructions (2 with CSE) and 4-6 cycles.
+   * Otherwise use ((4 << 3) == 32). See also __test_splatiuq_V1
+   * or __test_splatiuq_V3.
+   */
+#ifdef _ARCH_PWR8
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t v32 = vec_clzw (q_zero);
+  return (vui128_t) vec_sld (q_zero, v32, 4);
+#else
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t v3 = vec_splat_u32(3);
+  vui32_t v4 = vec_splat_u32(4);
+  vui32_t tmp = vec_sl (v4, v3);
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+#endif
+}
+
+vui128_t
+__test_splatiuq_64_V0 (void)
+{
+  /* Special case for constant 64.
+   * For PWR8 we can use Vector Count Leading Zeros Doubleword.
+   * For a value of zero returns a bit count of 64.
+   * We need to zero extent the doubleword for a quadword result.
+   * We can use either vsldoi or xxpermdi using the zero const.
+   * This runs 4 instructions (2 with CSE) and 4-6 cycles.
+   * Otherwise use ((4 << 4) == 64).
+   * This also needs zero extent of the byte/word to quadword.
+   * This runs 4 instructions (2 with CSE) and 4-6 cycles.
+   */
+#ifdef _ARCH_PWR8
+  // This should generate vspltisw vt,0
+  // But the compiler may separate vspltisw for word/doubleword const
+  const vui64_t q_zero = { 0, 0 };
+  vui64_t v64 = vec_clzd (q_zero);
+  return (vui128_t) vec_sld ((vui32_t) q_zero, (vui32_t) v64, 8);
+#else
+  const vui32_t q_zero = vec_splat_u32(0);
+  vui32_t v4 = vec_splat_u32(4);
+  vui32_t tmp = vec_sl (v4, v4);
+  return (vui128_t) vec_sld (q_zero, tmp, 4);
+#endif
 }
 
 vui128_t
@@ -1760,25 +2519,25 @@ __test_cmsumudm_V2 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 vui128_t
 test_vec_sldbi_0  (vui128_t a, vui128_t b)
 {
-  return (vec_vsldbi (a, b, 0));
+  return (vec_sldb_quadword (a, b, 0));
 }
 
 vui128_t
 test_vec_srdbi_0  (vui128_t a, vui128_t b)
 {
-  return (vec_vsrdbi (a, b, 0));
+  return (vec_sldb_quadword (a, b, 0));
 }
 
 vui128_t
 test_vec_sldbi_7  (vui128_t a, vui128_t b)
 {
-  return (vec_vsldbi (a, b, 7));
+  return (vec_sldb_quadword (a, b, 7));
 }
 
 vui128_t
 test_vec_srdbi_7  (vui128_t a, vui128_t b)
 {
-  return (vec_vsrdbi (a, b, 7));
+  return (vec_srdb_quadword (a, b, 7));
 }
 
 unsigned __int128
@@ -2258,6 +3017,54 @@ test_vec_addcuq (vui128_t a, vui128_t b)
 }
 
 vui128_t
+test_vec_rlqi_0 (vui128_t __A)
+{
+  return vec_rlqi (__A, 0);
+}
+
+vui128_t
+test_vec_rlqi_1 (vui128_t __A)
+{
+  return vec_rlqi (__A, 1);
+}
+
+vui128_t
+test_vec_rlqi_15 (vui128_t __A)
+{
+  return vec_rlqi (__A, 15);
+}
+
+vui128_t
+test_vec_rlqi_16 (vui128_t __A)
+{
+  return vec_rlqi (__A, 16);
+}
+
+vui128_t
+test_vec_rlqi_17 (vui128_t __A)
+{
+  return vec_rlqi (__A, 17);
+}
+
+vui128_t
+test_vec_rlqi_31 (vui128_t __A)
+{
+  return vec_rlqi (__A, 31);
+}
+
+vui128_t
+test_vec_rlqi_32 (vui128_t __A)
+{
+  return vec_rlqi (__A, 32);
+}
+
+vui128_t
+test_vec_rlqi_33 (vui128_t __A)
+{
+  return vec_rlqi (__A, 33);
+}
+
+vui128_t
 test_vec_slqi_0 (vui128_t __A)
 {
   return vec_slqi (__A, 0);
@@ -2299,10 +3106,41 @@ test_vec_slqi_17 (vui128_t __A)
 {
   return vec_slqi (__A, 17);
 }
+
+vui128_t
+test_vec_slqi_18 (vui128_t __A)
+{
+  return vec_slqi (__A, 18);
+}
+
+vui128_t
+test_vec_slqi_30 (vui128_t __A)
+{
+  return vec_slqi (__A, 30);
+}
+
 vui128_t
 test_vec_slqi_31 (vui128_t __A)
 {
   return vec_slqi (__A, 31);
+}
+
+vui128_t
+test_vec_slqi_32 (vui128_t __A)
+{
+  return vec_slqi (__A, 32);
+}
+
+vui128_t
+test_vec_slqi_34 (vui128_t __A)
+{
+  return vec_slqi (__A, 34);
+}
+
+vui128_t
+test_vec_slqi_36 (vui128_t __A)
+{
+  return vec_slqi (__A, 36);
 }
 
 vui128_t
@@ -2312,9 +3150,63 @@ test_vec_slqi_48 (vui128_t __A)
 }
 
 vui128_t
+test_vec_slqi_60 (vui128_t __A)
+{
+  return vec_slqi (__A, 60);
+}
+
+vui128_t
+test_vec_slqi_64 (vui128_t __A)
+{
+  return vec_slqi (__A, 64);
+}
+
+vui128_t
+test_vec_slqi_68 (vui128_t __A)
+{
+  return vec_slqi (__A, 68);
+}
+
+vui128_t
+test_vec_slqi_96 (vui128_t __A)
+{
+  return vec_slqi (__A, 96);
+}
+
+vui128_t
+test_vec_slqi_98 (vui128_t __A)
+{
+  return vec_slqi (__A, 98);
+}
+
+vui128_t
+test_vec_slqi_110 (vui128_t __A)
+{
+  return vec_slqi (__A, 110);
+}
+
+vui128_t
+test_vec_slqi_112 (vui128_t __A)
+{
+  return vec_slqi (__A, 112);
+}
+
+vui128_t
+test_vec_slqi_114 (vui128_t __A)
+{
+  return vec_slqi (__A, 114);
+}
+
+vui128_t
 test_vec_slqi_120 (vui128_t __A)
 {
   return vec_slqi (__A, 120);
+}
+
+vui128_t
+test_vec_slqi_127 (vui128_t __A)
+{
+  return vec_slqi (__A, 127);
 }
 
 vui128_t
@@ -2572,6 +3464,7 @@ test_vpaste_x (vui64_t __VH, vui64_t __VL)
   return (result);
 }
 
+#if 0 // Deprecated!
 vui128_t
 test_vsl4 (vui128_t a)
 {
@@ -2583,6 +3476,7 @@ test_vsr4 (vui128_t a)
 {
 	return (vec_srq4(a));
 }
+#endif
 
 vui128_t
 test_vec_sldq (vui128_t a, vui128_t b, vui128_t sh)

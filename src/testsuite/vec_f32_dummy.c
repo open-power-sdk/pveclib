@@ -35,9 +35,133 @@
 #include <testsuite/arith128_test_f32.h>
 
 vf32_t
+test_vec_absf32 (vf32_t x)
+{
+  return vec_absf32(x);
+}
+
+vf32_t
 test_vec_copysignf32 (vf32_t x, vf32_t y)
 {
   return vec_copysignf32 (x, y);
+}
+
+vui32_t
+test_vec_mask32_f32sign ()
+{
+  return vec_mask32_f32sign ();
+}
+
+vui32_t
+test_vec_mask32_f32mag ()
+{
+  return vec_mask32_f32mag ();
+}
+
+vui32_t
+test_vec_mask32_f32sig ()
+{
+  return vec_mask32_f32sig ();
+}
+
+vui32_t
+test_vec_mask32_f32exp ()
+{
+  return vec_mask32_f32exp ();
+}
+
+vui32_t
+test_vec_mask32_f32hidden ()
+{
+  return vec_mask32_f32hidden ();
+}
+
+vui32_t
+test_vec_mask32_f32hidden_V1 ()
+{
+  const vui32_t signmsk = vec_mask32_f32sign();
+  // rotate right 8 bits for hidden
+  return vec_sld (signmsk, signmsk, 3);
+}
+
+vui32_t
+test_vec_mask32_f32hidden_V0 ()
+{
+  // This could be 4 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui32_t ones = vec_splat_u32(1);
+  const vui32_t v23 = vec_splat_u32(23-32);
+  return vec_sl (ones, v23);
+}
+
+vui32_t
+test_vec_mask32_f32exp_V3 ()
+{
+  // This could be 4-6 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load + vslw
+  const vui32_t vones = vec_splat_u32(-1);
+  const vui32_t v23 = vec_splat_u32(23-32);
+  // Generate 0x000000ff
+  const vui32_t vFF = (vui32_t) vec_cmpeq((vui8_t) vones, (vui8_t) v23);
+  // shift to 0x7f800000
+  return vec_vslw_byte (vFF, (vui8_t) v23);
+}
+
+vui32_t
+test_vec_mask32_f32exp_V2 ()
+{
+  // This could be 6 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui8_t vones = vec_splat_u8(-1);
+  const vui8_t vzero = vec_splat_u8(0);
+  vui8_t vF0F0 = vec_mergeh (vones,vzero);
+  return vec_slwi ((vui32_t) vF0F0, 15);
+}
+
+vui32_t
+test_vec_mask32_f32exp_V1 ()
+{
+  // This could be 6-8 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui32_t vones = vec_splat_u32(-1);
+  vui32_t vFF = vec_slwi (vones, 24);
+  return vec_srwi (vFF, 1);
+}
+
+vui32_t
+test_vec_mask32_f32exp_V0 ()
+{
+  // This could be 6-8 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui32_t vones = vec_splat_u32(-1);
+  const vui32_t v24 = vec_splat_u32(24-32);
+  const vui32_t v1 = vec_splat_u32(1);
+  vui32_t vFF = vec_sl (vones, v24);
+  return vec_sr (vFF, v1);
+}
+
+vui32_t
+test_vec_mask32_byte0_V0 ()
+{
+  // This could be 6 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui8_t vones = vec_splat_u8(-1);
+  const vui8_t vzero = vec_splat_u8(0);
+  vui8_t vF0F0 = vec_mergeh (vones,vzero);
+  // vF000
+  return (vui32_t) vec_mergeh (vF0F0,vzero);
+}
+
+vui32_t
+test_vec_mask32_byte3_V0 ()
+{
+  // This could be 6 cycles, but GCC constant propagation
+  // rewrites to .rodata constant and 9 cycle load
+  const vui8_t vones = vec_splat_u8(-1);
+  const vui8_t vzero = vec_splat_u8(0);
+  vui8_t v0F0F = vec_mergeh (vzero, vones);
+  // v000F
+  return (vui32_t) vec_mergeh (vzero,v0F0F);
 }
 
 vf32_t
@@ -56,6 +180,42 @@ vui32_t
 test_vec_xvxsigsp (vf32_t f32)
 {
   return vec_xvxsigsp (f32);
+}
+
+vb32_t
+test_vec_iszerof32 (vf32_t vf32)
+{
+  return vec_iszerof32 (vf32);
+}
+
+vb32_t
+test_vec_issubnormalf32 (vf32_t vf32)
+{
+  return vec_issubnormalf32 (vf32);
+}
+
+vb32_t
+test_vec_isnormalf32 (vf32_t vf32)
+{
+  return vec_isnormalf32 (vf32);
+}
+
+vb32_t
+test_vec_isnanf32 (vf32_t vf32)
+{
+  return vec_isnanf32 (vf32);
+}
+
+vb32_t
+test_vec_isinff32 (vf32_t vf32)
+{
+  return vec_isinff32 (vf32);
+}
+
+vb32_t
+test_vec_isfinitef32 (vf32_t vf32)
+{
+  return vec_isfinitef32 (vf32);
 }
 
 vb32_t

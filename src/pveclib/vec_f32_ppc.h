@@ -213,6 +213,75 @@ vec_vsstfsso (vf64_t xs, float *array,
 	      const long long offset0, const long long offset1);
 static inline void
 vec_vstxsspx (vf64_t xs, const signed long long ra, float *rb);
+
+static inline vui32_t
+vec_mask32_f32sign (void)
+{
+#if defined (_ARCH_PWR8)
+  const vui32_t vones = vec_splat_u32(-1);
+  return vec_sl ( vones, vones);
+#else
+  // masks = {signmask, sigmask, expmask, hidden};
+  const vui32_t masks = {0x80000000, 0x007fffff, 0x7f800000, 0x00800000};
+  return vec_splat (masks, 0);
+#endif
+}
+
+static inline vui32_t
+vec_mask32_f32mag (void)
+{
+#if defined (_ARCH_PWR8)
+  vui32_t signmsk = vec_mask32_f32sign();
+  return vec_nor (signmsk, signmsk);
+#else
+  // masks = {signmask, sigmask, expmask, hidden};
+  const vui32_t masks = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff};
+  return masks;
+#endif
+}
+
+static inline vui32_t
+vec_mask32_f32sig (void)
+{
+#if defined (_ARCH_PWR8)
+  const vui32_t vones = vec_splat_u32(-1);
+  return vec_srwi (vones, 9);
+#else
+  // masks = {signmask, sigmask, expmask, hidden};
+  const vui32_t masks = {0x80000000, 0x007fffff, 0x7f800000, 0x00800000};
+  return vec_splat (masks, 1);
+#endif
+}
+
+static inline vui32_t
+vec_mask32_f32exp (void)
+{
+#if defined (_ARCH_PWR8)
+  const vui32_t vones = vec_splat_u32(-1);
+  const vui32_t v24 = vec_splat_u32(24-32);
+  const vui32_t v1 = vec_splat_u32(1);
+  vui32_t vFF = vec_sl (vones, v24);
+  return vec_sr (vFF, v1);
+#else
+  // masks = {signmask, sigmask, expmask, hidden};
+  const vui32_t masks = {0x80000000, 0x007fffff, 0x7f800000, 0x00800000};
+  return vec_splat (masks, 2);
+#endif
+}
+
+static inline vui32_t
+vec_mask32_f32hidden (void)
+{
+#if defined (_ARCH_PWR8)
+  const vui32_t signmsk = vec_mask32_f32sign();
+  // rotate right 8 bits for hidden
+  return vec_sld (signmsk, signmsk, 3);
+#else
+  // masks = {signmask, sigmask, expmask, hidden};
+  const vui32_t masks = {0x80000000, 0x007fffff, 0x7f800000, 0x00800000};
+  return vec_splat (masks, 3);
+#endif
+}
  ///@endcond
 
 /*! \brief typedef __vbinary32 to vector of 4 xfloat elements. */
@@ -224,6 +293,7 @@ typedef vf32_t __vbinary32;
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vf32x vector float values containing the magnitudes.
  *  @return vector absolute values of 4x float elements of vf32x.
@@ -256,6 +326,7 @@ vec_absf32 (vf32_t vf32x)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return an int containing 0 or 1.
@@ -277,8 +348,8 @@ vec_all_isfinitef32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+
   tmp = vec_and ((vui32_t)vf32, expmask);
   return !vec_any_eq(tmp, expmask);
 #endif
@@ -298,6 +369,7 @@ vec_all_isfinitef32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return boolean int, true if all 4 float values are infinity
@@ -320,10 +392,9 @@ vec_all_isinff32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_all_eq(tmp, expmask);
 #endif
@@ -343,6 +414,7 @@ vec_all_isinff32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if all of 4 vector float values are
@@ -366,10 +438,9 @@ vec_all_isnanf32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_all_gt(tmp, expmask);
 #endif
@@ -390,6 +461,7 @@ vec_all_isnanf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if all of 4 vector float values are
@@ -412,8 +484,8 @@ vec_all_isnormalf32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+
   tmp = vec_and ((vui32_t) vf32, expmask);
   return !(vec_any_eq (tmp, expmask) || vec_any_eq(tmp, vec_zero));
 #endif
@@ -433,6 +505,7 @@ vec_all_isnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-30 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if all of 4 vector float values are
@@ -456,11 +529,12 @@ vec_all_issubnormalf32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui32_t explow = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					 0x00800000);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t signmask = vec_mask32_f32sign ();
+  // Min normal exp same as hidden bit.
+  // rotate signmask right 8 bits for hidden
+  const vui32_t explow = vec_sld (signmask, signmask, 3);
+  const vui32_t vec_zero = vec_splat_u32(0);
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_all_lt (tmp, explow) && vec_all_ne (tmp, vec_zero);
 #endif
@@ -480,6 +554,7 @@ vec_all_issubnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if all of 4 vector float values are
@@ -503,9 +578,9 @@ vec_all_iszerof32 (vf32_t vf32)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t vec_zero = vec_splat_u32(0);
+  const vui32_t signmask = vec_mask32_f32sign ();
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_all_eq(tmp, vec_zero);
 #endif
@@ -526,6 +601,7 @@ vec_all_iszerof32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return an int containing 0 or 1.
@@ -547,8 +623,8 @@ vec_any_isfinitef32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_zero);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+
   tmp = vec_and ((vui32_t)vf32, expmask);
   return !vec_all_eq(tmp, expmask);
 #endif
@@ -567,6 +643,7 @@ vec_any_isfinitef32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 2/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return boolean int, true if any of 4 float values are infinity
@@ -589,10 +666,9 @@ vec_any_isinff32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_any_eq(tmp, expmask);
 #endif
@@ -612,6 +688,7 @@ vec_any_isinff32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 2/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if any of 4 vector float values are
@@ -635,10 +712,9 @@ vec_any_isnanf32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_any_gt(tmp, expmask);
 #endif
@@ -659,6 +735,7 @@ vec_any_isnanf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-24 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if any of 4 vector float values are
@@ -681,9 +758,9 @@ vec_any_isnormalf32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_zero);
 #else
+  const vui32_t expmask = vec_mask32_f32exp ();
   vui32_t res;
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
+
   tmp = vec_and ((vui32_t) vf32, expmask);
   res = (vui32_t) vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, vec_zero));
 
@@ -705,6 +782,7 @@ vec_any_isnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-18 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return if any of 4 vector float values are subnormal.
@@ -727,11 +805,11 @@ vec_any_issubnormalf32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
-  const vui32_t explow = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					 0x00800000);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t signmask = vec_mask32_f32sign ();
+  // Min normal exp same as hidden bit.
+  // rotate signmask right 8 bits for hidden
+  const vui32_t explow = vec_sld (signmask, signmask, 3);
+  const vui32_t vec_zero = vec_splat_u32(0);
   vui32_t tmpz, tmp2;
   vb32_t vsubnorm;
 
@@ -757,6 +835,7 @@ vec_any_issubnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a boolean int, true if any of 4 vector float values are
@@ -780,9 +859,9 @@ vec_any_iszerof32 (vf32_t vf32)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+  const vui32_t signmask = vec_mask32_f32sign ();
+  const vui32_t vec_zero = vec_splat_u32(0);
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   return vec_any_eq(tmp, vec_zero);
 #endif
@@ -807,6 +886,7 @@ vec_any_iszerof32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vf32x vector float values containing the sign bits.
  *  @param vf32y vector float values containing the magnitudes.
@@ -829,8 +909,7 @@ vec_copysignf32 (vf32_t vf32x, vf32_t vf32y)
   return (result);
 #endif
 #else
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000,
-      0x80000000, 0x80000000);
+  const vui32_t signmask = vec_mask32_f32sign ();
   vf32_t result;
 
   result = (vf32_t)vec_sel ((vui32_t)vf32y, (vui32_t)vf32x, signmask);
@@ -855,6 +934,7 @@ vec_copysignf32 (vf32_t vf32x, vf32_t vf32y)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-15  | 2/cycle  |
  *  |power9   |   5   | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -876,8 +956,7 @@ vec_isfinitef32 (vf32_t vf32)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
+  const vui32_t expmask = vec_mask32_f32exp ();
   vui32_t tmp;
 
   tmp = vec_and ((vui32_t)vf32, expmask);
@@ -899,6 +978,7 @@ vec_isfinitef32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -919,11 +999,10 @@ vec_isinff32 (vf32_t vf32)
       :);
 #endif
 #else
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+
   tmp = vec_andc ((vui32_t)vf32, signmask);
   result = vec_cmpeq (tmp, expmask);
 #endif
@@ -941,6 +1020,7 @@ vec_isinff32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -961,11 +1041,10 @@ vec_isnanf32 (vf32_t vf32)
       :);
 #endif
 #else
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t signmask = vec_mask32_f32sign ();
   vui32_t tmp2;
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+
   tmp2 = vec_andc ((vui32_t)vf32, signmask);
   result = vec_cmpgt (tmp2, expmask);
 #endif
@@ -987,6 +1066,7 @@ vec_isnanf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-15  | 1/cycle  |
  *  |power9   |   5   | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -1008,13 +1088,12 @@ vec_isnormalf32 (vf32_t vf32)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000, 0x7f800000,
-					  0x7f800000);
-  const vui32_t veczero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t vec_zero = vec_splat_u32(0);
   vui32_t tmp;
 
   tmp = vec_and ((vui32_t) vf32, expmask);
-  return vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, veczero));
+  return vec_nor (vec_cmpeq (tmp, expmask), vec_cmpeq (tmp, vec_zero));
 #endif
 }
 
@@ -1032,6 +1111,7 @@ vec_isnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-16  | 1/cycle  |
  *  |power9   |   3   | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -1053,12 +1133,13 @@ vec_issubnormalf32 (vf32_t vf32)
       :);
 #endif
 #else
+  const vui32_t signmask = vec_mask32_f32sign ();
+  // Min normal exp same as hidden bit.
+  // rotate signmask right 8 bits for hidden
+  const vui32_t explow = vec_sld (signmask, signmask, 3);
+  const vui32_t vec_zero = vec_splat_u32(0);
   vui32_t tmp, tmpz, tmp2;
-  const vui32_t explow = CONST_VINT128_W(0x00800000, 0x00800000, 0x00800000,
-					 0x00800000);
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+
   tmp2 = vec_andc ((vui32_t)vf32, signmask);
   tmp = (vui32_t) vec_cmplt(tmp2, explow);
   tmpz = (vui32_t) vec_cmpeq (tmp2, vec_zero);
@@ -1081,6 +1162,7 @@ vec_issubnormalf32 (vf32_t vf32)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   | 5     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf32 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -1101,10 +1183,10 @@ vec_iszerof32 (vf32_t vf32)
       :);
 #endif
 #else
+  const vui32_t signmask = vec_mask32_f32sign ();
+  const vui32_t vec_zero = vec_splat_u32(0);
   vui32_t tmp2;
-  const vui32_t vec_zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0x80000000, 0x80000000,
-					   0x80000000);
+
   tmp2 = vec_andc ((vui32_t)vf32, signmask);
   result = vec_cmpeq (tmp2, vec_zero);
 #endif
@@ -2056,6 +2138,7 @@ vec_vstxsspx (vf64_t xs, const signed long long ra, float *rb)
  *  |--------:|:-----:|:---------|
  *  |power8   |  6-15 | 2/cycle  |
  *  |power9   |   2   | 4/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param sig Vector unsigned int containing the Sign Bit and 23-bit significand.
  *  @param exp Vector unsigned int containing the 8-bit exponent.
@@ -2077,10 +2160,9 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
       : "wa" (sig), "wa" (exp)
       : );
 #endif
-#else
+#else // defined (_ARCH_PWR8)
+  const vui32_t expmask = vec_mask32_f32exp ();
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
-					  0x7f800000, 0x7f800000);
 
   tmp = vec_slwi (exp, 23);
   result = (vf32_t) vec_sel ((vui32_t) sig, tmp, expmask);
@@ -2106,6 +2188,7 @@ vec_xviexpsp (vui32_t sig, vui32_t exp)
  *  |--------:|:-----:|:---------|
  *  |power8   |  6-15 | 2/cycle  |
  *  |power9   |   2   | 4/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vrb vector double value.
  *  @return vector unsigned int containing the 8-bit exponent right justified
@@ -2126,12 +2209,11 @@ vec_xvxexpsp (vf32_t vrb)
       : "wa" (vrb)
       : );
 #endif
-#else
+#else // defined (_ARCH_PWR8)
+  const vui32_t signmask = vec_mask32_f32sign ();
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
-					  0x7f800000, 0x7f800000);
 
-  tmp = vec_and ((vui32_t) vrb, expmask);
+  tmp = vec_andc ((vui32_t) vrb, signmask);
   result = vec_srwi (tmp, 23);
 #endif
   return result;
@@ -2157,6 +2239,7 @@ vec_xvxexpsp (vf32_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |  8-17 | 1/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vrb vector double value.
  *  @return vector unsigned int containing the significand.
@@ -2176,16 +2259,19 @@ vec_xvxsigsp (vf32_t vrb)
       : "wa" (vrb)
       : );
 #endif
+#else // defined (_ARCH_PWR8)
+  const vui32_t zero = vec_splat_u32(0);
+  const vui32_t sigmask = vec_mask32_f32sig ();
+#if defined (__VSX__) && (__GNUC__ > 7)
+  const vui32_t expmask = vec_mask32_f32exp ();
+  const vui32_t hidden = vec_mask32_f32hidden ();
 #else
+  const vui32_t magmask = vec_mask32_f32mag ();
+  const vui32_t expmask = vec_andc (magmask, sigmask);
+  const vui32_t hidden = sigmask + 1;
+#endif
   vui32_t t128, tmp;
   vui32_t normal;
-  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t sigmask = CONST_VINT128_W(0x007fffff, 0x007fffff,
-					  0x007fffff, 0x007fffff);
-  const vui32_t expmask = CONST_VINT128_W(0x7f800000, 0x7f800000,
-					  0x7f800000, 0x7f800000);
-  const vui32_t hidden = CONST_VINT128_W(0x00800000, 0x00800000,
-					 0x00800000, 0x00800000);
 
   // Check if vrb is normal. Normal values need the hidden bit
   // restored to the significand. We use a simpler sequence here as

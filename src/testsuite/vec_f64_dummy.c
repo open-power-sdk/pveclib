@@ -41,6 +41,69 @@ test_vec_copysignf64 (vf64_t x, vf64_t y)
   return vec_copysignf64 (x, y);
 }
 
+vui64_t
+test_vec_const64_f64bias ()
+{
+  return vec_const64_f64bias ();
+}
+
+vui64_t
+test_vec_const64_f64maxe ()
+{
+  return vec_const64_f64maxe ();
+}
+
+vui64_t
+test_vec_const64_f64naninf ()
+{
+  return vec_const64_f64naninf ();
+}
+
+vui64_t
+test_vec_mask64_f64sign ()
+{
+  return vec_mask64_f64sign ();
+}
+
+vui64_t
+test_vec_mask64_f64mag ()
+{
+  return vec_mask64_f64mag ();
+}
+
+vui64_t
+test_vec_mask64_f64sig ()
+{
+  return vec_mask64_f64sig ();
+}
+
+vui64_t
+test_vec_mask64_f64exp ()
+{
+  return vec_mask64_f64exp ();
+}
+
+vui64_t
+test_vec_mask64_f64hidden ()
+{
+  return vec_mask64_f64hidden ();
+}
+
+vui64_t
+test_vec_mask64_f64hidden_V2 ()
+{
+  vui32_t v1 = vec_splat_u32(1);
+  return vec_sldi ((vui64_t) v1, 52);
+}
+
+vui64_t
+test_vec_mask64_f64hidden_V1 ()
+{
+  const vui64_t signmask = vec_mask64_f64sign ();
+  // Min normal exp same as hidden bit.
+  return vec_srdi (signmask, 11);
+}
+
 vf64_t
 test_vec_xviexpdp (vui64_t sig, vui64_t exp)
 {
@@ -57,6 +120,42 @@ vui64_t
 test_vec_xvxsigdp (vf64_t f64)
 {
   return vec_xvxsigdp (f64);
+}
+
+vb64_t
+test_vec_iszerof64 (vf64_t vf64)
+{
+  return vec_iszerof64 (vf64);
+}
+
+vb64_t
+test_vec_issubnormalf64 (vf64_t vf64)
+{
+  return vec_issubnormalf64 (vf64);
+}
+
+vb64_t
+test_vec_isnormalf64 (vf64_t vf64)
+{
+  return vec_isnormalf64 (vf64);
+}
+
+vb64_t
+test_vec_isnanf64 (vf64_t vf64)
+{
+  return vec_isnanf64 (vf64);
+}
+
+vb64_t
+test_vec_isinff64 (vf64_t vf64)
+{
+  return vec_isinff64 (vf64);
+}
+
+vb64_t
+test_vec_isfinitef64 (vf64_t vf64)
+{
+  return vec_isfinitef64 (vf64);
 }
 
 vb64_t
@@ -459,25 +558,25 @@ test_load_vf64 ( vf64_t *val)
 }
 
 int
-test_f64_isfinite (double value)
+test__builtin_f64_isfinite (double value)
 {
   return (__builtin_isfinite (value));
 }
 
 int
-test_f64_isinf (double value)
+test__builtin_f64_isinf (double value)
 {
   return (__builtin_isinf (value));
 }
 
 int
-test_f64_isnan (double value)
+test__builtin_f64_isnan (double value)
 {
   return (__builtin_isnan (value));
 }
 
 int
-test_f64_isnormal (double value)
+test__builtin_f64_isnormal (double value)
 {
   return (__builtin_isnormal (value));
 }
@@ -568,6 +667,36 @@ __test_cmpledp (vf64_t a, vf64_t b)
   return vec_cmple (a, b);
 }
 #endif
+
+void
+test_vec_xviexpdp_loop (vf64_t* out, vui64_t* sig, vui64_t* exp, int N)
+{
+  int i;
+  for (i=0; i<N; i++)
+    {
+      out[i] = vec_xviexpdp (sig[i], exp[i]);
+    }
+}
+
+void
+test_vec_xvxexpdp_loop (vui64_t* out, vf64_t* in, int N)
+{
+  int i;
+  for (i=0; i<N; i++)
+    {
+      out[i] = vec_xvxexpdp (in[i]);
+    }
+}
+
+void
+test_vec_xvxsigdp_loop (vui64_t* out, vf64_t* in, int N)
+{
+  int i;
+  for (i=0; i<N; i++)
+    {
+      out[i] = vec_xvxsigdp (in[i]);
+    }
+}
 
 /*
  * The following are both compile tests for Gather/Scatter operations

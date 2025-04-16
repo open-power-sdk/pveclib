@@ -974,7 +974,6 @@ __test_splatiud_31 (void)
 vui64_t
 __test_splatiud_31_V1 (void)
 {
-  const int sim = 0x1f;
   // latency PWR8 4-6
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
 #if defined (_ARCH_PWR8)
@@ -1007,7 +1006,6 @@ __test_splatiud_63 (void)
 vui64_t
 __test_splatiud_63_V1 (void)
 {
-  const int sim = 0x3f;
   // latency PWR8 4-6
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
 #if defined (_ARCH_PWR8)
@@ -1034,7 +1032,6 @@ __test_splatiud_127 (void)
 vui64_t
 __test_splatiud_127_V1 (void)
 {
-  const int sim = 0x7f;
   // latency PWR8 4-6
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
 #if defined (_ARCH_PWR8)

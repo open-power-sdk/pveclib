@@ -3949,6 +3949,7 @@ static inline vui128_t vec_sldq (vui128_t vrw, vui128_t vrx,
 				 vui128_t vrb);
 static inline vui128_t vec_sldqi (vui128_t vrw, vui128_t vrx,
 				  const unsigned int shb);
+static inline vui128_t vec_splat_u128 (const int sim);
 static inline vui128_t vec_srqi (vui128_t vra, const unsigned int shb);
 static inline vui128_t vec_subcuq (vui128_t vra, vui128_t vrb);
 static inline vui128_t vec_subeuqm (vui128_t vra, vui128_t vrb, vui128_t vrc);
@@ -3969,6 +3970,33 @@ static inline vi128_t vec_vsraq_byte (vi128_t vra, vui8_t vrb);
 static inline vui128_t vec_vsrq_byte (vui128_t vra, vui8_t vrb);
 #endif
 ///@endcond
+
+
+static inline vui32_t
+vec_mask128_int128sign (void)
+{
+  //  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+#ifdef _ARCH_PWR9
+  const vui8_t q_zero = vec_splat_u8 (0);
+  const vui8_t q_sign = vec_splats ((unsigned char) 0x80);
+  return (vui32_t) vec_sld (q_sign, q_zero, 15);
+#else
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t signmask;
+  signmask = vec_sl (q_ones, q_ones);
+  return vec_sld (signmask, q_zero, 12);
+#endif
+}
+
+static inline vui32_t
+vec_mask128_int128carry (void)
+{
+  //  const vui32_t signmask = CONST_VINT128_W(0, 0, 0, 1);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_one = vec_splat_u32 (1);
+  return vec_sld (q_zero, q_one, 4);
+}
 
 /** \brief Vector Absolute Difference Unsigned Quadword.
  *
@@ -4603,7 +4631,7 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
   return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
 #endif
 #else
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
@@ -4692,7 +4720,7 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
   return vrt;
 #endif
 #else
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
@@ -4781,7 +4809,7 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
   return (vb128_t) vec_nor ((vui64_t) vrt, (vui64_t) vrt);
 #endif
 #else
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
@@ -4871,7 +4899,7 @@ vec_cmpltsq (vi128_t vra, vi128_t vrb)
   return vrt;
 #endif
 #else
-  const vui32_t signbit = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui32_t _a, _b;
 
   _a = vec_xor ((vui32_t) vra, signbit);
@@ -5029,12 +5057,11 @@ vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
   return vec_all_eq (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpequq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpequq. %0,%2,%3;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -5072,26 +5099,25 @@ vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtsq. %0,%4,%3;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtsq. %0,%3,%2;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
-  const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t ncarry = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui128_t a_b, _a, _b;
 
   _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
   _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   a_b = vec_subcuq (_a, _b);
-  return vec_all_eq((vui32_t)a_b, carry128);
+  return vec_any_ne((vui32_t)a_b, ncarry);
 #endif
 }
 
@@ -5120,19 +5146,18 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
   return vec_all_gt (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtsq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtsq. %0,%2,%3;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui128_t b_a, _a, _b;
 
   _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
@@ -5168,26 +5193,25 @@ vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
   return vec_all_le (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtsq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtsq. %0,%2,%3;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
-  const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t ncarry = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui128_t b_a, _a, _b;
 
   _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
   _b = (vui128_t) vec_xor ((vui32_t) vrb, signbit);
 
   b_a = vec_subcuq (_b, _a);
-  return vec_all_eq((vui32_t)b_a, carry128);
+  return vec_any_ne((vui32_t)b_a, ncarry);
 #endif
 }
 
@@ -5216,19 +5240,18 @@ vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
   return vec_all_lt (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtsq. %0,%4,%3;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtsq. %0,%3,%2;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
   const vui32_t ncarry128 = CONST_VINT128_W (0, 0, 0, 0);
-  const vui32_t signbit = CONST_VINT128_W (0x80000000, 0, 0, 0);
+  const vui32_t signbit = vec_mask128_int128sign ();
   vui128_t a_b, _a, _b;
 
   _a = (vui128_t) vec_xor ((vui32_t) vra, signbit);
@@ -5266,12 +5289,11 @@ vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
   return vec_all_ne (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpequq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpequq. %0,%2,%3;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -5311,12 +5333,11 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
   return vec_all_eq (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpequq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpequq. %0,%2,%3;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -5354,22 +5375,21 @@ vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
   return vec_all_ge (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtuq. %0,%4,%3;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtuq. %0,%3,%2;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
-  const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
+  const vui32_t ncarry = CONST_VINT128_W (0, 0, 0, 0);
   vui128_t a_b;
 
   a_b = vec_subcuq (vra, vrb);
-  return vec_all_eq ((vui32_t) a_b, carry128);
+  return vec_any_ne((vui32_t)a_b, ncarry);
 #endif
 }
 
@@ -5398,12 +5418,11 @@ vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
   return vec_all_gt (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtuq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtuq. %0,%2,%3;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -5442,22 +5461,21 @@ vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
   return vec_all_le (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtuq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtuq. %0,%2,%3;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
 #endif
 #else
-  const vui32_t carry128 = CONST_VINT128_W (0, 0, 0, 1);
+  const vui32_t ncarry = CONST_VINT128_W (0, 0, 0, 0);
   vui128_t b_a;
 
   b_a = vec_subcuq (vrb, vra);
-  return vec_all_eq ((vui32_t) b_a, carry128);
+  return vec_any_ne((vui32_t)b_a, ncarry);
 #endif
 }
 
@@ -5486,12 +5504,11 @@ vec_cmpuq_all_lt (vui128_t vra, vui128_t vrb)
   return vec_all_lt (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpgtuq. %0,%4,%3;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,25,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpgtuq. %0,%3,%2;\n"
+      "setbc     %1,24;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -5532,12 +5549,11 @@ vec_cmpuq_all_ne (vui128_t vra, vui128_t vrb)
   return vec_all_ne (vra, vrb);
 #else
   vb128_t vrt;
-  int u, r;
+  int r;
   __asm__(
-      "vcmpequq. %0,%3,%4;\n"
-      "mfocrf    %1,2;\n"
-      "rlwinm    %2,%1,27,1"
-      : "=v" (vrt), "=&r" (u), "=r" (r)
+      "vcmpequq. %0,%2,%3;\n"
+      "setbc     %1,26;\n"
+      : "=v" (vrt), "=r" (r)
       : "v" (vra), "v" (vrb)
       : "cr6");
   return r;
@@ -9377,7 +9393,6 @@ vec_splat_u128 (const int sim)
       const vui32_t q_zero = vec_splat_u32(0);
       const vui32_t v4 = vec_splat_u32(4);
       const vui32_t vhigh = vec_splat_u32(sim / 16);
-      const vui32_t vlow = vec_splat_u32((sim % 16));
       vui32_t tmp;
 
       tmp = vec_sl (vhigh, v4);
@@ -11090,7 +11105,7 @@ vec_vmsumoud (vui64_t a, vui64_t b, vui128_t c)
   return vec_adduqm (res, c);
 #endif
 }
-#if 0
+#if 0 // deprecated
 /** \brief Vector Rotate Left Quadword by Byte.
  *
  *  Vector Rotate Left Quadword 0-127 bits.

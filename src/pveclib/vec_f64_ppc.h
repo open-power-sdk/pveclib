@@ -205,6 +205,241 @@ static inline vf64_t
 vec_vlxsfdx (const signed long long ra, const double *rb);
 static inline void
 vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb);
+
+/** \brief Add exponents Doubleword.
+ *
+ * Add Floating-point exponents (DP or QP) that are handled in
+ * vector long long int form. This is no problem for _ARCH_PWR8 which
+ * support vector doubleword integer arithmetic (vaddudm/vsubudm).
+ * But doubleword integer arithmetic will be slow for _ARCH_PW7 and
+ * earlier.
+ *
+ * Fortunately the exponents fit snugly in the odd words of the vector
+ * and the even words are always 0x0. So we can safely substitute
+ * vadduwm/vsubuwm for this case.
+ *
+ * /note The use of DW integers for exponent manipulation matches the
+ * _ARCH_PWR9 extract/insert exponent instructions for DP/QP.
+ *
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *
+ *  @param vra Vector unsigned long long containing exponent values.
+ *  @param vrb Vector unsigned long long containing exponent values.
+ *  @return The 128-bit vector long long int as vra + vrb.
+ */
+static inline vui64_t
+vec_addexp_DW(vui64_t vra, vui64_t vrb)
+{
+#if defined (_ARCH_PWR8)
+  return vec_addudm (vra, vrb);
+#else
+  return (vui64_t) vec_vadduwm ((vui32_t) vra, (vui32_t) vrb);
+#endif
+}
+
+/** \brief Add exponents Doubleword.
+ *
+ * Subtract Floating-point exponents (DP or QP) that are handled in
+ * vector long long int form. This is no problem for _ARCH_PWR8 which
+ * support vector doubleword integer arithmetic (vaddudm/vsubudm).
+ * But doubleword integer arithmetic will be slow for _ARCH_PW7 and
+ * earlier.
+ *
+ * Fortunately the exponents fit snugly in the odd words of the vector
+ * and the even words are always 0x0. So we can safely substitute
+ * vadduwm/vsubuwm for this case.
+ *
+ * /note The use of DW integers for exponent manipulation matches the
+ * _ARCH_PWR9 extract/insert exponent instructions for DP/QP.
+ *
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *
+ *  @param vra Vector unsigned long long containing exponent values.
+ *  @param vrb Vector unsigned long long containing exponent values.
+ *  @return The 128-bit vector long long int as vra - vrb.
+ */
+static inline vui64_t
+vec_subexp_DW(vui64_t vra, vui64_t vrb)
+{
+#if defined (_ARCH_PWR8)
+  return vec_subudm (vra, vrb);
+#else
+  return (vui64_t) vec_vsubuwm ((vui32_t) vra, (vui32_t) vrb);
+#endif
+
+}
+
+/** \brief Generate doubleword splat constant 0x3ff.
+ *
+ * Load immediate the quadword constant vui32_t {0, 0x3ff, 0, 0x3ff}.
+ *
+ * \note See vec_mask64_f128exp() for rationale.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-6  | 1/cycle  |
+ *
+ *  @return The 128-bit const vui64_t {0x3ff, 0x3ff}.
+ */
+static inline vui64_t
+vec_const64_f64bias(void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  return vec_srdi ((vui64_t) q_ones, 54);
+#else
+  // generate {0x3fff, 0x3fff, 0x3fff, 0x3fff}
+  vui32_t biasmask = vec_srwi (q_ones, 22);
+  // then {0, 0x3fff, 0, 0x3fff}
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) biasmask);
+#endif
+}
+
+/** \brief Generate doubleword splat constant 0x7fe.
+ *
+ * Load immediate the quadword constant vui32_t {0, 0x7fe, 0, 0x7fe}.
+ *
+ * \note See vec_mask64_f128exp() for rationale.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-8  | 2/cycle  |
+ *
+ *  @return The 128-bit const vui64_t {0x7fe, 0x7fe}.
+ */
+static inline vui64_t
+vec_const64_f64maxe(void)
+{
+  vui64_t biasmask = vec_const64_f64bias ();
+  return vec_addexp_DW (biasmask, biasmask);
+}
+
+/** \brief Generate doubleword splat constant 0x7ff.
+ *
+ * Load immediate the quadword constant vui32_t {0, 0x7ff, 0, 0x7ff}.
+ *
+ * \note See vec_mask64_f128exp() for rationale.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-6  | 1/cycle  |
+ *
+ *  @return The 128-bit const vui64_t {0x7ff, 0x7ff}.
+ */
+static inline vui64_t
+vec_const64_f64naninf(void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  return vec_srdi ((vui64_t) q_ones, 53);
+#else
+  // generate {0x7fff, 0x7fff, 0x7fff, 0x7fff}
+  vui32_t biasmask = vec_srwi (q_ones, 21);
+  // then {0, 0x7fff, 0, 0x7fff}
+  return (vui64_t) vec_vupklsw_PWR8 ((vi32_t) biasmask);
+#endif
+}
+
+static inline vui64_t
+vec_mask64_f64sign (void)
+{
+#if defined (_ARCH_PWR8)
+  // Total latency 4 cycles
+  const vui64_t vones = (vui64_t) vec_splat_u32(-1);
+  return vec_sl ( vones, vones);
+#else
+  const vui32_t vones = vec_splat_u32(-1);
+  const vui32_t vzero = vec_splat_u32(0);
+  // generate {0x80000000, 0x80000000, 0x80000000, 0x80000000}
+  vui32_t signmask = vec_sl ( vones, vones);
+  // merge to {0x80000000, 0x00000000, 0x80000000, 0x00000000}
+  return (vui64_t) vec_mergel (signmask, vzero);
+#endif
+}
+
+static inline vui64_t
+vec_mask64_f64mag (void)
+{
+#if defined (_ARCH_PWR8)
+  // Total latency 4 cycles
+  const vui64_t vones = (vui64_t) vec_splat_u32(-1);
+  return vec_srdi (vones, 1);
+#else
+  const vui32_t vones = vec_splat_u32(-1);
+  // generate {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff};
+  vui32_t magmask = vec_srwi (vones, 1);
+  // merge to {0x7fffffff, 0xffffffff, 0x7fffffff, 0xffffffff};
+  return (vui64_t) vec_mergel (magmask, vones);
+#endif
+}
+
+static inline vui64_t
+vec_mask64_f64sig (void)
+{
+#if defined (_ARCH_PWR8)
+  // Total latency 4 cycles
+  const vui64_t vones = (vui64_t) vec_splat_u32(-1);
+  return vec_srdi (vones, 12);
+#else
+  const vui32_t vones = vec_splat_u32(-1);
+  // generate {0x000fffff, 0x000fffff, 0x000fffff, 0x000fffff};
+  vui32_t sigmask = vec_srwi (vones, 12);
+  // merge to  {0x000fffff, 0xffffffff, 0x000fffff, 0xffffffff};
+  return (vui64_t) vec_mergel (sigmask, vones);
+#endif
+}
+
+static inline vui64_t
+vec_mask64_f64exp (void)
+{
+#if defined (_ARCH_PWR8)
+  // Total latency 6 cycles
+  vui64_t signmask, sigmask;
+  signmask = vec_mask64_f64sign ();
+  sigmask =  vec_mask64_f64sig ();
+  return vec_nor (signmask, sigmask);
+#else
+  const vui32_t vones = vec_splat_u32(-1);
+  vui32_t signmask, sigmask;
+  // generate {0x80000000, 0x80000000, 0x80000000, 0x80000000}
+  signmask =  vec_sl ( vones, vones);
+  // generate {0x000fffff, 0x000fffff, 0x000fffff, 0x000fffff};
+  sigmask = vec_srwi (vones, 12);
+  // merge to {0x000fffff, 0xffffffff, 0x000fffff, 0xffffffff};
+  sigmask = vec_mergel (sigmask, vones);
+  // generate {0x7ff00000, 0x00000000, 0x7ff00000, 0x00000000};
+  return (vui64_t) vec_nor (signmask, sigmask);
+#endif
+}
+
+static inline vui64_t
+vec_mask64_f64hidden (void)
+{
+#if defined (_ARCH_PWR8)
+  // No good way to generate an immediate vector long long = {1, 1)
+  // vec_splat_u64() will use a inline asm vupklsw(vec_splat_u32(1))
+  // Instead generate sign mask and rotate it hidden position.
+  // Total latency 6 cycles
+  const vui64_t signmsk = vec_mask64_f64sign ();
+  // 53 also used in naninf
+  return vec_rldi (signmsk, 53);
+#else
+  // Here is easier to generate 1 and shift left
+  const vui32_t v1 = vec_splat_u32(1);
+  const vui32_t v0 = vec_splat_u32(0);
+  vui32_t hmask;
+  hmask = vec_slwi (v1, 20);
+  return (vui64_t) vec_mergel (hmask, v0);
+#endif
+}
 ///@endcond
 
 /** \brief Vector double absolute value.
@@ -213,6 +448,7 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb);
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vf64x vector double values containing the magnitudes.
  *  @return vector double absolute values of vf64x.
@@ -242,6 +478,7 @@ vec_absf64 (vf64_t vf64x)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  \note This function will not raise VXSNAN or VXVC (FE_INVALID)
  *  exceptions. A normal __binary64 compare can.
@@ -266,8 +503,8 @@ vec_all_isfinitef64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+
   tmp = vec_and ((vui64_t)vf64, expmask);
   return !vec_cmpud_any_eq(tmp, expmask);
 #endif
@@ -287,6 +524,7 @@ vec_all_isfinitef64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return boolean int, true if all 2 double values are infinity
@@ -309,10 +547,9 @@ vec_all_isinff64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_all_eq(tmp, expmask);
 #endif
@@ -332,6 +569,7 @@ vec_all_isinff64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if all 2 vector double values are
@@ -355,10 +593,9 @@ vec_all_isnanf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_all_gt(tmp, expmask);
 #endif
@@ -379,6 +616,7 @@ vec_all_isnanf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-28 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if all 2 vector double values are
@@ -401,8 +639,8 @@ vec_all_isnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+
   tmp = vec_and ((vui64_t) vf64, expmask);
   return !(vec_cmpud_any_eq (tmp, expmask)
         || vec_cmpud_any_eq (tmp, vec_zero));
@@ -423,6 +661,7 @@ vec_all_isnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-30 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if all of 2 vector double values are
@@ -446,10 +685,9 @@ vec_all_issubnormalf64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t explow = CONST_VINT128_DW (0x0010000000000000,
-					   0x0010000000000000);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  const vui64_t signmask = vec_mask64_f64sign ();
+  // Min normal exp same as hidden bit.
+  const vui64_t explow  = vec_srdi (signmask, 11);
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 
   tmp = vec_andc ((vui64_t)vf64, signmask);
@@ -471,6 +709,7 @@ vec_all_issubnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if all 2 vector double values are
@@ -494,8 +733,7 @@ vec_all_iszerof64 (vf64_t vf64)
 #endif
   return vec_all_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  const vui64_t signmask = vec_mask64_f64sign ();
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
 
   tmp = vec_andc ((vui64_t)vf64, signmask);
@@ -518,6 +756,7 @@ vec_all_iszerof64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return an int containing 0 or 1.
@@ -539,8 +778,8 @@ vec_any_isfinitef64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_zero);
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+
   tmp = vec_and ((vui64_t)vf64, expmask);
   return !vec_cmpud_all_eq(tmp, expmask);
 #endif
@@ -559,6 +798,7 @@ vec_any_isfinitef64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary32 values.
  *  @return boolean int, true if any of 2 double values are infinity
@@ -581,10 +821,9 @@ vec_any_isinff64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_eq(tmp, expmask);
 #endif
@@ -604,6 +843,7 @@ vec_any_isinff64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if any of 2 vector double values are
@@ -627,10 +867,9 @@ vec_any_isnanf64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_gt(tmp, expmask);
 #endif
@@ -651,6 +890,7 @@ vec_any_isnanf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if any of 2 vector double values are
@@ -674,8 +914,7 @@ vec_any_isnormalf64 (vf64_t vf64)
   return vec_any_eq(tmp, vec_zero);
 #else
   vui64_t res;
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
 
   tmp = vec_and ((vui64_t) vf64, expmask);
   res = (vui64_t) vec_nor (vec_cmpequd (tmp, expmask),
@@ -698,6 +937,7 @@ vec_any_isnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-18 | 1/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return true if any of 2 vector double values are subnormal.
@@ -720,10 +960,9 @@ vec_any_issubnormalf64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
-  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
-					    0x0010000000000000UL);
+  const vui64_t signmask = vec_mask64_f64sign ();
+  // Min normal exp same as hidden bit.
+  const vui64_t minnorm  = vec_srdi (signmask, 11);
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
   vui64_t tmpz, tmp2, vsubnorm;
 
@@ -749,6 +988,7 @@ vec_any_issubnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-20  | 2/cycle  |
  *  |power9   |   6   | 1/cycle  |
+ *  |power10  | 6 - 8 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a boolean int, true if any of 2 vector double values are
@@ -772,9 +1012,9 @@ vec_any_iszerof64 (vf64_t vf64)
 #endif
   return vec_any_eq(tmp, vec_ones);
 #else
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  const vui64_t signmask = vec_mask64_f64sign ();
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   return vec_cmpud_any_eq(tmp, vec_zero);
 #endif
@@ -799,6 +1039,7 @@ vec_any_iszerof64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-7   | 2/cycle  |
  *  |power9   | 2     | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vf64x vector double values containing the sign bits.
  *  @param vf64y vector double values containing the magnitudes.
@@ -848,6 +1089,7 @@ vec_copysignf64 (vf64_t vf64x, vf64_t vf64y)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-15  | 2/cycle  |
  *  |power9   |   5   | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a vector boolean long, each containing all 0s(false)
@@ -869,8 +1111,7 @@ vec_isfinitef64 (vf64_t vf64)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
   vui64_t tmp;
 
   tmp = vec_and ((vui64_t)vf64, expmask);
@@ -892,6 +1133,7 @@ vec_isfinitef64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a vector boolean long long, each containing all 0s(false)
@@ -913,11 +1155,10 @@ vec_isinff64 (vf64_t vf64)
       :);
 #endif
 #else
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
   vui64_t tmp;
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+
   tmp = vec_andc ((vui64_t) vf64, signmask);
   result = (vb64_t)vec_cmpequd (tmp, expmask);
 #endif
@@ -935,6 +1176,7 @@ vec_isinff64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a vector boolean long long, each containing all 0s(false)
@@ -956,11 +1198,10 @@ vec_isnanf64 (vf64_t vf64)
       :);
 #endif
 #else
+  const vui64_t expmask = vec_mask64_f64exp ();
+  const vui64_t signmask = vec_mask64_f64sign ();
   vui64_t tmp;
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+
   tmp = vec_andc ((vui64_t)vf64, signmask);
   result = (vb64_t)vec_cmpgtud (tmp, expmask);
 #endif
@@ -981,6 +1222,7 @@ vec_isnanf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-15  | 1/cycle  |
  *  |power9   |   5   | 1/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a vector boolean long long, each containing all 0s(false)
@@ -1002,8 +1244,7 @@ vec_isnormalf64 (vf64_t vf64)
 #endif
   return vec_nor (tmp2, tmp2); // vec_not
 #else
-  const vui64_t expmask = CONST_VINT128_DW (0x7ff0000000000000UL,
-					    0x7ff0000000000000UL);
+  const vui64_t expmask = vec_mask64_f64exp ();
   const vui64_t veczero = CONST_VINT128_DW (0UL, 0UL);
   vui64_t tmp;
 
@@ -1027,6 +1268,7 @@ vec_isnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6-16  | 1/cycle  |
  *  |power9   |   3   | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary64 values.
  *  @return a vector boolean long long, each containing all 0s(false)
@@ -1048,12 +1290,16 @@ vec_issubnormalf64 (vf64_t vf64)
       :);
 #endif
 #else
-  vui64_t tmp;
-  const vui64_t minnorm = CONST_VINT128_DW (0x0010000000000000UL,
-					    0x0010000000000000UL);
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  const vui64_t signmask = vec_mask64_f64sign ();
+  // Min normal exp same as hidden bit.
+#if _ARCH_PWR8
+  const vui64_t minnorm  = vec_srdi (signmask, 11);
+#else
+  const vui64_t minnorm  = vec_mask64_f64hidden ();
+#endif
+  vui64_t tmp;
+
   tmp = vec_andc ((vui64_t) vf64, signmask);
   result = vec_andc (vec_cmpltud (tmp, minnorm),
 		     vec_cmpequd (tmp, vec_zero));
@@ -1075,6 +1321,7 @@ vec_issubnormalf64 (vf64_t vf64)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-13  | 2/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vf64 a vector of __binary32 values.
  *  @return a vector boolean int, each containing all 0s(false)
@@ -1096,10 +1343,10 @@ vec_iszerof64 (vf64_t vf64)
       :);
 #endif
 #else
-  vui64_t tmp2;
+  const vui64_t signmask = vec_mask64_f64sign ();
   const vui64_t vec_zero = CONST_VINT128_DW (0, 0);
-  const vui64_t signmask = CONST_VINT128_DW (0x8000000000000000UL,
-					     0x8000000000000000UL);
+  vui64_t tmp2;
+
   tmp2 = vec_andc ((vui64_t)vf64, signmask);
   result = (vb64_t)vec_cmpequd (tmp2, vec_zero);
 #endif
@@ -1652,8 +1899,9 @@ vec_vstxsfdx (vf64_t xs, const signed long long ra, double *rb)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |  6-15 | 2/cycle  |
- *  |power9   |   2   | 4/cycle  |
+ *  |power8   | 4 - 10| 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param sig Vector unsigned long long containing the Sign Bit and 52-bit significand.
  *  @param exp Vector unsigned long long containing the 11-bit exponent.
@@ -1675,12 +1923,19 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
       : "wa" (sig), "wa" (exp)
       : );
 #endif
+#elif defined (_ARCH_PWR8)
+  const vui64_t expmask = vec_mask64_f64exp();
+  vui64_t tmp;
+
+  tmp = vec_sldi (exp, 52);
+  result = (vf64_t) vec_sel (sig, tmp, expmask);
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
+  const vui64_t expmask = vec_mask64_f64exp();
+  // const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
 
   tmp = (vui32_t) vec_slqi ((vui128_t) exp, 52);
-  result = (vf64_t) vec_sel ((vui32_t) sig, tmp, expmask);
+  result = (vf64_t) vec_sel ((vui32_t) sig, tmp, (vui32_t) expmask);
 #endif
   return result;
 }
@@ -1701,8 +1956,9 @@ vec_xviexpdp (vui64_t sig, vui64_t exp)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   |  6-15 | 2/cycle  |
- *  |power9   |   2   | 4/cycle  |
+ *  |power8   | 4 - 8 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vrb vector double value.
  *  @return vector unsigned long long containing 11-bit exponent right justified
@@ -1723,11 +1979,18 @@ vec_xvxexpdp (vf64_t vrb)
       : "wa" (vrb)
       : );
 #endif
+#elif defined (_ARCH_PWR8)
+  const vui64_t signmask = vec_mask64_f64sign();
+  vui64_t tmp;
+
+  tmp = vec_andc ((vui64_t) vrb, signmask);
+  result = vec_srdi (tmp, 52);
 #else
   vui32_t tmp;
-  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
+  const vui64_t expmask = vec_mask64_f64exp();
+  // const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
 
-  tmp = vec_and ((vui32_t) vrb, expmask);
+  tmp = vec_and ((vui32_t) vrb, (vui32_t) expmask);
   result = (vui64_t) vec_srqi ((vui128_t) tmp, 52);
 #endif
   return result;
@@ -1753,6 +2016,7 @@ vec_xvxexpdp (vf64_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   |  8-17 | 1/cycle  |
  *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param vrb vector double value.
  *  @return vector unsigned long long containing the significand.
@@ -1772,13 +2036,31 @@ vec_xvxsigdp (vf64_t vrb)
       : "wa" (vrb)
       : );
 #endif
+#elif defined (_ARCH_PWR8)
+  const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
+  const vui64_t signmask = vec_mask64_f64sign ();
+  const vui64_t sigmask =  vec_mask64_f64sig ();
+  const vui64_t expmask = vec_nor (signmask, sigmask);
+  const vui64_t hidden = vec_rldi (signmask, 53);
+
+  vui32_t t128, tmp;
+  vui32_t normal;
+
+  // Check if vrb is normal. Normal values need the hidden bit
+  // restored to the significand. We use a simpler sequence here as
+  // vec_isnormalf64 does more then we need.
+  tmp = vec_and ((vui32_t) vrb, (vui32_t) expmask);
+  normal = (vui32_t) vec_nor (vec_cmpeq (tmp, (vui32_t) expmask),
+		              vec_cmpeq (tmp, zero));
+  t128 = vec_and ((vui32_t) vrb, (vui32_t) sigmask);
+  result = (vui64_t) vec_sel (t128, normal, (vui32_t) hidden);
 #else
   vui32_t t128, tmp;
   vui32_t normal;
   const vui32_t zero = CONST_VINT128_W(0, 0, 0, 0);
-  const vui32_t sigmask = CONST_VINT128_W(0x000fffff, -1, 0x000fffff, -1);
-  const vui32_t expmask = CONST_VINT128_W(0x7ff00000, 0, 0x7ff00000, 0);
-  const vui32_t hidden = CONST_VINT128_W(0x00100000, 0, 0x00100000, 0);
+  const vui32_t sigmask = (vui32_t) vec_mask64_f64sig ();
+  const vui32_t expmask = (vui32_t) vec_mask64_f64exp ();
+  const vui32_t hidden = (vui32_t) vec_mask64_f64hidden ();
 
   // Check if vrb is normal. Normal values need the hidden bit
   // restored to the significand. We use a simpler sequence here as

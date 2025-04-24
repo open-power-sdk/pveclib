@@ -4814,7 +4814,6 @@ vec_splat_s64 (const int sim)
   else if (__builtin_constant_p (sim))
     {
       vi32_t vword;
-      vi64_t vdw;
       vword = vec_splati (sim);
       return  vec_signextll_word (vword);
     }
@@ -4965,7 +4964,6 @@ vec_splat_u64 (const int sim)
   else if (__builtin_constant_p (sim) && (sim <= 2147483647))
     {
       vi32_t vword;
-      vi64_t vdw;
       vword = vec_splati (sim);
       return (vui64_t) vec_signextll_word (vword);
     }
@@ -5085,6 +5083,14 @@ vec_splat_u64 (const int sim)
       result = vec_srdi_PWR8 ((vui64_t) q_ones, (64-8));
     }
 #endif
+  else if (__builtin_constant_p (sim) && ((sim > 30) && (sim <=60) && (sim % 4 == 0)))
+    {
+      vi32_t tmp;
+      const vui32_t v2 = vec_splat_u32(2);
+      const vi32_t vhnib = vec_splat_s32((sim / 4));
+      tmp = vec_sl (vhnib, v2);
+      result = (vui64_t) vec_vupklsw_PWR8 (tmp);
+    }
   else if (__builtin_constant_p (sim) && ((sim > 45) && (sim < 256)))
     {
       vi32_t tmp;

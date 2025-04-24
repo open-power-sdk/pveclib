@@ -2160,7 +2160,6 @@ __test_splatiuq_31 (void)
 vui128_t
 __test_splatiuq_31_V1 (void)
 {
-  const int sim = 0x1f;
   // latency PWR8 6-8
   const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
@@ -2204,6 +2203,32 @@ __test_splatiuq_60 (void)
   return vec_splat_u128 (60);
 }
 
+#if 0
+vui128_t
+__test_splatiuq_60_v1 (void)
+{
+  // Does not work
+  // GCC constant propagation converts all divide/modulo by 10s
+  // into .rodata loads.
+  // Seems like GCC never got around to implementing built-ins for
+  // PWR9 vmul10* instructions.
+  const int sim = 60;
+  const vui32_t tens = vec_splat_u32 (sim/10);
+  vui128_t result;
+
+  if (__builtin_constant_p (sim) && (((sim % 10) == 0)))
+    {
+      result = vec_mul10uq ((vui128_t) tens);
+    }
+  else
+    {
+      const vui32_t digit = vec_splat_u32 (sim%10);
+      result = vec_mul10euq ((vui128_t) tens, (vui128_t) digit);
+    }
+  return result;
+}
+#endif
+
 vui128_t
 __test_splatiuq_63 (void)
 {
@@ -2213,7 +2238,6 @@ __test_splatiuq_63 (void)
 vui128_t
 __test_splatiuq_63_V1 (void)
 {
-  const int sim = 0x3f;
   // latency PWR8 6-8
   const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
@@ -2232,6 +2256,39 @@ __test_splatiuq_65 (void)
 {
   return vec_splat_u128 (65);
 }
+
+vui128_t
+__test_splatiuq_69 (void)
+{
+  return vec_splat_u128 (69);
+}
+
+#if 0
+vui128_t
+__test_splatiuq_69_v1 (void)
+{
+  // Does not work
+  // GCC constant propagation converts all divide/modulo by 10s
+  // into .rodata loads.
+  // Seems like GCC never got around to implementing built-ins for
+  // PWR9 vmul10* instructions.
+  const int sim = 69;
+  vui128_t result;
+
+  if (__builtin_constant_p (sim) && (sim < 100) && (((sim % 10) == 0)))
+    {
+      const vui8_t tens = vec_splats ((unsigned char)(sim/10));
+      result = vec_mul10uq ((vui128_t) tens);
+    }
+  else
+    {
+      const vui8_t tens = vec_splats ((unsigned char)(sim/10));
+      const vui8_t digit = vec_splats ((unsigned char)(sim%10));
+      result = vec_mul10euq ((vui128_t) tens, (vui128_t) digit);
+    }
+  return result;
+}
+#endif
 
 vui128_t
 __test_splatiuq_72 (void)
@@ -2260,7 +2317,6 @@ __test_splatiuq_127 (void)
 vui128_t
 __test_splatiuq_127_V1 (void)
 {
-  const int sim = 0x7f;
   // latency PWR8 6-8
   const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);

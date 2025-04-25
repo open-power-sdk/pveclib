@@ -1058,39 +1058,39 @@ test_scalar_test_neg_PWR9 (__binary128 vfa)
 vf64_t
 test_vec_xscvqpdpo_PWR9 (__binary128 f128)
 {
-  return vec_xscvqpdpo (f128);
+  return vec_xscvqpdpo_inline (f128);
 }
 
 vui64_t
 test_vec_xscvqpudz_PWR9 (__binary128 f128)
 {
-  return vec_xscvqpudz (f128);
+  return vec_xscvqpudz_inline (f128);
 }
 
 vui128_t
 test_vec_xscvqpuqz_PWR9 (__binary128 f128)
 {
-  return vec_xscvqpuqz (f128);
+  return vec_xscvqpuqz_inline (f128);
 }
 
 // Convert Float DP to QP
 __binary128
 test_vec_xscvdpqp_PWR9 (vf64_t f64)
 {
-  return vec_xscvdpqp (f64);
+  return vec_xscvdpqp_inline (f64);
 }
 
 // Convert Integer QW to QP
 __binary128
 test_vec_xscvsqqp_PWR9 (vi128_t int128)
 {
-  return vec_xscvsqqp (int128);
+  return vec_xscvsqqp_inline (int128);
 }
 
 __binary128
 test_vec_xscvuqqp_PWR9 (vui128_t int128)
 {
-  return vec_xscvuqqp (int128);
+  return vec_xscvuqqp_inline (int128);
 }
 
 // Convert Float DP to QP
@@ -1237,12 +1237,12 @@ test_convert_qpuqz_PWR9 (__binary128 f128)
 	      vui64_t ull_low, ull_high;
 	      // TBD xscvqpudz to proceed.
 	      tmp128 = f128 * qp_shr64;
-	      ull_high = vec_xscvqpudz (tmp128);
+	      ull_high = vec_xscvqpudz_inline (tmp128);
 	      //hi128 = ull_high [VEC_DW_H];
-	      hi128 = vec_xscvudqp (ull_high);
+	      hi128 = vec_xscvudqp_inline (ull_high);
 	      hi128 = hi128 * qp_shl64;
 	      tmp128 = tmp128 - hi128;
-	      ull_low = vec_xscvqpudz (tmp128);
+	      ull_low = vec_xscvqpudz_inline (tmp128);
 	      result = (vui128_t) vec_mrgahd ((vui128_t) ull_high, (vui128_t) ull_low);
 	    }
 	  else

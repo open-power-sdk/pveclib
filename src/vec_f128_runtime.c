@@ -58,4 +58,52 @@ __VEC_PWR_IMP (vec_xsmsubqpo) (__binary128 vfa, __binary128 vfb, __binary128 vfc
   return vec_xsmsubqpo_inline (vfa, vfb, vfc);
 }
 
+__binary128
+__VEC_PWR_IMP (vec_xscvdpqp) (vf64_t vfa)
+{
+  return vec_xscvdpqp_inline (vfa);
+}
+
+vf64_t
+__VEC_PWR_IMP (vec_xscvqpdpo) (__binary128 vfa)
+{
+  return vec_xscvqpdpo_inline (vfa);
+}
+
+vui64_t
+__VEC_PWR_IMP (vec_xscvqpudz) (__binary128 vfa)
+{
+  return vec_xscvqpudz_inline (vfa);
+}
+
+vui128_t
+__VEC_PWR_IMP (vec_xscvqpuqz) (__binary128 vfa)
+{
+  return vec_xscvqpuqz_inline (vfa);
+}
+
+__binary128
+__VEC_PWR_IMP (vec_xscvsdqp) (vi64_t vfa)
+{
+  return vec_xscvsdqp_inline (vfa);
+}
+
+__binary128
+__VEC_PWR_IMP (vec_xscvsqqp) (vi128_t vfa)
+{
+  return vec_xscvsqqp_inline (vfa);
+}
+
+__binary128
+__VEC_PWR_IMP (vec_xscvudqp) (vui64_t vfa)
+{
+  return vec_xscvudqp_inline (vfa);
+}
+
+__binary128
+__VEC_PWR_IMP (vec_xscvuqqp) (vui128_t vfa)
+{
+  return vec_xscvuqqp_inline (vfa);
+}
+
 

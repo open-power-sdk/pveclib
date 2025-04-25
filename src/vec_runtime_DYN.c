@@ -114,6 +114,15 @@
  * parameters.
  * \sa \ref main_libary_issues_0_0_2
  * \sa \ref main_libary_issues_0_0 */
+#define VEC_RESOLVER_1(_VT,_FUNC,_VA) \
+static _VT \
+(* RESPASTE(_FUNC) (void))(_VA) \
+{ \
+  VEC_DYN_RESOLVER(_FUNC); \
+} \
+_VT _FUNC (_VA) \
+__attribute__ ((ifunc ("resolve_" #_FUNC )));
+
 #define VEC_RESOLVER_2(_VT,_FUNC,_VA,_VB) \
 static _VT \
 (* RESPASTE(_FUNC) (void))(_VA, _VB) \
@@ -158,7 +167,15 @@ extern __binary128 vec_xssubqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xsdivqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xsmulqpo ## _TARGET (__binary128, __binary128); \
 extern __binary128 vec_xsmaddqpo ## _TARGET (__binary128, __binary128, __binary128); \
-extern __binary128 vec_xsmsubqpo ## _TARGET (__binary128, __binary128, __binary128);
+extern __binary128 vec_xsmsubqpo ## _TARGET (__binary128, __binary128, __binary128); \
+extern __binary128 vec_xscvdpqp ## _TARGET (vf64_t); \
+extern vf64_t vec_xscvqpdpo ## _TARGET (__binary128); \
+extern vui64_t vec_xscvqpudz ## _TARGET (__binary128); \
+extern vui128_t vec_xscvqpuqz ## _TARGET (__binary128); \
+extern __binary128 vec_xscvsdqp ## _TARGET (vi64_t); \
+extern __binary128 vec_xscvsqqp ## _TARGET (vi128_t); \
+extern __binary128 vec_xscvudqp ## _TARGET (vui64_t); \
+extern __binary128 vec_xscvuqqp ## _TARGET (vui128_t);
 
 #define VEC_INT512_LIB_LIST(_TARGET) \
 extern __VEC_U_256 vec_mul128x128 ## _TARGET (vui128_t, vui128_t); \
@@ -296,6 +313,14 @@ VEC_RESOLVER_2 (__binary128, vec_xsmulqpo, __binary128, __binary128);
 VEC_RESOLVER_2 (__binary128, vec_xssubqpo, __binary128, __binary128);
 VEC_RESOLVER_3 (__binary128, vec_xsmaddqpo, __binary128, __binary128, __binary128);
 VEC_RESOLVER_3 (__binary128, vec_xsmsubqpo, __binary128, __binary128, __binary128);
+VEC_RESOLVER_1 (__binary128, vec_xscvdpqp, vf64_t);
+VEC_RESOLVER_1 (vf64_t, vec_xscvqpdpo, __binary128);
+VEC_RESOLVER_1 (vui64_t, vec_xscvqpudz, __binary128);
+VEC_RESOLVER_1 (vui128_t, vec_xscvqpuqz, __binary128);
+VEC_RESOLVER_1 (__binary128, vec_xscvsdqp, vi64_t);
+VEC_RESOLVER_1 (__binary128, vec_xscvsqqp, vi128_t);
+VEC_RESOLVER_1 (__binary128, vec_xscvudqp, vui64_t);
+VEC_RESOLVER_1 (__binary128, vec_xscvuqqp, vui128_t);
 
 /* Declare the required static resolvers and ifunc aliases for dynamic
  * selection of CPU specific implementations supporting

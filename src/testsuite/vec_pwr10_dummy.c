@@ -60,8 +60,8 @@ __test_splatiuq_2147483647_PWR10 (void)
 vi64_t
 __test_splatisd_PWR10_V3 (void)
 {
-  const int sim = -128;
 #if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  const int sim = -128;
   if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
     { // Saves a word of code space
       vi8_t vbyte;
@@ -71,7 +71,6 @@ __test_splatisd_PWR10_V3 (void)
   else if (__builtin_constant_p (sim))
     {
       vi32_t vword;
-      vi64_t vdw;
       vword = vec_splati (sim);
       return  vec_signextll_word (vword);
     }
@@ -135,8 +134,8 @@ __test_splatiud_PWR10_V1 (void)
 vi128_t
 __test_splatisq_PWR10_V3 (void)
 {
-  const int sim = -2147483648;
 #if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  const int sim = -2147483648;
   if (__builtin_constant_p (sim) && (-128 <= sim) && (sim < 128))
     { // Saves a word of code space
       vi8_t vbyte;
@@ -165,8 +164,8 @@ __test_splatisq_PWR10_V3 (void)
 vui128_t
 __test_splatiuq_PWR10_V3 (void)
 {
-  const int sim = 248;
 #if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  const int sim = 248;
   if (__builtin_constant_p (sim) && (sim < 128))
     { // Saves a word of code space
       vi8_t vbyte;
@@ -186,7 +185,7 @@ __test_splatiuq_PWR10_V3 (void)
   else
     return vec_splats ((unsigned __int128) sim);
 #else
-  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 248);
   return tmp_PWR10;
 #endif
 }
@@ -195,8 +194,8 @@ __test_splatiuq_PWR10_V3 (void)
 vui128_t
 __test_splatiuq_PWR10_V2 (void)
 {
-  const int sim = 248;
 #if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
+  const int sim = 248;
   if (__builtin_constant_p (sim) && (sim < 256))
     { // Saves a word of code space
       const vui8_t q_zero = vec_splat_u8(0);
@@ -205,15 +204,15 @@ __test_splatiuq_PWR10_V2 (void)
     }
   else if (__builtin_constant_p (sim) && (sim <= 2147483647))
     {
-  // For ((sim < 256)) use vec_splats()
-  const vui32_t q_zero = vec_splat_u32(0);
-  vui32_t vai = (vui32_t) vec_splati (sim);
-  return (vui128_t) vec_sldw (q_zero, vai, 1);
+      // For ((sim < 256)) use vec_splats()
+      const vui32_t q_zero = vec_splat_u32(0);
+      vui32_t vai = (vui32_t) vec_splati (sim);
+      return (vui128_t) vec_sldw (q_zero, vai, 1);
     }
   else
-    return vec_splats ((unsigned __int128) sim);
+  return vec_splats ((unsigned __int128) sim);
 #else
-  vui128_t tmp_PWR10 = CONST_VUINT128_QxW (0, 0, 0, 1023);
+  vui128_t tmp_PWR10 = CONST_VUINT128_QxW(0, 0, 0, 248);
   return tmp_PWR10;
 #endif
 }
@@ -222,9 +221,9 @@ __test_splatiuq_PWR10_V2 (void)
 vui128_t
 __test_splatiuq_PWR10_V1 (void)
 {
-  const int sim = 1023;
 #if defined (_ARCH_PWR10) && (defined (__GNUC__) && (__GNUC__ >= 11))
   // For ((sim < 256)) use vec_splats()
+  const int sim = 1023;
   const vui32_t q_zero = vec_splat_u32(0);
   vui32_t vai = (vui32_t) vec_splati (sim);
   //return (vui128_t) vec_sld (q_zero, vai, 4);
@@ -592,14 +591,20 @@ __test_vec_abssq_PWR10 (vi128_t vra)
 vui128_t
 test_vec_xscvqpuqz_PWR10 (__binary128 f128)
 {
-  return vec_xscvqpuqz (f128);
+  return vec_xscvqpuqz_inline (f128);
 }
 
 // Convert Integer QW to QP
 __binary128
+test_vec_xscvsqqp_PWR10 (vi128_t int128)
+{
+  return vec_xscvsqqp_inline (int128);
+}
+
+__binary128
 test_vec_xscvuqqp_PWR10 (vui128_t int128)
 {
-  return vec_xscvuqqp (int128);
+  return vec_xscvuqqp_inline (int128);
 }
 
 vb128_t
@@ -872,12 +877,6 @@ __test_cmsumudm_V2_PWR10 (vui128_t * carry, vui64_t a, vui64_t b, vui128_t c)
 {
   *carry = vec_msumcud ( a, b, c);
   return vec_msumudm ( a, b, c);
-}
-
-vui128_t
-test_vec_srdbi_PWR10  (vui128_t a, vui128_t b, const unsigned int  sh)
-{
-  return ((vui128_t) vec_srdbi_PWR10 ((vui8_t) a, (vui8_t) b, sh));
 }
 
 vui128_t

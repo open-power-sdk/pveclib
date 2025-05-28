@@ -138,6 +138,7 @@ test_vec_diveuqo (vui128_t x, vui128_t z)
   return vec_diveuqo_inline (x, z);
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 vui128_t
 test_vec_diveuqo_V0 (vui128_t x, vui128_t z)
 {
@@ -501,6 +502,7 @@ test_vec_diveuqo_V1 (vui128_t x, vui128_t z)
     }
 #endif
 }
+#endif
 
 vui128_t
 test_vec_diveuq_qpo (vui128_t x, vui128_t z)
@@ -652,7 +654,7 @@ force_eMin (vui64_t x_exp)
 {
   vb64_t exp_mask;
   const vui64_t exp_dnrm = { 0, 0 };
-  const vui64_t exp_min = { 1, 1 };
+  const vui64_t exp_min = vec_splat_u64 (1);
   // Correct exponent for zeros or denormals to E_min
   // will force 0 exponents for zero/denormal results later
   exp_mask = vec_cmpequd (x_exp, exp_dnrm);
@@ -664,7 +666,7 @@ force_eMin_V0 (vui64_t x_exp)
 {
   vb64_t exp_mask;
   const vui64_t exp_dnrm = { 0, 0 };
-  const vui64_t exp_min = { 1, 1 };
+  const vui64_t exp_min = vec_splat_u64 (1);
   // Correct exponent for zeros or denormals to E_min
   // will force 0 exponents for zero/denormal results later
   exp_mask = vec_cmpequd (x_exp, exp_dnrm);
@@ -682,6 +684,33 @@ test_vec_xssubqpo (__binary128 vfa, __binary128 vfb)
 {
   return vec_xssubqpo_inline (vfa, vfb);
 }
+
+vui32_t
+test_const128_f128_fmax_V2(void)
+{
+  vui32_t mag = vec_mask128_f128mag ();
+  vui32_t lbit = vec_mask128_f128Lbit ();
+  return vec_andc (mag, lbit);
+}
+
+vui32_t
+test_const128_f128_fmax_V1(void)
+{
+  vui32_t mag = vec_mask128_f128mag ();
+  vui32_t lbit = vec_mask128_f128Lbit ();
+  return vec_sub (mag, lbit);
+}
+
+#if (__GNUC__ > 6) || (__clang_major__ > 15)
+vui32_t
+test_const128_f128_fmax_V0(void)
+{
+#ifdef __FLOAT128__
+  __binary128 maxf128 = __FLT128_MAX__;
+  return vec_xfer_bin128_2_vui32t (maxf128);
+#endif
+}
+#endif
 
 vui64_t
 test_const64_f128_16_V2(void)
@@ -748,9 +777,27 @@ test_const64_f128_16_V0(void)
 }
 
 vui64_t
+test_const64_f128_63 (void)
+{
+  return vec_const64_f128_63 ();
+}
+
+vui64_t
+test_const64_f128_127 (void)
+{
+  return vec_const64_f128_127 ();
+}
+
+vui64_t
 test_const64_f128_112 (void)
 {
   return vec_const64_f128_112 ();
+}
+
+vui64_t
+test_const64_f128_112_V1 (void)
+{
+  return vec_splat_u64 (112);
 }
 
 vui64_t
@@ -777,9 +824,121 @@ test_const64_f128_112_V0(void)
 }
 
 vui64_t
+test_const64_f128_116 (void)
+{
+  return vec_const64_f128_116 ();
+}
+
+vui64_t
+test_const64_f128_116_V1 (void)
+{
+  return vec_splat_u64 (116);
+}
+
+vui64_t
 test_const64_f128_128 (void)
 {
   return vec_const64_f128_128 ();
+}
+
+vui64_t
+test_const64_f128_128_V1 (void)
+{
+  //  const vui32_t dw_128 = CONST_VINT128_W(0, 0, 0, 128);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+#if defined (_ARCH_PWR8)
+  // Generate {64, 64} from count leading zeros of {0, 0}
+  vui64_t dw64 = vec_clzd((vui64_t) q_zero);
+  // Generate {128, 128}
+  return vec_addudm (dw64, dw64);
+#else
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  vui32_t signmask;
+  signmask = vec_sl (q_ones, q_ones);
+  signmask = vec_sld (q_zero, signmask, 1);
+  return vec_mrgald ((vui128_t) signmask, (vui128_t) signmask);
+#endif
+}
+
+vui64_t
+test_const64_f128naninf (void)
+{
+  return vec_const64_f128naninf ();
+}
+
+vui64_t
+test_const64_f128maxe (void)
+{
+  return vec_const64_f128maxe ();
+}
+
+vui64_t
+test_const64_f128maxe_V1 (void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  const vui32_t lbitmask = vec_splat_u32 (-2);
+  vui32_t biasmask;
+  biasmask = (vui32_t) vec_srdi ((vui64_t) q_ones, 49);
+  biasmask = vec_and (biasmask, lbitmask);
+  return (vui64_t) biasmask;
+#else
+  // const vui32_t biasmask = CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t biasmask = vec_mergel (q_zero, q_ones);
+  biasmask = vec_srwi (biasmask, 18);
+  biasmask = vec_add (biasmask, biasmask);
+  return (vui64_t) biasmask;
+#endif
+}
+
+vui64_t
+test_const64_f128maxe_V0 (void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+#if defined (_ARCH_PWR8)
+  vui64_t biasmask;
+  biasmask = vec_srdi ((vui64_t) q_ones, 50);
+  biasmask = vec_add (biasmask, biasmask);
+  return (vui64_t) biasmask;
+#else
+  // const vui32_t biasmask = CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t biasmask = vec_mergel (q_zero, q_ones);
+  biasmask = vec_srwi (biasmask, 18);
+  biasmask = vec_add (biasmask, biasmask);
+  return (vui64_t) biasmask;
+#endif
+}
+
+vui64_t
+test_const64_f128bias (void)
+{
+  return vec_const64_f128bias ();
+}
+
+vui64_t
+test_const64_f128bias_127 (void)
+{
+  const vui64_t f128bias = vec_const64_f128bias ();
+  const vui64_t v127_dw = vec_const64_f128_127 ();
+  return vec_addudm (f128bias, v127_dw);
+}
+
+vui64_t
+test_const64_f128bias_V0 (void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  #if defined (_ARCH_PWR8)
+
+  return vec_srdi ((vui64_t) q_ones, 50);
+#else
+  // const vui32_t biasmask = CONST_VINT128_W (0, 0x3fff, 0, 0x3fff);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t biasmask = vec_mergel (q_zero, q_ones);
+  biasmask = vec_srwi (biasmask, 18);
+  return (vui64_t) biasmask;
+#endif
 }
 
 vui64_t
@@ -807,6 +966,12 @@ test_const128_f128_128 (void)
   return vec_const128_f128_128 ();
 }
 
+vui32_t
+test_const128_f128_128_V1 (void)
+{
+  return (vui32_t) vec_splat_u128 (128);
+}
+
 vui64_t
 test_mask64_f128exp (void)
 {
@@ -817,6 +982,15 @@ vui32_t
 test_mask128_f128exp (void)
 {
   return vec_mask128_f128exp ();
+}
+
+vui32_t
+test_mask128_f128exp_v4(void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t expmask = vec_srwi (q_ones, 17);
+  return vec_sld (expmask, q_zero, 14);
 }
 
 vui32_t
@@ -876,6 +1050,22 @@ test_mask128_f128exp_V0 (void)
 }
 
 vui32_t
+test_mask128_f128bias_V0 (void)
+{
+  vui32_t biasmask;
+#if defined (_ARCH_PWR8)
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+
+  biasmask = vec_sld (q_ones, q_zero, 14);
+  biasmask = (vui32_t) vec_srhi ((vui16_t) biasmask, 2);
+#else
+  biasmask = CONST_VINT128_W (0x3fff0000, 0, 0, 0);
+#endif
+  return biasmask;
+}
+
+vui32_t
 test_mask128_f128mag (void)
 {
   return vec_mask128_f128mag ();
@@ -905,6 +1095,22 @@ test_mask128_f128sign_V0(void)
 {
   const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   return signmask;
+}
+
+vui32_t
+test_mask128_f128Xbits (void)
+{
+  return vec_mask128_f128Xbits ();
+}
+
+vui32_t
+test_mask128_f128Xbits_V0 (void)
+{
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+
+  vui32_t xbits;
+  xbits = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+  return xbits;
 }
 
 vui32_t
@@ -999,6 +1205,7 @@ test_xsigqpo_v2 (vui32_t a_mag, vui32_t b_mag, vui64_t x_exp)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 vui128_t
 test_xsigqpo_v1 (__binary128 vfa, __binary128 vfb)
 {
@@ -1032,6 +1239,7 @@ test_xsigqpo_v1 (__binary128 vfa, __binary128 vfb)
   result = vec_adduqm ((vui128_t) a_sig, (vui128_t) b_sig);;
   return result;
 }
+#endif
 
 __VEC_U_256
 test_xsigqpo_v0 (__binary128 vfa, __binary128 vfb)
@@ -1059,6 +1267,7 @@ test_xexpqpp (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 vui64_t
 test_xexpqpp_V2 (__binary128 vfa, __binary128 vfb)
 {
@@ -1092,6 +1301,7 @@ test_xexpqpp_V1 (__binary128 vfa, __binary128 vfb)
   result = (vui64_t) vec_sld (tmp, tmp, 10);
   return result;
 }
+#endif
 
 vui64_t
 test_xexpqpp_v0 (__binary128 vfa, __binary128 vfb)
@@ -1320,7 +1530,8 @@ test_vec_addqpo (__binary128 vfa, __binary128 vfb)
       if (__builtin_expect ((vec_cmpud_all_ge ( q_exp, exp_naninf)), 0))
 	{
 	  // return maximum finite exponent and significand
-	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  // const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  const vui32_t f128_max = vec_const128_f128_fmax ();
 	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
 	  return vec_xfer_vui32t_2_bin128 (f128_smax);
 	}
@@ -1378,6 +1589,7 @@ test_vec_addqpo (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 __binary128
 test_vec_addqpo_V5 (__binary128 vfa, __binary128 vfb)
 {
@@ -1758,6 +1970,7 @@ test_vec_addqpo_V5 (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifndef __clang__
   __binary128
   test_vec_addqpo_V4 (__binary128 vfa, __binary128 vfb)
   {
@@ -3051,6 +3264,8 @@ test_vec_addqpo_V0 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif // ndef __clang__
+#endif
 
 // test compile final xsdivqpo inline implementation
 __binary128
@@ -3214,9 +3429,10 @@ test_vec_divqpo (__binary128 vfa, __binary128 vfb)
       //
       if (__builtin_expect (vec_cmpsd_all_lt ((vi64_t) q_exp, exp_min), 0))
 	{
-	    const vui64_t exp_tinyer = (vui64_t) CONST_VINT64_DW( 116, 116 );
+	    // const vui64_t exp_tinyer = (vui64_t) CONST_VINT64_DW( 116, 116 );
+	    const vui64_t exp_tinyer = vec_const64_f128_116 ();
 	    // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
-	    vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	    vui32_t xmask = vec_mask128_f128Xbits ();
 	    vui32_t tmp;
 	    // Intermediate result is tiny, unbiased exponent < -16382
 	    x_exp = vec_subudm ((vui64_t) exp_min, q_exp);
@@ -3311,7 +3527,8 @@ test_vec_divqpo (__binary128 vfa, __binary128 vfb)
       {
 	  // Intermediate result is huge, unbiased exponent > 16383
 	  // so return __FLT128_MAX__ with the appropriate sign.
-	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  // const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  const vui32_t f128_max = vec_const128_f128_fmax ();
 	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
 	  return vec_xfer_vui32t_2_bin128 (f128_smax);
       }
@@ -3384,6 +3601,8 @@ test_vec_divqpo (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
+#ifndef __clang__
 __binary128
 test_vec_divqpo_V1 (__binary128 vfa, __binary128 vfb)
 {
@@ -4038,6 +4257,8 @@ test_vec_divqpo_V0 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif
+#endif
 
 __binary128
 test_negqp_nan_v0 (__binary128 vfb)
@@ -4245,7 +4466,8 @@ test_vec_subqpo (__binary128 vfa, __binary128 vfb)
       if (__builtin_expect ((vec_cmpud_all_ge ( q_exp, exp_naninf)), 0))
 	{
 	  // return maximum finite exponent and significand
-	  const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  // const vui32_t f128_max = CONST_VINT128_W(0x7ffeffff, -1, -1, -1);
+	  const vui32_t f128_max = vec_const128_f128_fmax ();
 	  vui32_t f128_smax = vec_or ((vui32_t) f128_max, q_sign);
 	  return vec_xfer_vui32t_2_bin128 (f128_smax);
 	}
@@ -4303,6 +4525,8 @@ test_vec_subqpo (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
+#ifndef __clang__
 __binary128
 test_vec_subqpo_V2 (__binary128 vfa, __binary128 vfb)
 {
@@ -4783,6 +5007,7 @@ test_vec_subqpo_V1 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif // ndef __clang__
 
 __binary128
 test_vec_subqpo_V0 (__binary128 vfa, __binary128 vfb)
@@ -4814,6 +5039,7 @@ test_vec_subqpo_V0 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif
 
 vui128_t
 test_sld16 (vui128_t *vrh, vui128_t vh, vui128_t vl)
@@ -4862,7 +5088,7 @@ vui128_t
 test_sticky_bits (vui128_t vgrx)
 {
   // GRX left adjusted in vgrx
-  const vui32_t smask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
+  const vui32_t smask = vec_mask128_f128Xbits ();
   vui32_t tmp;
 
   tmp = vec_and ((vui32_t) vgrx, smask);
@@ -4893,7 +5119,7 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
   vui64_t q_exp, a_exp, b_exp, x_exp;
   vui128_t q_sig, a_sig, b_sig, p_sig_h, p_sig_l;
   vui32_t q_sign,  a_sign,  b_sign;
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = vec_mask128_f128sign ();
   //const vui64_t q_zero = { 0, 0 };
   const vui64_t q_zero = vec_splat_u64 (0);
   // const vui64_t q_ones = { -1, -1 };
@@ -4906,7 +5132,7 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
   //const vui64_t exp_dnrm = vec_splat_u64 (0);
 //  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0x7fff );
 //  const vui64_t q_expmax = (vui64_t) CONST_VINT64_DW( 0x7ffe, 0x7ffe );
-  const vui64_t exp_naninf = (vui64_t) { 0x7fff, 0x7fff };
+  const vui64_t exp_naninf = vec_mask64_f128exp ();
 //  const vui32_t sigov = CONST_VINT128_W(0x0001ffff, -1, -1, -1);
 
   a_exp = vec_xsxexpqp (vfa);
@@ -4923,8 +5149,10 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
     {
       //      const vui32_t sigov = CONST_VINT128_W(0x0001ffff, -1, -1, -1);
       //      const vui32_t sigovt = CONST_VINT128_W(0x0000ffff, -1, -1, -1);
-      const vui64_t exp_bias = (vui64_t) { 0x3fff, 0x3fff };
-      const vui64_t exp_max = (vui64_t) { 0x7ffe, 0x7ffe };
+      // const vui64_t exp_bias = (vui64_t) { 0x3fff, 0x3fff };
+      const vui64_t exp_bias = vec_const64_f128bias ();
+      // const vui64_t exp_max = (vui64_t) { 0x7ffe, 0x7ffe };
+      const vui64_t exp_max = vec_const64_f128maxe ();
       const vui64_t exp_dnrm = q_zero;
       vui64_t exp_min, exp_one;
       vui128_t p_tmp;
@@ -4987,8 +5215,8 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
       if (__builtin_expect (
 	  (vec_cmpsd_all_lt ((vi64_t) q_exp, (vi64_t) exp_min)), 0))
 	{
-	  const vui64_t too_tiny = (vui64_t) { 116, 116 };
-	  const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
+	  const vui64_t too_tiny = vec_const64_f128_116();
+	  const vui32_t xmask = vec_mask128_f128Xbits ();
 	  vui32_t tmp;
 
 	  // Intermediate result is tiny, unbiased exponent < -16382
@@ -5014,7 +5242,7 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
 	      // from p_sig_l. So collect any 1-bits below GRX and
 	      // OR them into the X-bit, before the right shift.
 	      vui64_t l_exp;
-	      const vui64_t exp_128 = (vui64_t) { 128, 128 };
+	      const vui64_t exp_128 = vec_const64_f128_128 ();
 
 	      // Propagate low order bits into the sticky bit
 	      // GRX left adjusted in p_sig_l
@@ -5173,7 +5401,8 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
       else
 	{
 	  // One or both operands are NaN
-	  const vui32_t q_nan = CONST_VINT128_W(0x00008000, 0, 0, 0);
+	  //const vui32_t q_nan = CONST_VINT128_W(0x00008000, 0, 0, 0);
+	  vui32_t q_nan = vec_mask128_f128Qbit ();
 	  if (vec_all_isnanf128 (vfa))
 	    {
 	      // vfa is NaN
@@ -5205,6 +5434,8 @@ test_vec_mulqpn (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
+#ifndef __clang__
 __binary128
 test_vec_mulqpn_V1 (__binary128 vfa, __binary128 vfb)
 {
@@ -5488,6 +5719,8 @@ test_vec_mulqpn_V1 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif
+#endif
 
 __binary128
 test_vec_xsmulqpo (__binary128 vfa, __binary128 vfb)
@@ -6081,9 +6314,10 @@ test_vec_maddqpo (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 	{
 	  //const vui64_t exp_128 = (vui64_t) { 128, 128 };
 	  const vui64_t exp_128 = vec_const64_f128_128();
-	  const vui64_t too_tiny = (vui64_t) { 116, 116 };
+	  // const vui64_t too_tiny = (vui64_t) { 116, 116 };
+	  const vui64_t too_tiny = vec_const64_f128_116();
 	  // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
-	  vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	  vui32_t xmask = vec_mask128_f128Xbits ();
 	  vui32_t tmp;
 
 	  // Intermediate result is tiny, unbiased exponent < -16382
@@ -6458,11 +6692,10 @@ test_vec_mulqpo (__binary128 vfa, __binary128 vfb)
       if (__builtin_expect (
 	  (vec_cmpsd_all_lt ((vi64_t) q_exp, (vi64_t) exp_min)), 0))
 	{
-	  //const vui64_t exp_128 = (vui64_t) { 128, 128 };
 	  const vui64_t exp_128 = vec_const64_f128_128();
-	  const vui64_t too_tiny = (vui64_t) { 116, 116 };
+	  const vui64_t too_tiny = vec_const64_f128_116();
 	  // const vui32_t xmask = CONST_VINT128_W(0x1fffffff, -1, -1, -1);
-	  vui32_t xmask = (vui32_t) vec_srqi ((vui128_t) q_ones, 3);
+	  vui32_t xmask = vec_mask128_f128Xbits ();
 	  vui32_t tmp;
 
 	  // Intermediate result is tiny, unbiased exponent < -16382
@@ -6623,6 +6856,8 @@ test_vec_mulqpo (__binary128 vfa, __binary128 vfb)
   return result;
 }
 
+#ifdef PVECLIB_OLDTESTVERSIONS
+#ifndef __clang__
 __binary128
 test_vec_mulqpo_V7 (__binary128 vfa, __binary128 vfb)
 {
@@ -8632,6 +8867,8 @@ test_mulqpo_V0 (__binary128 vfa, __binary128 vfb)
 #endif
   return result;
 }
+#endif
+#endif
 
 int
 test_vec_cmpqp_exp_eq (__binary128 vfa, __binary128 vfb)
@@ -8786,41 +9023,55 @@ test_scalar_test_neg (__binary128 vfa)
 vf64_t
 test_vec_xscvqpdpo (__binary128 f128)
 {
-  return vec_xscvqpdpo (f128);
+  return vec_xscvqpdpo_inline (f128);
 }
 
 vui64_t
 test_vec_xscvqpudz (__binary128 f128)
 {
-  return vec_xscvqpudz (f128);
+  return vec_xscvqpudz_inline (f128);
 }
 
 vui128_t
 test_vec_xscvqpuqz (__binary128 f128)
 {
-  return vec_xscvqpuqz (f128);
+  return vec_xscvqpuqz_inline (f128);
 }
 
 // Convert Float DP to QP
 __binary128
 test_vec_xscvdpqp (vf64_t f64)
 {
-  return vec_xscvdpqp (f64);
+  return vec_xscvdpqp_inline (f64);
 }
 
 // Convert Integer QW to QP
 __binary128
 test_vec_xscvsqqp (vi128_t int128)
 {
-  return vec_xscvsqqp (int128);
+  return vec_xscvsqqp_inline (int128);
 }
 
 __binary128
 test_vec_xscvuqqp (vui128_t int128)
 {
-  return vec_xscvuqqp (int128);
+  return vec_xscvuqqp_inline (int128);
 }
 
+__binary128
+test_vec_xscvudqp (vui64_t int64)
+{
+  return vec_xscvudqp_inline (int64);
+}
+
+__binary128
+test_vec_xscvsdqp (vi64_t int64)
+{
+  return vec_xscvsdqp_inline (int64);
+}
+
+
+#ifdef PVECLIB_OLDTESTVERSIONS
 __binary128
 test_convert_uqqpn (vui128_t int128)
 {
@@ -8953,9 +9204,9 @@ test_convert_uqqpn_V0 (vui128_t int128)
   vui64_t q_exp;
   vui128_t q_sig;
   const vui128_t q_zero = (vui128_t) { 0 };
-  const vui32_t q_carry = CONST_VINT128_W(0x20000, 0, 0, 0);
-  const vui32_t lowmask = CONST_VINT128_W( 0, 0, 0, 1);
-  const vui32_t nlmask = CONST_VINT128_W( 0x7fffffff, -1, -1, -1);
+  const vui32_t q_carry = vec_mask128_f128Cbit ();
+  const vui32_t lowmask = (vui32_t) vec_splat_u128 ( 1 );
+  const vui32_t nlmask = vec_mask128_f128mag ();
 
 //  int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
   q_sig = int128;
@@ -9004,7 +9255,9 @@ test_convert_uqqpn_V0 (vui128_t int128)
 #endif
   return result;
 }
+#endif
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 __binary128
 test_convert_uqqpz (vui128_t int128)
 {
@@ -9163,7 +9416,7 @@ __test_convert_sdqp (vi64_t int64)
   vui128_t q_sig;
   vui32_t q_sign;
   const vui64_t d_zero = (vui64_t) CONST_VINT64_DW( 0, 0 );
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
+  const vui32_t signmask = vec_mask128_f128sign ();
 
   int64[VEC_DW_L] = 0UL; // clear the right most element to zero.
 
@@ -9277,7 +9530,9 @@ __test_convert_qpuqz (__binary128 f128)
 #endif
   return result;
 }
+#endif
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 vf64_t
 test_convert_qpdpo_v2 (__binary128 f128)
 {
@@ -9307,8 +9562,8 @@ test_convert_qpdpo_v2 (__binary128 f128)
   const vui64_t qpdp_delta = (vui64_t) CONST_VINT64_DW( (0x3fff - 0x3ff), 0 );
   const vui64_t exp_tiny = (vui64_t) CONST_VINT64_DW( (0x3fff - 1022), (0x3fff - 1022) );
   const vui64_t exp_high = (vui64_t) CONST_VINT64_DW( (0x3fff + 1023), (0x3fff + 1023));
-  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
-  const vui64_t q_naninf = (vui64_t) CONST_VINT64_DW( 0x7fff, 0x7fff );
+  const vui32_t signmask = vec_mask128_f128sign ();
+  const vui64_t q_naninf = vec_mask64_f128exp ();
   const vui64_t d_naninf = (vui64_t) CONST_VINT64_DW( 0x7ff, 0 );
 
   q_exp = vec_xsxexpqp (f128);
@@ -9680,6 +9935,7 @@ __test_convert_dpqp (vf64_t f64)
 #endif
   return result;
 }
+#endif
 
 int
 test_scalar_cmpto_exp_gt (__binary128 vfa, __binary128 vfb)
@@ -10286,10 +10542,10 @@ test_vec_qpdpo_f128 (vf64_t * vx64,
 {
   vf64_t vxf1, vxf2, vxf3, vxf4;
 
-  vxf1 = vec_xscvqpdpo (vf1);
-  vxf2 = vec_xscvqpdpo (vf2);
-  vxf3 = vec_xscvqpdpo (vf3);
-  vxf4 = vec_xscvqpdpo (vf4);
+  vxf1 = vec_xscvqpdpo_inline (vf1);
+  vxf2 = vec_xscvqpdpo_inline (vf2);
+  vxf3 = vec_xscvqpdpo_inline (vf3);
+  vxf4 = vec_xscvqpdpo_inline (vf4);
 
   vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
   vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
@@ -10297,10 +10553,10 @@ test_vec_qpdpo_f128 (vf64_t * vx64,
   vx64[0] = vxf1;
   vx64[1] = vxf3;
 
-  vxf1 = vec_xscvqpdpo (vf5);
-  vxf2 = vec_xscvqpdpo (vf6);
-  vxf3 = vec_xscvqpdpo (vf7);
-  vxf4 = vec_xscvqpdpo (vf8);
+  vxf1 = vec_xscvqpdpo_inline (vf5);
+  vxf2 = vec_xscvqpdpo_inline (vf6);
+  vxf3 = vec_xscvqpdpo_inline (vf7);
+  vxf4 = vec_xscvqpdpo_inline (vf8);
 
   vxf1[VEC_DW_L] = vxf2[VEC_DW_H];
   vxf3[VEC_DW_L] = vxf4[VEC_DW_H];
@@ -10342,14 +10598,14 @@ test_vec_qpuq_f128 (vui128_t * vf128,
 		    __binary128 vf5, __binary128 vf6,
 		    __binary128 vf7, __binary128 vf8)
 {
-  vf128[0] = vec_xscvqpuqz (vf1);
-  vf128[1] = vec_xscvqpuqz (vf2);
-  vf128[2] = vec_xscvqpuqz (vf3);
-  vf128[3] = vec_xscvqpuqz (vf4);
-  vf128[4] = vec_xscvqpuqz (vf5);
-  vf128[5] = vec_xscvqpuqz (vf6);
-  vf128[6] = vec_xscvqpuqz (vf7);
-  vf128[7] = vec_xscvqpuqz (vf8);
+  vf128[0] = vec_xscvqpuqz_inline (vf1);
+  vf128[1] = vec_xscvqpuqz_inline (vf2);
+  vf128[2] = vec_xscvqpuqz_inline (vf3);
+  vf128[3] = vec_xscvqpuqz_inline (vf4);
+  vf128[4] = vec_xscvqpuqz_inline (vf5);
+  vf128[5] = vec_xscvqpuqz_inline (vf6);
+  vf128[6] = vec_xscvqpuqz_inline (vf7);
+  vf128[7] = vec_xscvqpuqz_inline (vf8);
 }
 
 void
@@ -10388,14 +10644,14 @@ test_vec_uqqp_f128 (__binary128 * vf128,
 		    vui128_t vf5, vui128_t vf6,
 		    vui128_t vf7, vui128_t vf8)
 {
-  vf128[0] = vec_xscvuqqp (vf1);
-  vf128[1] = vec_xscvuqqp (vf2);
-  vf128[2] = vec_xscvuqqp (vf3);
-  vf128[3] = vec_xscvuqqp (vf4);
-  vf128[4] = vec_xscvuqqp (vf5);
-  vf128[5] = vec_xscvuqqp (vf6);
-  vf128[6] = vec_xscvuqqp (vf7);
-  vf128[7] = vec_xscvuqqp (vf8);
+  vf128[0] = vec_xscvuqqp_inline (vf1);
+  vf128[1] = vec_xscvuqqp_inline (vf2);
+  vf128[2] = vec_xscvuqqp_inline (vf3);
+  vf128[3] = vec_xscvuqqp_inline (vf4);
+  vf128[4] = vec_xscvuqqp_inline (vf5);
+  vf128[5] = vec_xscvuqqp_inline (vf6);
+  vf128[6] = vec_xscvuqqp_inline (vf7);
+  vf128[7] = vec_xscvuqqp_inline (vf8);
 }
 
 void
@@ -10421,25 +10677,25 @@ test_vec_dpqp_f128 (__binary128 * vf128,
 		    vf64_t vf3, vf64_t vf4,
 		    vf64_t vf5)
 {
-  vf128[0] = vec_xscvdpqp (vf1);
+  vf128[0] = vec_xscvdpqp_inline (vf1);
   vf1[VEC_DW_H] = vf1[VEC_DW_L];
-  vf128[1] = vec_xscvdpqp (vf1);
+  vf128[1] = vec_xscvdpqp_inline (vf1);
 
-  vf128[2] = vec_xscvdpqp (vf2);
+  vf128[2] = vec_xscvdpqp_inline (vf2);
   vf2[VEC_DW_H] = vf2[VEC_DW_L];
-  vf128[3] = vec_xscvdpqp (vf2);
+  vf128[3] = vec_xscvdpqp_inline (vf2);
 
-  vf128[4] = vec_xscvdpqp (vf3);
+  vf128[4] = vec_xscvdpqp_inline (vf3);
   vf3[VEC_DW_H] = vf3[VEC_DW_L];
-  vf128[5] = vec_xscvdpqp (vf3);
+  vf128[5] = vec_xscvdpqp_inline (vf3);
 
-  vf128[6] = vec_xscvdpqp (vf4);
+  vf128[6] = vec_xscvdpqp_inline (vf4);
   vf4[VEC_DW_H] = vf4[VEC_DW_L];
-  vf128[7] = vec_xscvdpqp (vf4);
+  vf128[7] = vec_xscvdpqp_inline (vf4);
 
-  vf128[8] = vec_xscvdpqp (vf5);
+  vf128[8] = vec_xscvdpqp_inline (vf5);
   vf5[VEC_DW_H] = vf5[VEC_DW_L];
-  vf128[8] = vec_xscvdpqp (vf5);
+  vf128[8] = vec_xscvdpqp_inline (vf5);
 }
 
 void
@@ -10708,6 +10964,7 @@ test_scalarCC_expxsuba_128 (__float128 x, __float128 a, __float128 expa)
 #endif
 #endif
 
+#ifdef PVECLIB_OLDTESTVERSIONS
 vui64_t
 test_vec_xxxsigqpp_V3 (vui128_t a_mag, vui128_t b_mag)
 {
@@ -10805,6 +11062,7 @@ test_vec_xxxsigqpp_V0 (__binary128 f128a, __binary128 f128b)
   b_sig = vec_xsxsigqp (f128b);
   return vec_mrgahd (a_sig, b_sig);
 }
+#endif
 
 vui64_t
 test_vec_xxxexpqpp (__binary128 f128a, __binary128 f128b)

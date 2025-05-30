@@ -5596,8 +5596,9 @@ vec_mask128_f128Xbits (void)
  static inline __binary128
  vec_sel_bin128_2_bin128 (__binary128 vfa, __binary128 vfb, vb128_t mask)
  {
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-      && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
    __binary128 result;
  #ifdef __VSX__
@@ -5645,8 +5646,9 @@ vec_mask128_f128Xbits (void)
  vec_and_bin128_2_vui32t (__binary128 f128, vui32_t mask)
  {
    vui32_t result;
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
  #ifdef __VSX__
    __asm__(
@@ -5690,8 +5692,9 @@ vec_mask128_f128Xbits (void)
  vec_andc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
  {
    vui32_t result;
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
  #ifdef __VSX__
    __asm__(
@@ -5735,8 +5738,9 @@ vec_mask128_f128Xbits (void)
  vec_or_bin128_2_vui32t (__binary128 f128, vui32_t mask)
  {
    vui32_t result;
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
  #ifdef __VSX__
    __asm__(
@@ -5780,8 +5784,9 @@ vec_mask128_f128Xbits (void)
  vec_xor_bin128_2_vui32t (__binary128 f128, vui32_t mask)
  {
    vui32_t result;
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
  #ifdef __VSX__
    __asm__(
@@ -5825,8 +5830,9 @@ vec_mask128_f128Xbits (void)
  vec_andc_bin128_2_vui128t (__binary128 f128, vui128_t mask)
  {
    vui128_t result;
- #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
    // Work around for GCC PR 100085
  #ifdef __VSX__
    __asm__(
@@ -5868,8 +5874,9 @@ static inline vui8_t
 vec_xfer_bin128_2_vui8t (__binary128 f128)
 {
   vui8_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
 #ifdef __VSX__
   __asm__(
@@ -5934,8 +5941,9 @@ static inline vui32_t
 vec_xfer_bin128_2_vui32t (__binary128 f128)
 {
   vui32_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
 #ifdef __VSX__
   __asm__(
@@ -5979,7 +5987,8 @@ static inline vui64_t
 vec_mrgh_bin128_2_vui64t (__binary128 vfa, __binary128 vfb)
 {
   vui64_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
     && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
   __asm__(
@@ -6017,7 +6026,8 @@ static inline vui64_t
 vec_mrgl_bin128_2_vui64t (__binary128 vfa, __binary128 vfb)
 {
   vui64_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
     && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
   __asm__(
@@ -6053,8 +6063,9 @@ static inline vui64_t
 vec_xfer_bin128_2_vui64t (__binary128 f128)
 {
   vui64_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
 #ifdef __VSX__
   __asm__(
@@ -6096,8 +6107,9 @@ static inline vui128_t
 vec_xfer_bin128_2_vui128t (__binary128 f128)
 {
   vui128_t result;
-#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && (__GNUC__ > 7) \
-    && !defined (_ARCH_PWR9)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
   // Work around for GCC PR 100085
 #ifdef __VSX__
   __asm__(
@@ -6244,9 +6256,9 @@ vec_xfer_vui128t_2_bin128 (vui128_t f128)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 2-11  | 2/cycle  |
+ *  |power8   | 2 - 6 | 2/cycle  |
  *  |power9   | 2     | 4/cycle  |
- *  |power10  | 1-3   | 4/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
  *
  *  @param f128 a __float128 value containing a signed value.
  *  @return a __float128 value with magnitude from f128 and a positive
@@ -6264,10 +6276,9 @@ vec_absf128 (__binary128 f128)
       :);
 #else
   vui32_t tmp;
-  // const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
-  const vui32_t signmask = vec_mask128_f128sign ();
+  const vui32_t magmask = vec_mask128_f128mag ();
 
-  tmp = vec_andc_bin128_2_vui32t (f128, signmask);
+  tmp = vec_and_bin128_2_vui32t (f128, magmask);
   result = vec_xfer_vui32t_2_bin128 (tmp);
 #endif
   return (result);

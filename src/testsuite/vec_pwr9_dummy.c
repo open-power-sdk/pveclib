@@ -850,12 +850,6 @@ test_sldi_16_PWR9 (vui64_t a)
 }
 
 __binary128
-test_negqp_PWR9 (__binary128 vfa)
-{
-  return vec_negf128 (vfa);
-}
-
-__binary128
 test_vec_maddqpo_PWR9 (__binary128 vfa, __binary128 vfb, __binary128 vfc)
 {
   __binary128 result;
@@ -1549,6 +1543,12 @@ __binary128
 test_vec_nabsf128_PWR9 (__binary128 f128)
 {
   return vec_nabsf128 (f128);
+}
+
+__binary128
+test_vec_negf128_PWR9 (__binary128 vfa)
+{
+  return vec_negf128 (vfa);
 }
 
 __float128

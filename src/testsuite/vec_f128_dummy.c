@@ -978,6 +978,44 @@ test_mask64_f128exp (void)
   return vec_mask64_f128exp ();
 }
 
+vui64_t
+test_mask64_f128exp_V1 (void)
+{
+#if defined (_ARCH_PWR8)
+  __VF_128 vunion;
+  const vui64_t q_ones = (vui64_t) CONST_VINT64_DW (-1, -1);
+  const vui8_t sh49 = vec_splat_u8 (-15);
+  vui64_t shdw;
+  vunion.vx16 = sh49;
+  shdw = vunion.vx2;
+  return vec_sr (q_ones, (vui64_t) sh49);
+#else
+  //const vui32_t expmask = CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t expmask;
+  expmask = (vui32_t) vec_splat_u8 (-8);
+  expmask = vec_sld (q_zero, expmask, 4);
+  return (vui64_t) vec_packpx (expmask, expmask);
+#endif
+}
+
+vui64_t
+test_mask64_f128exp_V0 (void)
+{
+#if defined (_ARCH_PWR8)
+  const vui64_t q_ones = (vui64_t) CONST_VINT64_DW (-1, -1);
+  const vui8_t sh49 = vec_splat_u8 (-15);
+  return vec_sr (q_ones, (vui64_t) sh49);
+#else
+  //const vui32_t expmask = CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
+  vui32_t expmask;
+  expmask = (vui32_t) vec_splat_u8 (-8);
+  expmask = vec_sld (q_zero, expmask, 4);
+  return (vui64_t) vec_packpx (expmask, expmask);
+#endif
+}
+
 vui32_t
 test_mask128_f128exp (void)
 {
@@ -1072,6 +1110,15 @@ test_mask128_f128mag (void)
 }
 
 vui32_t
+test_mask128_f128mag_V0 (void)
+{
+  //  const vui32_t magmask = CONST_VINT128_W (0x7fffffff, -1, -1, -1);
+  const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
+  const vui8_t b_one = vec_splat_u8 (1);
+  return (vui32_t) vec_srl ((vui8_t) q_ones, b_one);
+}
+
+vui32_t
 test_mask128_f128sig (void)
 {
   return vec_mask128_f128sig ();
@@ -1084,9 +1131,16 @@ test_mask128_f128sign(void)
 }
 
 vui32_t
-test_mask128_f128sign_v1(void)
+test_mask128_f128sign_v2(void)
 {
   const vui32_t mag = vec_mask128_f128mag ();
+  return vec_nor (mag, mag);
+}
+
+vui32_t
+test_mask128_f128sign_v1(void)
+{
+  const vui32_t mag = test_mask128_f128mag_V0 ();
   return vec_nor (mag, mag);
 }
 
@@ -10005,10 +10059,33 @@ test_sel_bin128_2_bin128 (__binary128 vfa, __binary128 vfb, vb128_t mask)
   return vec_sel_bin128_2_bin128 (vfa, vfb, mask);
 }
 
+__binary128
+test_sel_bin128_2_bin128_V0 (__binary128 vfa, __binary128 vfb, vb128_t mask)
+{
+  __VF_128 ua, ub;
+  vui32_t result;
+
+  ua.vf1 = vfa;
+  ub.vf1 = vfb;
+
+  result = vec_sel (ua.vx4, ub.vx4, (vb32_t) mask);
+  return vec_xfer_vui32t_2_bin128 (result);
+}
+
 vui32_t
 test_and_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 {
   return vec_and_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_and_bin128_2_vui32t_V0 (__binary128 f128, vui32_t mask)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+
+  return (vec_and (vunion.vx4, mask));
 }
 
 vui32_t
@@ -10018,9 +10095,29 @@ test_andc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 }
 
 vui32_t
+test_andc_bin128_2_vui32t_V0 (__binary128 f128, vui32_t mask)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+
+  return (vec_andc (vunion.vx4, mask));
+}
+
+vui32_t
 test_or_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 {
   return vec_or_bin128_2_vui32t (f128, mask);
+}
+
+vui32_t
+test_or_bin128_2_vui32t_V0 (__binary128 f128, vui32_t mask)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+
+  return (vec_or (vunion.vx4, mask));
 }
 
 vui32_t
@@ -10030,28 +10127,43 @@ test_xor_bin128_2_vui32t (__binary128 f128, vui32_t mask)
 }
 
 vui32_t
-test_xfer_bin128_2_vui32t_V0 (__binary128 f128)
-{
-  __VF_128 vunion;
-//  typedef __vector __float128 vf128_t;
-
-  vunion.vf1 = f128;
-  return vunion.vx4;
-}
-
-unsigned __int128
-test_xfer_bin128_2_ui128t_V0 (__binary128 f128)
+test_xor_bin128_2_vui32t_V0 (__binary128 f128, vui32_t mask)
 {
   __VF_128 vunion;
 
   vunion.vf1 = f128;
-  return vunion.ix1;
+
+  return (vec_xor (vunion.vx4, mask));
 }
 
 vui32_t
 test_xfer_bin128_2_vui32t (__binary128 f128)
 {
   return vec_xfer_bin128_2_vui32t (f128);
+}
+
+vui32_t
+test_xfer_bin128_2_vui32t_V0 (__binary128 f128)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+  return vunion.vx4;
+}
+
+vui64_t
+test_xfer_bin128_2_vui64t (__binary128 f128)
+{
+  return vec_xfer_bin128_2_vui64t (f128);
+}
+
+vui64_t
+test_xfer_bin128_2_vui64t_V0 (__binary128 f128)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+  return vunion.vx2;
 }
 
 vui64_t
@@ -10064,6 +10176,42 @@ vui64_t
 test_mrgl_bin128_2_vui64t (__binary128 vfa, __binary128 vfb)
 {
   return vec_mrgl_bin128_2_vui64t (vfa, vfb) ;
+}
+
+vui64_t
+test_mrgl_bin128_2_vui64t_V0 (__binary128 vfa, __binary128 vfb)
+{
+  __VF_128 vunion_a, vunion_b;
+
+  vunion_a.vf1 = vfa;
+  vunion_b.vf1 = vfb;
+
+  return vec_mrgald (vunion_a.vx1, vunion_b.vx1);
+}
+
+vui64_t
+test_mrgh_bin128_2_vui64t_V1 (__binary128 vfa, __binary128 vfb)
+{
+  vui64_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+  // Work around for GCC PR 100085
+  __asm__(
+      "xxmrghd %x0,%x1,%x2;"
+      "ori 2,2,0"
+      : "=wa" (result)
+      : "wa" (vfa), "wa" (vfb)
+      : );
+#else
+  __VF_128 vunion_a, vunion_b;
+
+  vunion_a.vf1 = vfa;
+  vunion_b.vf1 = vfb;
+
+  result = vec_mrgahd (vunion_a.vx1, vunion_b.vx1);
+#endif
+  return result;
 }
 
 vui64_t
@@ -10095,10 +10243,57 @@ test_xfer_bin128_2_vui128t (__binary128 f128)
   return vec_xfer_bin128_2_vui128t (f128);
 }
 
+vui128_t
+test_xfer_bin128_2_vui128t_V0 (__binary128 f128)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+
+  return (vunion.vx1);
+}
+
 __binary128
 test_xfer_vui32t_2_bin128 (vui32_t f128)
 {
   return vec_xfer_vui32t_2_bin128 (f128);
+}
+
+__binary128
+test_xfer_vui32t_2_bin128_V0 (vui32_t f128)
+{
+  __VF_128 vunion;
+
+  vunion.vx4 = f128;
+
+  return (vunion.vf1);
+}
+
+__binary128
+test_xfer_vui8t_2_bin128 (vui8_t f128)
+{
+  return vec_xfer_vui8t_2_bin128 (f128);
+}
+
+__binary128
+test_xfer_vui16t_2_bin128 (vui16_t f128)
+{
+  return vec_xfer_vui16t_2_bin128 (f128);
+}
+
+__binary128
+test_xfer_vui64t_2_bin128 (vui64_t f128)
+{
+  return vec_xfer_vui64t_2_bin128 (f128);
+}
+
+unsigned __int128
+test_xfer_bin128_2_ui128t_V0 (__binary128 f128)
+{
+  __VF_128 vunion;
+
+  vunion.vf1 = f128;
+  return vunion.ix1;
 }
 
 vb128_t
@@ -11070,6 +11265,52 @@ test_vec_xxxexpqpp (__binary128 f128a, __binary128 f128b)
   return vec_xxxexpqpp (f128a, f128b);
 }
 
+vui64_t
+test_vec_xxxexpqpp_V2 (__binary128 vfa, __binary128 vfb)
+{
+  const vui32_t magmask = vec_mask128_f128mag();
+  const vui32_t sigmask = vec_mask128_f128sig();
+  vui32_t maga, magb;
+  vui32_t expa, expb;
+  vui64_t result;
+  maga = vec_and_bin128_2_vui32t (vfa, magmask);
+  magb = vec_and_bin128_2_vui32t (vfb, magmask);
+  expa = vec_andc (maga, sigmask);
+  expb = vec_andc (magb, sigmask);
+
+  result = vec_mrgahd ((vui128_t) expa, (vui128_t) expb);
+  // GCC 7 -mcpu=power7 does not handle sld  of vector long long
+  result = (vui64_t) vec_sld ((vui32_t) result, (vui32_t) result, 10);
+  return result;
+}
+
+vui64_t
+test_vec_xxxexpqpp_V1 (__binary128 vfa, __binary128 vfb)
+{
+  const vui32_t magmask = vec_mask128_f128mag();
+  vui32_t maga, magb;
+  vui64_t result;
+  maga = vec_and_bin128_2_vui32t (vfa, magmask);
+  magb = vec_and_bin128_2_vui32t (vfb, magmask);
+
+  result = vec_mrgahd ((vui128_t) maga, (vui128_t) magb);
+  result = vec_srdi (result, 48);
+  return result;
+}
+
+vui64_t
+test_vec_xxxexpqpp_V0 (__binary128 vfa, __binary128 vfb)
+{
+  vui64_t result;
+  vui32_t tmp, rtmp, exp_mask;
+  //const vui32_t expmask = CONST_VINT128_W (0, 0x7fff, 0, 0x7fff);
+  exp_mask = (vui32_t) vec_mask64_f128exp();
+  tmp = (vui32_t) vec_mrgh_bin128_2_vui64t (vfa, vfb);
+  rtmp = vec_sld (tmp, tmp, 10);
+  result = (vui64_t) vec_and (rtmp, exp_mask);
+  return result;
+}
+
 __binary128
 test_vec_xsiexpqp (vui128_t sig, vui64_t exp)
 {
@@ -11100,10 +11341,40 @@ test_vec_absf128 (__binary128 f128)
   return vec_absf128 (f128);
 }
 
+#ifdef __FLOAT128_HARDWARE__
+__binary128
+test_vec_absf128_V0 (__binary128 f128)
+{
+  return __builtin_fabsq (f128);
+}
+#endif
+
 __binary128
 test_vec_nabsf128 (__binary128 f128)
 {
   return vec_nabsf128 (f128);
+}
+
+#ifdef __FLOAT128_HARDWARE__
+__binary128
+test_vec_nabsf128_V0 (__binary128 f128)
+{
+  return -__builtin_fabsq (f128);
+}
+#endif
+
+__binary128
+test_vec_negf128 (__binary128 f128)
+{
+  return vec_negf128 (f128);
+}
+
+__binary128
+test_vec_negf128_V1 (__binary128 f128)
+{
+#ifdef __FLOAT128_HARDWARE__
+  return (-f128);
+#endif
 }
 
 __binary128

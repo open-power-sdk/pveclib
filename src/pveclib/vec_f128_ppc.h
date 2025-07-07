@@ -5443,6 +5443,7 @@ static inline vui32_t
 vec_mask128_f128mag (void)
 {
   //  const vui32_t magmask = CONST_VINT128_W (0x7fffffff, -1, -1, -1);
+  // This version stops stupid CSE via vec_srqi inline asm
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
   return (vui32_t) vec_srqi ((vui128_t) q_ones, 1);
 }
@@ -5483,12 +5484,20 @@ vec_mask128_f128sig (void)
 static inline vui32_t
 vec_mask128_f128sign (void)
 {
+#if defined (_ARCH_PWR8)
+  /* This generates the same number of instructions as alternatives.
+   * And; Allows CSE with f128mag, Allows vand/vor with f128sign to
+   * optimized to vandc/vorc, and swap operands for vsel. */
+  const vui32_t mag = vec_mask128_f128mag ();
+  return vec_nor (mag, mag);
+#else
   //  const vui32_t signmask = CONST_VINT128_W(0x80000000, 0, 0, 0);
   const vui32_t q_zero = CONST_VINT128_W (0, 0, 0, 0);
   const vui32_t q_ones = CONST_VINT128_W (-1, -1, -1, -1);
   vui32_t signmask;
   signmask = vec_sl (q_ones, q_ones);
   return vec_sld (signmask, q_zero, 12);
+#endif
 }
 
 /** \brief Generate Quadword C-bit mask Immediate.
@@ -5616,14 +5625,203 @@ vec_mask128_f128Xbits (void)
  #endif
    return result;
  #else
-   __VF_128 ua, ub;
-   vui32_t result;
+   __VF_128 ua, ub, result;
+   // vui32_t result;
 
    ua.vf1 = vfa;
    ub.vf1 = vfb;
 
-   result = vec_sel (ua.vx4, ub.vx4, (vb32_t) mask);
-   return vec_xfer_vui32t_2_bin128 (result);
+   result.vx4 = vec_sel (ua.vx4, ub.vx4, (vb32_t) mask);
+   return result.vf1;
+ #endif
+ }
+
+ /** \brief Logical AND a quadword __binary128 with a mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ANDed with mask as a __binary128.
+ */
+ static inline __binary128
+ vec_and_bin128_2_bin128 (__binary128 f128, vui32_t mask)
+ {
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 15)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+   // Work around for GCC PR 100085
+   __binary128 result;
+ #ifdef __VSX__
+   __asm__(
+       "xxland %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vand %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+   return result;
+ #else
+   __VF_128 vunion;
+   __VF_128 result;
+
+   vunion.vf1 = f128;
+   result.vx4 = (vec_and (vunion.vx4, mask));
+   return result.vf1;
+ #endif
+ }
+
+ /** \brief Logical AND Compliment a quadword __binary128 with a mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ANDed with mask as a __binary128.
+ */
+ static inline __binary128
+ vec_andc_bin128_2_bin128 (__binary128 f128, vui32_t mask)
+ {
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 15)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+   // Work around for GCC PR 100085
+   __binary128 result;
+ #ifdef __VSX__
+   __asm__(
+       "xxlandc %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vandc %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+   return result;
+ #else
+   __VF_128 vunion;
+   __VF_128 result;
+
+   vunion.vf1 = f128;
+   result.vx4 = (vec_andc (vunion.vx4, mask));
+   return result.vf1;
+ #endif
+ }
+
+ /** \brief Logical OR a quadword __binary128 with a mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ORed with mask as a __binary128.
+ */
+ static inline __binary128
+ vec_or_bin128_2_bin128 (__binary128 f128, vui32_t mask)
+ {
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 15)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+   // Work around for GCC PR 100085
+   __binary128 result;
+ #ifdef __VSX__
+   __asm__(
+       "xxlor %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vor %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+   return result;
+ #else
+   __VF_128 vunion;
+   __VF_128 result;
+
+   vunion.vf1 = f128;
+   result.vx4 = (vec_or (vunion.vx4, mask));
+   return result.vf1;
+ #endif
+ }
+
+ /** \brief Logical OR Compliment a quadword __binary128 with a mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ORed with mask as a __binary128.
+ */
+ static inline __binary128
+ vec_orc_bin128_2_bin128 (__binary128 f128, vui32_t mask)
+ {
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && defined (_ARCH_PWR8) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 15)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+   // Work around for GCC PR 100085
+   __binary128 result;
+ #ifdef __VSX__
+   __asm__(
+       "xxlorc %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vorc %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+   return result;
+ #else
+   __VF_128 vunion;
+   __VF_128 result;
+
+   vunion.vf1 = f128;
+#if defined (_ARCH_PWR8)
+   result.vx4 = (vec_orc (vunion.vx4, mask));
+#else // _ARCH_PWR7
+   result.vx4 = (vec_or (vunion.vx4, vec_nor (mask, mask)));
+#endif
+   return result.vf1;
  #endif
  }
 
@@ -5761,6 +5959,56 @@ vec_mask128_f128Xbits (void)
    vunion.vf1 = f128;
 
    result = (vec_or (vunion.vx4, mask));
+ #endif
+   return result;
+ }
+
+ /** \brief Transfer a quadword from a __binary128 scalar to a vector int
+  * and logical OR Compliment with mask.
+ *
+ *  The compiler does not allow direct transfer (assignment or type
+ *  cast) between __binary128 (__float128) scalars and vector types.
+ *  This despite the fact the the ABI and ISA require __binary128 in
+ *  vector registers (VRs).
+ *
+ *  \note this function uses a union to effect the (logical) transfer.
+ *  The compiler should not generate any code for this.
+ *
+ *  @param f128 a __binary128 floating point scalar value.
+ *  @param mask a vector unsigned int
+ *  @return The original value ORed with Compliment mask as a 128-bit vector int.
+ */
+ static inline vui32_t
+ vec_orc_bin128_2_vui32t (__binary128 f128, vui32_t mask)
+ {
+   vui32_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && defined (_ARCH_PWR8) \
+    && ((__GNUC__ > 7) && (__GNUC__ < 12)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+   // Work around for GCC PR 100085
+ #ifdef __VSX__
+   __asm__(
+       "xxlorc %x0,%x1,%x2"
+       : "=wa" (result)
+       : "wa" (f128), "wa" (mask)
+       : );
+ #else
+   __asm__(
+       "vorc %0,%1,%2"
+       : "=v" (result)
+       : "v" (f128), "v" (mask)
+       : );
+ #endif
+ #else
+   __VF_128 vunion;
+
+   vunion.vf1 = f128;
+#if defined (_ARCH_PWR8)
+   result = (vec_orc (vunion.vx4, mask));
+#else // _ARCH_PWR7
+   result = (vec_or (vunion.vx4, vec_nor (mask, mask)));
+#endif
  #endif
    return result;
  }
@@ -6196,11 +6444,31 @@ vec_xfer_vui16t_2_bin128 (vui16_t f128)
 static inline __binary128
 vec_xfer_vui32t_2_bin128 (vui32_t f128)
 {
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+    && ((__GNUC__ > 11) && (__GNUC__ < 15)) \
+    && !defined (_ARCH_PWR9) && defined (__VSX__)
+  // Work around for GCC PR 100085
+  __binary128 result;
+#ifdef __VSX__
+  __asm__(
+      "xxlor %x0,%x1,%x1"
+      : "=wa" (result)
+      : "wa" (f128)
+      : );
+#else
+  __asm__(
+      "vor %0,%1,%1"
+      : "=v" (result)
+      : "v" (f128)
+      : );
+#endif
+  return result;
+#else
   __VF_128 vunion;
-
   vunion.vx4 = f128;
 
   return (vunion.vf1);
+#endif
 }
 
 /** \brief Transfer a vector unsigned long long  to __binary128 scalar.
@@ -6249,6 +6517,52 @@ vec_xfer_vui128t_2_bin128 (vui128_t f128)
   return (vunion.vf1);
 }
 
+/** \brief Logical OR a quadword __binary128 with a mask.
+*
+*  The compiler does not allow direct transfer (assignment or type
+*  cast) between __binary128 (__float128) scalars and vector types.
+*  This despite the fact the the ABI and ISA require __binary128 in
+*  vector registers (VRs).
+*
+*  \note this function uses a union to effect the (logical) transfer.
+*  The compiler should not generate any code for this.
+*
+*  @param f128 a __binary128 floating point scalar value.
+*  @param mask a vector unsigned int
+*  @return The original value ORed with mask as a __binary128.
+*/
+static inline __binary128
+vec_or_vui128t_2_bin128 (vui128_t f128, vui32_t mask)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
+   && ((__GNUC__ > 7) && (__GNUC__ < 15)) \
+   && !defined (_ARCH_PWR9) && defined (__VSX__)
+  // Work around for GCC PR 100085
+  __binary128 result;
+#ifdef __VSX__
+  __asm__(
+      "xxlor %x0,%x1,%x2"
+      : "=wa" (result)
+      : "wa" (f128), "wa" (mask)
+      : );
+#else
+  __asm__(
+      "vor %0,%1,%2"
+      : "=v" (result)
+      : "v" (f128), "v" (mask)
+      : );
+#endif
+  return result;
+#else
+  __VF_128 vunion;
+  __VF_128 result;
+
+  vunion.vx1 = f128;
+  result.vx4 = (vec_or (vunion.vx4, mask));
+  return result.vf1;
+#endif
+}
+
 /** \brief Absolute Quad-Precision
  *
  *  Clear the sign bit of the __float128 input
@@ -6269,17 +6583,19 @@ vec_absf128 (__binary128 f128)
 {
   __binary128 result;
 #if _ARCH_PWR9
+#if defined (__FLOAT128_HARDWARE__) && (__GNUC__ > 7)
+  // Let the compilers generate and optimize code.
+  result = __builtin_fabsq (f128);
+#else
   __asm__(
       "xsabsqp %0,%1;\n"
       : "=v" (result)
       : "v" (f128)
       :);
+#endif
 #else
-  vui32_t tmp;
   const vui32_t magmask = vec_mask128_f128mag ();
-
-  tmp = vec_and_bin128_2_vui32t (f128, magmask);
-  result = vec_xfer_vui32t_2_bin128 (tmp);
+  result = vec_and_bin128_2_bin128 (f128, magmask);
 #endif
   return (result);
 }
@@ -8996,7 +9312,8 @@ vec_cmpqp_exp_eq (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_eq (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  // const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = vec_mask128_f128exp ();
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
   vrb = vec_and_bin128_2_vui32t (vfb, expmask);
@@ -9043,7 +9360,8 @@ vec_cmpqp_exp_gt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_gt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  // const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = vec_mask128_f128exp ();
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
   vrb = vec_and_bin128_2_vui32t (vfb, expmask);
@@ -9090,7 +9408,8 @@ vec_cmpqp_exp_lt (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_lt (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  // const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = vec_mask128_f128exp ();
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
   vrb = vec_and_bin128_2_vui32t (vfb, expmask);
@@ -9137,7 +9456,8 @@ vec_cmpqp_exp_unordered (__binary128 vfa, __binary128 vfb)
   return scalar_cmp_exp_unordered (vfa, vfb);
 #else
   vui32_t vra, vrb;
-  const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  // const vui32_t expmask = CONST_VINT128_W (0x7fff0000, 0, 0, 0);
+  const vui32_t expmask = vec_mask128_f128exp ();
 
   vra = vec_and_bin128_2_vui32t (vfa, expmask);
   vrb = vec_and_bin128_2_vui32t (vfb, expmask);
@@ -9852,18 +10172,25 @@ vec_nabsf128 (__binary128 f128)
 {
   __binary128 result;
 #if _ARCH_PWR9
+#if defined (__FLOAT128_HARDWARE__) && (__GNUC__ > 7)
+  // Let the compilers generate and optimize code.
+  result = -__builtin_fabsq (f128);
+#else
   __asm__(
       "xsnabsqp %0,%1;\n"
       : "=v" (result)
       : "v" (f128)
       :);
+#endif
 #else
-  vui32_t tmp;
+#if defined (_ARCH_PWR8)
+  const vui32_t magmask = vec_mask128_f128mag ();
+  result = vec_orc_bin128_2_bin128 (f128, magmask);
+#else // no vorc/xxlorc for _ARCH_PWR7
   // const vui32_t signmask = CONST_VINT128_W (0x80000000, 0, 0, 0);
   const vui32_t signmask = vec_mask128_f128sign ();
-
-  tmp = vec_or_bin128_2_vui32t (f128, signmask);
-  result = vec_xfer_vui32t_2_bin128 (tmp);
+  result = vec_or_bin128_2_bin128 (f128, signmask);
+#endif
 #endif
   return (result);
 }
@@ -9886,7 +10213,7 @@ vec_negf128 (__binary128 f128)
 {
   __binary128 result;
 #if defined (_ARCH_PWR9) && (__GNUC__ > 6)
-#if defined (__FLOAT128__) && (__GNUC__ > 7)
+#if defined (__FLOAT128_HARDWARE__) && (__GNUC__ > 7)
   // Let the compilers generate and optimize code.
   result = -f128;
 #else

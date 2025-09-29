@@ -3949,6 +3949,7 @@ static inline vui128_t vec_sldq (vui128_t vrw, vui128_t vrx,
 				 vui128_t vrb);
 static inline vui128_t vec_sldqi (vui128_t vrw, vui128_t vrx,
 				  const unsigned int shb);
+static inline vui128_t vec_slqi (vui128_t vra, const unsigned int shb);
 static inline vui128_t vec_splat_u128 (const int sim);
 static inline vui128_t vec_srqi (vui128_t vra, const unsigned int shb);
 static inline vui128_t vec_subcuq (vui128_t vra, vui128_t vrb);
@@ -3969,7 +3970,6 @@ static inline vui128_t vec_vslq_byte (vui128_t vra, vui8_t vrb);
 static inline vi128_t vec_vsraq_byte (vi128_t vra, vui8_t vrb);
 static inline vui128_t vec_vsrq_byte (vui128_t vra, vui8_t vrb);
 #endif
-///@endcond
 
 
 static inline vui32_t
@@ -3997,6 +3997,7 @@ vec_mask128_int128carry (void)
   const vui32_t q_one = vec_splat_u32 (1);
   return vec_sld (q_zero, q_one, 4);
 }
+///@endcond
 
 /** \brief Vector Absolute Difference Unsigned Quadword.
  *
@@ -4533,6 +4534,7 @@ vec_ctzq (vui128_t vra)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 7     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4563,6 +4565,7 @@ vec_cmpeqsq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 7     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128s.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -4609,6 +4612,7 @@ vec_cmpequq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-16 |1/ 2cycles|
  *  |power9   | 8-14  | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4658,6 +4662,7 @@ vec_cmpgesq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8     |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -4698,6 +4703,7 @@ vec_cmpgeuq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-16 |1/ 2cycles|
  *  |power9   | 8-14  | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4747,6 +4753,7 @@ vec_cmpgtsq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8     |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -4787,6 +4794,7 @@ vec_cmpgtuq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-16 |1/ 2cycles|
  *  |power9   | 8-14  | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4836,6 +4844,7 @@ vec_cmplesq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8     |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -4877,6 +4886,7 @@ vec_cmpleuq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-16 |1/ 2cycles|
  *  |power9   | 8-14  | 1/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4926,6 +4936,7 @@ vec_cmpltsq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8     |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -4965,6 +4976,7 @@ vec_cmpltuq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 7     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an signed __int128.
  *  @param vrb 128-bit vector treated as an signed __int128.
@@ -4995,6 +5007,7 @@ vec_cmpnesq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 6     | 2/cycle  |
  *  |power9   | 7     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an unsigned __int128.
  *  @param vrb 128-bit vector treated as an unsigned __int128.
@@ -5039,6 +5052,7 @@ vec_cmpneuq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-9   | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5083,6 +5097,7 @@ vec_cmpsq_all_eq (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-15 |1/ 2cycles|
  *  |power9   | 8     | 1/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5130,6 +5145,7 @@ vec_cmpsq_all_ge (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-15 |1/ 2cycles|
  *  |power9   | 8     | 1/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5177,6 +5193,7 @@ vec_cmpsq_all_gt (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-15 |1/ 2cycles|
  *  |power9   | 8     | 1/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5224,6 +5241,7 @@ vec_cmpsq_all_le (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10-15 |1/ 2cycles|
  *  |power9   | 8     | 1/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5271,6 +5289,7 @@ vec_cmpsq_all_lt (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-9   | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector signed
  *  __int128 (qword) element.
@@ -5315,6 +5334,7 @@ vec_cmpsq_all_ne (vi128_t vra, vi128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-9   | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5359,6 +5379,7 @@ vec_cmpuq_all_eq (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8-13  |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5402,6 +5423,7 @@ vec_cmpuq_all_ge (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8-13  |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5445,6 +5467,7 @@ vec_cmpuq_all_gt (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8-13  |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5488,6 +5511,7 @@ vec_cmpuq_all_le (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 8-13  |2/ 2cycles|
  *  |power9   | 6     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5531,6 +5555,7 @@ vec_cmpuq_all_lt (vui128_t vra, vui128_t vrb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 4-9   | 2/cycle  |
  *  |power9   | 3     | 2/cycle  |
+ *  |power10  | 4 - 7 | 4/cycle  |
  *
  *  @param vra 128-bit vector treated as an vector unsigned
  *  __int128 (qword) element.
@@ -5983,27 +6008,6 @@ vec_divuq_10e32 (vui128_t vra)
   return result;
 }
 
-/** \brief Vector Expand Mask Quadword.
- *
- *  Create quadword element masks based on high-order (sign) bit of
- *  each quadword element.
- *
- *  |processor|Latency|Throughput|
- *  |--------:|:-----:|:---------|
- *  |power7   | 4 - 6 | 2/cycle  |
- *  |power8   | 4 - 6 | 2/cycle  |
- *  |power9   | 6 - 9 | 2/cycle  |
- *  |power10  | 3 - 4 | 4/cycle  |
- *
- *  @param vra a 128-bit vector treated as unsigned __int128.
- *  @return vector quadword mask from the sign bit.
- */
-static inline vui128_t
-vec_expandm_quadword (vui128_t vra)
-{
-  return vec_vexpandqm_PWR10 (vra);
-}
-
 /** \brief Vector Divide/Modulo Double Quadword Unsigned.
  *
  *  A vectorized 256-bit by 128-bit divide returning a 128-bit
@@ -6260,6 +6264,54 @@ vec_diveuq (vui128_t x, vui128_t z);
  */
 extern vui128_t
 vec_divuq (vui128_t y, vui128_t z);
+
+/** \brief Vector Count bitwise equivalence (exclusive NOR)
+ *
+ *  Bitwise equivalence (exclusive NOR) of a 128-bit vector VRA and VRB
+ *
+ *  For POWER8 (PowerISA 2.7) or later use the
+ *  Vector Logical Equivalence (VX/XX3-form) instruction.
+ *  Otherwise use a sequence of vxor/vnot (vnor).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  4    | 2/cycle  |
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  2    | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra 128-bit vector.
+ *  @param vrb 128-bit vector.
+ *  @return 128-bit vector bitwise equivalence (exclusive NOR) of VRA and VRB
+ *
+ *  \showrefby
+ */
+static inline vui128_t
+vec_eqvuq (vui128_t vra, vui128_t vrb)
+{
+  return ((vui128_t) vec_eqv_PWR8 ((vui32_t) vra, (vui32_t) vrb));
+}
+
+/** \brief Vector Expand Mask Quadword.
+ *
+ *  Create quadword element masks based on high-order (sign) bit of
+ *  each quadword element.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 2/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   | 6 - 9 | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as unsigned __int128.
+ *  @return vector quadword mask from the sign bit.
+ */
+static inline vui128_t
+vec_expandm_quadword (vui128_t vra)
+{
+  return vec_vexpandqm_PWR10 (vra);
+}
 
 /** \brief Vector Maximum Signed Quadword.
  *
@@ -6850,8 +6902,8 @@ vec_mul10euq (vui128_t a, vui128_t cin)
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|
- *  |power8   | 13-15 | 1/cycle  |
- *  |power9   | 3     | 1/cycle  |
+ *  |power8   | 8     |2/2 cycle2|
+ *  |power9   | 3     | 2/cycle  |
  *
  *  @param a 128-bit vector treated as unsigned __int128.
  *  @return __int128 (lower 128-bits) a * 10.
@@ -6866,6 +6918,11 @@ vec_mul10uq (vui128_t a)
       : "=v" (t)
       : "v" (a)
       : );
+#elif defined (_ARCH_PWR8)
+  vui128_t x8, x2;
+  x8 = vec_slqi (a, 3);
+  x2 = vec_slqi (a, 1);
+  t = (vui32_t) vec_adduqm (x8, x2);
 #else
   vui16_t ts = (vui16_t) a;
   vui16_t t10;
@@ -8447,7 +8504,7 @@ vec_setb_sq (vi128_t vra)
   return (vb128_t) vec_expandm_quadword ((vui128_t) vra);
 }
 
-/** \brief Vector Sign Extent to long long (from word).
+/** \brief Vector Sign Extent to __int128 (from doubleword).
  *
  *  Sign-extend smaller elements of a source vector to quadword
  *  length in the result vector. Each quadword element is the
@@ -8631,7 +8688,7 @@ vec_signextq_word (vi32_t vra)
   return result;
 }
 
-/** \brief Vector Sign Extent to long long (from word).
+/** \brief Vector Sign Extent to quadword (from doubleword).
  *
  *  Sign-extend smaller elements of a source vector to quadword
  *  length in the result vector. Each quadword element is the
@@ -8679,7 +8736,7 @@ vec_vextsd2q (vi64_t vra)
   return result;
 }
 
-/** \brief Vector Sign Extent to __int128 (from byte).
+/** \brief Vector Sign Extent to quadword (from byte).
  *
  *  Sign-extend smaller elements of a source vector to doubleword
  *  length in the result vector. Each word element is the
@@ -8719,7 +8776,7 @@ vec_vextsb2q (vi8_t vra)
   return result;
 }
 
-/** \brief Vector Sign Extent to __int128 (from halfword).
+/** \brief Vector Sign Extent to quadword (from halfword).
  *
  *  Sign-extend smaller elements of a source vector to doubleword
  *  length in the result vector. Each word element is the
@@ -8759,7 +8816,7 @@ vec_vextsh2q (vi16_t vra)
   return result;
 }
 
-/** \brief Vector Sign Extent to __int128 (from word).
+/** \brief Vector Sign Extent to quadword (from word).
  *
  *  Sign-extend smaller elements of a source vector to doubleword
  *  length in the result vector. Each word element is the
@@ -8873,8 +8930,8 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
  *
  *  Vector Shift Left double Quadword 0-127 bits.
  *  Return a vector __int128 that is the left most 128-bits after
- *  shifting left 0-127-bits of the 256-bit double vector
- *  (vrw||vrx).  The shift amount is from bits 121:127 of vrb.
+ *  shifting left 0-127-bits of the 256-bit double vector (vrw||vrx).
+ *  The shift amount is a const int  in the range 0-127.
  *
  *  |processor|Latency|Throughput|
  *  |--------:|:-----:|:---------|

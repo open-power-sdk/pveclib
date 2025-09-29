@@ -12,6 +12,18 @@
 #include <pveclib/vec_char_ppc.h>
 
 vui8_t
+test_vec_eqv_byte_PWR7 (vui8_t vra, vui8_t vrb)
+{
+  return (vui8_t) vec_eqv_PWR7 ((vui32_t) vra, (vui32_t) vrb);
+}
+
+vui8_t
+test_vec_eqv_byte (vui8_t vra, vui8_t vrb)
+{
+  return (vui8_t) vec_eqv_PWR8 ((vui32_t) vra, (vui32_t) vrb);
+}
+
+vui8_t
 test_vec_expandm_byte (vui8_t vra)
 {
   return vec_expandm_byte (vra);

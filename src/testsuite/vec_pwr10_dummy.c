@@ -38,6 +38,48 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui32_t
+test_vec_vrlwnim_24_27_PWR10 (vui32_t vra, vui32_t vrb)
+{
+  return vec_rlnmi_word (vra, vrb, 24, 27);
+}
+
+static inline vui32_t
+test_vrlwnmi_PWR10 (vui32_t vra, const unsigned int mb,
+	                   const unsigned int me,
+			   const unsigned int n)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrb = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, n)));
+#else
+  const vui32_t vrb = (vui32_t) { RMASK_MB_ME_N (mb, me, n),
+          RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n)};
+#endif
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vrlwnmi_24_27_0_PWR10 (vui32_t vra)
+{
+  return test_vrlwnmi_PWR10 (vra, 24, 27, 0);
+}
+
 vui128_t
 __test_splatiuq_127_PWR10 (void)
 {

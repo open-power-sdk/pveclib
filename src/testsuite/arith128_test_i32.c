@@ -30,6 +30,687 @@
 
 #include <testsuite/arith128_test_i32.h>
 
+vui32_t
+db_vec_vrlwnm (vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+  print_vint32x ("db_vec_vrlwnm (", vra);
+  print_vint32x ("               ", vrb);
+
+#ifdef _ARCH_PWR9
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#else
+  const vui32_t  mmask = (vui32_t)CONST_VINT32_W(31, 31, 31, 31);
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+  vrb_mb = vec_srwi (vrb, 16);
+  vrb_me = vec_srwi (vrb, 8);
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  //vrb_nb = vec_sub  (bits, vrb_mb);
+  vrb_n  = vrb;
+
+  print_vint32x ("          mb = ", vec_and (vrb_mb, mmask));
+  print_vint32x ("          me = ", vec_and (vrb_me, mmask));
+  print_vint32x ("          ne = ", vec_and (vrb_ne, mmask));
+  print_vint32x ("           n = ", vec_and (vrb_n, mmask));
+
+  shr = vec_add (vrb_mb, vrb_ne);
+  print_vint32x ("\n         shr = ", vec_and (shr, mmask));
+  mask = vec_sr (ones, shr);
+  print_vint32x ("   sr(m,shr) = ", mask);
+  mask = vec_rl (mask, vrb_ne);
+  print_vint32x ("   rl(m,ne)  = ", mask);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  print_vint32x ("      ROT<n> = ", vra_r);
+
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  print_vint32x ("\n      result = ", result);
+  return ((vui32_t) result);
+}
+
+vui32_t
+db_vec_vrlwmi (vui32_t vrt, vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+  print_vint32x ("db_vec_vrlwmi (", vra);
+  print_vint32x ("               ", vrb);
+
+#ifdef _ARCH_PWR9
+  result = vrt;
+  __asm__(
+      "vrlwmi %0,%1,%2;"
+      : "+v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#else
+  const vui32_t  mmask = (vui32_t)CONST_VINT32_W(31, 31, 31, 31);
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+#if 1
+  vrb_mb = vec_sld (vrb, vrb, 14);
+  vrb_me = vec_sld (vrb, vrb, 15);
+#else
+  vrb_mb = vec_srwi (vrb, 16);
+  vrb_me = vec_srwi (vrb, 8);
+#endif
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  vrb_n  = vrb;
+
+  print_vint32x ("          mb = ", vec_and (vrb_mb, mmask));
+  print_vint32x ("          me = ", vec_and (vrb_me, mmask));
+  print_vint32x ("          ne = ", vec_and (vrb_ne, mmask));
+  print_vint32x ("           n = ", vec_and (vrb_n, mmask));
+
+  shr = vec_add (vrb_mb, vrb_ne);
+  print_vint32x ("\n         shr = ", vec_and (shr, mmask));
+  mask = vec_sr (ones, shr);
+  print_vint32x ("   sr(m,shr) = ", mask);
+  mask = vec_rl (mask, vrb_ne);
+  print_vint32x ("   rl(m,ne)  = ", mask);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  print_vint32x ("      ROT<n> = ", vra_r);
+
+  result = vec_sel (vrt, vra_r, mask);
+#endif
+  print_vint32x ("\n      result = ", result);
+  return ((vui32_t) result);
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#ifdef __DEBUG_PRINT__
+#if (__DEBUG_PRINT__ == 2)
+#define test_vrlwmi(_t, _i, _m)	db_vec_vrlwmi(_t, _i, _m)
+#else
+// Test the implementation from vec_int32_dummy.c
+extern vui32_t test_vrlwmi (vui32_t, vui32_t, vui32_t);
+#endif
+#else
+#define test_vrlwmi(_t, _i, _m)	vec_vrlwmi(_t, _i, _m)
+#endif
+
+int
+test_rlwmi (void)
+{
+  vui32_t i, t, m, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlwmi Rotate Left Word then Mask Insert\n");
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  t = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(0, 0, 0),
+			      RMASK_MB_ME_N(31, 31, 0),
+			      RMASK_MB_ME_N(15, 15, 0),
+			      RMASK_MB_ME_N(16, 16, 0)
+			      );
+  k = test_vrlwmi (t, i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwmi t=", t);
+  print_vint32x ("           i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x00000001, 0x00010000, 0x00008000);
+  rc += check_vuint128x ("vec_vrlwmi 1:", (vui128_t)k, (vui128_t) e);
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x12345678, 0x12345678, 0x12345678);
+  t = (vui32_t)CONST_VINT32_W(0x87654321, 0x87654321, 0x87654321, 0x87654321);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(28, 31, 0),
+			      RMASK_MB_ME_N(28, 31, 8),
+			      RMASK_MB_ME_N(28, 31, 16),
+			      RMASK_MB_ME_N(28, 31, 24)
+			      );
+  k = test_vrlwmi (t, i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwmi t=", t);
+  print_vint32x ("           i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x87654328, 0x87654322, 0x87654324, 0x87654326);
+  rc += check_vuint128x ("vec_vrlwmi 2:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(24, 31, 8),
+			      RMASK_MB_ME_N(16, 23, 8),
+			      RMASK_MB_ME_N( 8, 15, 8),
+			      RMASK_MB_ME_N( 0,  7, 8)
+			      );
+  k = test_vrlwmi (t, i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwmi t=", t);
+  print_vint32x ("           i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x87654312, 0x87657821, 0x87564321, 0x34654321);
+  rc += check_vuint128x ("vec_vrlwmi 3:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#define test_vrlwimi(_t, _i, _sh, _mb, _me)	vec_vrlwimi(_t, _i, _sh, _mb, _me)
+
+int
+test_rlwimi (void)
+{
+  vui32_t i, t, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlwinm Rotate Left Word Immediate then  Mask Insert\n");
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x81234567, 0x78123456, 0x67812345);
+  t = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+
+  k = test_vrlwimi (t, i, 0, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwimi i=", i);i
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x7, 0x6, 0x5);
+  rc += check_vuint128x ("vec_vrlwimi 1:", (vui128_t)k, (vui128_t) e);
+
+  t = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+
+  k = test_vrlwimi (t, i, 0, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwimi i=", i);
+  print_vint32x ("            k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0xfffffff8, 0xfffffff7, 0xfffffff6, 0xfffffff5);
+  rc += check_vuint128x ("vec_vrlwimi 1:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#define test_vrlwnim(_i, _sh, _mb, _me)	vec_rlnmi_word(_i, _sh, _mb, _me)
+
+int
+test_rlnmi_w (void)
+{
+  vui32_t i, j, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlwnim Rotate Left Word then AND with (Immediate) Mask\n");
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x81234567, 0x78123456, 0x67812345);
+  j = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+
+  k = test_vrlwnim (i, j, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnim i=", i);
+  print_vint32x ("vec_vrlwnim j=", j);
+  print_vint32x ("            k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x7, 0x6, 0x5);
+  rc += check_vuint128x ("vec_vrlwnim 1:", (vui128_t)k, (vui128_t) e);
+  j = (vui32_t)CONST_VINT32_W(0, 4, 8, 12);
+
+  k = test_vrlwnim (i, j, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnim i=", i);
+  print_vint32x ("vec_vrlwnim j=", j);
+  print_vint32x ("            k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x8, 0x8, 0x8);
+  rc += check_vuint128x ("vec_vrlwnim 2:", (vui128_t)k, (vui128_t) e);
+  j = (vui32_t)CONST_VINT32_W(0, 8, 16, 24);
+
+  k = test_vrlwnim (i, j, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnim i=", i);
+  print_vint32x ("vec_vrlwnim j=", j);
+  print_vint32x ("            k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x1, 0x2, 0x3);
+  rc += check_vuint128x ("vec_vrlwnim 2:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#define test_vrlwinm(_i, _sh, _mb, _me)	vec_vrlwinm(_i, _sh, _mb, _me)
+
+int
+test_rlwinm (void)
+{
+  vui32_t i, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlwinm Rotate Left Word Immediate then AND with Mask\n");
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x81234567, 0x78123456, 0x67812345);
+
+  k = test_vrlwinm (i, 0, 28, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwinm i=", i);i
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x7, 0x6, 0x5);
+  rc += check_vuint128x ("vec_vrlwinm 1:", (vui128_t)k, (vui128_t) e);
+
+  k = test_vrlwinm (i, 0, 0, 3);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwinm i=", i);i
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x10000000, 0x80000000, 0x70000000, 0x60000000);
+  rc += check_vuint128x ("vec_vrlwinm 2:", (vui128_t)k, (vui128_t) e);
+
+  k = test_vrlwinm (i, 0, 28, 3);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwinm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x10000008, 0x80000007, 0x70000006, 0x60000005);
+  rc += check_vuint128x ("vec_vrlwinm 3:", (vui128_t)k, (vui128_t) e);
+
+  k = test_vrlwinm (i, 16, 28, 3);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x50000004, 0x40000003, 0x30000002, 0x20000001);
+  rc += check_vuint128x ("vec_vrlwinm 4:", (vui128_t)k, (vui128_t) e);
+
+  //Extract and left justify immediate 4n_0b
+  k = test_vrlwinm (i, 0, 0, (4-1));
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x10000000, 0x80000000, 0x70000000, 0x60000000);
+  rc += check_vuint128x ("vec_vrlwinm 5:", (vui128_t)k, (vui128_t) e);
+
+  //Extract and left justify immediate 4n_28b
+  k = test_vrlwinm (i, 28, 0, (4-1));
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x70000000, 0x60000000, 0x50000000);
+  rc += check_vuint128x ("vec_vrlwinm 6:", (vui128_t)k, (vui128_t) e);
+
+  //Extract and right justify immediate 4n_24b
+  k = test_vrlwinm (i, (24+4), (32-4), 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x00000007, 0x00000006, 0x00000005, 0x00000004);
+  rc += check_vuint128x ("vec_vrlwinm 7:", (vui128_t)k, (vui128_t) e);
+
+  //Extract and right justify immediate 1n_0b
+  k = test_vrlwinm (i, (0+1), (32-1), 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x00000000, 0x00000001, 0x00000000, 0x00000000);
+  rc += check_vuint128x ("vec_vrlwinm 8:", (vui128_t)k, (vui128_t) e);
+
+  //Clear left immediate 16n
+  k = test_vrlwinm (i, 0, 16, 31);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x00005678, 0x00004567, 0x00003456, 0x00002345);
+  rc += check_vuint128x ("vec_vrlwinm 9:", (vui128_t)k, (vui128_t) e);
+
+  //Clear right immediate 16n
+  k = test_vrlwinm (i, 0, 0, (31-16));
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x12340000, 0x81230000, 0x78120000, 0x67810000);
+  rc += check_vuint128x ("vec_vrlwinm 10:", (vui128_t)k, (vui128_t) e);
+
+  // Clear left and shift left immediate 8n_16b
+  k = test_vrlwinm (i, 8, (16-8), (31-8));
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrliwnm i=", i);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x00567800, 0x00456700, 0x00345600, 0x00234500);
+  rc += check_vuint128x ("vec_vrlwinm 11:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#ifdef __DEBUG_PRINT__
+#if (__DEBUG_PRINT__ == 2)
+#define test_vrlwnm(_i, _m)	db_vec_vrlwnm(_i, _m)
+#else
+// Test the implementation from vec_int32_dummy.c
+extern vui32_t test_vrlwnm (vui32_t, vui32_t);
+#endif
+#else
+#define test_vrlwnm(_i, _m)	vec_vrlwnm(_i, _m)
+#endif
+
+int
+test_rlwnm (void)
+{
+  vui32_t i, m, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlwnm Rotate Left Word then AND with Mask\n");
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(0, 0, 0),
+			      RMASK_MB_ME_N(31, 31, 0),
+			      RMASK_MB_ME_N(15, 15, 0),
+			      RMASK_MB_ME_N(16, 16, 0)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x00000001, 0x00010000, 0x00008000);
+  rc += check_vuint128x ("vec_vrlwnm 1:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(1, 31, 0),
+			      RMASK_MB_ME_N(1, 1, 0),
+			      RMASK_MB_ME_N(1, 30, 0),
+			      RMASK_MB_ME_N(0, 31, 0)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x7fffffff, 0x40000000, 0x7ffffffe, 0xffffffff);
+  rc += check_vuint128x ("vec_vrlwnm 2:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(0, 0, 0),
+			      RMASK_MB_ME_N(15, 16, 0),
+			      RMASK_MB_ME_N(12, 19, 0),
+			      RMASK_MB_ME_N(30, 31, 0)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x00018000, 0x000ff000, 0x00000003);
+  rc += check_vuint128x ("vec_vrlwnm 3:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(31, 0, 0),
+			      RMASK_MB_ME_N(28, 3, 0),
+			      RMASK_MB_ME_N(24, 7, 0),
+			      RMASK_MB_ME_N(31, 1, 0)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000001, 0xf000000f, 0xff0000ff, 0xc0000001);
+  rc += check_vuint128x ("vec_vrlwnm 4:", (vui128_t)k, (vui128_t) e);
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x12345678, 0x12345678, 0x12345678);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(28, 31, 0),
+			      RMASK_MB_ME_N(28, 31, 8),
+			      RMASK_MB_ME_N(28, 31, 16),
+			      RMASK_MB_ME_N(28, 31, 24)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x2, 0x4, 0x6);
+  rc += check_vuint128x ("vec_vrlwnm 5:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME_N(28, 31, 0),
+			      RMASK_MB_ME_N(24, 27, 8),
+			      RMASK_MB_ME_N(20, 23, 16),
+			      RMASK_MB_ME_N(16, 19, 24)
+			      );
+  k = test_vrlwnm (i, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_vrlwnm i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x10, 0x200, 0x3000);
+  rc += check_vuint128x ("vec_vrlwnm 6:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 0
+#ifdef __DEBUG_PRINT__
+#if (__DEBUG_PRINT__ == 2)
+#define test_rlnm_word(_i, _m, _n)	db_vec_rlnm_word(_i, _m, _n)
+#else
+// Test the implementation from vec_int32_dummy.c
+extern vui32_t test_rlnm_word (vui32_t, vui32_t, vui32_t);
+#endif
+#else
+#define test_rlnm_word(_i, _m, _n)	vec_rlnm_word(_i, _m, _n)
+#endif
+
+int
+test_rlnm_w (void)
+{
+  vui32_t i, m, n, e;
+  vui32_t k;
+  int rc = 0;
+
+  printf ("\ntest_rlnm_w Rotate Left Word then AND with Mask\n");
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(0, 0),
+			      RMASK_MB_ME(31, 31),
+			      RMASK_MB_ME(15, 15),
+			      RMASK_MB_ME(16, 16)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x00000001, 0x00010000, 0x00008000);
+  rc += check_vuint128x ("vec_rlnm_word 1:", (vui128_t)k, (vui128_t) e);
+
+  i = (vui32_t)CONST_VINT32_W(-1, -1, -1, -1);
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(1, 31),
+			      RMASK_MB_ME(1, 1),
+			      RMASK_MB_ME(1, 30),
+			      RMASK_MB_ME(0, 31)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x7fffffff, 0x40000000, 0x7ffffffe, 0xffffffff);
+  rc += check_vuint128x ("vec_rlnm_word 2:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(0, 0),
+			      RMASK_MB_ME(15, 16),
+			      RMASK_MB_ME(12, 19),
+			      RMASK_MB_ME(30, 31)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000000, 0x00018000, 0x000ff000, 0x00000003);
+  rc += check_vuint128x ("vec_rlnm_word 3:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(31, 0),
+			      RMASK_MB_ME(28, 3),
+			      RMASK_MB_ME(24, 7),
+			      RMASK_MB_ME(31, 1)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 0, 0, 0);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x80000001, 0xf000000f, 0xff0000ff, 0xc0000001);
+  rc += check_vuint128x ("vec_rlnm_word 4:", (vui128_t)k, (vui128_t) e);
+
+
+  i = (vui32_t)CONST_VINT32_W(0x12345678, 0x12345678, 0x12345678, 0x12345678);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(28, 31),
+			      RMASK_MB_ME(28, 31),
+			      RMASK_MB_ME(28, 31),
+			      RMASK_MB_ME(28, 31)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 8, 16, 24);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x2, 0x4, 0x6);
+  rc += check_vuint128x ("vec_rlnm_word 5:", (vui128_t)k, (vui128_t) e);
+
+  m = (vui32_t)CONST_VINT32_W(RMASK_MB_ME(28, 31),
+			      RMASK_MB_ME(24, 27),
+			      RMASK_MB_ME(20, 23),
+			      RMASK_MB_ME(16, 19)
+			      );
+  n = (vui32_t)CONST_VINT32_W(0, 8, 16, 24);
+  k = test_rlnm_word (i, n, m);
+
+#ifdef __DEBUG_PRINT__
+  print_vint32x ("vec_rlnm_word i=", i);
+  print_vint32x ("           m=", m);
+  print_vint32x ("           n=", n);
+  print_vint32x ("           k=", k);
+#endif
+
+  e = (vui32_t)CONST_VINT32_W(0x8, 0x10, 0x200, 0x3000);
+  rc += check_vuint128x ("vec_rlnm_word 6:", (vui128_t)k, (vui128_t) e);
+
+  return rc;
+}
+#undef __DEBUG_PRINT__
+
 int
 test_revbw (void)
 {
@@ -1924,6 +2605,12 @@ test_vec_i32 (void)
 
   printf ("\n%s\n", __FUNCTION__);
 
+  rc += test_rlwmi ();
+  rc += test_rlwimi ();
+  rc += test_rlwinm ();
+  rc += test_rlnmi_w ();
+  rc += test_rlwnm ();
+  rc += test_rlnm_w ();
   rc += test_revbw ();
   rc += test_expandm_word ();
   rc += test_signexti_b ();

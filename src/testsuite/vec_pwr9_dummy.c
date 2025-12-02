@@ -40,6 +40,92 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+vui32_t
+test_vec_vrlwnim_24_27_PWR9 (vui32_t vra, vui32_t vrb)
+{
+  return vec_rlnmi_word (vra, vrb, 24, 27);
+}
+
+static inline vui32_t
+test_vrlwnmi_PWR9 (vui32_t vra, const unsigned int mb,
+	                   const unsigned int me,
+			   const unsigned int n)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrb = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, n)));
+#else
+  const vui32_t vrb = (vui32_t) { RMASK_MB_ME_N (mb, me, n),
+          RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n)};
+#endif
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vrlwnmi_24_27_0_PWR9 (vui32_t vra)
+{
+  return test_vrlwnmi_PWR9 (vra, 24, 27, 0);
+}
+
+vui32_t
+test_vec_rlnm_intrinsic_PWR9 (vui32_t a, vui32_t b, vui32_t c)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlnm)
+  result = vec_rlnm (a, b, c);
+#endif
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vec_rlnm_word_PWR9 (vui32_t vra, vui32_t vrb, vui32_t vrc)
+{
+  return vec_rlnm_word (vra, vrb, vrc);
+}
+
+vui32_t
+test_vec_rlmi_intrinsic_PWR9 (vui32_t a, vui32_t b, vui32_t c)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlmi)
+  result = vec_rlmi (a, b, c);
+#endif
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vec_vrlwmi_PWR9 (vui32_t vrt, vui32_t vra, vui32_t vrb)
+{
+  return vec_vrlwmi (vrt, vra, vrb);
+}
+
+vui32_t
+test_vec_vrlwnm_PWR9 (vui32_t vra, vui32_t vrb)
+{
+  return vec_vrlwnm (vra, vrb);
+}
+
 vi64_t
 __test_splatisd_PWR9_V3 (void)
 {

@@ -22,6 +22,306 @@
 
 #include <pveclib/vec_int128_ppc.h>
 
+vui32_t
+test_vec_vrlwnim_24_27 (vui32_t vra, vui32_t vrb)
+{
+  return vec_rlnmi_word (vra, vrb, 24, 27);
+}
+
+vui32_t
+test_vec_vrlwimi_8_24_27 (vui32_t vrt, vui32_t vra)
+{
+  return vec_vrlwimi (vrt, vra, 8, 24, 27);
+}
+
+vui32_t
+test_vec_vinslwi_1n_0b (vui32_t vrt, vui32_t vra)
+{// Insert from right immediate 1n_0b
+  const unsigned int n = 1;
+  const unsigned int b = 0;
+  return vec_vrlwimi (vrt, vra, ((32-b)&31), b, ((b+n)-1));
+}
+
+vui32_t
+test_vec_vinsrwi_1n_0b (vui32_t vrt, vui32_t vra)
+{// Insert from right immediate 1n_0b
+  const unsigned int n = 1;
+  const unsigned int b = 0;
+  return vec_vrlwimi (vrt, vra, (32-(b+n)), b, ((b+n)-1));
+}
+
+vui32_t
+test_vec_vrlwinm_0_24_27 (vui32_t vra)
+{
+  return vec_vrlwinm (vra, 0, 24, 27);
+}
+
+vui32_t
+test_vec_vrlwinm_8_24_27 (vui32_t vra)
+{
+  return vec_vrlwinm (vra, 8, 24, 27);
+}
+
+vui32_t
+test_vec_vextlwi_4n_0b (vui32_t vra)
+{ //Extract and left justify immediate
+  const unsigned int n = 4;
+  const unsigned int b = 0;
+  return vec_vrlwinm (vra, b, 0, (n-1));
+}
+
+vui32_t
+test_vec_vextlwi_4n_28b (vui32_t vra)
+{ //Extract and left justify immediate
+  const unsigned int n = 4;
+  const unsigned int b = 28;
+  return vec_vrlwinm (vra, b, 0, (n-1));
+}
+
+vui32_t
+test_vec_vextrwi_4n_24b (vui32_t vra)
+{// Extract and right justify immediate
+  const unsigned int n = 1;
+  const unsigned int b = 0;
+  return vec_vrlwinm (vra, (b+n), (32-n), 31);
+}
+
+vui32_t
+test_vec_vextrwi_1n_0b (vui32_t vra)
+{// Extract and right justify immediate
+  const unsigned int n = 1;
+  const unsigned int b = 0;
+  return vec_vrlwinm (vra, (b+n), (32-n), 31);
+}
+
+vui32_t
+test_vec_vclrlwi_16n (vui32_t vra)
+{// Clear left immediate
+  const unsigned int n = 16;
+  const unsigned int b = 0;
+  return vec_vrlwinm (vra, 0, n, 31);
+}
+
+vui32_t
+test_vec_vclrrwi_16n (vui32_t vra)
+{// Clear Right immediate
+  const unsigned int n = 16;
+  const unsigned int b = 0;
+  return vec_vrlwinm (vra, 0, 0, (31-n));
+}
+
+vui32_t
+test_vec_vclrlslwi_8n_16b (vui32_t vra)
+{// Clear left and shift left immediate
+  const unsigned int n = 8;
+  const unsigned int b = 16;
+  return vec_vrlwinm (vra, n, (b-n), (31-n));
+}
+
+static inline vui32_t
+test_vrlwnmi (vui32_t vra, const unsigned int mb,
+	                   const unsigned int me,
+			   const unsigned int n)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrb = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, n)));
+#else
+  const vui32_t vrb = (vui32_t) { RMASK_MB_ME_N (mb, me, n),
+          RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n),
+	  RMASK_MB_ME_N (mb, me, n)};
+#endif
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask;
+  const unsigned int ne = ((~me) & 31);
+  const unsigned int sh = ((mb + (~me)) & 31);
+
+  mask = vec_srwi (ones, sh);
+  mask = vec_rlwi (mask, ne);
+
+  vra_r  = vec_rlwi(vra, n);
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vrlwnmi_24_27_0 (vui32_t vra)
+{
+  return test_vrlwnmi (vra, 24, 27, 0);
+}
+
+vui32_t
+test_vrlwnmi_24_27_28 (vui32_t vra)
+{
+  return test_vrlwnmi (vra, 24, 27, 28);
+}
+
+vui32_t
+test_vec_rlnm_word (vui32_t vra, vui32_t vrb, vui32_t vrc)
+{
+  return vec_rlnm_word (vra, vrb, vrc);
+}
+
+vui32_t
+test_rlnm_word (vui32_t vra, vui32_t vrb, vui32_t vrc)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = vec_rlnm (vra, vrb, vrc);
+#else
+  vui32_t vrb_c = ((vrc)<<8)|(vrb))
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb_c)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrc, vrc, 15);
+  vrb_me = vrc;
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vrlwmi (vui32_t vrt, vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+
+#if defined (vec_rlmi)  && ((__GNUC__ >= 7) && (__GNUC__ < 11))
+  // GCC 7..10 implement __builtin_vec_rlmi correctly
+  // PR121375 effects GCC 11..
+  result = __builtin_vec_rlmi (vrt, vra, vrb);
+#else
+  result = vrt;
+  __asm__(
+      "vrlwmi %0,%1,%2;"
+      : "+v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+#if 1
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrb, vrb, 14);
+  vrb_me = vec_sld (vrb, vrb, 15);
+#else
+  vrb_mb = vec_srwi (vrb, 16);
+  vrb_me = vec_srwi (vrb, 8);
+#endif
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+
+  result = vec_sel (vrt, vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+vui32_t
+test_vrlwnm (vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+#if 1
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrb, vrb, 14);
+  vrb_me = vec_sld (vrb, vrb, 15);
+#else
+  vrb_mb = vec_srwi (vrb, 16);
+  vrb_me = vec_srwi (vrb, 8);
+#endif
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
 vi32_t
 test_vec_vextsh2w (vi16_t vra)
 {

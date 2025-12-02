@@ -423,8 +423,10 @@ static inline vui32_t vec_popcntw (vui32_t vra);
 #undef vec_popcntw
 #define vec_popcntw __builtin_vec_vpopcntw
 #endif
+static inline vui32_t vec_rlwi (vui32_t vra, const unsigned int shb);
 static inline vui32_t vec_slwi (vui32_t vra, const unsigned int shb);
 static inline vi32_t vec_srawi (vi32_t vra, const unsigned int shb);
+static inline vui32_t vec_srwi (vui32_t vra, const unsigned int shb);
 static inline vui64_t
 vec_vlxsiwzx (const signed long long ra, const unsigned int *rb);
 static inline vi64_t
@@ -1425,6 +1427,159 @@ vec_vextsh2w (vi16_t vra)
   result = vec_srawi (result, 16);
 #endif
   return result;
+}
+
+/** \brief Vector Rotate Left Word then AND with Mask.
+ *
+ *  VRA words 0-3 are the input to the rotate/mask operation.
+ *  VRB words 0-3 each contain the shift/rotate count (sh bits[27:31]).
+ *  VRC words 0-3 each contain mask-begin (me bits[19:23]),
+ *  and the mask-end (sh bits[27:31]).
+ *  For each VRA word[n] the the word is rotated left sh bits.
+ *  For each VRC word[n] generate the a word mask with 1-bits
+ *  starting at mask-begin and through mask-end and 0s elsewhere.
+ *  If mask-begin is greater then mask-end the mask wraps around.
+ *  Then the rotated words are ANDed with the generated masks and
+ *  the result returned.
+ *
+ *  The helper macro RMASK_MB_ME() will combine mb/me values
+ *  in an integer constant. This can be used to initialize
+ *  vector mask constants.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  mb/me/sh byte value. All other bits are ignored.
+ *  \note This operation conforms to Power Vector Intrinsic
+ *  Programming Reference which separates the shift count
+ *  (parameter b) from the mask begin/end parameter c).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-14 | 2/cycle  |
+ *  |power9   |   9   | 2/cycle  |
+ *  |power10  |  4-13 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vrb a vector where each word contains sh values.
+ *  @param vrc a vector where each word contains mb/me values.
+ *  @return Rotated AND Masked vector unsigned int elements.
+ */
+static inline vui32_t
+vec_rlnm_word (vui32_t vra, vui32_t vrb, vui32_t vrc)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = vec_rlnm (vra, vrb, vrc);
+#else
+  vui32_t vrb_c = ((vrc)<<8)|(vrb))
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb_c)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrc, vrc, 15);
+  vrb_me = vrc;
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+/** \brief Vector Rotate Left Word then AND with (Immediate) Mask.
+ *
+ *  For each VRA word[n], rotated left using VRB word[n] then
+ *  AND with a word mask generated from mb/me.
+ *
+ *  VRA words 0-3 are the input to the rotate/mask operation.
+ *  VRB words 0-3 each contain the shift/rotate counts
+ *  (word[n] bits[27:31]).
+ *  Parameters mb, me are immediate constants that control
+ *  word mask generation. Word masks are generated with 1-bits
+ *  starting at bit mb, through bit me, and 0s elsewhere.
+ *  If mb is greater then me then the mask wraps around.
+ *  begin/end and the rotate bit count in the range 0-31.
+ *  The mask parameters are applied across all
+ *  elements of VRA.
+ *
+ *  \note This operation provides the word vector form of the
+ *  rlwnm FXU instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  4-7  | 2/cycle  |
+ *  |power9   |  4-13 | 2/cycle  |
+ *  |power10  |  2-10 | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vrb rotate bit counts, as 4 x unsigned integers.
+ *  @param mb mask-begin, an integer constant in the range 0-31.
+ *  @param me mask-end, an integer constant in the range 0-31.
+ *  @return Rotated AND Masked vector unsigned int elements.
+ */
+static inline vui32_t
+vec_rlnmi_word (vui32_t vra, vui32_t vrb,
+		          const unsigned int mb,
+	                  const unsigned int me)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrc = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, 0)));
+#else
+  const vui32_t vrc = (vui32_t) { RMASK_MB_ME_N (mb, me, 0),
+          RMASK_MB_ME_N (mb, me, 0),
+	  RMASK_MB_ME_N (mb, me, 0),
+	  RMASK_MB_ME_N (mb, me, 0)};
+#endif
+  vrb = vec_or (vrb, vrc);
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  const unsigned int ne = ((~me) & 31);
+  const unsigned int n = ((mb + (~me)) & 31);
+  vui32_t vra_r, mask;
+
+  mask = vec_srwi (ones, n);
+  if (ne != 0)
+    mask = vec_rlwi (mask, ne);
+
+  vra_r  = vec_rl(vra, vrb);
+
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
 }
 
 /** \brief Vector Rotate left Word Immediate.
@@ -2540,6 +2695,331 @@ vec_vmulouw (vui32_t vra, vui32_t vrb)
   return (res);
 }
 
+
+/** \brief Vector Rotate Left Word then Mask Insert.
+ *
+ *  VRT words 0-3 are original inputs to be updated by rotate/insert
+ *  leaving unmasked bits unchanged.
+ *  VRA words 0-3 are the input to the rotated and inserted under mask.
+ *  VRB words 0-3 each contain mask-begin (mb bits[11:15]), mask-end
+ *  (me bits[19:23]), and the shift/rotate count (sh bits[27:31]).
+ *
+ *  For each VRA word[n] the the word is rotated left sh bits.
+ *  For each VRB word[n] generate the a word mask with 1-bits
+ *  starting at mask-begin and through mask-end and 0s elsewhere.
+ *  If mask-begin is greater then mask-end the mask wraps around.
+ *  Then masked bits from rotated VRA are inserted under mask into
+ *  VRT and the result returned.
+ *
+ *  The helper macro RMASK_MB_ME_N() will combine mb/me/sh values
+ *  in an integer constant. This can be used to initialize
+ *  vector mask constants.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  mb/me/sh byte value. All other bits are ignored.
+ *  \note This operation conforms to the PowerISA instructions where
+ *  the mb/me/sh values are combined in each mask word.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-14 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vrt a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vrb a vector where each word contains mb/me/sh values.
+ *  @return Bits from vra rotated and inserted under mask into vrt.
+ */
+static inline vui32_t
+vec_vrlwmi (vui32_t vrt, vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_rlmi)  && ((__GNUC__ >= 7) && (__GNUC__ < 11))
+  // GCC 7..10 implement __builtin_vec_rlmi correctly
+  // PR121375 effects GCC 11..
+  result = __builtin_vec_rlmi (vrt, vra, vrb);
+#else
+  result = vrt;
+  __asm__(
+      "vrlwmi %0,%1,%2;"
+      : "+v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrb, vrb, 14);
+  vrb_me = vec_sld (vrb, vrb, 15);
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+
+  result = vec_sel (vrt, vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+
+/** \brief Vector Rotate Left Word Immediate then Mask Insert.
+ *
+ *  For each VRA word[n], rotated left sh bits then apply the word
+ *  mask to selectively insert rotated bits from VRA into VRT.
+ *
+ *  VRT words 0-3 are original inputs to be updated by rotate/insert
+ *  leaving unmasked bits unchanged.
+ *  VRA words 0-3 are the input to be rotated and inserted under mask.
+ *  Parameters sh, mb, me are immediate constants that control
+ *  rotation and mask generation. Word masks are generated with 1-bits
+ *  starting at bit mb, through bit me, and 0s elsewhere.
+ *  If mb is greater then me then the mask wraps around.
+ *  These rotate and mask parameters are applied across all
+ *  elements of VRA.
+ *  Shift and mask begin/end values in the range 0-31.
+ *
+ *  \note This operation provides the word vector form of the
+ *  rlwimi FXU instruction. By extension it can be used to perform
+ *  the vector equivalent of the insert left/right
+ *  extended operations.
+ *
+ *  \note This operation provides the word vector form of the
+ *  rlwnm FXU instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-10 | 2/cycle  |
+ *  |power9   |  2-11 | 2/cycle  |
+ *  |power10  |  1-7  | 4/cycle  |
+ *
+ *  @param vrt a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param sh rotate bit count, an integer constant in the range 0-31.
+ *  @param mb mask-begin, an integer constant in the range 0-31.
+ *  @param me mask-end, an integer constant in the range 0-31.
+ *  @return Rotated AND Masked vector unsigned int elements.
+ */
+static inline vui32_t
+vec_vrlwimi (vui32_t vrt, vui32_t vra,
+	      const unsigned int sh,
+	      const unsigned int mb,
+	      const unsigned int me)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrb = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, sh)));
+#else
+  const vui32_t vrb = (vui32_t) { RMASK_MB_ME_N (mb, me, sh),
+          RMASK_MB_ME_N (mb, me, sh),
+	  RMASK_MB_ME_N (mb, me, sh),
+	  RMASK_MB_ME_N (mb, me, sh)};
+#endif
+#if defined (vec_rlmi)  && ((__GNUC__ >= 7) && (__GNUC__ < 11))
+  // GCC 7..10 implement __builtin_vec_rlmi correctly
+  // PR121375 effects GCC 11..
+  result = __builtin_vec_rlmi (vrt, vra, vrb);
+#else
+  result = vrt;
+  __asm__(
+      "vrlwmi %0,%1,%2;"
+      : "+v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  const unsigned int ne = ((~me) & 31);
+  const unsigned int n = ((mb + (~me)) & 31);
+  vui32_t vra_r, mask;
+
+  mask = vec_srwi (ones, n);
+  if (ne != 0)
+    mask = vec_rlwi (mask, ne);
+
+  if (sh != 0)
+    vra_r  = vec_rlwi(vra, sh);
+  else
+    vra_r = vra;
+
+  result = vec_sel (vrt, vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+/** \brief Vector Rotate Left Word Immediate then AND with Mask.
+ *
+ *  For each VRA word[n], rotated left sh bits then
+ *  AND with a word mask generated from mb/me.
+ *
+ *  VRA words 0-3 are the input to the rotate/mask operation.
+ *  Parameters sh, mb, me are immediate constants that control rotation
+ *  and word mask generation. Word masks are generated with 1-bits
+ *  starting at bit mb, through bit me, and 0s elsewhere.
+ *  If mb is greater then me then the mask wraps around.
+ *  begin/end and the rotate bit count in the range 0-31.
+ *  These rotate and mask parameters are applied across all
+ *  elements of VRA.
+ *
+ *  \note This operation provides the word vector form of the
+ *  rlwinm FXU instruction. By extension it can be used to perform
+ *  the vector equivalent of the extract and clear left/right
+ *  extended operations.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   |  6-10 | 2/cycle  |
+ *  |power9   |  2-11 | 2/cycle  |
+ *  |power10  |  1-7  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param sh rotate bit count, an integer constant in the range 0-31.
+ *  @param mb mask-begin, an integer constant in the range 0-31.
+ *  @param me mask-end, an integer constant in the range 0-31.
+ *  @return Rotated AND Masked vector unsigned int elements.
+ */
+static inline vui32_t
+vec_vrlwinm (vui32_t vra, const unsigned int sh,
+		          const unsigned int mb,
+	                  const unsigned int me)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined(_ARCH_PWR10) && (defined (vec_splati))
+  const vui32_t vrb = (vui32_t) vec_splati ((int)(RMASK_MB_ME_N (mb, me, sh)));
+#else
+  const vui32_t vrb = (vui32_t) { RMASK_MB_ME_N (mb, me, sh),
+          RMASK_MB_ME_N (mb, me, sh),
+	  RMASK_MB_ME_N (mb, me, sh),
+	  RMASK_MB_ME_N (mb, me, sh)};
+#endif
+#if defined (vec_rlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  const unsigned int ne = ((~me) & 31);
+  const unsigned int n = ((mb + (~me)) & 31);
+  vui32_t vra_r, mask;
+
+  mask = vec_srwi (ones, n);
+  if (ne != 0)
+    mask = vec_rlwi (mask, ne);
+
+  if (sh != 0)
+    vra_r  = vec_rlwi(vra, sh);
+  else
+    vra_r = vra;
+
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
+/** \brief Vector Rotate Left Word then AND with Mask.
+ *
+ *  VRA words 0-3 are the input to the rotate/mask operation.
+ *  VRB words 0-3 each contain mask-begin (mb bits[11:15]), mask-end
+ *  (me bits[19:23]), and the shift/rotate count (sh bits[27:31]).
+ *  For each VRA word[n], rotate left sh bits.
+ *  For each VRB word[n] generate the a word mask with 1-bits
+ *  starting at mask-begin and through mask-end and 0s elsewhere.
+ *  If mask-begin is greater then mask-end the mask wraps around.
+ *  Then the rotated words are ANDed with the generated masks and
+ *  the result returned.
+ *
+ *  The helper macro RMASK_MB_ME_N() will combine mb/me/sh values
+ *  in an integer constant. This can be used to initialize
+ *  vector mask constants.
+ *
+ *  \note The PowerISA only requires the low order 5-bits of each
+ *  mb/me/sh byte value. All other bits are ignored.
+ *  \note This operation conforms to the PowerISA instructions where
+ *  the mb/me/sh values are combined in each mask word.
+ *  This differs from Power Vector Intrinsic Programming Reference
+ *  which separates the shift count (parameter b) from the mask
+ *  begin/end parameter c).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power8   | 10-14 | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *  |power10  |  1-3  | 4/cycle  |
+ *
+ *  @param vra a 128-bit vector treated as 4 x unsigned integers.
+ *  @param vrb a vector where each word contains mb/me/sh values.
+ *  @return Rotated AND Masked vector unsigned int elements.
+ */
+static inline vui32_t
+vec_vrlwnm (vui32_t vra, vui32_t vrb)
+{
+  vui32_t result;
+
+#ifdef _ARCH_PWR9
+#if defined (vec_vrlnm)  && (__GNUC__ >= 7)
+  result = __builtin_vec_rlnm (vra, vrb);
+#else
+  __asm__(
+      "vrlwnm %0,%1,%2;"
+      : "=v" (result)
+      : "v" (vra),
+      "v" (vrb)
+      : );
+#endif
+#else
+  const vui32_t  ones = vec_splat_u32(-1);
+  vui32_t vra_r, mask, shr;
+  vui32_t vrb_mb, vrb_me, vrb_ne, vrb_n;
+
+  // Rotate mb/me in to low order word bytes
+  vrb_mb = vec_sld (vrb, vrb, 14);
+  vrb_me = vec_sld (vrb, vrb, 15);
+  vrb_n  = vrb;
+
+  vrb_ne = vec_nor  (vrb_me, vrb_me);
+  shr = vec_add (vrb_mb, vrb_ne);
+
+#if defined (__clang__) || (__GNUC__ < 8)
+  mask = vec_sr (ones, shr);
+#else
+  // Prevent gratuitous .rodata const and shr masking
+  mask = vec_vsrw_byte (ones, (vui8_t) shr);
+#endif
+  mask = vec_rl (mask, vrb_ne);
+
+  vra_r  = vec_rl(vra, vrb_n);
+  result = (vui32_t)vec_and (vra_r, mask);
+#endif
+  return ((vui32_t) result);
+}
+
 /** \brief Vector Scatter-Store 4 words to Scalar Offsets.
  *
  *  For each word element [i] of xs, store the
@@ -2932,7 +3412,7 @@ vec_vstxsiwx (vui32_t xs, const signed long long ra, unsigned int *rb)
 
 /** \brief Vector Rotate Left Word by Byte.
  *
- *  Vector Rotate Left Doubleword 0-31 bits.
+ *  Vector Rotate Left Word 0-31 bits.
  *  The shift amount is from bits 27-31, 59-63, 91-95 and 123-127 of vrb.
  *
  *  \note The PowerISA only requires the low order 5-bits of each

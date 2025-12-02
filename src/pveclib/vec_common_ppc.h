@@ -1652,6 +1652,18 @@ typedef union
 #define VEC_BYTE_HHW 1
 #endif
 
+/*! \brief Generate integer values for combined mask constants.
+ *
+ * For word/doublword/quadword rotate AND mask.
+ *   */
+#define RMASK_MB_ME(_mb, _me)	((_mb<<8)+_me)
+
+/*! \brief Generate integer values for combined rotate AND mask constants.
+ *
+ * For word/doublword/quadword rotate AND mask and rotate and mask insert.
+ *   */
+#define RMASK_MB_ME_N(_mb, _me, _sh)	((((_mb<<8)+_me)<<8)+_sh)
+
 /*! \brief table powers of 10 [0-38] in vector __int128 format.  */
 extern const vui128_t vtipowof10[];
 /*! \brief table used to verify 128-bit frexp operations for powers of 10.  */
@@ -1696,6 +1708,8 @@ static inline vi128_t vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb);
  *  @param a 128-bit vector long long int.
  *  @param b 128-bit vector long long int.
  *  @return vector long long int sums of a and b.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_addudm_PWR7 (vui64_t a, vui64_t b)
@@ -1733,6 +1747,8 @@ vec_addudm_PWR7 (vui64_t a, vui64_t b)
  *  @param vra 128-bit vector treated as a __int128.
  *  @param vrb 128-bit vector treated as a __int128.
  *  @return __int128 sum of vra and vrb.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_adduqm_PWR7 (vui128_t vra, vui128_t vrb)
@@ -1767,6 +1783,8 @@ vec_adduqm_PWR7 (vui128_t vra, vui128_t vrb)
  *  @param a 128-bit vector treated as a __int128.
  *  @param b 128-bit vector treated as a __int128.
  *  @return __int128 sum of a and b.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_adduqm_PWR8 (vui128_t a, vui128_t b)
@@ -1813,6 +1831,8 @@ vec_adduqm_PWR8 (vui128_t a, vui128_t b)
  *  elements.
  *  @return 128-bit vector with the Leading Zeros count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_clzw_PWR7 (vui32_t vra)
@@ -1868,6 +1888,8 @@ vec_clzw_PWR7 (vui32_t vra)
  *  long long int (doubleword) elements.
  *  @return 128-bit vector with the leading zeros count for each
  *  doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_clzd_PWR7 (vui64_t vra)
@@ -1934,6 +1956,8 @@ vec_clzd_PWR7 (vui64_t vra)
  *  long long (doubleword) elements.
  *  @return 128-bit vector with the leading zeros count for each
  *  doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_clzd_PWR8 (vui64_t vra)
@@ -1970,6 +1994,8 @@ vec_clzd_PWR8 (vui64_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  leading zeros.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_clzq_PWR7 (vui128_t vra)
@@ -2011,6 +2037,8 @@ vec_clzq_PWR7 (vui128_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  leading zeros.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_clzq_PWR8 (vui128_t vra)
@@ -2062,6 +2090,8 @@ vec_clzq_PWR8 (vui128_t vra)
  *  elements.
  *  @return 128-bit vector with the Trailng Zeros count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_ctzw_PWR7 (vui32_t vra)
@@ -2101,6 +2131,8 @@ vec_ctzw_PWR7 (vui32_t vra)
  *  elements.
  *  @return 128-bit vector with the Trailng Zeros count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_ctzw_PWR8 (vui32_t vra)
@@ -2142,6 +2174,8 @@ vec_ctzw_PWR8 (vui32_t vra)
  *  elements.
  *  @return 128-bit vector with the Trailng Zeros count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_ctzw_PWR9 (vui32_t vra)
@@ -2185,6 +2219,8 @@ vec_ctzw_PWR9 (vui32_t vra)
  *  (doublewords) elements.
  *  @return 128-bit vector with the trailng zeros count for each
  *  doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_ctzd_PWR7 (vui64_t vra)
@@ -2224,6 +2260,8 @@ vec_ctzd_PWR7 (vui64_t vra)
  *  (doublewords) elements.
  *  @return 128-bit vector with the trailng zeros count for each
  *  doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_ctzd_PWR8 (vui64_t vra)
@@ -2267,6 +2305,8 @@ vec_ctzd_PWR8 (vui64_t vra)
  *  (doublewords) elements.
  *  @return 128-bit vector with the trailng zeros count for each
  *  doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_ctzd_PWR9 (vui64_t vra)
@@ -2303,6 +2343,8 @@ vec_ctzd_PWR9 (vui64_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  trailing zeros.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_ctzq_PWR7 (vui128_t vra)
@@ -2351,6 +2393,8 @@ vec_ctzq_PWR7 (vui128_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  trailing zeros.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_ctzq_PWR8 (vui128_t vra)
@@ -2382,6 +2426,8 @@ vec_ctzq_PWR8 (vui128_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the count of
  *  trailing zeros.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_ctzq_PWR9 (vui128_t vra)
@@ -2404,6 +2450,65 @@ vec_ctzq_PWR9 (vui128_t vra)
   return ((vui128_t) result);
 }
 
+/** \brief Vector Count bitwise equivalence (exclusive NOR) POWER7 and earlier.
+ *
+ *  Bitwise equivalence (exclusive NOR) of a 128-bit vector VRA and VRB
+ *
+ *  For POWER8 (PowerISA 2.7) or later use the
+ *  Vector Logical Equivalence (VX/XX3-form) instruction.
+ *  Otherwise use a sequence of vxor/vnot (vnor).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  4    | 2/cycle  |
+ *
+ *  @param vra 128-bit vector.
+ *  @param vrb 128-bit vector.
+ *  @return 128-bit vector bitwise equivalence (exclusive NOR) of VRA and VRB
+ *
+ *  \showrefby
+ */
+static inline vui32_t
+vec_eqv_PWR7 (vui32_t vra, vui32_t vrb)
+{
+  vui32_t r;
+  r = vec_xor (vra, vrb);
+  return vec_nor (r, r);
+}
+
+/** \brief Vector Count bitwise equivalence (exclusive NOR) POWER8 and earlier.
+ *
+ *  Bitwise equivalence (exclusive NOR) of a 128-bit vector VRA and VRB
+ *
+ *  For POWER8 (PowerISA 2.7) or later use the
+ *  Vector Logical Equivalence (VX/XX3-form) instruction.
+ *  Otherwise use a sequence of vxor/vnot (vnor).
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  4    | 2/cycle  |
+ *  |power8   |  2    | 2/cycle  |
+ *  |power9   |  2    | 2/cycle  |
+ *  |power10  | 1 - 3 | 4/cycle  |
+ *
+ *  @param vra 128-bit vector.
+ *  @param vrb 128-bit vector.
+ *  @return 128-bit vector bitwise equivalence (exclusive NOR) of VRA and VRB
+ *
+ *  \showrefby
+ */
+static inline vui32_t
+vec_eqv_PWR8 (vui32_t vra, vui32_t vrb)
+{
+  vui32_t r;
+#if defined(_ARCH_PWR8) && defined (vec_eqv)
+  r = vec_eqv (vra, vrb);
+#else
+  r = vec_eqv_PWR7 (vra, vrb);
+#endif
+  return ((vui32_t) r);
+}
+
 /** \brief Vector doubleword paste.
  *  Concatenate the high doubleword of the 1st vector with the
  *  low double word of the 2nd vector.
@@ -2418,6 +2523,8 @@ vec_ctzq_PWR9 (vui128_t vra)
  *  low order doubleword.
  *  @return The combined 128-bit vector composed of the high order
  *  doubleword of __VH and the low order doubleword of __VL.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_pasted_PWR7 (vui64_t __VH, vui64_t __VL)
@@ -2446,6 +2553,8 @@ vec_pasted_PWR7 (vui64_t __VH, vui64_t __VL)
  *  low order doubleword.
  *  @return The combined 128-bit vector composed of the high order
  *  doubleword of __VH and the low order doubleword of __VL.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_pasted_PWR8 (vui64_t __VH, vui64_t __VL)
@@ -2483,6 +2592,8 @@ vec_pasted_PWR8 (vui64_t __VH, vui64_t __VL)
  *  elements.
  *  @return 128-bit vector with the population count for each byte
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_popcntb_PWR7 (vui8_t vra)
@@ -2518,6 +2629,8 @@ vec_popcntb_PWR7 (vui8_t vra)
  *  elements.
  *  @return 128-bit vector with the population count for each halfword
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui16_t
 vec_popcnth_PWR7 (vui16_t vra)
@@ -2552,6 +2665,8 @@ vec_popcnth_PWR7 (vui16_t vra)
  *  elements.
  *  @return 128-bit vector with the population count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_popcntw_PWR7 (vui32_t vra)
@@ -2583,6 +2698,8 @@ vec_popcntw_PWR7 (vui32_t vra)
  *  elements.
  *  @return 128-bit vector with the population count for each word
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_popcntw_PWR8 (vui32_t vra)
@@ -2623,6 +2740,8 @@ vec_popcntw_PWR8 (vui32_t vra)
  *  elements.
  *  @return 128-bit vector with the population count for each dword
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_popcntd_PWR7 (vui64_t vra)
@@ -2662,6 +2781,8 @@ vec_popcntd_PWR7 (vui64_t vra)
  *  elements.
  *  @return 128-bit vector with the population count for each dword
  *  element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_popcntd_PWR8 (vui64_t vra)
@@ -2701,6 +2822,8 @@ vec_popcntd_PWR8 (vui64_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the
  *  population count.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_popcntq_PWR7 (vui128_t vra)
@@ -2735,6 +2858,8 @@ vec_popcntq_PWR7 (vui128_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the
  *  population count.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_popcntq_PWR8 (vui128_t vra)
@@ -2784,6 +2909,8 @@ vec_popcntq_PWR8 (vui128_t vra)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return a 128-bit vector with bits 121:127 containing the
  *  population count.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_popcntq_PWR9 (vui128_t vra)
@@ -2834,6 +2961,8 @@ vec_popcntq_PWR9 (vui128_t vra)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Left shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_rldi_PWR7 (vui64_t vra, const unsigned int shb)
@@ -2900,6 +3029,8 @@ vec_rldi_PWR7 (vui64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Left shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_rldi_PWR8 (vui64_t vra, const unsigned int shb)
@@ -2930,6 +3061,8 @@ vec_rldi_PWR8 (vui64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long long int, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_sldi_PWR7 (vui64_t vra, const unsigned int shb)
@@ -2990,6 +3123,8 @@ vec_sldi_PWR7 (vui64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Left shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_sldi_PWR8 (vui64_t vra, const unsigned int shb)
@@ -3025,6 +3160,8 @@ vec_sldi_PWR8 (vui64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_vsrad_PWR7 (vi64_t vra, vui8_t vrb)
@@ -3084,6 +3221,8 @@ vec_vsrad_PWR7 (vi64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_vsrad_PWR8 (vi64_t vra, vui8_t vrb)
@@ -3123,6 +3262,8 @@ vec_vsrad_PWR8 (vi64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_sradi_PWR7 (vi64_t vra, const unsigned int shb)
@@ -3199,6 +3340,8 @@ vec_sradi_PWR7 (vi64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_sradi_PWR8 (vi64_t vra, const unsigned int shb)
@@ -3236,6 +3379,8 @@ vec_sradi_PWR8 (vi64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long long int, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_srdi_PWR7 (vui64_t vra, const unsigned int shb)
@@ -3296,6 +3441,8 @@ vec_srdi_PWR7 (vui64_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long long integers.
  *  @param shb shift amount in the range 0-63.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_srdi_PWR8 (vui64_t vra, const unsigned int shb)
@@ -3333,6 +3480,8 @@ vec_srdi_PWR8 (vui64_t vra, const unsigned int shb)
  *  @param vrb lower 128-bits of the 256-bit double quadword vector.
  *  @param shb Shift amount in the range 0-7.
  *  @return 128-bits from bits shb:shb+127.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_sldbi_PWR9 (vui8_t vra, vui8_t vrb, const unsigned int shb)
@@ -3391,6 +3540,8 @@ vec_sldbi_PWR9 (vui8_t vra, vui8_t vrb, const unsigned int shb)
  *  @param vrb lower 128-bits of the 256-bit double quadword vector.
  *  @param shb Shift amount in the range 0-7.
  *  @return 128-bits from bits shb:shb+127.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_sldbi_PWR10 (vui8_t vra, vui8_t vrb, const unsigned int shb)
@@ -3438,6 +3589,8 @@ vec_sldbi_PWR10 (vui8_t vra, vui8_t vrb, const unsigned int shb)
  *  @param vrb lower 128-bits of the 256-bit double quadword vector.
  *  @param shb Shift amount in the range 0-7.
  *  @return 128-bits from bits 128-shb:255-shb.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_srdbi_PWR9 (vui8_t vra, vui8_t vrb, const unsigned int shb)
@@ -3496,6 +3649,8 @@ vec_srdbi_PWR9 (vui8_t vra, vui8_t vrb, const unsigned int shb)
  *  @param vrb lower 128-bits of the 256-bit double quadword vector.
  *  @param shb Shift amount in the range 0-7.
  *  @return 128-bits from bits 128-shb:255-shb.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_srdbi_PWR10 (vui8_t vra, vui8_t vrb, const unsigned int shb)
@@ -3548,6 +3703,8 @@ vec_srdbi_PWR10 (vui8_t vra, vui8_t vrb, const unsigned int shb)
  *  @param vrx lower 128-bits of the 256-bit double vector.
  *  @param vrb Shift amount in bits 121:127.
  *  @return high 128-bits of left shifted double vector.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_sldq_PWR7 (vui8_t vrw, vui8_t vrx, vui8_t vrb)
@@ -3585,6 +3742,8 @@ vec_sldq_PWR7 (vui8_t vrw, vui8_t vrx, vui8_t vrb)
  *  @param vra a 128-bit vector treated as a vector unsigned __int128.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned __int128, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_rlqi_PWR8 (vui128_t vra, const unsigned int shb)
@@ -3641,6 +3800,8 @@ vec_rlqi_PWR8 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned __int128.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned __int128, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_rlqi_PWR9 (vui128_t vra, const unsigned int shb)
@@ -3701,6 +3862,8 @@ vec_rlqi_PWR9 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned __int128.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned __int128, rotated left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_rlqi_PWR10 (vui128_t vra, const unsigned int shb)
@@ -3764,6 +3927,8 @@ vec_rlqi_PWR10 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Left rotated 128-bit vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_rlq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -3790,6 +3955,8 @@ vec_rlq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Left rotated 128-bit vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_rlq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -3829,6 +3996,8 @@ vec_rlq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long long int, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slqi_PWR8 (vui128_t vra, const unsigned int shb)
@@ -3885,6 +4054,8 @@ vec_slqi_PWR8 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long long int, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slqi_PWR9 (vui128_t vra, const unsigned int shb)
@@ -3953,6 +4124,8 @@ vec_slqi_PWR9 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long long int, shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slqi_PWR10 (vui128_t vra, const unsigned int shb)
@@ -4023,6 +4196,8 @@ vec_slqi_PWR10 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Left shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -4047,6 +4222,8 @@ vec_slq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Left shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -4086,6 +4263,8 @@ vec_slq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srqi_PWR8 (vui128_t vra, const unsigned int shb)
@@ -4142,6 +4321,8 @@ vec_srqi_PWR8 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srqi_PWR9 (vui128_t vra, const unsigned int shb)
@@ -4211,6 +4392,8 @@ vec_srqi_PWR9 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srqi_PWR10 (vui128_t vra, const unsigned int shb)
@@ -4284,6 +4467,8 @@ vec_srqi_PWR10 (vui128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Right shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -4308,6 +4493,8 @@ vec_srq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Right shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -4347,6 +4534,8 @@ vec_srq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraqi_PWR7 (vi128_t vra, const unsigned int shb)
@@ -4404,6 +4593,8 @@ vec_sraqi_PWR7 (vi128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraqi_PWR8 (vi128_t vra, const unsigned int shb)
@@ -4496,6 +4687,8 @@ vec_sraqi_PWR8 (vi128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraqi_PWR9 (vi128_t vra, const unsigned int shb)
@@ -4577,6 +4770,8 @@ vec_sraqi_PWR9 (vi128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as a vector unsigned long int.
  *  @param shb shift amount in the range 0-127.
  *  @return 128-bit vector unsigned long long int, shifted Right shb bits.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraqi_PWR10 (vi128_t vra, const unsigned int shb)
@@ -4649,6 +4844,8 @@ vec_sraqi_PWR10 (vi128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as signed __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Right algebraic shifted vector.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraq_PWR9 (vi128_t vra, vui8_t vrb)
@@ -4683,6 +4880,8 @@ vec_sraq_PWR9 (vi128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as signed __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Right algebraic shifted vector.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_sraq_PWR10 (vi128_t vra, vui8_t vrb)
@@ -4723,6 +4922,8 @@ vec_sraq_PWR10 (vi128_t vra, vui8_t vrb)
  *  @param sim5 shift amount in the range -16 to 15.
  *  @return 128-bit vector unsigned char, where the 5-bit sim5 is
  *  signed extend.
+ *
+ *  \showrefby
  */
 static inline vi8_t
 vec_splat5_s8 (const signed int sim5)
@@ -4768,6 +4969,8 @@ vec_splat5_s8 (const signed int sim5)
  *  @param sim5 shift amount in the range -16 to 15.
  *  @return 128-bit vector unsigned char, where the 5-bit sim5 is
  *  signed extend.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_splat5_u8 (const unsigned int sim5)
@@ -4810,6 +5013,8 @@ vec_splat5_u8 (const unsigned int sim5)
  *  @param sim6 shift amount in the range -32 to 31.
  *  @return 128-bit vector unsigned char, where the 6-bit sim6 is
  *  signed extend.
+ *
+ *  \showrefby
  */
 static inline vi8_t
 vec_splat6_s8 (const signed int sim6)
@@ -4890,6 +5095,8 @@ vec_splat6_s8 (const signed int sim6)
  *  @param sim6 shift amount in the range 0-63.
  *  @return 128-bit vector unsigned char, with const sim6 placed
  *  in the low-order 6 bits of each byte element.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_splat6_u8 (const unsigned int sim6)
@@ -5018,6 +5225,8 @@ vec_splat6_u8 (const unsigned int sim6)
  *  @param sim7 shift amount in the range 0-127.
  *  @return 128-bit vector unsigned char, with const sim7 placed
  *  in the low-order 7 bits of each byte element.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_splat7_u8 (const unsigned int sim7)
@@ -5224,6 +5433,8 @@ vec_splat7_u8 (const unsigned int sim7)
  *  @param sim6 shift amount in the range -32 to 31.
  *  @return 128-bit vector unsigned int, where the 6-bit sim6 is
  *  signed extend for each word.
+ *
+ *  \showrefby
  */
 static inline vi32_t
 vec_splat6_s32 (const signed int sim6)
@@ -5305,6 +5516,8 @@ vec_splat6_s32 (const signed int sim6)
  *  @param sim6 shift amount in the range 0-63.
  *  @return 128-bit vector unsigned int, with const sim6 placed
  *  in the low-order 6 bits of each Word element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_splat6_u32 (const unsigned int sim6)
@@ -5397,6 +5610,8 @@ vec_splat6_u32 (const unsigned int sim6)
  *  @param sim7 shift amount in the range 0-127.
  *  @return 128-bit vector unsigned char, with const sim7 placed
  *  in the low-order 7 bits of each byte element.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_splat7_u32 (const unsigned int sim7)
@@ -5617,6 +5832,8 @@ vec_splat7_u32 (const unsigned int sim7)
  *  @param sim6 shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long int, with const sim6 placed
  *  in the low-order 6 bits of each Doubleword element.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_splat6_u64 (const unsigned int sim6)
@@ -5726,6 +5943,8 @@ vec_splat6_u64 (const unsigned int sim6)
  *  @param sim6 shift amount in the range 0-63.
  *  @return 128-bit vector unsigned long int, with const sim6 placed
  *  in the low-order 6 bits of each Doubleword element.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_splat6_s64 (const signed int sim6)
@@ -5777,6 +5996,8 @@ vec_splat6_s64 (const signed int sim6)
  *  @param vrb 128-bit vector treated as 2 X unsigned long long int.
  *  @return  vector unsigned long int sum of vra[0] + NOT(vrb[0]) + 1
  *  and vra[1] + NOT(vrb[1]) + 1.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_subudm_PWR7 (vui64_t vra, vui64_t vrb)
@@ -5819,6 +6040,8 @@ vec_subudm_PWR7 (vui64_t vra, vui64_t vrb)
  *  @param vra 128-bit vector treated as unsigned __int128.
  *  @param vrb 128-bit vector treated as unsigned __int128.
  *  @return __int128 unsigned difference of vra minus vrb.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_subuqm_PWR7 (vui128_t vra, vui128_t vrb)
@@ -5863,6 +6086,8 @@ vec_subuqm_PWR7 (vui128_t vra, vui128_t vrb)
  *
  *  @param vra a 128-bit vector treated as unsigned char.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_vexpandbm_PWR7 (vui8_t vra)
@@ -5890,6 +6115,8 @@ vec_vexpandbm_PWR7 (vui8_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned char.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui8_t
 vec_vexpandbm_PWR10 (vui8_t vra)
@@ -5924,6 +6151,8 @@ vec_vexpandbm_PWR10 (vui8_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned short.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui16_t
 vec_vexpandhm_PWR7 (vui16_t vra)
@@ -5951,6 +6180,8 @@ vec_vexpandhm_PWR7 (vui16_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned short.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui16_t
 vec_vexpandhm_PWR10 (vui16_t vra)
@@ -5985,6 +6216,8 @@ vec_vexpandhm_PWR10 (vui16_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned int.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_vexpandwm_PWR7 (vui32_t vra)
@@ -6012,6 +6245,8 @@ vec_vexpandwm_PWR7 (vui32_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned int.
  *  @return vector word mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui32_t
 vec_vexpandwm_PWR10 (vui32_t vra)
@@ -6044,6 +6279,8 @@ vec_vexpandwm_PWR10 (vui32_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned long long.
  *  @return vector doubleword mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vexpanddm_PWR7 (vui64_t vra)
@@ -6074,6 +6311,8 @@ vec_vexpanddm_PWR7 (vui64_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned long long.
  *  @return vector doubleword mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vexpanddm_PWR8 (vui64_t vra)
@@ -6106,6 +6345,8 @@ vec_vexpanddm_PWR8 (vui64_t vra)
  *  @param vra a 128-bit vector treated as unsigned long long.
  *  |processor|Latency|Throughput|
  *  @return vector doubleword mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vexpanddm_PWR10 (vui64_t vra)
@@ -6140,6 +6381,8 @@ vec_vexpanddm_PWR10 (vui64_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return vector quadword mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vexpandqm_PWR7 (vui128_t vra)
@@ -6171,6 +6414,8 @@ vec_vexpandqm_PWR7 (vui128_t vra)
  *
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @return vector quadword mask from the sign bit.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vexpandqm_PWR10 (vui128_t vra)
@@ -6209,6 +6454,8 @@ vec_vexpandqm_PWR10 (vui128_t vra)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Left shifted vector unsigned long long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vrld_PWR7 (vui64_t vra, vui8_t vrb)
@@ -6260,6 +6507,8 @@ vec_vrld_PWR7 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Left shifted vector unsigned long long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vrld_PWR8 (vui64_t vra, vui8_t vrb)
@@ -6295,6 +6544,8 @@ vec_vrld_PWR8 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Left shifted vector unsigned long long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vsld_PWR7 (vui64_t vra, vui8_t vrb)
@@ -6355,6 +6606,8 @@ vec_vsld_PWR7 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Left shifted vector unsigned long long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vsld_PWR8 (vui64_t vra, vui8_t vrb)
@@ -6391,6 +6644,8 @@ vec_vsld_PWR8 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vsrd_PWR7 (vui64_t vra, vui8_t vrb)
@@ -6441,6 +6696,8 @@ vec_vsrd_PWR7 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as 2 x unsigned long integers.
  *  @param vrb shift amount in bits 58:63 and 122:127.
  *  @return Right shifted vector unsigned long.
+ *
+ *  \showrefby
  */
 static inline vui64_t
 vec_vsrd_PWR8 (vui64_t vra, vui8_t vrb)
@@ -6482,6 +6739,8 @@ vec_vsrd_PWR8 (vui64_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 1:7 of each byte.
  *  @return vector quadword shifted left.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vrlq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -6521,6 +6780,8 @@ vec_vrlq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 57:63.
  *  @return vector quadword shifted left.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vrlq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -6563,6 +6824,8 @@ vec_vrlq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 1:7 of each byte.
  *  @return vector quadword shifted left.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vslq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -6606,6 +6869,8 @@ vec_vslq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 57:63.
  *  @return vector quadword shifted left.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vslq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -6648,6 +6913,8 @@ vec_vslq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 1:7 of each byte.
  *  @return vector quadword shifted right.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vsrq_PWR9 (vui128_t vra, vui8_t vrb)
@@ -6691,6 +6958,8 @@ vec_vsrq_PWR9 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 57:63.
  *  @return vector quadword shifted right.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vsrq_PWR10 (vui128_t vra, vui8_t vrb)
@@ -6727,6 +6996,8 @@ vec_vsrq_PWR10 (vui128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as signed __int128.
  *  @param vrb Shift count in bits 1:7, splatted across bytes 0-15.
  *  @return Right algebraic shifted vector.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_vsraq_PWR9 (vi128_t vra, vui8_t vrb)
@@ -6763,6 +7034,8 @@ vec_vsraq_PWR9 (vi128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as signed __int128.
  *  @param vrb Shift amount in bits 57:63.
  *  @return vector quadword shifted right algebraic.
+ *
+ *  \showrefby
  */
 static inline vi128_t
 vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb)
@@ -6809,6 +7082,8 @@ vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb)
  *  @param vra a 128-bit vector treated as signed int.
  *  @param vrb a 128-bit vector treated as signed int.
  *  @return vector doubleword sums of 3 word element in word elements 1 and 3.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vsum2sws_PWR7 (vi32_t vra, vi32_t vrb)
@@ -6846,6 +7121,8 @@ vec_vsum2sws_PWR7 (vi32_t vra, vi32_t vrb)
  *  @param vra a 128-bit vector treated as signed int.
  *  @param vrb a 128-bit vector treated as signed int.
  *  @return vector quadword sum of 5 word element in word element 3.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_vsumsws_PWR7 (vi32_t vra, vi32_t vrb)
@@ -6882,6 +7159,8 @@ vec_vsumsws_PWR7 (vi32_t vra, vi32_t vrb)
  *
  *  @param vra a 128-bit vector treated as signed int.
  *  @return vector quadword sum of 5 word element in word element 3.
+ *
+ *  \showrefby
  */
 static inline vi64_t
 vec_vupklsw_PWR8 (vi32_t vra)

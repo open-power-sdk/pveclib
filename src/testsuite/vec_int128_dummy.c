@@ -2158,6 +2158,14 @@ __test_splatiuq_31 (void)
 }
 
 vui128_t
+__test_splatiuq_31_V2 (void)
+{
+  const vui8_t sr123 = vec_splat_u8 (-5);
+  const vui32_t q_ones = vec_splat_u32(-1);
+  return vec_vsrq_PWR9 ((vui128_t) q_ones, sr123);
+}
+
+vui128_t
 __test_splatiuq_31_V1 (void)
 {
   // latency PWR8 6-8
@@ -2233,6 +2241,14 @@ vui128_t
 __test_splatiuq_63 (void)
 {
   return vec_splat_u128 (63);
+}
+
+vui128_t
+__test_splatiuq_63_V2 (void)
+{
+  const vui8_t sr122 = vec_splat_u8 (-6);
+  const vui32_t q_ones = vec_splat_u32(-1);
+  return vec_vsrq_PWR9 ((vui128_t) q_ones, sr122);
 }
 
 vui128_t
@@ -2312,6 +2328,14 @@ vui128_t
 __test_splatiuq_127 (void)
 {
   return vec_splat_u128 (127);
+}
+
+vui128_t
+__test_splatiuq_127_V2 (void)
+{
+  const vui8_t sr121 = vec_splat_u8 (-7);
+  const vui32_t q_ones = vec_splat_u32(-1);
+  return vec_vsrq_PWR9 ((vui128_t) q_ones, sr121);
 }
 
 vui128_t
@@ -3468,7 +3492,46 @@ __attribute__((__target__("cpu=power9")))
 #endif
 test_vec_mul10uq (vui128_t a)
 {
-	return vec_mul10uq (a);
+  return vec_mul10uq (a);
+}
+
+vui128_t
+test_vec_mul10uq_V1 (vui128_t a)
+{
+  // Power8 latency 8
+  vui128_t result, x8, x2;
+  x8 = vec_slqi (a, 3);
+  x2 = vec_slqi (a, 1);
+  return vec_adduqm (x8, x2);
+}
+
+vui128_t
+test_vec_mul10uq_V0 (vui128_t a)
+{
+  // Power8 latency 13 also works for power7 but slower
+  vui16_t ts = (vui16_t) a;
+  vui16_t t10;
+  vui32_t t;
+  vui32_t t_odd, t_even;
+  vui32_t z = { 0, 0, 0, 0 };
+  t10 = vec_splat_u16(10);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  t_even = vec_vmulouh (ts, t10);
+  t_odd = vec_vmuleuh (ts, t10);
+#else
+  t_even = vec_vmuleuh(ts, t10);
+  t_odd = vec_vmulouh(ts, t10);
+#endif
+  /* Shift t_even left 16 bits */
+  t_even = vec_sld (t_even, z, 2);
+  /* then add the even/odd sub-products to generate the final product */
+#ifdef _ARCH_PWR8
+  t = (vui32_t) vec_vadduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#else
+  /* Use pveclib addcuq implementation for pre _ARCH_PWR8.  */
+  t = (vui32_t) vec_adduqm ((vui128_t) t_even, (vui128_t) t_odd);
+#endif
+  return ((vui128_t) t);
 }
 
 vui128_t

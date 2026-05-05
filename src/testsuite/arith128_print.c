@@ -550,11 +550,11 @@ print_v4f32x (char *prefix, vf32_t val)
 void
 print_v4b32c (char *prefix, vb32_t val)
 {
-  const vui32_t true =  { 'T', 'T', 'T', 'T' };
-  const vui32_t false = { 'F', 'F', 'F', 'F' };
+  const vui32_t _true =  { 'T', 'T', 'T', 'T' };
+  const vui32_t _false = { 'F', 'F', 'F', 'F' };
   vui32_t text;
 
-  text = vec_sel (false, true, val);
+  text = vec_sel (_false, _true, val);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   printf ("%s %c,%c,%c,%c\n", prefix, text[3], text[2], text[1], text[0]);
@@ -598,11 +598,11 @@ print_v2f64x (char *prefix, vf64_t val)
 void
 print_v2b64c (char *prefix, vb64_t val)
 {
-  const vui64_t true =  { 'T', 'T' };
-  const vui64_t false = { 'F', 'F' };
+  const vui64_t _true =  { 'T', 'T' };
+  const vui64_t _false = { 'F', 'F' };
   vui64_t text;
 
-  text = vec_sel (false, true, val);
+  text = vec_sel (_false, _true, val);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   printf ("%s %c,%c\n", prefix, (int)text[1], (int)text[0]);
@@ -735,11 +735,11 @@ print_vuint512x (char *prefix, vui128_t val0_128, vui128_t val1_128, vui128_t va
 void
 print_vb128c (char *prefix, vb128_t val)
 {
-  const vui64_t true = { 'T', 'T' };
-  const vui64_t false = { 'F', 'F' };
+  const vui64_t _true = { 'T', 'T' };
+  const vui64_t _false = { 'F', 'F' };
   vui64_t text;
 
-  text = vec_sel (false, true, (vb64_t) val);
+  text = vec_sel (_false, _true, (vb64_t) val);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   printf ("%s %c%c\n", prefix, (int) text[1], (int) text[0]);

@@ -304,22 +304,22 @@ test_lib_max8_f128 (__binary128 vf1, __binary128 vf2,
 		    __binary128 vf7, __binary128 vf8)
 {
   __binary128 maxres;
-  vb128_t bool;
+  vb128_t b00l;
 
-  bool = test_vec_cmpgtuqp (vf2, vf1);
-  maxres = vec_self128 (vf1, vf2, bool);
-  bool = test_vec_cmpgtuqp (vf3, maxres);
-  maxres = vec_self128 (vf3, maxres, bool);
-  bool = test_vec_cmpgtuqp (vf4, maxres);
-  maxres = vec_self128 (vf4, maxres, bool);
-  bool = test_vec_cmpgtuqp (vf5, maxres);
-  maxres = vec_self128 (vf5, maxres, bool);
-  bool = test_vec_cmpgtuqp (vf6, maxres);
-  maxres = vec_self128 (vf6, maxres, bool);
-  bool = test_vec_cmpgtuqp (vf7, maxres);
-  maxres = vec_self128 (vf7, maxres, bool);
-  bool = test_vec_cmpgtuqp (vf8, maxres);
-  maxres = vec_self128 (vf8, maxres, bool);
+  b00l = test_vec_cmpgtuqp (vf2, vf1);
+  maxres = vec_self128 (vf1, vf2, b00l);
+  b00l = test_vec_cmpgtuqp (vf3, maxres);
+  maxres = vec_self128 (vf3, maxres, b00l);
+  b00l = test_vec_cmpgtuqp (vf4, maxres);
+  maxres = vec_self128 (vf4, maxres, b00l);
+  b00l = test_vec_cmpgtuqp (vf5, maxres);
+  maxres = vec_self128 (vf5, maxres, b00l);
+  b00l = test_vec_cmpgtuqp (vf6, maxres);
+  maxres = vec_self128 (vf6, maxres, b00l);
+  b00l = test_vec_cmpgtuqp (vf7, maxres);
+  maxres = vec_self128 (vf7, maxres, b00l);
+  b00l = test_vec_cmpgtuqp (vf8, maxres);
+  maxres = vec_self128 (vf8, maxres, b00l);
 
   return maxres;
 }

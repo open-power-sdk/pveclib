@@ -38,6 +38,91 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+#if defined (_ARCH_PWR10) && defined (vec_permx)
+static inline vui8_t
+test_vec_xxpermx_raw_V1 (vui8_t vra, vui8_t vrb, vui8_t vrc, const unsigned int d)
+{
+  vui8_t vrt;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  vrt = vec_permx (vrb, vra, ~vrc, (7-d));
+#else
+  vrt = vec_permx (vra, vrb, vrc, d);
+#endif
+  return vrt;
+}
+
+vui8_t
+test_vec_xxpermx_raw_c0_PWR10 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return test_vec_xxpermx_raw_V1 (vra, vrb, vrc, 0);
+}
+
+vui8_t
+test_vec_xxpermx2_c01_PWR10 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1, vui8_t vrc)
+{
+  vui8_t perm0, perm1;
+  perm0 = test_vec_xxpermx_raw_V1 (vra0, vrb0, vrc, 0);
+  perm1 = test_vec_xxpermx_raw_V1 (vra1, vrb1, vrc, 1);
+  return vec_or (perm0, perm1);
+}
+
+vui8_t
+test_vec_permx_c0_PWR10 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_permx (vra, vrb, vrc, 0);
+}
+
+vui8_t
+test_vec_permx_c5_PWR10 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_permx (vra, vrb, vrc, 5);
+}
+
+vui8_t
+test_vec_permx_c7_PWR10 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_permx (vra, vrb, vrc, 7);
+}
+
+// Exposes GCC PR 125138
+vui8_t
+test_permx2_c01_PWR10 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1, vui8_t vrc)
+{
+  vui8_t perm0, perm1;
+  perm0 = vec_permx (vra0, vrb0, vrc, 0);
+  perm1 = vec_permx (vra1, vrb1, vrc, 1);
+  return vec_or (perm0, perm1);
+}
+
+// Exposes GCC PR 125138
+vui8_t
+test_permx2_c0123_PWR10 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1,
+		   vui8_t vra2, vui8_t vrb2, vui8_t vra3, vui8_t vrb3, vui8_t vrc)
+{
+  vui8_t perm0, perm1, perm2, perm3;
+  perm0 = vec_permx (vra0, vrb0, vrc, 0);
+  perm1 = vec_permx (vra1, vrb1, vrc, 1);
+  perm2 = vec_permx (vra2, vrb2, vrc, 2);
+  perm3 = vec_permx (vra3, vrb3, vrc, 3);
+  perm0 = vec_or (perm0, perm1);
+  perm2 = vec_or (perm2, perm3);
+  return vec_or (perm0, perm2);
+}
+#endif
+
+// Vector Shift Left Double Quadword Bit VSR index
+vui128_t
+test_vec_sldq_PWR10 (vui128_t vra, vui128_t vrb, vui128_t vrc)
+{ // vec_int128_ppc.h
+  return vec_sldq (vra, vrb, vrc);
+}
+
+vui8_t
+test_sldq_PWR10 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{ // vec_common_ppc.h
+  return vec_sldq_PWR10 (vra, vrb, vrc);
+}
+
 vui32_t
 test_vec_vrlwnim_24_27_PWR10 (vui32_t vra, vui32_t vrb)
 {

@@ -1472,7 +1472,7 @@ vec_rlnm_word (vui32_t vra, vui32_t vrb, vui32_t vrc)
 #if defined (vec_rlnm)  && (__GNUC__ >= 7)
   result = vec_rlnm (vra, vrb, vrc);
 #else
-  vui32_t vrb_c = ((vrc)<<8)|(vrb))
+  vui32_t vrb_c = ((vrc<<8)|(vrb));
   __asm__(
       "vrlwnm %0,%1,%2;"
       : "=v" (result)

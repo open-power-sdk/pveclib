@@ -12,6 +12,322 @@
 #include <pveclib/vec_char_ppc.h>
 
 vui8_t
+test_not_v0 (vui8_t vra)
+{
+  return ~vra;
+}
+
+static inline vui8_t
+test_vec_permx_V0 (vui8_t vra, vui8_t vrb, vui8_t vrc, const unsigned int d)
+{
+  vui8_t result;
+
+#if defined (_ARCH_PWR10) && (__GNUC__ >= 11)
+#if 0 // def vec_permx
+  // Exposes GCC PR 125138
+  result = vec_permx (vra, vrb, vrc, d);
+#else
+  // bi-endian !
+  // Work around for GCC PR 125138
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  vui8_t pcv = ~vrc; // Generates xxlnot pcv,vrc for LE
+  __asm__(
+      "xxpermx %x0,%x2,%x1,%x3,%4;\n"
+      : "=wa" (result)
+      : "wa" (vra), "wa" (vrb), "wa" (pcv), "K" (7-d)
+      : );
+#else
+  __asm__(
+      "xxpermx %x0,%x1,%x2,%x3,%4;\n"
+      : "=wa" (result)
+      : "wa" (vra), "wa" (vrb), "wa" (vrc), "K" (d)
+      : );
+#endif
+#endif
+#else
+  // bi-endian ???
+  vui8_t c_02, mask, tmp;
+  const vui8_t sh5 = vec_splat_u8 (5);
+  const vui8_t uim = vec_splat_u8 (d);
+
+  c_02 = vec_sr (vrc, sh5);
+  mask = (vui8_t) vec_cmpeq (c_02, uim);
+  // tmp = vec_vperm_PWR9 (vra, vrb, vrc);
+  // This will include the bi-endian transform.
+  tmp = vec_perm (vra, vrb, vrc);
+  result = vec_and (tmp, mask);
+#endif
+  return ((vui8_t) result);
+}
+
+vui8_t
+test_vec_permx_c0 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return test_vec_permx_V0 (vra, vrb, vrc, 0);
+}
+
+vui8_t
+test_vec_permx_c5 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return test_vec_permx_V0 (vra, vrb, vrc, 5);
+}
+
+vui8_t
+test_vec_permx_c7 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return test_vec_permx_V0 (vra, vrb, vrc, 7);
+}
+
+vui8_t
+test_vec_permx2_c01 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1,
+		     vui8_t vrc)
+{
+  vui8_t perm0, perm1;
+  perm0 = test_vec_permx_V0 (vra0, vrb0, vrc, 0);
+  perm1 = test_vec_permx_V0 (vra1, vrb1, vrc, 1);
+  return vec_or (perm0, perm1);
+}
+
+vui8_t
+test_permx2_c0123 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1,
+		   vui8_t vra2, vui8_t vrb2, vui8_t vra3, vui8_t vrb3,
+		   vui8_t vrc)
+{
+  vui8_t perm0, perm1, perm2, perm3;
+  perm0 = test_vec_permx_V0 (vra0, vrb0, vrc, 0);
+  perm1 = test_vec_permx_V0 (vra1, vrb1, vrc, 1);
+  perm2 = test_vec_permx_V0 (vra2, vrb2, vrc, 2);
+  perm3 = test_vec_permx_V0 (vra3, vrb3, vrc, 3);
+  perm0 = vec_or (perm0, perm1);
+  perm2 = vec_or (perm2, perm3);
+  return vec_or (perm0, perm2);
+}
+
+vui8_t
+test_perm2 (vui8_t vra0, vui8_t vrb0, vui8_t vra1, vui8_t vrb1,
+	    vui8_t vrc)
+{
+  vui8_t perm0, perm1;
+  perm0 = vec_perm (vra0, vrb0, vrc);
+  perm1 = vec_perm (vra1, vrb1, vrc);
+  return vec_or (perm0, perm1);
+}
+
+// Vector Generate PCV for VSLDO from index
+
+vui8_t
+test_vec_genpcv_sldo (int gpra)
+{
+  return vec_vgenpcvsldx_PWR7 (gpra);
+}
+
+vui8_t
+test_vec_genpcv_sldo_V0 (int gpra)
+{
+  vui8_t pcv;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  __asm__(
+      "lvsl %0,0,%1;"
+      : "=v" (pcv)
+      : "r" (gpra)
+      : );
+#else
+  const unsigned char* gprb = 0ULL;
+  pcv = vec_lvsl (gpra, gprb);
+#endif
+  return pcv;
+}
+
+vui8_t
+test_vec_genpcv_srdo (int gpra)
+{
+  return vec_vgenpcvsrdx_PWR7 (gpra);
+}
+
+// Vector Generate PCV for VSRDO Using GPR specified index
+vui8_t
+test_vec_genpcv_srdo_V0 (int gpra)
+{
+  vui8_t pcv;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  __asm__(
+      "lvsr %0,0,%1;"
+      : "=v" (pcv)
+      : "r" (gpra)
+      : );
+#else
+  const unsigned char* gprb = 0ULL;
+  pcv = vec_lvsr (gpra, gprb);
+#endif
+  return pcv;
+}
+
+vui8_t
+test_vec_vperm (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_vperm_PWR8 (vra, vrb, vrc);
+}
+
+vui8_t
+test_vec_vperm_raw_V1 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  vui8_t vrt;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  vrt = vec_perm (vrb, vra, ~vrc);
+#else
+  vrt = vec_perm (vra, vrb, vrc);
+#endif
+  return vrt;
+}
+
+vui8_t
+test_vec_vperm_raw_V0 (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  vui8_t vrt;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)  && ( __GNUC__ > 6)
+#if defined(_ARCH_PWR9) && defined (__VSX__)
+  __asm__(
+      "xxperm %x0,%x1,%x2;"
+      : "+wa" (vrb)
+      : "wa" (vra), "wa" (vrc)
+      : );
+  vrt = vrb;
+#else
+  __asm__(
+      "vperm %0,%1,%2,%3;"
+      : "=v" (vrt)
+      : "v" (vra), "v" (vrb), "v" (vrc)
+      : );
+#endif
+#else
+  vrt = vec_perm (vra, vrb, vrc);
+#endif
+  return vrt;
+}
+
+// Vector Extract Double Quadword to VSR
+// using GPR-specified Left-Index
+vui8_t
+test_vec_vextdqvlx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdqvlx_PWR9 (vra, vrb, gprc);
+}
+
+vui8_t
+test_vextdqvlx_V1 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui8_t pcv, result;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 16 for quadword elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    result = vec_vperm_PWR8 (vra, vrb, pcv);
+  else // if (gprc == 16) result = vrb else undefined
+    result = vrb;
+  return result;
+}
+
+// Vector Shift Left Double by Octet Using GPR specified index
+vui8_t
+test_vextdqvlx_V0 (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t result;
+  vui8_t pcv;
+  pcv  = vec_vgenpcvsldx_PWR7 (gpra);
+  result = vec_vperm_PWR8 (vra, vrb, pcv);
+  return result;
+}
+
+// using GPR-specified Right-Index
+vui8_t
+test_vec_vextdqvrx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdqvrx_PWR9 (vra, vrb, gprc);
+}
+
+vui8_t
+test_vextdqvrx_V1 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui8_t pcv, result;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 16 for quadword elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    result = vec_vperm_PWR8 (vra, vrb, pcv);
+  else // if (gprc == 16) result = vra else undefined
+    result = vra;
+  return result;
+}
+
+// Vector Shift Right Double by Octet Using GPR specified index
+vui8_t
+test_vextdqvrx_V0 (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t result;
+  vui8_t pcv;
+  pcv  = vec_vgenpcvsrdx_PWR7 (gpra);
+  result = vec_vperm_PWR8 (vra, vrb, pcv);
+  return result;
+}
+
+// Vector Shift Left Double by Octet Using GPR specified index
+// Vector Extract Double Quadword to VSR using GPR-specified Left-Index
+// vextdqvlx VA-form?
+vui8_t
+test_vsldog (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t pcv;
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  return vec_vperm_PWR8 (vra, vrb, pcv);
+}
+
+vui8_t
+test_vsldog_V2 (vui8_t vra, vui8_t vrb, int gpra)
+{
+  return vec_vextdqvlx_PWR8 (vra, vrb, (gpra & 15));
+}
+
+// Vector Shift Left Double by Octet Using GPR specified index
+vui8_t
+test_vsldog_V1 (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t pcv;
+  pcv = test_vec_genpcv_sldo (gpra);
+  return test_vec_vperm_raw_V0 (vra, vrb, pcv);
+}
+
+// Vector Shift Left Double by Octet Using GPR specified index
+#if 0
+/* Disable for build to prevent pedantic compiler from reporting lvsl
+ * as deprecated. Keep in the compile tests to observe what the
+ * compilers are generating. */
+vui8_t
+test_vsldog_V0 (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t pcv;
+  const unsigned char* lvsl = 0ULL;
+  pcv = vec_lvsl (gpra, lvsl);
+  return vec_perm (vra, vrb, pcv);
+}
+#endif
+
+// Vector Shift Left Double Bit VSR index
+vui8_t
+test_sldq (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_sldq_PWR7 (vra, vrb, vrc);
+}
+
+// Vector Shift Left Double by Octet Using VSR specified index
+vui8_t
+test_vsldov (vui8_t vra, vui8_t vrb, vui8_t vrc)
+{
+  return vec_sldov_PWR7 (vra, vrb, vrc);
+}
+
+vui8_t
 test_vec_eqv_byte_PWR7 (vui8_t vra, vui8_t vrb)
 {
   return (vui8_t) vec_eqv_PWR7 ((vui32_t) vra, (vui32_t) vrb);

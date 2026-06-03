@@ -8872,6 +8872,8 @@ vec_vextsw2q (vi32_t vra)
  *  @param vrb lower 128-bits of the 256-bit double quadword vector.
  *  @param shb Shift amount in the range 0-7.
  *  @return 128-bits from bits shb:shb+127.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_sldb_quadword (vui128_t vra, vui128_t vrb, const unsigned int shb)
@@ -8901,16 +8903,24 @@ vec_sldb_quadword (vui128_t vra, vui128_t vrb, const unsigned int shb)
  *  |--------:|:-----:|:---------|
  *  |power8   | 10    | 1 cycle  |
  *  |power9   | 14    | 1/cycle  |
+ *  |power10  | 13-16 | 2/cycle  |
  *
  *  @param vrw upper 128-bits of the 256-bit double vector.
  *  @param vrx lower 128-bits of the 256-bit double vector.
  *  @param vrb Shift amount in bits 121:127.
  *  @return high 128-bits of left shifted double vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
 {
-  vui8_t result, vt1, vt2, vt3, vbs;
+  vui8_t result;
+#if defined (_ARCH_PWR10)
+  // Use PowerISA 3.1 Quadword shift left/right
+  result = vec_sldq_PWR10 ((vui8_t) vrw, (vui8_t) vrx, (vui8_t) vrb);
+#else
+  vui8_t vt1, vt2, vt3, vbs;
   const vui8_t vzero = vec_splat_u8 (0);
 
   vt1 = vec_slo ((vui8_t) vrw, (vui8_t) vrb);
@@ -8922,7 +8932,7 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
   vt2 = vec_sro ((vui8_t) vrx, vt3);
   vt2 = vec_srl (vt2, vt3);
   result = vec_or (vt1, vt2);
-
+#endif
   return ((vui128_t) result);
 }
 
@@ -8943,6 +8953,8 @@ vec_sldq (vui128_t vrw, vui128_t vrx, vui128_t vrb)
  *  @param vrx lower 128-bits of the 256-bit double vector.
  *  @param shb Shift amount in the range 0-127.
  *  @return high 128-bits of left shifted double vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
@@ -8997,6 +9009,8 @@ vec_sldqi (vui128_t vrw, vui128_t vrx, const unsigned int shb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Left shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slq (vui128_t vra, vui128_t vrb)
@@ -9035,6 +9049,8 @@ vec_slq (vui128_t vra, vui128_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return 128-bit vector shifted left shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_slqi (vui128_t vra, const unsigned int shb)
@@ -9606,6 +9622,8 @@ vec_sraqi (vi128_t vra, const unsigned int shb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param vrb Shift amount in bits 121:127.
  *  @return Right shifted vector.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srq (vui128_t vra, vui128_t vrb)
@@ -9644,6 +9662,8 @@ vec_srq (vui128_t vra, vui128_t vrb)
  *  @param vra a 128-bit vector treated as unsigned __int128.
  *  @param shb Shift amount in the range 0-127.
  *  @return 128-bit vector shifted right shb bits.
+ *
+ *  \showrefby
  */
 static inline vui128_t
 vec_srqi (vui128_t vra, const unsigned int shb)

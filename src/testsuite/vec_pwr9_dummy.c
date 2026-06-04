@@ -40,6 +40,75 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+static inline vui64_t
+test_vec_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractub %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#endif
+  return result;
+}
+
+vui64_t
+test_vextractub_8_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractub_PWR9 (vrb, 8);
+}
+
+// Vector Extract Double Doubleword to VSR
+vui64_t
+test_vec_vextddvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvlx_PWR9 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextddvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvrx_PWR9 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextdubvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextdubvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvrx_PWR10 (vra, vrb, gprc);
+}
+
 // Vector Extract Double Quadword to VSR
 // using GPR-specified Left-Index
 vui8_t

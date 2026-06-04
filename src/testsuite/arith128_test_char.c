@@ -3243,6 +3243,113 @@ rc += check_vuint128x ("vgenpcvsrdx(15):", (vui128_t)i, (vui128_t) e);
   }
 
 int
+test_vsldo_indexed (void)
+{
+  vui8_t i, j, k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = vec_sldox (i, j, 0);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsldox (0) ", k);
+#endif
+  rc += check_vuint128x ("vsldox( 0):", (vui128_t) k, (vui128_t) e);
+
+  k = vec_sldox (i, j, 8);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+			 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsldox (8) ", k);
+#endif
+  rc += check_vuint128x ("vsldox( 8):", (vui128_t) k, (vui128_t) e);
+
+  k = vec_sldox (i, j, 15);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+			 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsldox (15) ", k);
+#endif
+  rc += check_vuint128x ("vsldox(15):", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
+int
+test_vsrdo_indexed (void)
+{
+  vui8_t i, j, k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = vec_srdox (i, j, 0);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsrdox (0) ", k);
+#endif
+  rc += check_vuint128x ("vsrdox( 0):", (vui128_t) k, (vui128_t) e);
+
+  k = vec_srdox (i, j, 8);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+			 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsrdox (8) ", k);
+#endif
+  rc += check_vuint128x ("vsrdox( 8):", (vui128_t) k, (vui128_t) e);
+
+  k = vec_srdox (i, j, 15);
+
+  e = (vui8_t
+	) CONST_VINT8_B (0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+			 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vsrdox (15) ", k);
+#endif
+  rc += check_vuint128x ("vsrdox(15):", (vui128_t) k, (vui128_t) e);
+
+  return (rc);
+}
+
+
+int
 test_vextdq_indexed (void)
 {
   vui8_t i, j, k, e;
@@ -3350,6 +3457,586 @@ test_vextdq_indexed (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_vextdubvlx_V0 (vui8_t, vui8_t, int);
+#define test_extd_ub_l(_l,_k,_m) test_vextdubvlx_V0(_l,_k,_m)
+vui64_t test_vextdubvrx_V0 (vui8_t, vui8_t, int);
+#define test_extd_ub_r(_l,_k,_m) test_vextdubvrx_V0(_l,_k,_m)
+#else
+#define test_extd_ub_l(_l,_k,_m) vec_vextdubvlx_PWR10(_l,_k,_m)
+#define test_extd_ub_r(_l,_k,_m) vec_vextdubvrx_PWR10(_l,_k,_m)
+#endif
+
+int
+test_vextdb_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_ub_l (i, j, 0);
+
+  e = CONST_VINT128_DW (0x00, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx( 0):", k, e);
+
+  k = test_extd_ub_l (i, j, 1);
+
+  e = CONST_VINT128_DW (0x01, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (1) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx( 1):", k, e);
+
+  k = test_extd_ub_l (i, j, 7);
+
+  e = CONST_VINT128_DW (0x07, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (7) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx( 7):", k, e);
+
+  k = test_extd_ub_l (i, j, 8);
+
+  e = CONST_VINT128_DW (0x08, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (8) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx( 8):", k, e);
+
+  k = test_extd_ub_l (i, j, 15);
+
+  e = CONST_VINT128_DW (0x0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (f) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx(15):", k, e);
+
+  k = test_extd_ub_l (i, j, 16);
+
+  e = CONST_VINT128_DW (0x10, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx(16):", k, e);
+
+  k = test_extd_ub_l (i, j, 23);
+
+  e = CONST_VINT128_DW (23, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (23) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx(23):", k, e);
+
+  k = test_extd_ub_l (i, j, 24);
+
+  e = CONST_VINT128_DW (24, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (24) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx(24):", k, e);
+
+  k = test_extd_ub_l (i, j, 31);
+
+  e = CONST_VINT128_DW (31, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvlx (31) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvlx(31):", k, e);
+
+  k = test_extd_ub_r (i, j, 0);
+
+  e = CONST_VINT128_DW (31, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvrx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvrx( 0):", k, e);
+
+  k = test_extd_ub_r (i, j, 15);
+
+  e = CONST_VINT128_DW (16, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvrx (15) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvrx(15):", k, e);
+
+  k = test_extd_ub_r (i, j, 16);
+
+  e = CONST_VINT128_DW (15, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvrx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvrx(16):", k, e);
+
+  k = test_extd_ub_r (i, j, 31);
+
+  e = CONST_VINT128_DW (0x00, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextdubvrx (31) ", k);
+#endif
+  rc += check_v2ui64x ("vextdubvrx(31):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_vextduhvlx_V0 (vui8_t, vui8_t, int);
+#define test_extd_uh_l(_l,_k,_m) test_vextduhvlx_V0(_l,_k,_m)
+vui64_t test_vextduhvrx_V0 (vui8_t, vui8_t, int);
+#define test_extd_uh_r(_l,_k,_m) test_vextduhvrx_V0(_l,_k,_m)
+#else
+#define test_extd_uh_l(_l,_k,_m) vec_vextduhvlx_PWR10(_l,_k,_m)
+#define test_extd_uh_r(_l,_k,_m) vec_vextduhvrx_PWR10(_l,_k,_m)
+#endif
+
+int
+test_vextdh_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_uh_l (i, j, 0);
+
+  e = CONST_VINT128_DW (0x0001, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvlx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvlx( 0):", k, e);
+
+  k = test_extd_uh_l (i, j, 14);
+
+  e = CONST_VINT128_DW (0x0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvlx (14) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvlx(14):", k, e);
+
+  k = test_extd_uh_l (i, j, 15);
+
+  e = CONST_VINT128_DW (0x0f10, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvlx (15) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvlx(15):", k, e);
+
+  k = test_extd_uh_l (i, j, 16);
+
+  e = CONST_VINT128_DW (0x1011, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvlx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvlx(16):", k, e);
+
+  k = test_extd_uh_l (i, j, 30);
+
+  e = CONST_VINT128_DW (0x1e1f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvlx (30) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvlx(30):", k, e);
+
+  k = test_extd_uh_r (i, j, 0);
+
+  e = CONST_VINT128_DW (0x1e1f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvrx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvrx( 0):", k, e);
+
+  k = test_extd_uh_r (i, j, 14);
+
+  e = CONST_VINT128_DW (0x1011, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvrx (14) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvrx(14):", k, e);
+
+  k = test_extd_uh_r (i, j, 15);
+
+  e = CONST_VINT128_DW (0x0f10, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvrx (15) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvrx(15):", k, e);
+
+  k = test_extd_uh_r (i, j, 16);
+
+  e = CONST_VINT128_DW (0x0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvrx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvrx(16):", k, e);
+
+  k = test_extd_uh_r (i, j, 30);
+
+  e = CONST_VINT128_DW (0x0001, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduhvrx (30) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhvrx(30):", k, e);
+
+  return (rc);
+}
+
+// #define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_vextduwvlx_V0 (vui8_t, vui8_t, int);
+#define test_extd_uw_l(_l,_k,_m) test_vextduwvlx_V0(_l,_k,_m)
+vui64_t test_vextduwvrx_V0 (vui8_t, vui8_t, int);
+#define test_extd_uw_r(_l,_k,_m) test_vextduwvrx_V0(_l,_k,_m)
+#else
+#define test_extd_uw_l(_l,_k,_m) vec_vextduwvlx_PWR10(_l,_k,_m)
+#define test_extd_uw_r(_l,_k,_m) vec_vextduwvrx_PWR10(_l,_k,_m)
+#endif
+
+int
+test_vextdw_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_uw_l (i, j, 0);
+
+  e = CONST_VINT128_DW (0x00010203, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvlx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwlx( 0):", k, e);
+
+  k = test_extd_uw_l (i, j, 12);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvlx (12) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwlx(12):", k, e);
+
+  k = test_extd_uw_l (i, j, 14);
+
+  e = CONST_VINT128_DW (0x0e0f1011, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvlx (14) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwlx(14):", k, e);
+
+  k = test_extd_uw_l (i, j, 16);
+
+  e = CONST_VINT128_DW (0x10111213, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvlx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwlx(16):", k, e);
+
+  k = test_extd_uw_l (i, j, 28);
+
+  e = CONST_VINT128_DW (0x1c1d1e1f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvlx (28) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwlx(28):", k, e);
+
+  k = test_extd_uw_r (i, j, 0);
+
+  e = CONST_VINT128_DW (0x1c1d1e1f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvrx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwrx( 0):", k, e);
+
+  k = test_extd_uw_r (i, j, 12);
+
+  e = CONST_VINT128_DW (0x10111213, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvrx (12) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwrx(12):", k, e);
+
+  k = test_extd_uw_r (i, j, 14);
+
+  e = CONST_VINT128_DW (0x0e0f1011, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvrx (14) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwrx(14):", k, e);
+
+  k = test_extd_uw_r (i, j, 16);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvrx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwrx(16):", k, e);
+
+  k = test_extd_uw_r (i, j, 28);
+
+  e = CONST_VINT128_DW (0x00010203, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextduwvrx (28) ", k);
+#endif
+  rc += check_v2ui64x ("vextduhwrx(28):", k, e);
+
+  return (rc);
+}
+
+#undef __DEBUG_PRINT__
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_vextddvlx_V0 (vui8_t, vui8_t, int);
+#define test_extd_d_l(_l,_k,_m) test_vextddvlx_V0(_l,_k,_m)
+vui64_t test_vextddvrx_V0 (vui8_t, vui8_t, int);
+#define test_extd_d_r(_l,_k,_m) test_vextddvrx_V0(_l,_k,_m)
+#else
+#define test_extd_d_l(_l,_k,_m) vec_vextddvlx_PWR10(_l,_k,_m)
+#define test_extd_d_r(_l,_k,_m) vec_vextddvrx_PWR10(_l,_k,_m)
+#endif
+
+int
+test_vextdd_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_d_l (i, j, 0);
+
+  e = CONST_VINT128_DW (0x0001020304050607UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx( 0):", k, e);
+
+  k = test_extd_d_l (i, j, 1);
+
+  e = CONST_VINT128_DW (0x0102030405060708UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (1) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx( 1):", k, e);
+
+  k = test_extd_d_l (i, j, 4);
+
+  e = CONST_VINT128_DW (0x0405060708090a0bUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (4) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx( 4):", k, e);
+
+  k = test_extd_d_l (i, j, 8);
+
+  e = CONST_VINT128_DW (0x08090a0b0c0d0e0fUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (8) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx( 8):", k, e);
+
+  k = test_extd_d_l (i, j, 12);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f10111213UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (12) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(12):", k, e);
+
+  k = test_extd_d_l (i, j, 15);
+
+  e = CONST_VINT128_DW (0x0f10111213141516UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (15) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(15):", k, e);
+
+  k = test_extd_d_l (i, j, 16);
+
+  e = CONST_VINT128_DW (0x1011121314151617UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(16):", k, e);
+
+  k = test_extd_d_l (i, j, 20);
+
+  e = CONST_VINT128_DW (0x1415161718191a1bUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (20) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(20):", k, e);
+
+  k = test_extd_d_l (i, j, 23);
+
+  e = CONST_VINT128_DW (0x1718191a1b1c1d1eUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (23) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(23):", k, e);
+
+  k = test_extd_d_l (i, j, 24);
+
+  e = CONST_VINT128_DW (0x18191a1b1c1d1e1fUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvlx (24) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvlx(24):", k, e);
+
+  k = test_extd_d_r (i, j, 0);
+
+  e = CONST_VINT128_DW (0x18191a1b1c1d1e1fUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (0) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx( 0):", k, e);
+
+  k = test_extd_d_r (i, j, 8);
+
+  e = CONST_VINT128_DW (0x1011121314151617UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (8) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx( 8):", k, e);
+
+  k = test_extd_d_r (i, j, 9);
+
+  e = CONST_VINT128_DW (0x0f10111213141516UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (9) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx( 9):", k, e);
+
+  k = test_extd_d_r (i, j, 12);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f10111213UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (12) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx(12):", k, e);
+
+  k = test_extd_d_r (i, j, 15);
+
+  e = CONST_VINT128_DW (0x090a0b0c0d0e0f10UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (15) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx(15):", k, e);
+
+  k = test_extd_d_r (i, j, 16);
+
+  e = CONST_VINT128_DW (0x08090a0b0c0d0e0fUL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (16) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx(16):", k, e);
+
+  k = test_extd_d_r (i, j, 24);
+
+  e = CONST_VINT128_DW (0x0001020304050607UL, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextddvrx (24) ", k);
+#endif
+  rc += check_v2ui64x ("vextddvrx(24):", k, e);
+
+  return (rc);
+}
+
 int
 test_vec_char (void)
 {
@@ -3388,7 +4075,13 @@ test_vec_char (void)
   rc += test_splat7_u8 ();
   rc += test_expandm_byte ();
   rc += test_vgenpcv_sld ();
+  rc += test_vsldo_indexed ();
+  rc += test_vsrdo_indexed ();
   rc += test_vextdq_indexed ();
+  rc += test_vextdd_indexed ();
+  rc += test_vextdw_indexed ();
+  rc += test_vextdh_indexed ();
+  rc += test_vextdb_indexed ();
 #endif
   return (rc);
 }

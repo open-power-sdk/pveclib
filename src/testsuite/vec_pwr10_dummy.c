@@ -38,6 +38,50 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+
+vui64_t
+test_vec_vextdubvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvrx_PWR10 (vra, vrb, gprc);
+}
+
+// Vector Extract Double Doubleword to VSR
+vui64_t
+test_vec_vextddvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextddvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvrx_PWR10 (vra, vrb, gprc);
+}
+
 #if defined (_ARCH_PWR10) && defined (vec_permx)
 static inline vui8_t
 test_vec_xxpermx_raw_V1 (vui8_t vra, vui8_t vrb, vui8_t vrc, const unsigned int d)

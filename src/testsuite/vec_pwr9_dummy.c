@@ -40,8 +40,64 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
-static inline vui64_t
+unsigned char
+test_vec_extract_byte_PWR9 (vui8_t vra, int gprb)
+{
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  return vec_extract (vra, gprb);
+#endif
+}
+
+signed char
+test_vec_extract_sbyte_PWR9 (vi8_t vra, int gprb)
+{
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  return vec_extract (vra, gprb);
+#endif
+}
+
+unsigned short
+test_vec_extract_HW_PWR9 (vui16_t vra, int gprb)
+{
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  return vec_extract (vra, gprb);
+#endif
+}
+
+signed short
+test_vec_extract_sHW_PWR9 (vi16_t vra, int gprb)
+{
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  return vec_extract (vra, gprb);
+#endif
+}
+
+vui64_t
 test_vec_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractub_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractuh_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractuh_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractuw_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractuw_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractd_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractd_PWR9 (vrb, 8);
+}
+
+static inline vui64_t
+test_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
 {
   vui64_t result;
 #if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
@@ -57,7 +113,7 @@ test_vec_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
 vui64_t
 test_vextractub_8_PWR9 (vui8_t vrb, const unsigned int uim)
 {
-  return test_vec_vextractub_PWR9 (vrb, 8);
+  return test_vextractub_PWR9 (vrb, 8);
 }
 
 // Vector Extract Double Doubleword to VSR

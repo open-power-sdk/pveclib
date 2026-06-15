@@ -40,6 +40,40 @@
 
 
 vui64_t
+test_vec_extractl_byte_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl (vrb, vra, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld (result, result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vec_extracth_byte_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth (vrb, vra, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld (result, result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
 test_vec_vextdubvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
 {
   return vec_vextdubvrx_PWR10 (vra, vrb, gprc);

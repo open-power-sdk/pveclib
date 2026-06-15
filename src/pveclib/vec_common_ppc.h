@@ -1685,6 +1685,10 @@ static inline vui8_t vec_splat6_u8 (const unsigned int sim6);
 static inline vui8_t vec_splat7_u8 (const unsigned int sim7);
 static inline vui128_t vec_vexpandqm_PWR7 (vui128_t vra);
 static inline vui128_t vec_vexpandqm_PWR10 (vui128_t vra);
+static inline vui64_t vec_vextractd_PWR9 (vui8_t, const unsigned int);
+static inline vui64_t vec_vextractub_PWR9 (vui8_t, const unsigned int);
+static inline vui64_t vec_vextractuh_PWR9 (vui8_t, const unsigned int);
+static inline vui64_t vec_vextractuw_PWR9 (vui8_t, const unsigned int);
 static inline vui8_t vec_vgenpcvsldx_PWR7(int gpra);
 static inline vui8_t vec_vgenpcvsrdx_PWR7(int gpra);
 static inline vui8_t
@@ -6761,7 +6765,9 @@ vec_vextddvlx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextddvlx_PWR7
- *  \note Support xxperm with access to all 64 VSX registers.
+ *  \note Use <B>Vector Extract Unsigned Doubleword to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
  *  \sa vec_vextddvlx_PWR7 for details.
  *  \showrefby
  * */
@@ -6777,13 +6783,12 @@ vec_vextddvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
   /* Vector Extract element operations extend to the last element
    * of the double Quadword. So the index range needs to cover
    * 0 .. (32 - element_size). So 0 - 24 for doubleword elements. */
-  /* Enable for full VSX register usage. */
   if (__builtin_expect (gprc < 16, 1))
-    res = vec_vperm_PWR9 (vra, vrb, pcv);
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
   else
-    res = vec_vperm_PWR9 (vrb, vrb, pcv);
-  // Merge high DW with DW zero.
-  result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // extract DW 0 and set DW 1 to zero
+  result = vec_vextractd_PWR9 (res, 0);
 #else
   result = vec_vextddvlx_PWR7 (vra, vrb, gprc);
 #endif
@@ -6870,7 +6875,9 @@ vec_vextddvrx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextddvrx_PWR7
- *  \note Support xxperm with access to all 64 VSX registers.
+ *  \note Use <B>Vector Extract Unsigned Doubleword to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
  *  \sa vec_vextddvrx_PWR7 for details.
  *  \showrefby
  * */
@@ -6885,14 +6892,12 @@ vec_vextddvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
   /* Vector Extract element operations extend to the last element
    * of the double Quadword. So the index range needs to cover
    * 0 .. (32 - element_size). So 0 - 24 for doubleword elements. */
-  /* Enable for full VSX register usage. */
   if (__builtin_expect (gprc < 16, 1))
-    res = vec_vperm_PWR9 (vra, vrb, pcv);
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
   else
-    res = vec_vperm_PWR9 (vra, vra, pcv);
-
-  // Merge low DW with DW zero.
-  result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 3);
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+  // extract byte 8-15 and zero extend to DW
+  result = vec_vextractd_PWR9 (res, 8);
 #else
   result = vec_vextddvrx_PWR7 (vra, vrb, gprc);
 #endif
@@ -7061,7 +7066,7 @@ vec_vextdqvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
  *  |--------:|:-----:|:---------|
  *  |power7   | 8 - 10| 2/cycle  |
  *  |power8   | 8 - 10| 2/cycle  |
- *  |power9   |12 - 15| 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
  *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Quadword containing Octets 0-15 of the source.
@@ -7095,6 +7100,38 @@ vec_vextdubvlx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextdubvlx_PWR7
+ *  \note Use <B>Vector Extract Unsigned Byte to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextdubvlx_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextdubvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
+
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // extract byte 0 and zero extend to DW
+  result = vec_vextractub_PWR9 (res, 0);
+#else
+  result = vec_vextdubvlx_PWR7 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+/** \copybrief vec_vextdubvlx_PWR7
  *  \note Generate vextdubvlx instruction for _ARCH_PWR10.
  *  Else generate equivalent function for PWR7/8/9.
  *  \sa vec_vextdubvlx_PWR7 for details.
@@ -7115,7 +7152,7 @@ vec_vextdubvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
       : );
 #endif
 #else
-  result = vec_vextdubvlx_PWR7 (vra, vrb, gprc);
+  result = vec_vextdubvlx_PWR9 (vra, vrb, gprc);
 #endif
   return result;
 }
@@ -7137,7 +7174,7 @@ vec_vextdubvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
  *  |--------:|:-----:|:---------|
  *  |power7   | 8 - 10| 2/cycle  |
  *  |power8   | 8 - 10| 2/cycle  |
- *  |power9   |12 - 15| 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
  *  |power10  | 3 - 4 | 4/cycle  |
  *
  *  @param vra Quadword containing Octets 0-15 of the source.
@@ -7171,6 +7208,38 @@ vec_vextdubvrx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextdubvrx_PWR7
+ *  \note Use <B>Vector Extract Unsigned Byte to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextdubvrx_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextdubvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
+
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+  // extract byte 15 and zero extend to DW
+  result = vec_vextractub_PWR9 (res, 15);
+#else
+  result = vec_vextdubvrx_PWR7 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+/** \copybrief vec_vextdubvrx_PWR7
  *  \note Generate vextdubvrx instruction for _ARCH_PWR10.
  *  Else generate equivalent function for PWR7/8/9.
  *  \sa vec_vextdubvrx_PWR7 for details.
@@ -7191,7 +7260,7 @@ vec_vextdubvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
       : );
 #endif
 #else
-  result = vec_vextdubvrx_PWR7 (vra, vrb, gprc);
+  result = vec_vextdubvrx_PWR9 (vra, vrb, gprc);
 #endif
   return result;
 }
@@ -7249,6 +7318,38 @@ vec_vextduhvlx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextduhvlx_PWR7
+ *  \note Use <B>Vector Extract Unsigned Halfword to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextduhvlx_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextduhvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
+
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // extract byte 0-1 and zero extend to DW
+  result = vec_vextractuh_PWR9 (res, 0);
+#else
+  result = vec_vextduhvlx_PWR7 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+/** \copybrief vec_vextduhvlx_PWR7
  *  \note Generate vextduhvlx instruction for _ARCH_PWR10.
  *  Else generate equivalent function for PWR7/8/9.
  *  \sa vec_vextduhvlx_PWR7 for details.
@@ -7269,7 +7370,7 @@ vec_vextduhvlx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
       : );
 #endif
 #else
-  result = vec_vextduhvlx_PWR7 (vra, vrb, gprc);
+  result = vec_vextduhvlx_PWR9 (vra, vrb, gprc);
 #endif
   return result;
 }
@@ -7327,6 +7428,37 @@ vec_vextduhvrx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextduhvrx_PWR7
+ *  \note Use <B>Vector Extract Unsigned Halfword to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextduhvrx_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextduhvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 30 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+  // extract byte 14-15 and zero extend to DW
+  result = vec_vextractuh_PWR9 (res, 14);
+#else
+  result = vec_vextduhvrx_PWR7 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+/** \copybrief vec_vextduhvrx_PWR7
  *  \note Generate vextduhvrx instruction for _ARCH_PWR10.
  *  Else generate equivalent function for PWR7/8/9.
  *  \sa vec_vextduhvrx_PWR7 for details.
@@ -7347,7 +7479,7 @@ vec_vextduhvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
       : );
 #endif
 #else
-  result = vec_vextduhvrx_PWR7 (vra, vrb, gprc);
+  result = vec_vextduhvrx_PWR9 (vra, vrb, gprc);
 #endif
   return result;
 }
@@ -7403,7 +7535,9 @@ vec_vextduwvlx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextduwvlx_PWR7
- *  \note Support xxperm/xxsldwi with access to all 64 VSX registers.
+ *  \note Use <B>Vector Extract Unsigned Word to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
  *  \sa vec_vextduwvlx_PWR7 for details.
  *  \showrefby
  */
@@ -7411,24 +7545,21 @@ static inline vui64_t
 vec_vextduwvlx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
 {
   vui64_t result;
+
 #if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
-  const vui8_t zero = vec_splat_u8(0);
   vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
+
   pcv = vec_vgenpcvsldx_PWR7 (gprc);
   /* Vector Extract element operations extend to the last element
    * of the double Quadword. So the index range needs to cover
-   * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
   if (__builtin_expect (gprc < 16, 1))
-    res = vec_vperm_PWR9 (vra, vrb, pcv);
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
   else
-    res = vec_vperm_PWR9 (vrb, vrb, pcv);
-
-  // shift high-W in to low-W with leading zeros.
-  res = vec_sldw (zero, res, 1);
-  // rotate result into high DW
-  res = vec_sldw (res,res, 2);
-
-  result = (vui64_t) res;
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // extract byte 0-1 and zero extend to DW
+  result = vec_vextractuw_PWR9 (res, 0);
 #else
   result = vec_vextduwvlx_PWR7 (vra, vrb, gprc);
 #endif
@@ -7513,7 +7644,9 @@ vec_vextduwvrx_PWR7 (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 /** \copybrief vec_vextduwvrx_PWR7
- *  \note Support xxperm/xxsldwi with access to all 64 VSX registers.
+ *  \note Use <B>Vector Extract Unsigned Word to VSR using
+ *  immediate-specified index</B> to format final result for _ARCH_PWR9.
+ *  Else generate equivalent function for PWR7/8.
  *  \sa vec_vextduwvrx_PWR7 for details.
  *  \showrefby
  */
@@ -7521,24 +7654,20 @@ static inline vui64_t
 vec_vextduwvrx_PWR9 (vui8_t vra, vui8_t vrb, int gprc)
 {
   vui64_t result;
+
 #if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
-  const vui8_t zero = vec_splat_u8(0);
   vui8_t pcv, res;
+  const vui8_t zero = vec_splat_u8(0);
   pcv = vec_vgenpcvsrdx_PWR7 (gprc);
   /* Vector Extract element operations extend to the last element
    * of the double Quadword. So the index range needs to cover
    * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
   if (__builtin_expect (gprc < 16, 1))
-    res = vec_vperm_PWR9 (vra, vrb, pcv);
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
   else
-    res = vec_vperm_PWR9 (vra, vra, pcv);
-
-  // shift low-W into high-W with trailing zeros.
-  res = vec_sldw (res, zero, 3);
-  // rotate result into high DW
-  res = vec_sldw (res, res, 3);
-
-  result = (vui64_t) res;
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+  // extract byte 12-15 and zero extend to DW
+  result = vec_vextractuw_PWR9 (res, 12);
 #else
   result = vec_vextduwvrx_PWR7 (vra, vrb, gprc);
 #endif
@@ -7567,6 +7696,287 @@ vec_vextduwvrx_PWR10 (vui8_t vra, vui8_t vrb, int gprc)
 #endif
 #else
   result = vec_vextduwvrx_PWR9 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Doubleword to VSR using immediate-specified index
+ *
+ *  Vector Extract a Doubleword element from a Quadword (16 bytes),
+ *  specified by the immediate-index.
+ *  The index (uim) in the range 0-8 selects eight Octets.
+ *  The resulting doubleword is returned in the high-order doubleword
+ *  of a vector, while The low-order doubleword is set to zero.
+ *
+ *  \note If the index is greater then 8 the result is boundedly undefined.
+ *  \note This operation provides only the function of vextractd.
+ *  Currently the PVIPR does not generate a intrinsic to generate
+ *  this instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 2 - 4 | 2/cycle  |
+ *  |power8   | 2 - 4 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param uim Unsigned Integer index (0-12)
+ *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractd_PWR7 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if ((uim > 0) && (uim < 8))
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+
+#if defined (_ARCH_PWR7)
+  // Merge high DW with DW zero.
+  if (uim == 8)
+    result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 3);
+  else
+    result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
+#else
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 8);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+/** \copybrief vec_vextractd_PWR7
+ *  \note Generate vextractd instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextractd_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractd_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractd %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  result = vec_vextractd_PWR7 (vrb, uim);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Byte to VSR using immediate-specified index
+ *
+ *  Vector Extract a Byte element (Octet) from a Quadword (16 bytes),
+ *  specified by the immediate-index.
+ *  The index (uim) in the range 0-15 selects a single
+ *  Octet. The selected byte is zero extended to a doubleword.
+ *  The resulting doubleword is returned in the high-order doubleword
+ *  of a vector, while The low-order doubleword is set to zero.
+ *
+ *  \note This operation provides only the function of vextractub.
+ *  Currently the PVIPR does not generate a intrinsic to generate
+ *  this instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 2/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param uim Unsigned Integer index (0-15)
+ *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractub_PWR7 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 1);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+  return result;
+}
+
+/** \copybrief vec_vextractub_PWR7
+ *  \note Generate vextractub instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextractub_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractub %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  result = vec_vextractub_PWR7 (vrb, uim);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Halfword to VSR using immediate-specified index
+ *
+ *  Vector Extract a Halfword element from a Quadword (16 bytes),
+ *  specified by the immediate-index.
+ *  The index (uim) in the range 0-14 selects two Octets.
+ *  The selected halfword is zero extended to a doubleword.
+ *  The resulting doubleword is returned in the high-order doubleword
+ *  of a vector, while The low-order doubleword is set to zero.
+ *
+ *  \note If the index is greater then 14 the result is boundedly undefined.
+ *  \note This operation provides only the function of vextractuh.
+ *  Currently the PVIPR does not generate a intrinsic to generate
+ *  this instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 2/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param uim Unsigned Integer index (0-14)
+ *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractuh_PWR7 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 2);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+
+  return result;
+}
+
+/** \copybrief vec_vextractuh_PWR7
+ *  \note Generate vextractuh instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextractuh_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractuh_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractuh %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  result = vec_vextractuh_PWR7 (vrb, uim);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Word to VSR using immediate-specified index
+ *
+ *  Vector Extract a Word element from a Quadword (16 bytes),
+ *  specified by the immediate-index.
+ *  The index (uim) in the range 0-12 selects four Octets.
+ *  The selected word is zero extended to a doubleword.
+ *  The resulting doubleword is returned in the high-order doubleword
+ *  of a vector, while The low-order doubleword is set to zero.
+ *
+ *  \note If the index is greater then 12 the result is boundedly undefined.
+ *  \note This operation provides only the function of vextractuw.
+ *  Currently the PVIPR does not generate a intrinsic to generate
+ *  this instruction.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 6 | 2/cycle  |
+ *  |power8   | 4 - 6 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param uim Unsigned Integer index (0-12)
+ *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractuw_PWR7 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+
+  return result;
+}
+
+/** \copybrief vec_vextractuw_PWR7
+ *  \note Generate vextractuw instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextractuh_PWR7 for details.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_vextractuw_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractuw %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  result = vec_vextractuw_PWR7 (vrb, uim);
 #endif
   return result;
 }

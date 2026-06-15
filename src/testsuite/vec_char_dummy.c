@@ -17,6 +17,438 @@ test_not_v0 (vui8_t vra)
   return ~vra;
 }
 
+static inline vui64_t
+test_vec_vextractub (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractub %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  res = vec_sld (vrb, vrb, uim);
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 1);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+vui64_t
+test_vextractub_8 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractub (vrb, 8);
+}
+
+vui64_t
+test_vec_vextddvlx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextddvrx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextddvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextdubvlx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextdubvrx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvlx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduhvrx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduhvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvlx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvlx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_vextduwvrx (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_vextduwvrx_PWR10 (vra, vrb, gprc);
+}
+
+vui64_t
+test_vextddvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extracth ((vui64_t) vrb, (vui64_t) vra, gprc);
+#else
+  __asm__(
+      "vextddvlx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 24 for doubleword elements. */
+#if defined(_ARCH_PWR9) && defined (__VSX__)
+  /* Enable for full VSX register usage. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR9 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR9 (vrb, vrb, pcv);
+#else
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+#endif
+
+#if defined (_ARCH_PWR7)
+  // Merge high DW with DW zero.
+  res = (vui8_t) vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
+#else
+  // shift high-DW in to low-DW with leading zeros.
+  res = vec_sld (zero, res, 8);
+  // rotate result into high DW
+  res = vec_sld (res,res, 8);
+#endif
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
+vui64_t
+test_vextddvrx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extractl ((vui64_t) vrb, (vui64_t) vra, gprc);
+#else
+  __asm__(
+      "vextddvrx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 24 for doubleword elements. */
+#if defined(_ARCH_PWR9) && defined (__VSX__)
+  /* Enable for full VSX register usage. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR9 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR9 (vra, vra, pcv);
+#else
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+#endif
+
+#if defined (_ARCH_PWR7)
+  // Merge low DW with DW zero.
+  res = (vui8_t) vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 3);
+#else
+  // shift low-DW into high-DW with trailing zeros.
+  res = vec_sld (res, zero, 8);
+  // rotate result into low-byte of high DW
+  //res = vec_sld (res,res, 8);
+#endif
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
+vui64_t
+test_vextduwvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extracth ((vui32_t) vrb, (vui32_t) vra, gprc);
+#else
+  __asm__(
+      "vextduwvlx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR9 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR9 (vrb, vrb, pcv);
+
+  // shift high-W in to low-W with leading zeros.
+  res = vec_sldw (zero, res, 1);
+  // rotate result into high DW
+  res = vec_sldw (res,res, 2);
+
+  result = (vui64_t) res;
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift high-W in to low-W with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // rotate result into high DW
+  res = vec_sld (res,res, 8);
+
+  result = (vui64_t) res;
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vextduwvrx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extractl ((vui32_t) vrb, (vui32_t) vra, gprc);
+#else
+  __asm__(
+      "vextduwvrx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR9 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR9 (vra, vra, pcv);
+
+  // shift low-W into high-W with trailing zeros.
+  res = vec_sldw (res, zero, 3);
+  // rotate result into high DW
+  res = vec_sldw (res, res, 3);
+
+  result = (vui64_t) res;
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 28 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+
+  // shift low-W into high-W with trailing zeros.
+  res = vec_sld (res, zero, 12);
+  // rotate result into high DW
+  res = vec_sld (res,res, 12);
+
+  result = (vui64_t) res;
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vextduhvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extracth ((vui16_t) vrb, (vui16_t) vra, gprc);
+#else
+  __asm__(
+      "vextduhvlx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 30 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift high-HW in to low-HW with leading zeros.
+  res = vec_sld (zero, res, 2);
+  // rotate result into high DW
+  res = vec_sld (res,res, 8);
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
+vui64_t
+test_vextduhvrx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extractl ((vui16_t) vrb, (vui16_t) vra, gprc);
+#else
+  __asm__(
+      "vextduhvrx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 30 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+
+  // shift low-byte into high-byte with trailing zeros.
+  res = vec_sld (res, zero, 14);
+  // rotate result into low-byte of high DW
+  res = vec_sld (res,res, 10);
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
+vui64_t
+test_vextdubvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extracth (vrb, vra, gprc);
+#else
+  __asm__(
+      "vextdubvlx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 1);
+  // rotate result into high DW
+  res = vec_sld (res,res, 8);
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
+vui64_t
+test_vextdubvrx_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extractl (vrb, vra, gprc);
+#else
+  __asm__(
+      "vextdubvrx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsrdx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 31 for byte elements. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vra, vra, pcv);
+
+  // shift low-byte into high-byte with trailing zeros.
+  res = vec_sld (res, zero, 15);
+  // rotate result into low-byte of high DW
+  res = vec_sld (res,res, 9);
+
+  result = (vui64_t) res;
+#endif
+  return result;
+}
+
 static inline vui8_t
 test_vec_permx_V0 (vui8_t vra, vui8_t vrb, vui8_t vrc, const unsigned int d)
 {
@@ -275,8 +707,15 @@ test_vextdqvrx_V0 (vui8_t vra, vui8_t vrb, int gpra)
 // Vector Shift Left Double by Octet Using GPR specified index
 // Vector Extract Double Quadword to VSR using GPR-specified Left-Index
 // vextdqvlx VA-form?
+
 vui8_t
-test_vsldog (vui8_t vra, vui8_t vrb, int gpra)
+test_vec_sldox (vui8_t vra, vui8_t vrb, int gpra)
+{
+  return vec_sldox (vra, vrb, gpra);
+}
+
+vui8_t
+test_vsldox (vui8_t vra, vui8_t vrb, int gpra)
 {
   vui8_t pcv;
   pcv = vec_vgenpcvsldx_PWR7 (gpra);
@@ -284,14 +723,31 @@ test_vsldog (vui8_t vra, vui8_t vrb, int gpra)
 }
 
 vui8_t
-test_vsldog_V2 (vui8_t vra, vui8_t vrb, int gpra)
+test_vec_srdox (vui8_t vra, vui8_t vrb, int gpra)
+{
+  return vec_srdox (vra, vrb, gpra);
+}
+
+// Vector Shift right Double by Octet Using GPR specified index
+vui8_t
+test_vsrdox (vui8_t vra, vui8_t vrb, int gpra)
+{
+  vui8_t pcv;
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  return vec_vperm_PWR8 (vra, vrb, pcv);
+}
+
+// Vector Extract Double Quadword to VSR using GPR-specified Left-Index
+// vextdqvlx VA-form?
+vui8_t
+test_vsldox_V2 (vui8_t vra, vui8_t vrb, int gpra)
 {
   return vec_vextdqvlx_PWR8 (vra, vrb, (gpra & 15));
 }
 
 // Vector Shift Left Double by Octet Using GPR specified index
 vui8_t
-test_vsldog_V1 (vui8_t vra, vui8_t vrb, int gpra)
+test_vsldox_V1 (vui8_t vra, vui8_t vrb, int gpra)
 {
   vui8_t pcv;
   pcv = test_vec_genpcv_sldo (gpra);
@@ -304,7 +760,7 @@ test_vsldog_V1 (vui8_t vra, vui8_t vrb, int gpra)
  * as deprecated. Keep in the compile tests to observe what the
  * compilers are generating. */
 vui8_t
-test_vsldog_V0 (vui8_t vra, vui8_t vrb, int gpra)
+test_vsldox_V0 (vui8_t vra, vui8_t vrb, int gpra)
 {
   vui8_t pcv;
   const unsigned char* lvsl = 0ULL;

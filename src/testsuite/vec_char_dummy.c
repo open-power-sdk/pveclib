@@ -26,35 +26,62 @@ test_not_v0 (vui8_t vra)
   return ~vra;
 }
 
-vui64_t
-test_vec_extractl_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+vui8_t
+test_extractl_QW_V0 (vui8_t vra, vui8_t vrb, int gprc)
 {
-  vui64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
-  result = vec_extractl (vrb, vra, gprc);
-#else
+  vui8_t result;
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+  result = vec_vextdqvrx_PWR9 (vrb, vra, gprc);
 #else
-  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
-  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
-#endif
+  result = vec_vextdqvlx_PWR9 (vra, vrb, gprc);
 #endif
   return result;
 }
 
-vui64_t
-test_vec_extracth_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+vui8_t
+test_extracth_QW_V0 (vui8_t vra, vui8_t vrb, int gprc)
 {
-  vui64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
-  result = vec_extracth (vrb, vra, gprc);
-#else
+  vui8_t result;
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+  result = vec_vextdqvlx_PWR9 (vrb, vra, gprc);
 #else
-  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
-  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+  result = vec_vextdqvrx_PWR9 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextublx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+      result = vec_extract (vrb, gpra);
+#else
+  __asm__(
+      "vextublx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 1);
+#if 0
+  // rotate result into high DW
+  vdres = (vui64_t) vec_sld (res,res, 8);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#else
+  // Copy low DW to GPR
+  vdres = (vui64_t) res;
+  result = vdres[VEC_DW_L];
 #endif
 #endif
   return result;

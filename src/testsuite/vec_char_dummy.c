@@ -11,12 +11,93 @@
 
 #include <pveclib/vec_char_ppc.h>
 
+vui64_t
+test_vec_swapdx2 (vui64_t vra)
+{
+  // Hoping the compiler would optimize this away. But no.
+  vui64_t swap;
+  swap = vec_xxswapd_PWR7 (vra);
+  return vec_xxswapd_PWR7 (swap);
+}
+
 vui8_t
 test_not_v0 (vui8_t vra)
 {
   return ~vra;
 }
 
+vui64_t
+test_vec_extractl_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl (vrb, vra, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vec_extracth_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth (vrb, vra, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vec_vextractub_8 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractub_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractuh_8 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractuh_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractuw_8 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractuw_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_vextractd_0 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractd_PWR9 (vrb, 0);
+}
+
+vui64_t
+test_vec_vextractd_4 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractd_PWR9 (vrb, 4);
+}
+
+vui64_t
+test_vec_vextractd_8 (vui8_t vrb, const unsigned int uim)
+{
+  return vec_vextractd_PWR9 (vrb, 8);
+}
+
+// Vector Extract Unsigned Byte to VSR using
+// immediate-specified index VX-form
 static inline vui64_t
 test_vec_vextractub (vui8_t vrb, const unsigned int uim)
 {
@@ -32,7 +113,10 @@ test_vec_vextractub (vui8_t vrb, const unsigned int uim)
   vui8_t res;
 
   // Rotate indexed byte to high byte.
-  res = vec_sld (vrb, vrb, uim);
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
   // Shift high-byte in to low-byte with leading zeros.
   res = vec_sld (zero, res, 1);
   // Rotate result into high DW
@@ -42,9 +126,174 @@ test_vec_vextractub (vui8_t vrb, const unsigned int uim)
 }
 
 vui64_t
+test_vextractub_0 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractub (vrb, 0);
+}
+
+vui64_t
 test_vextractub_8 (vui8_t vrb, const unsigned int uim)
 {
   return test_vec_vextractub (vrb, 8);
+}
+
+vui64_t
+test_vextractub_15 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractub (vrb, 15);
+}
+
+// Vector Extract Unsigned Halfword to VSR using
+// immediate-specified index VX-form
+static inline vui64_t
+test_vec_vextractuh (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractuh %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 2);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+vui64_t
+test_vextractuh_0 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuh (vrb, 0);
+}
+
+vui64_t
+test_vextractuh_8 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuh (vrb, 8);
+}
+
+vui64_t
+test_vextractuh_14 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuh (vrb, 14);
+}
+
+// Vector Extract Unsigned Word to VSR using
+// immediate-specified index VX-form
+static inline vui64_t
+test_vec_vextractuw (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractuw %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+vui64_t
+test_vextractuw_0 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuw (vrb, 0);
+}
+
+vui64_t
+test_vextractuw_8 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuw (vrb, 8);
+}
+
+vui64_t
+test_vextractuw_12 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractuw (vrb, 12);
+}
+
+// Vector Extract Unsigned Doubleword to VSR using
+// immediate-specified index VX-form
+static inline vui64_t
+test_vec_vextractd (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  __asm__(
+      "vextractd %0,%1,%2;\n"
+      : "=v" (result)
+      : "v" (vrb), "K" (uim)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+
+#if defined (_ARCH_PWR7)
+  // Merge high DW with DW zero.
+  result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
+#else
+  // Shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 8);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_vextractd_0 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractd (vrb, 0);
+}
+
+vui64_t
+test_vextractd_4 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractd (vrb, 4);
+}
+
+vui64_t
+test_vextractd_8 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractd (vrb, 8);
+}
+
+vui64_t
+test_vextractd_15 (vui8_t vrb, const unsigned int uim)
+{
+  return test_vec_vextractd (vrb, 15);
 }
 
 vui64_t
@@ -96,6 +345,55 @@ test_vec_vextduwvrx (vui8_t vra, vui8_t vrb, int gprc)
 }
 
 vui64_t
+test_vextddvlx_V1 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10)
+#if defined (vec_extracth) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extracth ((vui64_t) vrb, (vui64_t) vra, gprc);
+#else
+  __asm__(
+      "vextddvlx %0,%1,%2,%3;\n"
+      : "=v" (result)
+      : "v" (vra), "v" (vrb), "r" (gprc)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  pcv = vec_vgenpcvsldx_PWR7 (gprc);
+  /* Vector Extract element operations extend to the last element
+   * of the double Quadword. So the index range needs to cover
+   * 0 .. (32 - element_size). So 0 - 24 for doubleword elements. */
+#if defined(_ARCH_PWR9) && defined (__VSX__)
+  /* Enable for full VSX register usage. */
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // Extract DW 0 and set DW 1 to zero
+  result = vec_vextractd_PWR9 (res, 0);
+#else
+  if (__builtin_expect (gprc < 16, 1))
+    res = vec_vperm_PWR8 (vra, vrb, pcv);
+  else
+    res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+#if defined (_ARCH_PWR7)
+  // Merge high DW with DW zero.
+  result = vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
+#else
+  // shift high-DW in to low-DW with leading zeros.
+  res = vec_sld (zero, res, 8);
+  // rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+#endif
+#endif
+  return result;
+}
+
+vui64_t
 test_vextddvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
 {
   vui64_t result;
@@ -122,12 +420,13 @@ test_vextddvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
     res = vec_vperm_PWR9 (vra, vrb, pcv);
   else
     res = vec_vperm_PWR9 (vrb, vrb, pcv);
+  // Merge high DW with DW zero.
+  res = (vui8_t) vec_xxpermdi_PWR7 ((vui64_t) res, (vui64_t) zero, 0);
 #else
   if (__builtin_expect (gprc < 16, 1))
     res = vec_vperm_PWR8 (vra, vrb, pcv);
   else
     res = vec_vperm_PWR8 (vrb, vrb, pcv);
-#endif
 
 #if defined (_ARCH_PWR7)
   // Merge high DW with DW zero.
@@ -137,6 +436,7 @@ test_vextddvlx_V0 (vui8_t vra, vui8_t vrb, int gprc)
   res = vec_sld (zero, res, 8);
   // rotate result into high DW
   res = vec_sld (res,res, 8);
+#endif
 #endif
 
   result = (vui64_t) res;

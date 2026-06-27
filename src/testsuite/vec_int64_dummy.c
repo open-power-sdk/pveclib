@@ -24,6 +24,190 @@
 #include <pveclib/vec_int128_ppc.h>
 
 vui64_t
+test_vec_extracth_byte (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extracth_byte (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extractl_byte (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extractl_byte (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extracth_DW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extracth_DW (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extractl_DW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extractl_DW (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extracth_HW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extracth_HW (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extractl_HW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extractl_HW (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extracth_word (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extracth_word (vra, vrb, gprc);
+}
+
+vui64_t
+test_vec_extractl_word (vui8_t vra, vui8_t vrb, int gprc)
+{
+  return vec_extractl_word (vra, vrb, gprc);
+}
+
+vui64_t
+test_extractl_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl (vra, vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extracth_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth (vra, vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extractl_DW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui64_t) vra, (vui64_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextddvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextddvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extracth_DW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui64_t) vra, (vui64_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextddvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextddvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extractl_HW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui16_t) vra, (vui16_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduhvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduhvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extracth_HW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui16_t) vra, (vui16_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduhvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduhvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extractl_word_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui32_t) vra, (vui32_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduwvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduwvlx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
+test_extracth_word_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui32_t) vra, (vui32_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduwvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduwvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+vui64_t
 test_vec_expandm_doubleword (vui64_t vra)
 {
   return vec_expandm_doubleword (vra);

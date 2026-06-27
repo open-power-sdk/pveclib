@@ -13397,6 +13397,743 @@ test_signextll_w(void)
     return (rc);
   }
 
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_extractl_byte_V0 (vui8_t, vui8_t, int);
+#define test_extd_ub_l(_l,_k,_m) test_extractl_byte_V0(_l,_k,_m)
+vui64_t test_extracth_byte_V0 (vui8_t, vui8_t, int);
+#define test_extd_ub_h(_l,_k,_m) test_extracth_byte_V0(_l,_k,_m)
+#else
+#define test_extd_ub_l(_l,_k,_m) vec_extractl_byte(_l,_k,_m)
+#define test_extd_ub_h(_l,_k,_m) vec_extracth_byte(_l,_k,_m)
+#endif
+
+int
+test_extract_b_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+#if 1
+  i = (vui8_t) {0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15};
+  j = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+#else
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_ub_l (i, j, 0);
+
+  e = (vui64_t) {0, 0x00};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (0) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub( 0):", k, e);
+
+  k = test_extd_ub_l (i, j, 1);
+
+  e = (vui64_t) {0, 0x01};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (1) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub( 1):", k, e);
+
+  k = test_extd_ub_l (i, j, 7);
+
+  e = (vui64_t) {0, 0x07};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (7) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub( 7):", k, e);
+
+  k = test_extd_ub_l (i, j, 8);
+
+  e = (vui64_t) {0, 0x08};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (8) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub( 8):", k, e);
+
+  k = test_extd_ub_l (i, j, 15);
+
+  e = (vui64_t) {0, 0x0f};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (f) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub(15):", k, e);
+
+  k = test_extd_ub_l (i, j, 16);
+
+  e = (vui64_t) {0, 0x10};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (16) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub(16):", k, e);
+
+  k = test_extd_ub_l (i, j, 23);
+
+  e = (vui64_t) {0, 0x17};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (23) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub(23):", k, e);
+
+  k = test_extd_ub_l (i, j, 24);
+
+  e = (vui64_t) {0, 0x18};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (24) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub(24):", k, e);
+
+  k = test_extd_ub_l (i, j, 31);
+
+  e = (vui64_t) {0, 0x1f};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_ub (31) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_ub(31):", k, e);
+
+  k = test_extd_ub_h (i, j, 0);
+
+  e = (vui64_t) {0, 0x1f};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_ub (0) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_ub( 0):", k, e);
+
+  k = test_extd_ub_h (i, j, 15);
+
+  e = (vui64_t) {0, 0x10};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_ub (15) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_ub(15):", k, e);
+
+  k = test_extd_ub_h (i, j, 16);
+
+  e = (vui64_t) {0, 0x0f};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_ub (16) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_ub(16):", k, e);
+
+  k = test_extd_ub_h (i, j, 31);
+
+  e = (vui64_t) {0, 0x00};
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_ub (31) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_ub(31):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_extractl_HW_V0 (vui8_t, vui8_t, int);
+#define test_extd_uh_l(_l,_k,_m) test_extractl_HW_V0(_l,_k,_m)
+vui64_t test_extracth_HW_V0 (vui8_t, vui8_t, int);
+#define test_extd_uh_h(_l,_k,_m) test_extracth_HW_V0(_l,_k,_m)
+#else
+#define test_extd_uh_l(_l,_k,_m) vec_extractl_HW(_l,_k,_m)
+#define test_extd_uh_h(_l,_k,_m) vec_extracth_HW(_l,_k,_m)
+#endif
+
+int
+test_extract_h_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+#if 1
+  i = (vui8_t) {0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15};
+  j = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+#else
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_uh_l (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0100};
+#else
+  e = (vui64_t) {0, 0x0001};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uh (0) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uh( 0):", k, e);
+
+  k = test_extd_uh_l (i, j, 14);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0f0e};
+#else
+  e = (vui64_t) {0, 0x0e0f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uh (14) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uh(14):", k, e);
+
+  k = test_extd_uh_l (i, j, 15);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x100f};
+#else
+  e = (vui64_t) {0, 0x0f10};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uh (15) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uh(15):", k, e);
+
+  k = test_extd_uh_l (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1110};
+#else
+  e = (vui64_t) {0, 0x1011};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uh (16) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uh(16):", k, e);
+
+  k = test_extd_uh_l (i, j, 30);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1f1e};
+#else
+  e = (vui64_t) {0, 0x1e1f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uh (30) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uh(30):", k, e);
+
+  k = test_extd_uh_h (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1f1e};
+#else
+  e = (vui64_t) {0, 0x1e1f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uh (0) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uh( 0):", k, e);
+
+  k = test_extd_uh_h (i, j, 14);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1110};
+#else
+  e = (vui64_t) {0, 0x1011};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uh (14) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uh(14):", k, e);
+
+  k = test_extd_uh_h (i, j, 15);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x100f};
+#else
+  e = (vui64_t) {0, 0x0f10};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uh (15) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uh(15):", k, e);
+
+  k = test_extd_uh_h (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0f0e};
+#else
+  e = (vui64_t) {0, 0x0e0f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uh (16) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uh(16):", k, e);
+
+  k = test_extd_uh_h (i, j, 30);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0100};
+#else
+  e = (vui64_t) {0, 0x0001};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uh (30) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uh(30):", k, e);
+
+  return (rc);
+}
+
+// #define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_extractl_word_V0 (vui8_t, vui8_t, int);
+#define test_extd_uw_l(_l,_k,_m) test_extractl_word_V0(_l,_k,_m)
+vui64_t test_extracth_word_V0 (vui8_t, vui8_t, int);
+#define test_extd_uw_h(_l,_k,_m) test_extracth_word_V0(_l,_k,_m)
+#else
+#define test_extd_uw_l(_l,_k,_m) vec_extractl_word(_l,_k,_m)
+#define test_extd_uw_h(_l,_k,_m) vec_extracth_word(_l,_k,_m)
+#endif
+
+int
+test_extract_w_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_uw_l (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0c0d0e0f};
+#else
+  e = (vui64_t) {0, 0x00010203};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uw (0) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uw( 0):", k, e);
+
+  k = test_extd_uw_l (i, j, 12);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x00010203};
+#else
+  e = (vui64_t) {0, 0x0c0d0e0f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uw (12) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uw(12):", k, e);
+
+  k = test_extd_uw_l (i, j, 14);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1e1f0001};
+#else
+  e = (vui64_t) {0, 0x0e0f1011};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uw (14) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uw(14):", k, e);
+
+  k = test_extd_uw_l (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1c1d1e1f};
+#else
+  e = (vui64_t) {0, 0x10111213};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uw (16) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uw(16):", k, e);
+
+  k = test_extd_uw_l (i, j, 28);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x10111213};
+#else
+  e = (vui64_t) {0, 0x1c1d1e1f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_uw (28) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_uw(28):", k, e);
+
+  k = test_extd_uw_h (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x10111213};
+#else
+  e = (vui64_t) {0, 0x1c1d1e1f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uw (0) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uw( 0):", k, e);
+
+  k = test_extd_uw_h (i, j, 12);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1c1d1e1f};
+#else
+  e = (vui64_t) {0, 0x10111213};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uw (12) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uw(12):", k, e);
+
+  k = test_extd_uw_h (i, j, 14);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1e1f0001};
+#else
+  e = (vui64_t) {0, 0x0e0f1011};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uw (14) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uw(14):", k, e);
+
+  k = test_extd_uw_h (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x00010203};
+#else
+  e = (vui64_t) {0, 0x0c0d0e0f};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uw (16) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uw(16):", k, e);
+
+  k = test_extd_uw_h (i, j, 28);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0c0d0e0f};
+#else
+  e = (vui64_t) {0, 0x00010203};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_uw (28) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_uw(28):", k, e);
+
+  return (rc);
+}
+
+#undef __DEBUG_PRINT__
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui64_t test_extractl_DW_V0 (vui8_t, vui8_t, int);
+#define test_extd_d_l(_l,_k,_m) test_extractl_DW_V0(_l,_k,_m)
+vui64_t test_extracth_DW_V0 (vui8_t, vui8_t, int);
+#define test_extd_d_h(_l,_k,_m) test_extracth_DW_V0(_l,_k,_m)
+#else
+#define test_extd_d_l(_l,_k,_m) vec_extractl_DW(_l,_k,_m)
+#define test_extd_d_h(_l,_k,_m) vec_extracth_DW(_l,_k,_m)
+#endif
+
+int
+test_extract_d_indexed (void)
+{
+  vui8_t i, j;
+  vui64_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_extd_d_l (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x08090a0b0c0d0e0fUL};
+#else
+  e = (vui64_t) {0, 0x0001020304050607UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (0) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d( 0):", k, e);
+
+  k = test_extd_d_l (i, j, 1);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0708090a0b0c0d0eUL};
+#else
+  e = (vui64_t) {0, 0x0102030405060708UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (1) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d( 1):", k, e);
+
+  k = test_extd_d_l (i, j, 4);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0405060708090a0bUL};
+#else
+  e = (vui64_t) {0, 0x0405060708090a0bUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (4) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d( 4):", k, e);
+
+  k = test_extd_d_l (i, j, 8);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0001020304050607UL};
+#else
+  e = (vui64_t) {0, 0x08090a0b0c0d0e0fUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (8) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d( 8):", k, e);
+
+  k = test_extd_d_l (i, j, 12);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1c1d1e1f00010203UL};
+#else
+  e = (vui64_t) {0, 0x0c0d0e0f10111213UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (12) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(12):", k, e);
+
+  k = test_extd_d_l (i, j, 15);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x191a1b1c1d1e1f00UL};
+#else
+  e = (vui64_t) {0, 0x0f10111213141516UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (15) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(15):", k, e);
+
+  k = test_extd_d_l (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x18191a1b1c1d1e1fUL};
+#else
+  e = (vui64_t) {0, 0x1011121314151617UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (16) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(16):", k, e);
+
+  k = test_extd_d_l (i, j, 20);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1415161718191a1bUL};
+#else
+  e = (vui64_t) {0, 0x1415161718191a1bUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (20) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(20):", k, e);
+
+  k = test_extd_d_l (i, j, 23);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1112131415161718UL};
+#else
+  e = (vui64_t) {0, 0x1718191a1b1c1d1eUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (23) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(23):", k, e);
+
+  k = test_extd_d_l (i, j, 24);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1011121314151617UL};
+#else
+  e = (vui64_t) {0, 0x18191a1b1c1d1e1fUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extractl_d (24) ", k);
+#endif
+  rc += check_v2ui64x ("extractl_d(24):", k, e);
+
+  k = test_extd_d_h (i, j, 0);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1011121314151617UL};
+#else
+  e = (vui64_t) {0, 0x18191a1b1c1d1e1fUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (0) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d( 0):", k, e);
+
+  k = test_extd_d_h (i, j, 8);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x18191a1b1c1d1e1fUL};
+#else
+  e = (vui64_t) {0, 0x1011121314151617UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (8) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d( 8):", k, e);
+
+  k = test_extd_d_h (i, j, 9);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x191a1b1c1d1e1f00UL};
+#else
+  e = (vui64_t) {0, 0x0f10111213141516UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (9) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d( 9):", k, e);
+
+  k = test_extd_d_h (i, j, 12);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1c1d1e1f00010203UL};
+#else
+  e = (vui64_t) {0, 0x0c0d0e0f10111213UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (12) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d(12):", k, e);
+
+  k = test_extd_d_h (i, j, 15);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x1f00010203040506UL};
+#else
+  e = (vui64_t) {0, 0x090a0b0c0d0e0f10UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (15) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d(15):", k, e);
+
+  k = test_extd_d_h (i, j, 16);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x0001020304050607UL};
+#else
+  e = (vui64_t) {0, 0x08090a0b0c0d0e0fUL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (16) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d(16):", k, e);
+
+  k = test_extd_d_h (i, j, 24);
+
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  e = (vui64_t) {0, 0x08090a0b0c0d0e0fUL};
+#else
+  e = (vui64_t) {0, 0x0001020304050607UL};
+#endif
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("extracth_d (24) ", k);
+#endif
+  rc += check_v2ui64x ("extracth_d(24):", k, e);
+
+  return (rc);
+}
+
 int
 test_vec_i64 (void)
 {
@@ -13452,6 +14189,10 @@ test_vec_i64 (void)
   rc += test_vec_divide_dw ();
   rc += test_vec_modulo_dw ();
   rc += test_vec_divide_qud ();
+  rc += test_extract_b_indexed ();
+  rc += test_extract_h_indexed ();
+  rc += test_extract_w_indexed ();
+  rc += test_extract_d_indexed ();
 
   return (rc);
 }

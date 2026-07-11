@@ -3639,6 +3639,389 @@ vec_expandm_doubleword (vui64_t vra)
   return vec_vexpanddm_PWR10 (vra);
 }
 
+/** \brief Vector Extract byte High-Order
+ *
+ *  Extract a Byte element from a double Quadword (vra||vrb) using an
+ *  index in reverse of natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-31 selects a single
+ *  byte. The selected byte is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extracth operation for
+ *  a double quadword of vector unsigned char.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 8 - 10| 2/cycle  |
+ *  |power8   | 8 - 10| 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-31),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extracth_byte (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth (vra, vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
+  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Doubleword High-Order
+ *
+ *  Extract a Doubleword element from a double Quadword (vra||vrb)
+ *  using an index in reverse of natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-24 selects a
+ *  total of 8 bytes.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extracth operation for
+ *  a double quadword of vector unsigned long long.
+ *  \sa vec_extracth_QW().
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 24 or does not address a doubleword boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-24),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extracth_DW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui64_t) vra, (vui64_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextddvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextddvrx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Halfword High-Order
+ *
+ *  Extract a Halfword element from a double Quadword (vra||vrb) using
+ *  an index in reverse of natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-30 selects a
+ *  total of 2 bytes
+ *  The selected halfword is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extracth operation for
+ *  a double quadword of vector unsigned short.
+ *
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 30 or does not address a halfword boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-30),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extracth_HW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui16_t) vra, (vui16_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduhvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduhvrx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Word High-Order
+ *
+ *  Extract a word element from a double Quadword (vra||vrb) using an
+ *  index in reverse of natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-28 selects a
+ *  total of 4 bytes.
+ *  The selected word is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extracth operation for
+ *  a double quadword of vector unsigned int.
+ *
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 28 or does not address a word boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-28),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extracth_word (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
+  result = vec_extracth ((vui32_t) vra, (vui32_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduwvlx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduwvrx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract byte Low-Order
+ *
+ *  Extract a Byte element from a double Quadword (vra||vrb) using
+ *  an index in natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-31 selects a single
+ *  byte. The selected byte is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extractl operation for
+ *  a double quadword of vector unsigned char.
+ *
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 8 - 10| 2/cycle  |
+ *  |power8   | 8 - 10| 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-31),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extractl_byte (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl (vra, vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Doubleword Low-Order
+ *
+ *  Extract a Doubleword element from a double Quadword (vra||vrb)
+ *  using an index in natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-24 selects a
+ *  total of 8 bytes.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extractl operation for
+ *  a double quadword of vector unsigned long long.
+ *  \sa vec_extractl_QW().
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 24 or does not address a doubleword boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-24),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extractl_DW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui64_t) vra, (vui64_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextddvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextddvlx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Halfword Low-Order
+ *
+ *  Extract a Halfword element from a double Quadword (vra||vrb)
+ *  using an index in natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-30 selects a
+ *  total of 2 bytes.
+ *  The selected halfword is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extractl operation for
+ *  a double quadword of vector unsigned short.
+ *
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 30 or does not address a halfword boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-30),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extractl_HW (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui16_t) vra, (vui16_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduhvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduhvlx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Word Low-Order
+ *
+ *  Extract a word element from a double Quadword (vra||vrb) using an
+ *  index in reverse of natural order.
+ *  The byte and element numbering within a register is left-to-right
+ *  for big-endian, and right-to-left for little-endian.
+ *  The index (gprc, bits [59-63]) in the range 0-28 selects a
+ *  total of 4 bytes.
+ *  The selected word is zero extended to a doubleword.
+ *  The resulting doubleword is returned in vector doubleword element 1
+ *  while the doubleword 0 is set to 0.
+ *
+ *  \note This is equivalent to the PVIPR vec_extractl operation for
+ *  a double quadword of vector unsigned int.
+ *
+ *  \note The results are boundedly undefined if the index is greater
+ *  then 28 or does not address a word boundary.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 6 - 8 | 2/cycle  |
+ *  |power8   | 6 - 8 | 2/cycle  |
+ *  |power9   | 9 - 12| 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vra Quadword bytes 0-15 of the source.
+ *  @param vrb Quadword bytes 16-31 of the source.
+ *  @param gprc Integer index (0-28),
+ *  @return Indexed element, zero extended to doubleword in DW element 1.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_extractl_word (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
+  result = vec_extractl ((vui32_t) vra, (vui32_t) vrb, gprc);
+#else
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextduwvrx_PWR10 (vrb, vra, gprc);
+#else
+  result = vec_vextduwvlx_PWR10 (vra, vrb, gprc);
+  result = vec_xxswapd_PWR7 (result);
+#endif
+#endif
+  return result;
+}
+
 /** \brief Vector Maximum Signed Doubleword.
  *
  *  For each doubleword element [0|1] of vra and vrb compare as

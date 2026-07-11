@@ -4040,7 +4040,11 @@ test_vextdd_indexed (void)
 //#define __DEBUG_PRINT__ 1
 #define test_ext_ub_uim(_l,_m) vec_vextractub_PWR9(_l,_m)
 #define test_ext_uh_uim(_l,_m) vec_vextractuh_PWR9(_l,_m)
+#if 1
+#define test_ext_uw_uim(_l,_m) vec_xxextractuw_PWR9(_l,_m)
+#else
 #define test_ext_uw_uim(_l,_m) vec_vextractuw_PWR9(_l,_m)
+#endif
 #define test_ext_d_uim(_l,_m) vec_vextractd_PWR9(_l,_m)
 
 int
@@ -4121,6 +4125,24 @@ test_vextractd_uim (void)
 #endif
   rc += check_v2ui64x ("vextractuw( 0):", k, e);
 
+  k = test_ext_uw_uim (i, 1);
+
+  e = CONST_VINT128_DW (0x01020304, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextractuw (1) ", k);
+#endif
+  rc += check_v2ui64x ("vextractuw( 1):", k, e);
+
+  k = test_ext_uw_uim (i, 4);
+
+  e = CONST_VINT128_DW (0x04050607, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextractuw (4) ", k);
+#endif
+  rc += check_v2ui64x ("vextractuw( 4):", k, e);
+
   k = test_ext_uw_uim (i, 8);
 
   e = CONST_VINT128_DW (0x08090a0b, 0x00);
@@ -4165,6 +4187,239 @@ test_vextractd_uim (void)
   print_v2xint64 ("vextractd (8) ", k);
 #endif
   rc += check_v2ui64x ("vextractd( 8):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#define test_xxext_uw_uim(_l,_m) vec_xxextractuw_PWR9(_l,_m)
+
+int
+test_xxextractd_uim (void)
+{
+  vui8_t i;
+  vui64_t k, e;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+#endif
+
+  k = test_xxext_uw_uim (i, 0);
+
+  e = CONST_VINT128_DW (0x00010203, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (0) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 0):", k, e);
+
+  k = test_xxext_uw_uim (i, 1);
+
+  e = CONST_VINT128_DW (0x01020304, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (1) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 1):", k, e);
+
+  k = test_xxext_uw_uim (i, 4);
+
+  e = CONST_VINT128_DW (0x04050607, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (4) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 4):", k, e);
+
+  k = test_xxext_uw_uim (i, 8);
+
+  e = CONST_VINT128_DW (0x08090a0b, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (8) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 8):", k, e);
+
+  k = test_xxext_uw_uim (i, 10);
+
+  e = CONST_VINT128_DW (0x0a0b0c0d, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (10) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw(10):", k, e);
+
+  k = test_xxext_uw_uim (i, 12);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (12) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw(12):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+vui8_t test_extractl_QW_V0 (vui8_t, vui8_t, int);
+#define test_extd_q_l(_l,_k,_m) test_extractl_QW_V0(_l,_k,_m)
+vui8_t test_extracth_QW_V0 (vui8_t, vui8_t, int);
+#define test_extd_q_h(_l,_k,_m) test_extracth_QW_V0(_l,_k,_m)
+#else
+#define test_extd_q_l(_l,_k,_m) vec_extractl_QW(_l,_k,_m)
+#define test_extd_q_h(_l,_k,_m) vec_extracth_QW(_l,_k,_m)
+#endif
+
+int
+test_extract_q_indexed (void)
+{
+  vui8_t i, j;
+  vui8_t k, e;
+  int r, er;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = (vui8_t) {0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15};
+  j = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d (" i = ", i);
+  print_vint8d (" j = ", j);
+#endif
+
+  k = test_extd_q_l (i, j, 0);
+
+  e = (vui8_t) {0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (0) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q( 0):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 0);
+
+  e = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (0) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q( 0):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 1);
+
+  e = (vui8_t) {1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (1) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q( 1):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 1);
+
+  e = (vui8_t) {15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (1) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q( 1):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 4);
+
+  e = (vui8_t) {4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (04) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q( 4):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 4);
+
+  e = (vui8_t) {12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (04) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q( 4):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 8);
+
+  e = (vui8_t) {8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (08) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q( 8):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 8);
+
+  e = (vui8_t) {8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (08) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q( 8):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 12);
+
+  e = (vui8_t) {12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (12) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q(12):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 12);
+
+  e = (vui8_t) {4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (12) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q(12):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 15);
+
+  e = (vui8_t) {15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (15) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q(15):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 15);
+
+  e = (vui8_t) {1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (15) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q(15):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_l (i, j, 16);
+
+  e = (vui8_t) {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extractl_q (16) ", k);
+#endif
+  rc += check_vuint128x ("extractl_q(16):", (vui128_t) k, (vui128_t) e);
+
+  k = test_extd_q_h (i, j, 16);
+
+  e = (vui8_t) {0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15};
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("extracth_q (16) ", k);
+#endif
+  rc += check_vuint128x ("extracth_q(16):", (vui128_t) k, (vui128_t) e);
 
   return (rc);
 }
@@ -4215,6 +4470,8 @@ test_vec_char (void)
   rc += test_vextdh_indexed ();
   rc += test_vextdb_indexed ();
   rc += test_vextractd_uim ();
+  rc += test_xxextractd_uim ();
+  rc += test_extract_q_indexed ();
 #endif
   return (rc);
 }

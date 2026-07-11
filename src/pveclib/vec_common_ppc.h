@@ -1,5 +1,5 @@
 /*
- Copyright (c) [2017, 2018] IBM Corporation.
+ Copyright (c) [2017, 2025-2026] IBM Corporation.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -1691,10 +1691,10 @@ static inline vui64_t vec_vextractuh_PWR9 (vui8_t, const unsigned int);
 static inline vui64_t vec_vextractuw_PWR9 (vui8_t, const unsigned int);
 static inline vui8_t vec_vgenpcvsldx_PWR7(int gpra);
 static inline vui8_t vec_vgenpcvsrdx_PWR7(int gpra);
-static inline vui8_t
-vec_vperm_PWR8 (vui8_t vra, vui8_t vrb, vui8_t pcv);
-static inline vui8_t
-vec_vperm_PWR9 (vui8_t vra, vui8_t vrb, vui8_t pcv);
+static inline vui32_t vec_vmrghw_PWR7 (vui32_t, vui32_t);
+static inline vui32_t vec_vmrglw_PWR7 (vui32_t, vui32_t);
+static inline vui8_t vec_vperm_PWR8 (vui8_t, vui8_t, vui8_t);
+static inline vui8_t vec_vperm_PWR9 (vui8_t, vui8_t, vui8_t);
 static inline vui64_t vec_vrld_PWR8 (vui64_t vra, vui8_t vrb);
 static inline vui64_t vec_vsld_PWR8 (vui64_t vra, vui8_t vrb);
 static inline vui64_t vec_vsrd_PWR8 (vui64_t vra, vui8_t vrb);
@@ -1706,8 +1706,9 @@ static inline vui128_t vec_vsrq_PWR9 (vui128_t vra, vui8_t vrb);
 static inline vui128_t vec_vsrq_PWR10 (vui128_t vra, vui8_t vrb);
 static inline vi128_t vec_vsraq_PWR10 (vi128_t vra, vui8_t vrb);
 static inline vui64_t vec_xxswapd_PWR7 (vui64_t vra);
-static inline vui64_t
-vec_xxpermdi_PWR7 (vui64_t vra, vui64_t vrb, const int ctl);
+static inline vui64_t vec_xxpermdi_PWR7 (vui64_t, vui64_t, const int);
+static inline vui32_t vec_xxmrghw_PWR7 (vui32_t, vui32_t);
+static inline vui32_t vec_xxmrglw_PWR7 (vui32_t, vui32_t);
 ///@endcond
 
 /** \brief Vector Add Unsigned Doubleword Modulo for POWER7 and earlier.
@@ -7866,7 +7867,7 @@ vec_vextractub_PWR9 (vui8_t vrb, const unsigned int uim)
  *
  *  @param vrb Quadword containing Octets 0-15 of the source.
  *  @param uim Unsigned Integer index (0-14)
- *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *  @return Vector with Octets (uim:uim+1) zero extended to doubleword in DW 0.
  *
  *  \showrefby
  */
@@ -7935,7 +7936,7 @@ vec_vextractuh_PWR9 (vui8_t vrb, const unsigned int uim)
  *
  *  @param vrb Quadword containing Octets 0-15 of the source.
  *  @param uim Unsigned Integer index (0-12)
- *  @return Vector with Octet (index) zero extended to doubleword in DW 0.
+ *  @return Vector with Octets (uim:uim+3) zero extended to doubleword in DW 0.
  *
  *  \showrefby
  */
@@ -7943,18 +7944,33 @@ static inline vui64_t
 vec_vextractuw_PWR7 (vui8_t vrb, const unsigned int uim)
 {
   vui64_t result;
-  const vui8_t zero = vec_splat_u8(0);
-  vui8_t res;
+  const vui32_t zero = vec_splat_u32(0);
+  vui32_t res;
 
-  // Rotate indexed byte to high byte.
-  if (uim > 0)
-    res = vec_sld (vrb, vrb, uim);
+  // If target is not word element aligned rotate 1-3 octets.
+  if ((uim & 3) != 0)
+    res = (vui32_t) vec_sld ((vui32_t) vrb, (vui32_t) vrb, (uim & 3));
   else
-    res = vrb;
-  // Shift high-byte in to low-byte with leading zeros.
-  res = vec_sld (zero, res, 4);
-  // Rotate result into high DW
-  result = (vui64_t) vec_sld (res,res, 8);
+    res = (vui32_t) vrb;
+
+  // Now that the selected word is element aligned
+  // Extract the specific word element.
+  if (uim < 8)
+    {
+      result = (vui64_t) vec_vmrghw_PWR7 (zero, res);
+      if (uim < 4)
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
+  else
+    {
+      result = (vui64_t) vec_vmrglw_PWR7 (zero, res);
+      if (uim < 12)
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
 
   return result;
 }
@@ -7962,7 +7978,7 @@ vec_vextractuw_PWR7 (vui8_t vrb, const unsigned int uim)
 /** \copybrief vec_vextractuw_PWR7
  *  \note Generate vextractuw instruction for _ARCH_PWR9/10.
  *  Else generate equivalent function for PWR7/8.
- *  \sa vec_vextractuh_PWR7 for details.
+ *  \sa vec_vextractuw_PWR7 for details.
  *  \showrefby
  */
 static inline vui64_t
@@ -8072,6 +8088,74 @@ vec_vgenpcvsrdx_PWR7(int gpra)
   pcv = vec_lvsr (gpra, gprb);
 #endif
   return pcv;
+}
+
+/** \brief Vector Merge High Words.
+ *
+ * Merge the High word elements from the concatenation of 2 x vectors
+ * (vra and vrb).
+ * - res[0] = vra[0];
+ * - res[1] = vrb[0];
+ * - res[2] = vra[1];
+ * - res[3] = vrb[1];
+ *
+ * /note This operations is not bi-endian enabled and deliberately
+ * undoes the compilers LE transforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *
+ * @param vra vector unsigned int.
+ * @param vrb vector unsigned int.
+ * @return A vector word merge from only the high words of vra and vrb.
+ *
+ * \showrefby
+ */
+static inline vui32_t
+vec_vmrghw_PWR7 (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vmrglw (vrb, vra);
+#else
+  return vec_vmrghw (vra, vrb);
+#endif
+}
+
+/** \brief Vector Merge Low Words.
+ *
+ * Merge the even word elements from the concatenation of 2 x vectors
+ * (vra and vrb).
+ * - res[0] = vra[2];
+ * - res[1] = vrb[2];
+ * - res[2] = vra[3];
+ * - res[3] = vrb[3];
+ *
+ * /note This operations is not bi-endian enabled and deliberately
+ * undoes the compilers LE transforms.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   2   | 2/cycle  |
+ *
+ * @param vra 128-bit vector unsigned int.
+ * @param vrb 128-bit vector unsigned int.
+ * @return A vector merge from only the high words of vra and vrb.
+ *
+ * \showrefby
+ */
+static inline vui32_t
+vec_vmrglw_PWR7 (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vmrghw (vrb, vra);
+#else
+  return vec_vmrglw (vra, vrb);
+#endif
 }
 
 /** \brief Vector Permute.
@@ -8921,6 +9005,178 @@ vec_vupklsw_PWR8 (vi32_t vra)
       : );
 #endif
   return (result);
+}
+
+/** \brief VSX Vector Extract Unsigned Word XX2-form
+ *
+ *  Vector Extract a Word element from a Quadword (16 bytes),
+ *  specified by the immediate-index.
+ *  The index (uim) in the range 0-12 selects four Octets.
+ *  The selected word is zero extended to a doubleword.
+ *  The resulting doubleword is returned in the high-order doubleword
+ *  of a vector, while The low-order doubleword is set to zero.
+ *
+ *  \note If the index is greater then 12 the result is boundedly undefined.
+ *  \note Use XX-form instructions where possible to allow access to
+ *  all 64 VSRs.
+ *  For __ARCH_PWR9 targets and later use vec_xxextractuw_PWR9().
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   | 4 - 8 | 2/cycle  |
+ *  |power8   | 4 - 8 | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param uim Unsigned Integer index (0-12)
+ *  @return Vector with Octets (uim:uim+3) zero extended to doubleword in DW 0.
+ *
+ *  \showrefby
+ */
+static inline vui64_t
+vec_xxextractuw_PWR7 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+  const vui32_t zero = vec_splat_u32(0);
+  vui32_t res;
+
+  // If target is not word element aligned rotate 1-3 octets.
+  if ((uim & 3) != 0)
+    res = (vui32_t) vec_sld ((vui32_t) vrb, (vui32_t) vrb, (uim & 3));
+  else
+    res = (vui32_t) vrb;
+
+  // Now that the selected word is element aligned
+  // Extract the specific word element.
+  if (uim < 8)
+    {
+      result = (vui64_t) vec_xxmrghw_PWR7 (zero, res);
+      if (uim < 4)
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
+  else
+    {
+      result = (vui64_t) vec_xxmrglw_PWR7 (zero, res);
+      if (uim < 12)
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
+
+  return result;
+}
+
+/** \brief VXS Vector Extract Unsigned Word XX2-Form
+ *
+ *  This operation has access to all 64 VSRs.
+ *  See vec_xxextractuw_PWR7() for operation details.
+ *  \note Generate xxextractuw instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \note We can use the vec_extract4b intrinsic (if available)
+ *  but need to reverse the bi-endian transform for LE.
+ *  \showrefby
+ */
+static inline vui64_t
+vec_xxextractuw_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract4b)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_extract4b (vrb, (12 - uim));
+#else
+  result = vec_extract4b (vrb, uim);
+#endif
+#else
+  __asm__(
+      "xxextractuw %x0,%x1,%2;\n"
+      : "=wa" (result)
+      : "wa" (vrb), "K" (uim)
+      : );
+#endif
+#else
+  result = vec_xxextractuw_PWR7 (vrb, uim);
+#endif
+  return result;
+}
+
+/** \brief VSX Vector Merge High Word XX3-form.
+ *
+ * Merge the high word elements from the concatenation of 2 x vectors
+ * (vra and vrb).
+ * - res[0] = vra[0];
+ * - res[1] = vrb[0];
+ * - res[2] = vra[1];
+ * - res[3] = vrb[1];
+ *
+ * \note This operations is not bi-endian enabled and deliberately
+ * undoes the compilers LE transforms.
+ * \note The vec_mergeh/l intrinsic will generate xxmrghw if there is
+ * sufficient register pressure to allocate from the low (vs0-vs31)
+ * VSRs for this operation. Otherwise it may generate vmrghw.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ * @param vra vector unsigned int.
+ * @param vrb vector unsigned int.
+ * @return A vector word merge from only the high words of vra and vrb.
+ *
+ * \showrefby
+ */
+static inline vui32_t
+vec_xxmrghw_PWR7 (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_mergel (vrb, vra);
+#else
+  return vec_mergeh (vra, vrb);
+#endif
+}
+
+/** \brief VSX Vector Merge Low Word XX3-form.
+ *
+ * Merge the low word elements from the concatenation of 2 x vectors
+ * (vra and vrb).
+ * - res[0] = vra[2];
+ * - res[1] = vrb[2];
+ * - res[2] = vra[3];
+ * - res[3] = vrb[3];
+ *
+ * /note This operations is not bi-endian enabled and deliberately
+ * undoes the compilers LE transforms.
+ * /note The vec_mergeh/l intrinsic will generate xxmrglw if there is
+ * sufficient register pressure to allocate from the low (vs0-vs31)
+ * VSRs for this operation. Otherwise it may generate vmrglw.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |   2   | 2/cycle  |
+ *  |power8   |   2   | 2/cycle  |
+ *  |power9   |   3   | 2/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ * @param vra 128-bit vector unsigned int.
+ * @param vrb 128-bit vector unsigned int.
+ * @return A vector merge from only the low words of vra and vrb.
+ *
+ * \showrefby
+ */
+static inline vui32_t
+vec_xxmrglw_PWR7 (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_mergeh (vrb, vra);
+#else
+  return vec_mergel (vra, vrb);
+#endif
 }
 
 /** \brief VSX Vector Permute Doubleword Immediate.

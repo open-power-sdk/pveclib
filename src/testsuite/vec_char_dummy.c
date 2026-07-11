@@ -26,35 +26,234 @@ test_not_v0 (vui8_t vra)
   return ~vra;
 }
 
-vui64_t
-test_vec_extractl_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+// Vector Extract Unsigned Word to VSR using
+// immediate-specified index XX2-form
+
+// This version saves one instruction for PWR7/8 if word aligned
+static inline vui64_t
+test_vec_xxextractuw (vui8_t vrb, const unsigned int uim)
 {
   vui64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extractl)
-  result = vec_extractl (vrb, vra, gprc);
-#else
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract4b)
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-  result = vec_vextdubvrx_PWR10 (vrb, vra, gprc);
+  result = vec_extract4b (vrb, (12 - uim));
 #else
-  result = vec_vextdubvlx_PWR10 (vra, vrb, gprc);
-  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+  result = vec_extract4b (vrb, uim);
+#endif
+#else
+  __asm__(
+      "xxextractuw %x0,%x1,%2;\n"
+      : "=wa" (result)
+      : "wa" (vrb), "K" (uim)
+      : );
+#endif
+#else
+  const vui32_t zero = vec_splat_u32(0);
+  vui32_t res;
+
+  // If target is not word element aligned rotate 1-3 octets.
+  if ((uim & 3) != 0)
+    res = (vui32_t) vec_sld ((vui32_t) vrb, (vui32_t) vrb, (uim & 3));
+  else
+    res = (vui32_t) vrb;
+  // Now that the selected word is element aligned
+  // Extract the specific word element.
+  if (uim < 8)
+    { // Use vmrghw for words 0:1
+      result = (vui64_t) vec_vmrghw_PWR7 (zero, res);
+      if (uim < 4)
+	// Use xxmrghd for words 0 ro DW 0
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	// Use xxmrgld for words 1 ro DW 0
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
+  else
+    { // Use vmrglw for words 2:3
+      result = (vui64_t) vec_vmrglw_PWR7 (zero, res);
+      if (uim < 12)
+	// Use xxmrghd for words 2 ro DW 0
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 0);
+      else
+	// Use xxmrghd for words 3 ro DW 0
+	result = vec_xxpermdi_PWR7 (result, (vui64_t) zero, 3);
+    }
+#endif
+  return result;
+}
+
+// Use xxsldwi for word shifts covering 64 VSRs
+static inline vui64_t
+test_vec_xxextractuw_V1 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract4b)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_extract4b (vrb, (12 - uim));
+#else
+  result = vec_extract4b (vrb, uim);
+#endif
+#else
+  __asm__(
+      "xxextractuw %x0,%x1,%2;\n"
+      : "=wa" (result)
+      : "wa" (vrb), "K" (uim)
+      : );
+#endif
+#else
+  const vui32_t zero = vec_splat_u32(0);
+  vui32_t res;
+
+  // Align word element; Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = (vui32_t) vec_sld ((vui32_t) vrb, zero, uim);
+  else
+    res = (vui32_t) vrb;
+#if (__GNUC__ >= 8)
+  // vec_sldw requires GCC 8+ or AT12.0
+  // Shift high-word in to low-word with leading zeros.
+  res = vec_sldw ((vui32_t) zero, res, 1);
+  // Rotate result into high word 1 (zero extended DW 0)
+  result = (vui64_t) vec_sldw (res,res, 2);
+#else
+  // Shift high-bytes in to low-bytes with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
 #endif
 #endif
   return result;
 }
 
-vui64_t
-test_vec_extracth_byte_V0 (vui8_t vra, vui8_t vrb, int gprc)
+static inline vui64_t
+test_vec_xxextractuw_V0 (vui8_t vrb, const unsigned int uim)
 {
   vui64_t result;
-#if defined (_ARCH_PWR10)  && (__GNUC__ >= 10) &&  defined (vec_extracth)
-  result = vec_extracth (vrb, vra, gprc);
-#else
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract4b)
 #if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-  result = vec_vextdubvlx_PWR10 (vrb, vra, gprc);
+  result = vec_extract4b (vrb, (12 - uim));
 #else
-  result = vec_vextdubvrx_PWR10 (vra, vrb, gprc);
-  result = (vui64_t) vec_sld ((vui8_t) result, (vui8_t) result, 8);
+  result = vec_extract4b (vrb, uim);
+#endif
+#else
+  __asm__(
+      "xxextractuw %x0,%x1,%2;\n"
+      : "=wa" (result)
+      : "wa" (vrb), "K" (uim)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-bytes in to low-bytes with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+vui64_t
+test_vec_xxextractuw_0 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 0);
+}
+
+vui64_t
+test_vec_xxextractuw_2 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 2);
+}
+
+vui64_t
+test_vec_xxextractuw_4 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 4);
+}
+
+vui64_t
+test_vec_xxextractuw_8 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 8);
+}
+
+vui64_t
+test_vec_xxextractuw_10 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 10);
+}
+
+vui64_t
+test_vec_xxextractuw_12 (vui8_t vrb)
+{
+  return test_vec_xxextractuw (vrb, 12);
+}
+
+vui8_t
+test_extractl_QW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui8_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdqvrx_PWR9 (vrb, vra, gprc);
+#else
+  result = vec_vextdqvlx_PWR9 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+vui8_t
+test_extracth_QW_V0 (vui8_t vra, vui8_t vrb, int gprc)
+{
+  vui8_t result;
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_vextdqvlx_PWR9 (vrb, vra, gprc);
+#else
+  result = vec_vextdqvrx_PWR9 (vra, vrb, gprc);
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextublx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+      result = vec_extract (vrb, gpra);
+#else
+  __asm__(
+      "vextublx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift high-byte in to low-byte with leading zeros.
+  res = vec_sld (zero, res, 1);
+#if 0
+  // rotate result into high DW
+  vdres = (vui64_t) vec_sld (res,res, 8);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#else
+  // Copy low DW to GPR
+  vdres = (vui64_t) res;
+  result = vdres[VEC_DW_L];
 #endif
 #endif
   return result;

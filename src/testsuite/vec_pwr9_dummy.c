@@ -40,6 +40,67 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+// VSX Vector Extract Unsigned Word to VSR using
+// immediate-specified index XX2-form
+static inline vui64_t
+test_vec_xxextractuw_PWR9 (vui8_t vrb, const unsigned int uim)
+{
+  vui64_t result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract4b)
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  result = vec_extract4b (vrb, (12 - uim));
+#else
+  result = vec_extract4b (vrb, uim);
+#endif
+#else
+  __asm__(
+      "xxextractuw %x0,%x1,%2;\n"
+      : "=wa" (result)
+      : "wa" (vrb), "K" (uim)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t res;
+
+  // Rotate indexed byte to high byte.
+  if (uim > 0)
+    res = vec_sld (vrb, vrb, uim);
+  else
+    res = vrb;
+  // Shift high-bytes in to low-bytes with leading zeros.
+  res = vec_sld (zero, res, 4);
+  // Rotate result into high DW
+  result = (vui64_t) vec_sld (res,res, 8);
+#endif
+  return result;
+}
+
+vui64_t
+test_vec_xxextractuw_0_PWR9 (vui8_t vrb)
+{
+  return test_vec_xxextractuw_PWR9 (vrb, 0);
+}
+
+vui64_t
+test_vec_xxextractuw_4_PWR9 (vui8_t vrb)
+{
+  return test_vec_xxextractuw_PWR9 (vrb, 4);
+}
+
+vui64_t
+test_vec_xxextractuw_8_PWR9 (vui8_t vrb)
+{
+  return test_vec_xxextractuw_PWR9 (vrb, 8);
+}
+
+vui64_t
+test_vec_xxextractuw_12_PWR9 (vui8_t vrb)
+{
+  return test_vec_xxextractuw_PWR9 (vrb, 12);
+}
+
 unsigned char
 test_vec_extract_byte_PWR9 (vui8_t vra, int gprb)
 {

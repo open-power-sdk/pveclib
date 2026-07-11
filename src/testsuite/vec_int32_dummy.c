@@ -23,6 +23,46 @@
 #include <pveclib/vec_int128_ppc.h>
 
 vui32_t
+test_vmrghw (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vmrglw (vrb, vra);
+#else
+  return vec_vmrghw (vra, vrb);
+#endif
+}
+
+vui32_t
+test_vmrglw (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_vmrghw (vrb, vra);
+#else
+  return vec_vmrglw (vra, vrb);
+#endif
+}
+
+vui32_t
+test_xxmrghw (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_mergel (vrb, vra);
+#else
+  return vec_mergeh (vra, vrb);
+#endif
+}
+
+vui32_t
+test_xxmrglw (vui32_t vra, vui32_t vrb)
+{
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+  return vec_mergeh (vrb, vra);
+#else
+  return vec_mergel (vra, vrb);
+#endif
+}
+
+vui32_t
 test_vec_vrlwnim_24_27 (vui32_t vra, vui32_t vrb)
 {
   return vec_rlnmi_word (vra, vrb, 24, 27);

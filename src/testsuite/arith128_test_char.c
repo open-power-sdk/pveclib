@@ -4040,7 +4040,11 @@ test_vextdd_indexed (void)
 //#define __DEBUG_PRINT__ 1
 #define test_ext_ub_uim(_l,_m) vec_vextractub_PWR9(_l,_m)
 #define test_ext_uh_uim(_l,_m) vec_vextractuh_PWR9(_l,_m)
+#if 1
+#define test_ext_uw_uim(_l,_m) vec_xxextractuw_PWR9(_l,_m)
+#else
 #define test_ext_uw_uim(_l,_m) vec_vextractuw_PWR9(_l,_m)
+#endif
 #define test_ext_d_uim(_l,_m) vec_vextractd_PWR9(_l,_m)
 
 int
@@ -4121,6 +4125,24 @@ test_vextractd_uim (void)
 #endif
   rc += check_v2ui64x ("vextractuw( 0):", k, e);
 
+  k = test_ext_uw_uim (i, 1);
+
+  e = CONST_VINT128_DW (0x01020304, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextractuw (1) ", k);
+#endif
+  rc += check_v2ui64x ("vextractuw( 1):", k, e);
+
+  k = test_ext_uw_uim (i, 4);
+
+  e = CONST_VINT128_DW (0x04050607, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("vextractuw (4) ", k);
+#endif
+  rc += check_v2ui64x ("vextractuw( 4):", k, e);
+
   k = test_ext_uw_uim (i, 8);
 
   e = CONST_VINT128_DW (0x08090a0b, 0x00);
@@ -4165,6 +4187,81 @@ test_vextractd_uim (void)
   print_v2xint64 ("vextractd (8) ", k);
 #endif
   rc += check_v2ui64x ("vextractd( 8):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#define test_xxext_uw_uim(_l,_m) vec_xxextractuw_PWR9(_l,_m)
+
+int
+test_xxextractd_uim (void)
+{
+  vui8_t i;
+  vui64_t k, e;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  i = vec_vgenpcvsldx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsldx (0) ", i);
+#endif
+
+  k = test_xxext_uw_uim (i, 0);
+
+  e = CONST_VINT128_DW (0x00010203, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (0) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 0):", k, e);
+
+  k = test_xxext_uw_uim (i, 1);
+
+  e = CONST_VINT128_DW (0x01020304, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (1) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 1):", k, e);
+
+  k = test_xxext_uw_uim (i, 4);
+
+  e = CONST_VINT128_DW (0x04050607, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (4) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 4):", k, e);
+
+  k = test_xxext_uw_uim (i, 8);
+
+  e = CONST_VINT128_DW (0x08090a0b, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (8) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw( 8):", k, e);
+
+  k = test_xxext_uw_uim (i, 10);
+
+  e = CONST_VINT128_DW (0x0a0b0c0d, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (10) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw(10):", k, e);
+
+  k = test_xxext_uw_uim (i, 12);
+
+  e = CONST_VINT128_DW (0x0c0d0e0f, 0x00);
+
+#ifdef __DEBUG_PRINT__
+  print_v2xint64 ("xxextractuw (12) ", k);
+#endif
+  rc += check_v2ui64x ("xxextractuw(12):", k, e);
 
   return (rc);
 }
@@ -4373,6 +4470,7 @@ test_vec_char (void)
   rc += test_vextdh_indexed ();
   rc += test_vextdb_indexed ();
   rc += test_vextractd_uim ();
+  rc += test_xxextractd_uim ();
   rc += test_extract_q_indexed ();
 #endif
   return (rc);

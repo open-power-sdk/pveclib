@@ -4424,6 +4424,309 @@ test_extract_q_indexed (void)
   return (rc);
 }
 
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+unsigned long long test_vextublx_V0 (vui8_t, int);
+#define test_ext_ub_l(_l,_k) test_vextublx_V0(_l,_k)
+unsigned long long test_vextubrx_V0 (vui8_t, int);
+#define test_ext_ub_r(_l,_k) test_vextubrx_V0(_l,_k)
+#else
+#define test_ext_ub_l(_l,_k) vec_vextublx_PWR9(_l,_k)
+#define test_ext_ub_r(_l,_k) vec_vextubrx_PWR9(_l,_k)
+#endif
+
+int
+test_vextub_indexed (void)
+{
+  vui8_t j;
+  unsigned long long k, e;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_ext_ub_l (j, 0);
+
+  e = 0x10UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextublx (0) ", k);
+#endif
+  rc += check_int64 ("vextublx( 0):", k, e);
+
+  k = test_ext_ub_r (j, 0);
+
+  e = 0x1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextubrx (0) ", k);
+#endif
+  rc += check_int64 ("vextubrx( 0):", k, e);
+
+  k = test_ext_ub_l (j, 7);
+
+  e = 0x17UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextublx (7) ", k);
+#endif
+  rc += check_int64 ("vextublx( 7):", k, e);
+
+  k = test_ext_ub_r (j, 7);
+
+  e = 0x18UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextubrx (7) ", k);
+#endif
+  rc += check_int64 ("vextubrx( 7):", k, e);
+
+  k = test_ext_ub_l (j, 8);
+
+  e = 0x18UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextublx (8) ", k);
+#endif
+  rc += check_int64 ("vextublx( 8):", k, e);
+
+  k = test_ext_ub_r (j, 8);
+
+  e = 0x17UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextubrx (8) ", k);
+#endif
+  rc += check_int64 ("vextubrx( 8):", k, e);
+
+  k = test_ext_ub_l (j, 15);
+
+  e = 0x1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextublx (15) ", k);
+#endif
+  rc += check_int64 ("vextublx(15):", k, e);
+
+  k = test_ext_ub_r (j, 15);
+
+  e = 0x10UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextubrx (15) ", k);
+#endif
+  rc += check_int64 ("vextubrx(15):", k, e);
+
+  return (rc);
+}
+
+//#define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+unsigned long long test_vextuhlx_V0 (vui8_t, int);
+#define test_ext_uh_l(_l,_k) test_vextuhlx_V0(_l,_k)
+unsigned long long test_vextuhrx_V0 (vui8_t, int);
+#define test_ext_uh_r(_l,_k) test_vextuhrx_V0(_l,_k)
+#else
+#define test_ext_uh_l(_l,_k) vec_vextuhlx_PWR9(_l,_k)
+#define test_ext_uh_r(_l,_k) vec_vextuhrx_PWR9(_l,_k)
+#endif
+
+int
+test_vextuh_indexed (void)
+{
+  vui8_t j;
+  unsigned long long k, e;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_ext_uh_l (j, 0);
+
+  e = 0x1011UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhlx (0) ", k);
+#endif
+  rc += check_int64 ("vextuhlx( 0):", k, e);
+
+  k = test_ext_uh_r (j, 0);
+
+  e = 0x1e1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhrx (0) ", k);
+#endif
+  rc += check_int64 ("vextuhrx( 0):", k, e);
+
+  k = test_ext_uh_l (j, 7);
+
+  e = 0x1718UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhlx (7) ", k);
+#endif
+  rc += check_int64 ("vextuhlx( 7):", k, e);
+
+  k = test_ext_uh_r (j, 7);
+
+  e = 0x1718UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhrx (7) ", k);
+#endif
+  rc += check_int64 ("vextuhrx( 7):", k, e);
+
+  k = test_ext_uh_l (j, 8);
+
+  e = 0x1819UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhlx (8) ", k);
+#endif
+  rc += check_int64 ("vextuhlx( 8):", k, e);
+
+  k = test_ext_uh_r (j, 8);
+
+  e = 0x1617UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhrx (8) ", k);
+#endif
+  rc += check_int64 ("vextuhrx( 8):", k, e);
+
+  k = test_ext_uh_l (j, 14);
+
+  e = 0x1e1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhlx (14) ", k);
+#endif
+  rc += check_int64 ("vextuhlx(14):", k, e);
+
+  k = test_ext_uh_r (j, 14);
+
+  e = 0x1011UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuhrx (14) ", k);
+#endif
+  rc += check_int64 ("vextuhrx(14):", k, e);
+
+  return (rc);
+}
+
+// #define __DEBUG_PRINT__ 1
+#ifdef __DEBUG_PRINT__
+unsigned long long test_vextuwlx_V0 (vui8_t, int);
+#define test_ext_uw_l(_l,_k) test_vextuwlx_V0(_l,_k)
+unsigned long long test_vextuwrx_V0 (vui8_t, int);
+#define test_ext_uw_r(_l,_k) test_vextuwrx_V0(_l,_k)
+#else
+#define test_ext_uw_l(_l,_k) vec_vextuwlx_PWR9(_l,_k)
+#define test_ext_uw_r(_l,_k) vec_vextuwrx_PWR9(_l,_k)
+#endif
+
+int
+test_vextuw_indexed (void)
+{
+  vui8_t j;
+  unsigned long long k, e;
+  int rc = 0;
+  printf ("\n%s\n", __FUNCTION__);
+
+  // Generate double quadword test pattern.
+  j = vec_vgenpcvsrdx_PWR7 (0);
+
+#ifdef __DEBUG_PRINT__
+  print_vint8d ("vgenpcvsrdx (0) ", j);
+#endif
+
+  k = test_ext_uw_l (j, 0);
+
+  e = 0x10111213UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwlx (0) ", k);
+#endif
+  rc += check_int64 ("vextuwlx( 0):", k, e);
+
+  k = test_ext_uw_r (j, 0);
+
+  e = 0x1c1d1e1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwrx (0) ", k);
+#endif
+  rc += check_int64 ("vextuwrx( 0):", k, e);
+
+  k = test_ext_uw_l (j, 7);
+
+  e = 0x1718191aUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwlx (7) ", k);
+#endif
+  rc += check_int64 ("vextuwlx( 7):", k, e);
+
+  k = test_ext_uw_r (j, 7);
+
+  e = 0x15161718UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwrx (7) ", k);
+#endif
+  rc += check_int64 ("vextuwrx( 7):", k, e);
+
+  k = test_ext_uw_l (j, 8);
+
+  e = 0x18191a1bUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwlx (8) ", k);
+#endif
+  rc += check_int64 ("vextuwlx( 8):", k, e);
+
+  k = test_ext_uw_r (j, 8);
+
+  e = 0x14151617UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwrx (8) ", k);
+#endif
+  rc += check_int64 ("vextuhrx( 8):", k, e);
+
+  k = test_ext_uw_l (j, 12);
+
+  e = 0x1c1d1e1fUL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwlx (12) ", k);
+#endif
+  rc += check_int64 ("vextuwlx(12):", k, e);
+
+  k = test_ext_uw_r (j, 12);
+
+  e = 0x10111213UL;
+
+#ifdef __DEBUG_PRINT__
+  print_int64x ("vextuwrx (12) ", k);
+#endif
+  rc += check_int64 ("vextuwrx(12):", k, e);
+
+  return (rc);
+}
+
 int
 test_vec_char (void)
 {
@@ -4472,6 +4775,9 @@ test_vec_char (void)
   rc += test_vextractd_uim ();
   rc += test_xxextractd_uim ();
   rc += test_extract_q_indexed ();
+  rc += test_vextub_indexed ();
+  rc += test_vextuh_indexed ();
+  rc += test_vextuw_indexed ();
 #endif
   return (rc);
 }

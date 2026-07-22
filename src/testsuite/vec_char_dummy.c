@@ -11,6 +11,18 @@
 
 #include <pveclib/vec_char_ppc.h>
 
+unsigned long long int
+test_mfvsrwz (vui32_t vxs)
+{
+  return vxs [VEC_WE_1];
+}
+
+unsigned long long int
+test_mfvrd (vui64_t vxs)
+{
+  return vxs [VEC_DW_H];
+}
+
 vui64_t
 test_vec_swapdx2 (vui64_t vra)
 {
@@ -24,6 +36,47 @@ vui8_t
 test_not_v0 (vui8_t vra)
 {
   return ~vra;
+}
+
+// Vector Extract Unsigned <element> to GPR using GPR-specified
+// Left/Right-Index
+// Vector Extract Byte elements
+unsigned long long
+test_vec_vextublx (vui8_t vrb, int gpra)
+{
+  return vec_vextublx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextubrx (vui8_t vrb, int gpra)
+{
+  return vec_vextubrx_PWR9 (vrb, gpra);
+}
+
+// Vector Extract Halfword elements
+unsigned long long
+test_vec_vextuhlx (vui8_t vrb, int gpra)
+{
+  return vec_vextuhlx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextuhrx (vui8_t vrb, int gpra)
+{
+  return vec_vextuhrx_PWR9 (vrb, gpra);
+}
+
+// Vector Extract Word elements
+unsigned long long
+test_vec_vextuwlx (vui8_t vrb, int gpra)
+{
+  return vec_vextuwlx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextuwrx (vui8_t vrb, int gpra)
+{
+  return vec_vextuwrx_PWR9 (vrb, gpra);
 }
 
 // Vector Extract Unsigned Word to VSR using
@@ -243,16 +296,183 @@ test_vextublx_V0 (vui8_t vrb, int gpra)
   pcv = vec_vgenpcvsldx_PWR7 (gpra);
   res = vec_vperm_PWR8 (vrb, vrb, pcv);
 
+#if 0
   // shift high-byte in to low-byte with leading zeros.
   res = vec_sld (zero, res, 1);
-#if 0
   // rotate result into high DW
   vdres = (vui64_t) vec_sld (res,res, 8);
   // Copy High DW to GPR
   result = vdres[VEC_DW_H];
 #else
-  // Copy low DW to GPR
-  vdres = (vui64_t) res;
+  // shift high-byte in to low-byte of HDW with leading zeros.
+  vdres = (vui64_t) vec_sld (zero, res, 9);
+  result = vdres[VEC_DW_H];
+#endif
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextuhlx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuhlx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+#if 0
+  // shift high-halfword in to low-halfword with leading zeros.
+  res = vec_sld (zero, res, 2);
+  // rotate result into high DW
+  vdres = (vui64_t) vec_sld (res,res, 8);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#else
+  // shift high-halfword in to low-byte of HDW with leading zeros.
+  vdres = (vui64_t) vec_sld (zero, res, 10);
+  result = vdres[VEC_DW_H];
+#endif
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextuwlx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuwlx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  const vui32_t zero = vec_splat_u32(0);
+  vui8_t pcv;
+  vui32_t res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = (vui32_t) vec_vperm_PWR8 (vrb, vrb, pcv);
+
+#if 0
+  // shift high-word in to low-word of HDW with leading zeros.
+  vdres = (vui64_t) vec_sld (zero, res, 12);
+#else
+  // shift high-word in to low-word of HDW with leading zeros.
+  vdres = (vui64_t) vec_vmrghw_PWR7 (zero, res);
+#endif
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextubrx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extract (vrb, gpra);
+#else
+  __asm__(
+      "vextubrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#endif
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift low-byte into high-byte with trailing zeros.
+  res = vec_sld (res, zero, 15);
+  // rotate result into high DW with leading zeros.
+  vdres = (vui64_t) vec_sld (res,res, 9);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextuhrx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuhrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift low-halfword into high-halfword with trailing zeros.
+  res = vec_sld (res, zero, 14);
+  // rotate result into high DW with leading zeros.
+  vdres = (vui64_t) vec_sld (res,res, 10);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#endif
+  return result;
+}
+
+unsigned long long
+test_vextuwrx_V0 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuwrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  const vui32_t zero = vec_splat_u32(0);
+  vui8_t pcv;
+  vui32_t res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = (vui32_t) vec_vperm_PWR8 (vrb, vrb, pcv);
+#if 1
+#if 1
+  // rotate result into high DW.
+  res = vec_sld (res,res, 8);
+  // Copy Word element 1 into GPR will zero extend
+  result = res [VEC_WE_1];
+#else
+  // shift low-word into high-word with trailing zeros.
+  res = vec_sld (res, zero, 12);
+  // rotate result into high DW with leading zeros.
+  vdres = (vui64_t) vec_sld (res,res, 12);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+#endif
+#else
+  vdres = (vui64_t) vec_vmrglw_PWR7 (zero, res);
+  // Copy Low DW to GPR
   result = vdres[VEC_DW_L];
 #endif
 #endif

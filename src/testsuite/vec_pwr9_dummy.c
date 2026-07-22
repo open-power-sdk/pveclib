@@ -40,6 +40,47 @@
 #include <pveclib/vec_f32_ppc.h>
 #include <pveclib/vec_bcd_ppc.h>
 
+// Vector Extract Unsigned <element> to GPR using GPR-specified
+// Left/Right-Index
+// Vector Extract Byte elements
+unsigned long long
+test_vec_vextublx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextublx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextubrx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextubrx_PWR9 (vrb, gpra);
+}
+
+// Vector Extract Halfword elements
+unsigned long long
+test_vec_vextuhlx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextuhlx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextuhrx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextuhrx_PWR9 (vrb, gpra);
+}
+
+// Vector Extract Word elements
+unsigned long long
+test_vec_vextuwlx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextuwlx_PWR9 (vrb, gpra);
+}
+
+unsigned long long
+test_vec_vextuwrx_PWR9 (vui8_t vrb, int gpra)
+{
+  return vec_vextuwrx_PWR9 (vrb, gpra);
+}
+
 // VSX Vector Extract Unsigned Word to VSR using
 // immediate-specified index XX2-form
 static inline vui64_t

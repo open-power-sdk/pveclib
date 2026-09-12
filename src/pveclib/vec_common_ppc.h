@@ -7997,6 +7997,440 @@ vec_vextractuw_PWR9 (vui8_t vrb, const unsigned int uim)
   return result;
 }
 
+/** \brief Vector Extract Unsigned Byte to GPR using GPR-specified Left-Index
+ *
+ *  Vector Extract a Byte element (Octet) from a Quadword (16 bytes),
+ *  specified by the Left-index.
+ *  The index (gpra, bits [60-63]) in the range 0-15 selects a single
+ *  Octet. The selected byte is zero extended to a doubleword.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextublx.
+ *  The PVIPR provides the vec_extract (vector char, int)
+ *  intrinsic to generate this instruction for Big Endian
+ *  __ARCH_PWR9 and later.
+ *  However the compiler may generate additional instructions depending
+ *  on the specific types used.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |10 - 11| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with Octet [gpra] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextublx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // shift high-byte in to low-byte of HDW with leading zeros.
+  vdres = (vui64_t) vec_sld (zero, res, 9);
+  result = vdres[VEC_DW_H];
+
+  return result;
+}
+
+/** \copybrief vec_vextublx_PWR7
+ *  \note Generate vextublx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextublx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextublx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+      result = vec_extract (vrb, gpra);
+#else
+  __asm__(
+      "vextublx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#endif
+#else
+  result = vec_vextublx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Byte to GPR using GPR-specified Right-Index
+ *
+ *  Vector Extract a Byte element (Octet) from a Quadword (16 bytes),
+ *  specified by the Right-index.
+ *  The index (gpra, bits [60-63]) in the range 0-15 selects a single
+ *  Octet. The selected byte is zero extended to a doubleword.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextubrx.
+ *  The PVIPR provides the vec_extract (vector char, int)
+ *  intrinsic to generate this instruction for Little Endian
+ *  __ARCH_PWR9 and later.
+ *  However the compiler may generate additional instructions depending
+ *  on the specific types used.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |12 - 13| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with Octet [15-gpra] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextubrx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+
+  // shift low-byte into high-byte with trailing zeros.
+  res = vec_sld (res, zero, 15);
+  // rotate result into high DW with leading zeros.
+  vdres = (vui64_t) vec_sld (res,res, 9);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+
+  return result;
+}
+
+/** \copybrief vec_vextubrx_PWR7
+ *  \note Generate vextubrx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextubrx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextubrx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+#if defined (vec_extract) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+      result = vec_extract (vrb, gpra);
+#else
+  __asm__(
+      "vextubrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#endif
+#else
+  result = vec_vextubrx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Halfword to GPR using GPR-specified Left-Index
+ *
+ *  Vector Extract a Halfword element from a Quadword (16 bytes),
+ *  specified by the Left-index.
+ *  The index (gpra, bits [60-63]) in the range 0-14 selects the
+ *  starting (high order) Octet of 2 contiguous Octets.
+ *  The selected halfword is zero extended to 64-bits.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextuhlx.
+ *  The PVIPR vec_extract (vector short, int) intrinsic,
+ *  generates several instruction including vextuhlx,
+ *  for Big Endian __ARCH_PWR9 and later.
+ *  The additional instructions converts the element index to the
+ *  octet index required by vextuhlx and sign extends the result if
+ *  input vector type is signed.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |10 - 11| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with halfword [gpra:gpra+1] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuhlx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // shift high-halfword in to low-byte of HDW with leading zeros.
+  vdres = (vui64_t) vec_sld (zero, res, 10);
+  result = vdres[VEC_DW_H];
+
+  return result;
+}
+
+/** \copybrief vec_vextuhlx_PWR7
+ *  \note Generate vextuhlx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextuhlx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuhlx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuhlx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  result = vec_vextuhlx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Halfword to GPR using GPR-specified Right-Index
+ *
+ *  Vector Extract a Halfword element from a Quadword (16 bytes),
+ *  specified by the Right-index.
+ *  The index (gpra, bits [60-63]) in the range 0-14 selects the
+ *  starting (low order) Octet of 2 contiguous Octets.
+ *  The selected halfword is zero extended to 64-bits.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextuhrx.
+ *  The PVIPR vec_extract (vector short, int) intrinsic,
+ *  generates several instruction including vextuhrx,
+ *  for Little Endian __ARCH_PWR9 and later.
+ *  The additional instructions converts the element index to the
+ *  octet index required by vextuhrx and sign extends the result if
+ *  input vector type is signed.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |10 - 11| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with halfword [14-gpra:15-gpra] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuhrx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui8_t zero = vec_splat_u8(0);
+  vui8_t pcv, res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = vec_vperm_PWR8 (vrb, vrb, pcv);
+  // shift low-halfword into high-halfword with trailing zeros.
+  res = vec_sld (res, zero, 14);
+  // rotate result into high DW with leading zeros.
+  vdres = (vui64_t) vec_sld (res,res, 10);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+
+  return result;
+}
+
+/** \copybrief vec_vextuhrx_PWR7
+ *  \note Generate vextuhrx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextuhrx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuhrx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuhrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  result = vec_vextuhrx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
+
+/** \brief Vector Extract Unsigned Word to GPR using GPR-specified Left-Index
+ *
+ *  Vector Extract a Word element from a Quadword (16 bytes),
+ *  specified by the Left-index.
+ *  The index (gpra, bits [60-63]) in the range 0-12 selects the
+ *  starting (high order) Octet of 4 contiguous Octets.
+ *  The selected word is zero extended to 64-bits.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextuwlx.
+ *  The PVIPR vec_extract (vector int, int) intrinsic,
+ *  generates several instruction including vextuwlx,
+ *  for Big Endian __ARCH_PWR9 and later.
+ *  The additional instructions converts the element index to the
+ *  octet index required by vextuwlx and sign extends the result if
+ *  input vector type is signed int.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |10 - 11| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with word [gpra:gpra+3] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuwlx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui32_t zero = vec_splat_u32(0);
+  vui8_t pcv;
+  vui32_t res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsldx_PWR7 (gpra);
+  res = (vui32_t) vec_vperm_PWR8 (vrb, vrb, pcv);
+  // shift high-word in to low-word of HDW with leading zeros.
+  vdres = (vui64_t) vec_vmrghw_PWR7 (zero, res);
+  // Copy High DW to GPR
+  result = vdres[VEC_DW_H];
+
+  return result;
+}
+
+/** \copybrief vec_vextuwlx_PWR7
+ *  \note Generate vextuwlx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextuwlx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuwlx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuwlx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  result = vec_vextuwlx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
+/** \brief Vector Extract Unsigned Word to GPR using GPR-specified Right-Index
+ *
+ *  Vector Extract a Word element from a Quadword (16 bytes),
+ *  specified by the Right-index.
+ *  The index (gpra, bits [60-63]) in the range 0-12 selects the
+ *  starting (low order) Octet of 4 contiguous Octets.
+ *  The selected word is zero extended to 64-bits.
+ *  The resulting doubleword is returned in a GPR.
+ *
+ *  \note This operation provides only the function of vextuwrx.
+ *  The PVIPR vec_extract (vector int, int) intrinsic,
+ *  generates several instruction including vextuwrx,
+ *  for Little Endian __ARCH_PWR9 and later.
+ *  The additional instructions converts the element index to the
+ *  octet index required by vextuwrx and sign extends the result if
+ *  input vector type is signed.
+ *
+ *  |processor|Latency|Throughput|
+ *  |--------:|:-----:|:---------|
+ *  |power7   |  20+  | 1/cycle  |
+ *  |power8   |10 - 11| 2/cycle  |
+ *  |power9   |   3   | 4/cycle  |
+ *  |power10  | 3 - 4 | 4/cycle  |
+ *
+ *  @param vrb Quadword containing Octets 0-15 of the source.
+ *  @param gpra Integer index (0-15)
+ *  @return Integer with word [12-gpra:15-gpra] zero extended to 64-bits.
+ *
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuwrx_PWR7 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+  const vui32_t zero = vec_splat_u32(0);
+  vui8_t pcv;
+  vui32_t res;
+  vui64_t vdres;
+
+  pcv = vec_vgenpcvsrdx_PWR7 (gpra);
+  res = (vui32_t) vec_vperm_PWR8 (vrb, vrb, pcv);
+  // rotate result into high DW.
+  res = vec_sld (res,res, 8);
+  // Copy Word element 1 into GPR will zero extend
+  result = res [VEC_WE_1];
+
+  return result;
+}
+
+/** \copybrief vec_vextuwrx_PWR7
+ *  \note Generate vextuwrx instruction for _ARCH_PWR9/10.
+ *  Else generate equivalent function for PWR7/8.
+ *  \sa vec_vextuwrx_PWR7 for details.
+ *  \showrefby
+ */
+static inline unsigned long long
+vec_vextuwrx_PWR9 (vui8_t vrb, int gpra)
+{
+  unsigned long long result;
+#if defined (_ARCH_PWR9)  && (__GNUC__ >= 9)
+  // Cant use vec_extract here because the compiler will force HW alignment
+  __asm__(
+      "vextuwrx %0,%1,%2;\n"
+      : "=r" (result)
+      : "r" (gpra), "v" (vrb)
+      : );
+#else
+  result = vec_vextuwrx_PWR7 (vrb, gpra);
+#endif
+  return result;
+}
+
 /** \brief Vector Generate PCV from SLDO Index.
  *
  *  Vector Generate a Permute Control Vector for Shift Left Double
